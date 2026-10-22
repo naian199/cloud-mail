@@ -183,6 +183,48 @@ test('real-world inline reply headers without whitespace and English dates are h
 	);
 });
 
+test('Chinese 来信 history headers disappear even when joined directly to the reply', () => {
+	const samples = [
+		['你好2026年7月3日周五凌晨5:37 199<199@naian.edu.kg>来信:', '你好'],
+		['小呆瓜 2026年7月3日 周五凌晨5:37 199 <199@naian.edu.kg> 来信:', '小呆瓜'],
+		['2026年7月3日周五凌晨5:37 199<199@naian.edu.kg>来信:', ''],
+		[
+			'你看到我得消息了吗 2026年7月3日 周五凌晨5:37 199<199@naian.edu.kg>来信:',
+			'你看到我得消息了吗'
+		],
+		[
+			'忘记登录了🤣 2026年7月3日 周五 早上6:42 shier1688 <shier1688@naian.edu.kg> 来信:',
+			'忘记登录了🤣'
+		],
+		[
+			'忘记回你了 2026年7月3日 周五 早上6:42 shier1688 <shier1688@naian.edu.kg> 来信:',
+			'忘记回你了'
+		],
+		['同样好玩 2026年7月5日 周日 晚上22:42 199 <199@naian.edu.kg> 来信:', '同样好玩'],
+		['收到2026 年 7 月 10 日 周五 中午12:20 199 <199@naian.edu.kg> 來信：旧内容', '收到'],
+		['收到7月10日 周五 中午12:20 199 <199@naian.edu.kg> 来信：旧内容', '收到'],
+		['收到2026/7/10 12:20 199 <199@naian.edu.kg> 来信：旧内容', '收到']
+	];
+	for (const [input, expected] of samples) {
+		assert.equal(replyText(input), expected);
+		assert.equal(chatBody(input).replyText, expected);
+	}
+	assert.equal(
+		chatBody(
+			'',
+			'<div>你好<span>2026年7月3日周五凌晨5:37 199&lt;199@naian.edu.kg&gt;来信:</span></div>'
+		).replyText,
+		'你好'
+	);
+	for (const input of [
+		'2026年7月3日收到你的来信，很开心',
+		'谢谢来信：内容已经看过',
+		'下次约在2026年7月3日凌晨5:37见'
+	]) {
+		assert.equal(replyText(input), input);
+	}
+});
+
 test('legacy image URLs resolve to private attachments even with generic MIME and URL-encoded CID', () => {
 	const atts = [
 		{
