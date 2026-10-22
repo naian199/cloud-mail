@@ -1,3 +1,5 @@
+export const MAIL_CHAT_SCHEMA_MARKER = 'mail_chat_schema_v1';
+
 export async function migrateMailChat(db) {
 	const { results } = await db.prepare('PRAGMA table_info(email)').all();
 	const names = new Set(results.map((row) => row.name));
@@ -8,7 +10,16 @@ export async function migrateMailChat(db) {
 		['ingest_key', 'TEXT'],
 		['send_key', 'TEXT']
 	]) {
-		if (!names.has(name)) await db.prepare(`ALTER TABLE email ADD COLUMN ${name} ${type}`).run();
+		if (!names.has(name)) {
+			try {
+				await db.prepare(`ALTER TABLE email ADD COLUMN ${name} ${type}`).run();
+			} catch (error) {
+				// Another isolate may have applied the same additive migration.
+				// Ignore the error only after verifying the column now exists.
+				const current = await db.prepare('PRAGMA table_info(email)').all();
+				if (!current.results.some(column => column.name === name)) throw error;
+			}
+		}
 	}
 	await db.batch([
 		db.prepare(
@@ -36,6 +47,23 @@ export async function migrateMailChat(db) {
       user_id INTEGER NOT NULL REFERENCES user(user_id) ON DELETE CASCADE,
       account_id INTEGER NOT NULL REFERENCES account(account_id) ON DELETE CASCADE,
       conversation_key TEXT NOT NULL, PRIMARY KEY(user_id, account_id, conversation_key)
-    )`)
+			)`),
+		db.prepare(`CREATE TABLE IF NOT EXISTS ${MAIL_CHAT_SCHEMA_MARKER} (id INTEGER PRIMARY KEY)`)
 	]);
+}
+
+const readyBindings = new WeakSet();
+
+export async function ensureMailChat(env) {
+	const db = env.db;
+	if (!db || readyBindings.has(db)) return;
+	const marker = await db.prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?")
+		.bind(MAIL_CHAT_SCHEMA_MARKER).first();
+	if (!marker) {
+		const columns = await db.prepare('PRAGMA table_info(email)').all();
+		// Allow the existing authenticated initializer to bootstrap a fresh DB.
+		if (!columns.results.length) return;
+		await migrateMailChat(db);
+	}
+	readyBindings.add(db);
 }

@@ -6,11 +6,13 @@ import emailService from './service/email-service';
 import kvObjService from './service/kv-obj-service';
 import oauthService from './service/oauth-service';
 import analysisService from './service/analysis-service';
+import { ensureMailChat } from './init/mail-chat-schema';
 export { ChatNotifications } from './chat/notifications';
 export default {
 	 async fetch(req, env, ctx) {
 
 		const url = new URL(req.url)
+		if (!url.pathname.startsWith('/api/init/')) await ensureMailChat(env);
 
 		if (url.pathname.startsWith('/api/')) {
 			url.pathname = url.pathname.replace('/api', '')
@@ -26,6 +28,7 @@ export default {
 	},
 	email: email,
 	async scheduled(c, env, ctx) {
+		await ensureMailChat(env);
 		if (c.cron === '*/30 * * * *') {
 			await analysisService.refreshEchartsCache({ env })
 			return;

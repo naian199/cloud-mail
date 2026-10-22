@@ -28,7 +28,7 @@ HTML 预览采用服务端标签/属性白名单，并在无脚本、无同源�
 
 1. 保留并备份现有 D1 数据。安装依赖，执行 `pnpm --dir mail-vue run build`。
 2. 复用上一版本的 `CHAT_NOTIFICATIONS` Durable Object 配置，无需新增聊天服务或凭证。
-3. GitHub Actions 会先执行 `scripts/migrate-mail-chat.mjs --remote --config wrangler-action.toml`，为已有数据库增加兼容字段、索引和表，再发布 Worker；迁移失败会停止发布。全新数据库会交给发布后的完整初始化流程处理。手动部署时也应先用已填妥的生产配置执行此脚本，再发布 Worker。
+3. Worker 在处理 HTTP、收信或定时任务前，通过已有 D1 绑定确认并执行兼容升级；升级完成后才进入邮件逻辑。并发首次请求会核实已新增字段，只有确认字段存在才忽略重复添加错误。升级标记按版本记录，成功后缓存当前数据库绑定的就绪状态。无需为部署凭证额外增加独立 D1 API 权限。全新数据库由原有完整初始化流程创建基础表。可选的 `scripts/migrate-mail-chat.mjs` 供拥有 D1 API 权限的管理员手动预升级使用，常规流水线不依赖它。
 4. Worker 发布后，执行项目原有 `/api/init/<jwt_secret>` 完整数据库更新流程。GitHub Actions 会自动执行；不要公开实际密钥 URL。迁移可重复执行，不清空现有邮件。随后流水线以只读请求核对线上前端入口与本次构建一致、网站配置可读，以及聊天接口拒绝未登录请求。
 5. `src/init/mail-chat-schema.js` 添加会话字段、Reply-To、收信去重/发件幂等字段，以及发送尝试和置顶表。旧版本尚未收集的 Reply-To 不会凭空恢复。
 6. 完成后进入 `/mail-chat`。发信权限、域名权限、发送额度和服务商配置沿用已有设置；默认角色禁止发信时，新界面同样不能发送。

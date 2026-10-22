@@ -6,7 +6,7 @@ import {
 	plainMail,
 	threadReferences
 } from '../src/lib/mail-conversations.js';
-import { migrateMailChat } from '../src/init/mail-chat-schema.js';
+import { migrateMailChat, ensureMailChat } from '../src/init/mail-chat-schema.js';
 import { DatabaseSync } from 'node:sqlite';
 
 test('mail conversations preserve identity across directions, subjects and participant order', async () => {
@@ -58,18 +58,23 @@ test('rich mail preview removes active content and external resource requests', 
 	);
 });
 
-test('mail schema migrates existing records twice without changing original email data', async () => {
+test('schema gate handles concurrent first requests, preserves mail, and caches readiness', async () => {
 	const sqlite = new DatabaseSync(':memory:');
 	sqlite.exec(
 		"PRAGMA foreign_keys=ON;CREATE TABLE user(user_id INTEGER PRIMARY KEY);CREATE TABLE account(account_id INTEGER PRIMARY KEY);CREATE TABLE email(email_id INTEGER PRIMARY KEY,user_id INTEGER,account_id INTEGER,subject TEXT,type INTEGER,message_id TEXT);INSERT INTO email VALUES(1,1,1,'original',0,'<old@test>');"
 	);
+	let queries = 0;
 	const db = {
 		prepare(sql) {
+			queries++;
 			let args = [];
 			return {
 				bind(...values) {
 					args = values;
 					return this;
+				},
+				async first() {
+					return sqlite.prepare(sql).get(...args) || null;
 				},
 				async all() {
 					return { results: sqlite.prepare(sql).all(...args) };
@@ -84,7 +89,10 @@ test('mail schema migrates existing records twice without changing original emai
 		}
 	};
 	try {
-		await migrateMailChat(db);
+		await Promise.all([ensureMailChat({ db }), ensureMailChat({ db })]);
+		const readyQueries = queries;
+		await ensureMailChat({ db });
+		assert.equal(queries, readyQueries);
 		await migrateMailChat(db);
 		assert.equal(sqlite.prepare('SELECT subject FROM email').get().subject, 'original');
 		assert.equal(sqlite.prepare('SELECT conversation_key FROM email').get().conversation_key, '');

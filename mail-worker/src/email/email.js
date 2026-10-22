@@ -13,10 +13,12 @@ import telegramService from '../service/telegram-service';
 import aiService from '../service/ai-service';
 import webhookService from '../service/webhook-service';
 import { notifyMail } from '../chat/mail-notify';
+import { ensureMailChat } from '../init/mail-chat-schema';
 
 export async function email(message, env, ctx) {
 
 	try {
+		await ensureMailChat(env);
 
 		const {
 			receive,
