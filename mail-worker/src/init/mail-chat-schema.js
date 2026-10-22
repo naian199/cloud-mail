@@ -1,4 +1,4 @@
-export const MAIL_CHAT_SCHEMA_MARKER = 'mail_chat_schema_v1';
+export const MAIL_CHAT_SCHEMA_MARKER = 'mail_chat_schema_v2';
 
 export async function migrateMailChat(db) {
 	const { results } = await db.prepare('PRAGMA table_info(email)').all();
@@ -17,7 +17,7 @@ export async function migrateMailChat(db) {
 				// Another isolate may have applied the same additive migration.
 				// Ignore the error only after verifying the column now exists.
 				const current = await db.prepare('PRAGMA table_info(email)').all();
-				if (!current.results.some(column => column.name === name)) throw error;
+				if (!current.results.some((column) => column.name === name)) throw error;
 			}
 		}
 	}
@@ -25,6 +25,13 @@ export async function migrateMailChat(db) {
 		db.prepare(
 			'CREATE INDEX IF NOT EXISTS idx_mail_conversation ON email(user_id, account_id, conversation_key, email_id)'
 		),
+		...(names.has('create_time')
+			? [
+					db.prepare(
+						'CREATE INDEX IF NOT EXISTS idx_mail_conversation_time ON email(user_id,account_id,conversation_key,create_time,email_id)'
+					)
+				]
+			: []),
 		db.prepare(
 			'CREATE INDEX IF NOT EXISTS idx_mail_message_identity ON email(account_id, type, message_id, email_id)'
 		),
@@ -48,6 +55,33 @@ export async function migrateMailChat(db) {
       account_id INTEGER NOT NULL REFERENCES account(account_id) ON DELETE CASCADE,
       conversation_key TEXT NOT NULL, PRIMARY KEY(user_id, account_id, conversation_key)
 			)`),
+		db.prepare(`CREATE TABLE IF NOT EXISTS mail_live_session (
+      user_id INTEGER NOT NULL REFERENCES user(user_id) ON DELETE CASCADE,
+      session_id TEXT NOT NULL, account_id INTEGER NOT NULL REFERENCES account(account_id) ON DELETE CASCADE,
+      peer_account_id INTEGER, expires_at INTEGER NOT NULL, typing_until INTEGER NOT NULL DEFAULT 0,
+      PRIMARY KEY(user_id, session_id)
+    )`),
+		db.prepare(
+			'CREATE INDEX IF NOT EXISTS idx_mail_live_expiry ON mail_live_session(user_id, expires_at)'
+		),
+		db.prepare(`CREATE TABLE IF NOT EXISTS mail_conversation_revision (
+      user_id INTEGER NOT NULL REFERENCES user(user_id) ON DELETE CASCADE,
+      account_id INTEGER NOT NULL REFERENCES account(account_id) ON DELETE CASCADE,
+      conversation_key TEXT NOT NULL, revision INTEGER NOT NULL DEFAULT 0,
+      PRIMARY KEY(user_id, account_id, conversation_key)
+    )`),
+		db.prepare(`CREATE TABLE IF NOT EXISTS mail_conversation_contact (
+      user_id INTEGER NOT NULL REFERENCES user(user_id) ON DELETE CASCADE,
+      account_id INTEGER NOT NULL REFERENCES account(account_id) ON DELETE CASCADE,
+      conversation_key TEXT NOT NULL, peer_email TEXT NOT NULL,
+      PRIMARY KEY(user_id, account_id, conversation_key)
+    )`),
+		db.prepare(`CREATE TABLE IF NOT EXISTS mail_removed_message (
+      email_id INTEGER PRIMARY KEY REFERENCES email(email_id) ON DELETE CASCADE
+    )`),
+		db.prepare(`CREATE TRIGGER IF NOT EXISTS mail_keep_bilateral_deleted AFTER UPDATE OF is_del ON email
+      WHEN NEW.is_del=0 AND EXISTS(SELECT 1 FROM mail_removed_message WHERE email_id=NEW.email_id)
+      BEGIN UPDATE email SET is_del=1 WHERE email_id=NEW.email_id; END`),
 		db.prepare(`CREATE TABLE IF NOT EXISTS ${MAIL_CHAT_SCHEMA_MARKER} (id INTEGER PRIMARY KEY)`)
 	]);
 }
@@ -57,8 +91,10 @@ const readyBindings = new WeakSet();
 export async function ensureMailChat(env) {
 	const db = env.db;
 	if (!db || readyBindings.has(db)) return;
-	const marker = await db.prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?")
-		.bind(MAIL_CHAT_SCHEMA_MARKER).first();
+	const marker = await db
+		.prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?")
+		.bind(MAIL_CHAT_SCHEMA_MARKER)
+		.first();
 	if (!marker) {
 		const columns = await db.prepare('PRAGMA table_info(email)').all();
 		// Allow the existing authenticated initializer to bootstrap a fresh DB.

@@ -1,6 +1,7 @@
 import BizError from '../error/biz-error';
 import userContext from '../security/user-context';
 import emailService from './email-service';
+import live from './mail-live-service';
 import {
 	addresses,
 	conversation,
@@ -82,14 +83,22 @@ const mailChat = {
 
 	async list(c, query) {
 		const account = await this.account(c, query.accountId);
-		const indexing = await this.backfill(c, account);
-		const before = query.before ? id(query.before) : Number.MAX_SAFE_INTEGER;
+		const legacyIndexing = await live.importLegacy(c, account);
+		const indexing = (await this.backfill(c, account)) || legacyIndexing;
+		const before = query.before ? id(query.before) : null;
+		const cursor = before
+			? await c.env.db
+					.prepare('SELECT create_time FROM email WHERE email_id=? AND user_id=? AND account_id=?')
+					.bind(before, account.user_id, account.account_id)
+					.first()
+			: null;
+		if (before && !cursor) fail('Invalid cursor');
 		const search =
 			typeof query.search === 'string' ? query.search.trim().slice(0, 100).toLowerCase() : '';
 		const { results } = await c.env.db
 			.prepare(
 				`WITH conversations AS (
-      SELECT conversation_key, MAX(email_id) AS latestId,
+      SELECT conversation_key, (SELECT best.email_id FROM email best WHERE best.user_id=email.user_id AND best.account_id=email.account_id AND best.conversation_key=email.conversation_key AND best.is_del=0 AND best.type IN (0,1) AND best.status!=6 ORDER BY best.create_time DESC,best.email_id DESC LIMIT 1) AS latestId,
       COUNT(DISTINCT CASE WHEN type = 0 AND unread = 0 THEN
         CASE WHEN coalesce(message_id, '') != '' THEN 'm:' || message_id ELSE 'i:' || email_id END END) AS unread
       FROM email WHERE user_id = ? AND account_id = ? AND is_del = 0 AND type IN (0,1) AND status != 6
@@ -99,13 +108,45 @@ const mailChat = {
       p.conversation_key IS NOT NULL AS pinned
       FROM conversations c JOIN email e ON e.email_id = c.latestId
       LEFT JOIN mail_conversation_pin p ON p.user_id = e.user_id AND p.account_id = e.account_id AND p.conversation_key = c.conversation_key
-      WHERE c.latestId < ? AND (? = '' OR instr(lower(e.conversation_peers), ?) > 0 OR instr(lower(coalesce(e.subject, '')), ?) > 0)
-      ORDER BY c.latestId DESC LIMIT 31`
+      WHERE ${cursor ? '(e.create_time < ? OR (e.create_time = ? AND e.email_id < ?)) AND ' : ''}(? = '' OR instr(lower(e.conversation_peers), ?) > 0 OR instr(lower(coalesce(e.subject, '')), ?) > 0)
+      ORDER BY e.create_time DESC,e.email_id DESC LIMIT 31`
 			)
-			.bind(account.user_id, account.account_id, before, search, search, search)
+			.bind(
+				account.user_id,
+				account.account_id,
+				...(cursor ? [cursor.create_time, cursor.create_time, before] : []),
+				search,
+				search,
+				search
+			)
+			.all();
+		const { results: contacts } = await c.env.db
+			.prepare(
+				`SELECT conversation_key AS key,peer_email FROM mail_conversation_contact WHERE user_id=? AND account_id=?`
+			)
+			.bind(account.user_id, account.account_id)
+			.all();
+		const { results: removed } = await c.env.db
+			.prepare(
+				`SELECT r.conversation_key AS key FROM mail_conversation_revision r WHERE r.user_id=? AND r.account_id=? AND NOT EXISTS(SELECT 1 FROM email e WHERE e.user_id=r.user_id AND e.account_id=r.account_id AND e.conversation_key=r.conversation_key AND e.is_del=0)`
+			)
+			.bind(account.user_id, account.account_id)
 			.all();
 		return {
 			conversations: results.slice(0, 30).map((row) => ({ ...row, peers: addresses(row.peers) })),
+			contacts: !query.before
+				? contacts.map((r) => ({
+						key: r.key,
+						peers: [r.peer_email],
+						latestId: 0,
+						unread: 0,
+						preview: '',
+						subject: '站内聊天',
+						createTime: null,
+						pinned: 0
+					}))
+				: [],
+			removedKeys: removed.map((r) => r.key),
 			hasMore: results.length > 30,
 			indexing
 		};
@@ -116,6 +157,15 @@ const mailChat = {
 		const conversationKey = key(query.key);
 		if (query.before && query.after) fail('Invalid pagination / 无效分页');
 		const cursor = query.before ? id(query.before) : query.after ? id(query.after) : null;
+		const cursorRow = cursor
+			? await c.env.db
+					.prepare(
+						'SELECT create_time FROM email WHERE email_id=? AND user_id=? AND account_id=? AND conversation_key=?'
+					)
+					.bind(cursor, account.user_id, account.account_id, conversationKey)
+					.first()
+			: null;
+		if (cursor && !cursorRow) fail('Invalid cursor');
 		const cmp = query.after ? '>' : '<',
 			order = query.after ? 'ASC' : 'DESC';
 		const { results } = await c.env.db
@@ -127,9 +177,16 @@ const mailChat = {
         AND prior.type = e.type AND prior.message_id = e.message_id AND prior.is_del = 0 AND prior.status != 6
         AND prior.email_id < e.email_id
       ))
-      ${cursor ? `AND email_id ${cmp} ?` : ''} ORDER BY email_id ${order} LIMIT 21`
+      ${cursor ? `AND (e.create_time ${cmp} ? OR (e.create_time = ? AND email_id ${cmp} ?))` : ''} ORDER BY e.create_time ${order},email_id ${order} LIMIT 21`
 			)
-			.bind(...[account.user_id, account.account_id, conversationKey, ...(cursor ? [cursor] : [])])
+			.bind(
+				...[
+					account.user_id,
+					account.account_id,
+					conversationKey,
+					...(cursor ? [cursorRow.create_time, cursorRow.create_time, cursor] : [])
+				]
+			)
 			.all();
 		const hasMore = results.length > 20;
 		const messages = results.slice(0, 20);
@@ -163,7 +220,24 @@ const mailChat = {
 				)
 				.map(({ key, ...att }) => att);
 		}
-		return { messages, hasMore };
+		const peer = await live.resolve(c, account, conversationKey);
+		if (peer) {
+			const ids = messages.filter((m) => m.type === 1 && m.messageId).map((m) => m.messageId);
+			const read = new Set();
+			if (ids.length) {
+				const { results } = await c.env.db
+					.prepare(
+						`SELECT message_id FROM email WHERE user_id=? AND account_id=? AND type=0 AND unread=1 AND is_del=0 AND message_id IN (${ids.map(() => '?').join(',')})`
+					)
+					.bind(peer.user_id, peer.account_id, ...ids)
+					.all();
+				results.forEach((row) => read.add(row.message_id));
+			}
+			messages.forEach((m) => {
+				if (m.type === 1) m.read = read.has(m.messageId);
+			});
+		}
+		return { messages, hasMore, revision: await live.revision(c, account, conversationKey) };
 	},
 
 	async detail(c, rawId) {
@@ -204,7 +278,7 @@ const mailChat = {
 		const account = await this.account(c, params?.accountId);
 		const conversationKey = key(params.key),
 			through = id(params.through);
-		await c.env.db
+		const changed = await c.env.db
 			.prepare(
 				`UPDATE email SET unread = 1 WHERE user_id = ? AND account_id = ? AND conversation_key = ?
       AND type = 0 AND is_del = 0 AND unread = 0 AND (email_id <= ? OR (coalesce(message_id, '') != '' AND message_id IN (
@@ -222,6 +296,10 @@ const mailChat = {
 				through
 			)
 			.run();
+		if (changed.meta.changes) {
+			const peer = await live.resolve(c, account, conversationKey);
+			c.executionCtx.waitUntil(notifyMail(c.env, peer?.user_id));
+		}
 	},
 
 	async pin(c, params) {
@@ -234,7 +312,7 @@ const mailChat = {
 		await c.env.db.prepare(sql).bind(account.user_id, account.account_id, conversationKey).run();
 	},
 
-	async send(c, params) {
+	async send(c, params, instant = false) {
 		const account = await this.account(c, params?.accountId);
 		if (typeof params.clientId !== 'string' || !/^[a-zA-Z0-9_-]{16,80}$/.test(params.clientId))
 			fail('Invalid request ID / 无效请求标识');
@@ -272,6 +350,14 @@ const mailChat = {
 			recipients.some((email) => !verify.isEmail(email))
 		)
 			fail('Invalid recipients / 请检查收件人');
+		let instantPeer;
+		if (instant) {
+			if (recipients.length !== 1) fail('Internal one-to-one only', 403);
+			const contact = await live.open(c, account, recipients[0]);
+			instantPeer = await live.resolve(c, account, contact.key);
+			if (!instantPeer?.friendship_id)
+				fail('Accepted friendship required / 请先添加好友并由对方接受', 403);
+		}
 		let parent;
 		if (params.replyId) {
 			parent = await c.env.db
@@ -319,6 +405,7 @@ const mailChat = {
 				recipients,
 				replyId: params.replyId || null,
 				...(params.quote === true ? { quote: true } : {}),
+				...(instant ? { instant: true } : {}),
 				attachments
 			})
 		);
@@ -365,30 +452,44 @@ const mailChat = {
 				params.quote === true
 					? `<blockquote class="cloud-mail-reference" data-message-id="${escape(parent.message_id || '')}" data-author="${escape(parent.send_email || '')}">${escape(excerpt)}</blockquote>`
 					: '';
-			const [sent] = await emailService.send(
-				c,
-				{
-					accountId: account.account_id,
-					receiveEmail: recipients,
-					subject,
-					text: body,
-					content: `<div style="white-space:pre-wrap">${escape(body)}</div>${quoteHtml}`,
-					sendType: parent ? 'reply' : 'send',
-					emailId: parent?.email_id,
-					attachments: attachments.map((att) => ({
-						filename: att.filename,
-						content: att.content,
-						type: att.contentType || 'application/octet-stream'
-					}))
-				},
-				account.user_id,
-				{
-					sendKey: requestKey,
-					beforeDelivery: () => {
-						started = true;
-					}
-				}
-			);
+			const [sent] = instant
+				? await live.deliver(
+						c,
+						account,
+						instantPeer,
+						requestKey,
+						body,
+						`<div style="white-space:pre-wrap">${escape(body)}</div>${quoteHtml}`,
+						parent,
+						attachments,
+						() => {
+							started = true;
+						}
+					)
+				: await emailService.send(
+						c,
+						{
+							accountId: account.account_id,
+							receiveEmail: recipients,
+							subject,
+							text: body,
+							content: `<div style="white-space:pre-wrap">${escape(body)}</div>${quoteHtml}`,
+							sendType: parent ? 'reply' : 'send',
+							emailId: parent?.email_id,
+							attachments: attachments.map((att) => ({
+								filename: att.filename,
+								content: att.content,
+								type: att.contentType || 'application/octet-stream'
+							}))
+						},
+						account.user_id,
+						{
+							sendKey: requestKey,
+							beforeDelivery: () => {
+								started = true;
+							}
+						}
+					);
 			const indexed = await c.env.db
 				.prepare('SELECT conversation_key AS conversationKey FROM email WHERE email_id = ?')
 				.bind(sent.emailId)

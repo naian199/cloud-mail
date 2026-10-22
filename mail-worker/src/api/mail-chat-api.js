@@ -2,6 +2,7 @@ import app from '../hono/hono';
 import result from '../model/result';
 import mail from '../service/mail-chat-service';
 import r2Service from '../service/r2-service';
+import live from '../service/mail-live-service';
 
 app.get('/mail-chat/conversations', async (c) =>
 	c.json(result.ok(await mail.list(c, c.req.query())))
@@ -34,3 +35,27 @@ app.put('/mail-chat/pin', async (c) => {
 	return c.json(result.ok());
 });
 app.post('/mail-chat/send', async (c) => c.json(result.ok(await mail.send(c, await c.req.json()))));
+
+app.get('/mail-chat/live', async (c) => {
+	const q = c.req.query();
+	return c.json(result.ok(await live.status(c, await mail.account(c, q.accountId), q.key)));
+});
+app.put('/mail-chat/presence', async (c) => {
+	const p = await c.req.json();
+	await live.pulse(c, await mail.account(c, p.accountId), p);
+	return c.json(result.ok());
+});
+app.post('/mail-chat/delete', async (c) => {
+	const p = await c.req.json();
+	if (typeof p.key !== 'string' || !/^[a-f0-9]{64}$/.test(p.key))
+		return c.json(result.fail('Invalid conversation', 400));
+	await live.remove(c, await mail.account(c, p.accountId), p);
+	return c.json(result.ok());
+});
+app.post('/mail-chat/open', async (c) => {
+	const p = await c.req.json();
+	return c.json(result.ok(await live.open(c, await mail.account(c, p.accountId), p.email)));
+});
+app.post('/mail-chat/instant', async (c) =>
+	c.json(result.ok(await mail.send(c, await c.req.json(), true)))
+);

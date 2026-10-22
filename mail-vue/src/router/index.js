@@ -19,7 +19,7 @@ const routes = [
             {
                 path: '/chat',
                 name: 'chat',
-                component: () => import('@/views/chat/index.vue'),
+                redirect: '/mail-chat',
                 meta: { title: 'chatTitle', name: 'chat', menu: true }
             },
             {

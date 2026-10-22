@@ -3,6 +3,15 @@
     <aside class="conversations">
       <div class="list-title">
         <h2>{{ t('mailChatTitle') }}</h2>
+        <el-button
+          text
+          size="small"
+          @click="
+            friendsOpen = true;
+            loadFriends();
+          "
+          >{{ t('mailChatContacts') }}</el-button
+        >
         <el-button v-perm="'email:send'" type="primary" size="small" @click="newOpen = true">{{
           t('mailChatNew')
         }}</el-button>
@@ -67,11 +76,25 @@
         /></el-button>
         <div class="thread-title">
           <strong translate="no">{{ selected.peers.join(', ') }}</strong
-          ><span>{{ connected ? t('mailChatLive') : t('chatReconnecting') }}</span>
+          ><span v-if="live.internal" class="live-status" :class="{ online: live.online }">{{
+            live.typing
+              ? t('mailChatTyping')
+              : live.online
+                ? t('mailChatOnline')
+                : t('mailChatOffline')
+          }}</span>
+          <span v-else>{{ connected ? t('mailChatLive') : t('chatReconnecting') }}</span>
         </div>
         <el-button text :aria-label="t('mailChatPin')" @click="togglePin">{{
           selected.pinned ? '★' : '☆'
         }}</el-button>
+        <el-button
+          v-if="live.internal && messages.length"
+          text
+          type="danger"
+          @click="removeBoth()"
+          >{{ t('mailChatClearBoth') }}</el-button
+        >
       </header>
       <div ref="scroll" class="messages" v-loading="messageLoading" @scroll="onScroll">
         <el-button v-if="hasOlder" class="load-more" text :loading="olderLoading" @click="older">{{
@@ -153,12 +176,26 @@
               </div>
             </div>
             <el-button
-              v-if="hasPerm('email:send')"
+              v-if="canSend"
               class="quote-action"
               text
               size="small"
               @click="quoteMessage(m)"
               >{{ t('mailChatQuoteReply') }}</el-button
+            >
+            <el-button
+              v-if="live.internal"
+              class="quote-action"
+              text
+              size="small"
+              type="danger"
+              @click="removeBoth(m)"
+              >{{ t('mailChatDeleteBoth') }}</el-button
+            >
+            <span
+              v-if="live.internal && m.type === 1 && m.read !== undefined"
+              class="read-receipt"
+              >{{ m.read ? t('mailChatRead') : t('mailChatUnread') }}</span
             >
             <div v-if="m.type === 1 && [3, 4, 5, 8].includes(m.status)" class="message-meta">
               <span :class="{ failed: [3, 4, 8].includes(m.status) }">{{
@@ -171,7 +208,7 @@
       <el-button v-if="!atBottom" class="latest" round @click="bottom">{{
         t('chatNewest')
       }}</el-button>
-      <form v-if="hasPerm('email:send')" class="composer" @submit.prevent="send">
+      <form v-if="canSend" class="composer" @submit.prevent="send">
         <div v-if="quoteTarget" class="compose-quote">
           <div>
             <strong
@@ -196,6 +233,7 @@
           :placeholder="t('mailChatInput')"
           :aria-label="t('mailChatInput')"
           @keydown="keyDown"
+          @input="liveInput"
         />
         <div class="chosen-files">
           <div v-for="(file, i) in files[draftKey] || []" :key="i" class="chosen-file">
@@ -255,6 +293,30 @@
         }}</el-button>
       </form>
     </el-dialog>
+    <el-drawer v-model="friendsOpen" :title="t('mailChatContacts')" size="min(420px, 100%)">
+      <form class="friend-request" @submit.prevent="addFriend">
+        <el-input v-model="friendEmail" :placeholder="t('mailChatFriendEmail')" /><el-button
+          native-type="submit"
+          type="primary"
+          >{{ t('mailChatAddFriend') }}</el-button
+        >
+      </form>
+      <div v-for="friend in friends" :key="friend.id" class="friend-row">
+        <span translate="no">{{ friend.email }}</span>
+        <template v-if="friend.status === 'accepted'"
+          ><el-button text @click="openFriend(friend)">{{
+            t('mailChatOpenChat')
+          }}</el-button></template
+        >
+        <template v-else-if="friend.requesterId !== user.user.userId"
+          ><el-button text @click="answerFriend(friend, true)">{{ t('mailChatAccept') }}</el-button
+          ><el-button text @click="answerFriend(friend, false)">{{
+            t('mailChatDecline')
+          }}</el-button></template
+        >
+        <span v-else>{{ t('mailChatPending') }}</span>
+      </div>
+    </el-drawer>
     <el-dialog
       :model-value="!!imagePreview"
       @close="imagePreview = ''"
@@ -270,7 +332,7 @@
 <script setup>
 import { computed, nextTick, onMounted, onBeforeUnmount, reactive, ref, watch } from 'vue';
 import { Icon } from '@iconify/vue';
-import { ElMessage } from 'element-plus';
+import { ElMessage, ElMessageBox } from 'element-plus';
 import { useI18n } from 'vue-i18n';
 import { useUserStore } from '@/store/user';
 import { useAccountStore } from '@/store/account';
@@ -283,8 +345,13 @@ import {
   mailRead,
   mailPin,
   mailSend,
-  mailAttachment
+  mailAttachment,
+  mailRemoveBoth,
+  mailOpen,
+  mailInstant
 } from '@/request/mail-chat';
+import { useMailLive } from '@/composables/use-mail-live';
+import { listFriends, requestFriend, respondFriend } from '@/request/chat';
 import { useMailSync } from '@/composables/use-mail-sync';
 import { fileToBase64, formatBytes } from '@/utils/file-utils';
 import { mailDate, showChatTime, chatTimeLabel } from '@/utils/mail-chat-display';
@@ -301,7 +368,11 @@ const conversations = ref([]),
 const active = computed(() => !!selected.value);
 const sortedConversations = computed(() =>
   [...conversations.value].sort(
-    (a, b) => Number(b.pinned) - Number(a.pinned) || b.latestId - a.latestId
+    (a, b) =>
+      Number(b.pinned) - Number(a.pinned) ||
+      (b.createTime ? mailDate(b.createTime).getTime() : 0) -
+        (a.createTime ? mailDate(a.createTime).getTime() : 0) ||
+      b.latestId - a.latestId
   )
 );
 const draftKey = computed(() => `${accountId.value}:${selected.value?.key || ''}`);
@@ -319,7 +390,18 @@ const indexing = ref(false),
   scroll = ref(null);
 const quoteTarget = ref(null);
 const replyAll = ref(false),
-  target = computed(() => quoteTarget.value || messages.value.at(-1));
+  target = computed(
+    () =>
+      quoteTarget.value ||
+      messages.value.at(-1) ||
+      (selected.value
+        ? {
+            type: 1,
+            recipient: JSON.stringify(selected.value.peers),
+            subject: t('mailChatDefaultSubject')
+          }
+        : null)
+  );
 const newOpen = ref(false),
   newMail = reactive({ to: '', subject: '', text: '' });
 let version = 0,
@@ -373,6 +455,81 @@ watch(
 const pendingRequests = new Map();
 const readThrough = new Map();
 const { connected } = useMailSync(sync);
+const { live, refreshLive, liveInput, stopTyping } = useMailLive(accountId, selected, connected);
+const canSend = computed(() => hasPerm('email:send') || live.value.friend);
+const friendsOpen = ref(false),
+  friends = ref([]),
+  friendEmail = ref('');
+const revisions = new Map();
+function applyMessages(data) {
+  const marker = `${accountId.value}:${selected.value?.key}`;
+  if (revisions.has(marker) && revisions.get(marker) !== data.revision) {
+    messages.value = [];
+    quoteTarget.value = null;
+    readThrough.delete(marker);
+    hasOlder.value = !!data.hasMore;
+    imagePreview.value = '';
+    for (const [id, url] of Object.entries(imageUrls)) {
+      URL.revokeObjectURL(url);
+      delete imageUrls[id];
+    }
+  }
+  revisions.set(marker, data.revision);
+  merge(data.messages);
+}
+async function loadFriends() {
+  try {
+    friends.value = await listFriends();
+  } catch {}
+}
+async function addFriend() {
+  try {
+    await requestFriend(friendEmail.value);
+    friendEmail.value = '';
+    await loadFriends();
+  } catch {}
+}
+async function answerFriend(friend, accept) {
+  try {
+    await respondFriend(friend.id, accept);
+    await loadFriends();
+  } catch {}
+}
+async function openFriend(friend) {
+  try {
+    const c = await mailOpen({ accountId: accountId.value, email: friend.email });
+    if (!conversations.value.some((r) => r.key === c.key)) conversations.value.push(c);
+    friendsOpen.value = false;
+    await select(c);
+  } catch {}
+}
+async function removeBoth(message) {
+  const a = accountId.value,
+    k = selected.value?.key,
+    v = version;
+  if (!k || !messages.value.length) return;
+  const through = messages.value.at(-1).emailId;
+  try {
+    await ElMessageBox.confirm(
+      t(message ? 'mailChatDeleteBothConfirm' : 'mailChatClearBothConfirm'),
+      t('mailChatDeleteTitle'),
+      {
+        type: 'warning',
+        confirmButtonText: t('mailChatConfirmDelete'),
+        cancelButtonText: t('mailChatCancelDelete')
+      }
+    );
+    if (a !== accountId.value || k !== selected.value?.key || v !== version) return;
+    await mailRemoveBoth({
+      accountId: a,
+      key: k,
+      through,
+      ...(message ? { emailId: message.emailId } : {})
+    });
+    stopTyping();
+    await sync();
+  } catch {}
+}
 const utc = mailDate;
 const date = (value) => utc(value).toLocaleDateString();
 const shortTime = (value) => (value ? date(value) : '');
@@ -406,7 +563,7 @@ function deliveryError(value) {
   }
 }
 function quoteMessage(message) {
-  if (!hasPerm('email:send')) return;
+  if (!canSend.value) return;
   quoteTarget.value = message;
   nextTick(() => document.querySelector('.composer textarea')?.focus());
 }
@@ -436,7 +593,7 @@ function merge(rows) {
   rows.forEach((m) => data.set(m.emailId, m));
   const identities = new Set();
   messages.value = [...data.values()]
-    .sort((a, b) => a.emailId - b.emailId)
+    .sort((a, b) => utc(a.createTime) - utc(b.createTime) || a.emailId - b.emailId)
     .filter((m) => {
       const k = m.messageId ? `${m.type}:${m.messageId}` : `id:${m.emailId}`;
       if (identities.has(k)) return false;
@@ -445,10 +602,19 @@ function merge(rows) {
     });
 }
 async function markRead() {
-  if (!selected.value || !atBottom.value || document.hidden || !messages.value.length) return;
+  if (
+    !selected.value ||
+    !atBottom.value ||
+    document.hidden ||
+    friendsOpen.value ||
+    newOpen.value ||
+    imagePreview.value ||
+    !messages.value.length
+  )
+    return;
   const current = selected.value;
   const marker = `${accountId.value}:${current.key}`,
-    through = messages.value.at(-1).emailId;
+    through = Math.max(...messages.value.map((m) => m.emailId));
   if ((readThrough.get(marker) || 0) >= through) {
     if (current.latestId <= through) {
       current.unread = 0;
@@ -480,7 +646,7 @@ async function select(c) {
   try {
     const data = await mailMessages({ accountId: accountId.value, key: c.key });
     if (mine !== version || stopped) return;
-    merge(data.messages);
+    applyMessages(data);
     hasOlder.value = data.hasMore;
     await bottom();
     await markRead();
@@ -510,13 +676,26 @@ async function sync() {
         dirty = true;
         continue;
       }
-      const oldestFresh = Math.min(...list.conversations.map((c) => c.latestId));
+      const oldestFresh = list.conversations.at(-1);
       const retained = list.conversations.length
         ? conversations.value.filter(
-            (c) => c.latestId < oldestFresh && !list.conversations.some((f) => f.key === c.key)
+            (c) =>
+              c.createTime &&
+              (utc(c.createTime) < utc(oldestFresh.createTime) ||
+                (utc(c.createTime).getTime() === utc(oldestFresh.createTime).getTime() &&
+                  c.latestId < oldestFresh.latestId)) &&
+              !list.conversations.some((f) => f.key === c.key)
           )
         : [];
-      conversations.value = [...list.conversations, ...retained];
+      conversations.value = [
+        ...list.conversations,
+        ...retained.filter((c) => !list.removedKeys?.includes(c.key)),
+        ...(list.contacts || []).filter(
+          (c) =>
+            !list.conversations.some((r) => r.key === c.key) &&
+            !retained.some((r) => r.key === c.key)
+        )
+      ];
       indexing.value = list.indexing;
       if (!retained.length) listHasMore.value = list.hasMore;
       clearTimeout(indexTimer);
@@ -524,6 +703,8 @@ async function sync() {
       const matching =
         selected.value && list.conversations.find((c) => c.key === selected.value.key);
       if (matching) Object.assign(selected.value, matching);
+      await refreshLive();
+      if (friendsOpen.value) await loadFriends();
       if (selected.value && !messageLoading.value) {
         const mine = version,
           k = selected.value.key,
@@ -533,13 +714,13 @@ async function sync() {
           const after = messages.value.at(-1)?.emailId;
           const data = await mailMessages({ accountId: a, key: k, ...(after ? { after } : {}) });
           if (mine !== version || stopped) break;
-          merge(data.messages);
+          applyMessages(data);
           if (!after) hasOlder.value = data.hasMore;
           more = !!after && data.hasMore;
         } while (more);
         if (mine === version && !stopped) {
           const recent = await mailMessages({ accountId: a, key: k });
-          if (mine === version && !stopped) merge(recent.messages);
+          if (mine === version && !stopped) applyMessages(recent);
         }
         if (mine === version && !stopped) {
           if (stick) await bottom();
@@ -563,7 +744,10 @@ async function moreConversations() {
     const data = await mailConversations({
       accountId: a,
       search: q,
-      before: Math.min(...conversations.value.map((c) => c.latestId))
+      before: [...conversations.value]
+        .filter((c) => c.latestId > 0)
+        .sort((a, b) => utc(a.createTime) - utc(b.createTime) || a.latestId - b.latestId)[0]
+        ?.latestId
     });
     if (a !== accountId.value || q !== search.value) return;
     const map = new Map(conversations.value.map((c) => [c.key, c]));
@@ -589,7 +773,7 @@ async function older() {
       before: messages.value[0].emailId
     });
     if (mine !== version || stopped) return;
-    merge(data.messages);
+    applyMessages(data);
     hasOlder.value = data.hasMore;
     await nextTick();
     el.scrollTop = top + el.scrollHeight - height;
@@ -685,7 +869,8 @@ async function deliver(payload, context, intent) {
   }
   // Notifications may change the default reply target during a lost response.
   // Retrying an unchanged draft must reuse the original payload and request ID.
-  const result = await mailSend({ ...pending.payload, clientId: pending.clientId });
+  const sendRequest = pending.payload.instant ? mailInstant : mailSend;
+  const result = await sendRequest({ ...pending.payload, clientId: pending.clientId });
   pendingRequests.delete(context);
   return result;
 }
@@ -727,12 +912,14 @@ async function send() {
     text,
     attachments: files[current] || [],
     replyAll: replyAll.value,
-    quoteId: quoteTarget.value?.emailId || null
+    quoteId: quoteTarget.value?.emailId || null,
+    instant: !!live.value.friend
   });
   try {
     const result = await deliver(
       {
         accountId: a,
+        instant: !!live.value.friend,
         replyId: m.emailId,
         quote: !!quoteTarget.value,
         recipients,
@@ -748,6 +935,7 @@ async function send() {
     if (drafts[current] === text) drafts[current] = '';
     files[current] = [];
     quoteTarget.value = null;
+    stopTyping();
     await showSent(a, result);
   } catch {
   } finally {
@@ -1001,6 +1189,27 @@ pre {
   -webkit-line-clamp: 8;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+.read-receipt {
+  font-size: 11px;
+  color: var(--el-text-color-secondary);
+  margin-top: 3px;
+}
+.live-status.online {
+  color: #20a162;
+}
+.friend-request {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.friend-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 12px 0;
+  overflow-wrap: anywhere;
 }
 .quote-action {
   opacity: 0;
