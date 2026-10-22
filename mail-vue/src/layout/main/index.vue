@@ -20,7 +20,7 @@ import { hasPerm } from "@/perm/perm.js"
 const settingStore = useSettingStore()
 const uiStore = useUiStore();
 const route = useRoute()
-let  innerWidth =  window.innerWidth
+let isMobile = window.innerWidth < 768
 
 let elNotification = null
 
@@ -82,6 +82,7 @@ function showNotice(data) {
 }
 
 onMounted(() => {
+  if (isMobile) uiStore.accountShow = false
   window.addEventListener('resize', handleResize)
   handleResize()
 })
@@ -91,11 +92,10 @@ onBeforeUnmount(() => {
 })
 
 const handleResize = () => {
-  if (['content','email','send'].includes(route.meta.name)) {
-    if (innerWidth !==  window.innerWidth) {
-      innerWidth = window.innerWidth;
-      uiStore.accountShow = window.innerWidth >= 767;
-    }
+  const mobile = window.innerWidth < 768
+  if (mobile !== isMobile) {
+    isMobile = mobile
+    uiStore.accountShow = !mobile && ['content', 'email', 'send'].includes(route.meta.name)
   }
 }
 
@@ -106,6 +106,7 @@ const handleResize = () => {
   position: fixed;
   @media (max-width: 767px) {
     position: absolute;
+    inset: 0;
     right: 0;
     border: 0;
     height: 100%;
@@ -126,9 +127,12 @@ const handleResize = () => {
 .show {
   transition: all 100ms;
   @media (max-width: 767px) {
-    position: fixed;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
     z-index: 100;
-    width: 260px;
+    width: min(300px, calc(100% - 44px));
   }
 }
 
@@ -146,21 +150,30 @@ const handleResize = () => {
 
 .main-box-show {
   display: grid;
-  grid-template-columns: 260px  1fr;
-  height: calc(100% - 60px);
+  grid-template-columns: 260px minmax(0, 1fr);
   @media (max-width: 767px) {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
 .main-box-hide {
   display: grid;
-  grid-template-columns: 1fr;
-  height: calc(100% - 60px);
+  grid-template-columns: minmax(0, 1fr);
 }
 
+.main-box-show,
+.main-box-hide {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+  grid-template-rows: minmax(0, 1fr);
+}
 
 .main-view {
+  min-width: 0;
+  min-height: 0;
   background: var(--el-bg-color);
 }
 

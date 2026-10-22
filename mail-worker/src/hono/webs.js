@@ -12,6 +12,7 @@ import '../api/r2-api';
 import '../api/resend-api';
 import '../api/user-api';
 import '../api/my-api';
+import '../api/chat-api';
 import '../api/role-api'
 import '../api/all-email-api'
 import '../api/init-api'

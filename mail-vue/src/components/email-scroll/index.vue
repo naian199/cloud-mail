@@ -899,7 +899,9 @@ function loadData() {
 
 .email-container {
   display: grid;
-  grid-template-rows: auto 1fr;
+  grid-template-rows: auto minmax(0, 1fr);
+  min-width: 0;
+  min-height: 0;
   padding: 0;
   font-size: 14px;
   color: var(--el-text-color-primary);
@@ -908,6 +910,8 @@ function loadData() {
 }
 
 .scroll {
+  min-width: 0;
+  min-height: 0;
   margin: 0;
   height: 100%;
   overflow: hidden;
@@ -1053,6 +1057,7 @@ function loadData() {
 
   .title {
     flex: 1;
+    min-width: 0;
     display: grid;
     grid-template-columns: 240px 1fr;
     @media (max-width: 1366px) {
@@ -1079,9 +1084,10 @@ function loadData() {
       }
 
       .name {
+        min-width: 0;
         display: grid;
         gap: 5px;
-        grid-template-columns: auto 1fr;
+        grid-template-columns: minmax(0, auto) 1fr;
 
         > span:last-child {
           display: flex;
@@ -1265,7 +1271,7 @@ function loadData() {
 
 .header-actions {
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: 15px;
   padding: 3px 15px;
@@ -1303,6 +1309,53 @@ function loadData() {
   .more-icon {
     margin-top: 8px;
     margin-left: 15px;
+  }
+}
+
+@media (max-width: 767px) {
+  .header-actions {
+    gap: 8px;
+    padding: 4px 12px;
+
+    .header-left {
+      column-gap: 12px;
+    }
+
+    .header-right {
+      align-items: center;
+
+      .email-count {
+        margin-top: 0;
+        font-size: 12px;
+      }
+    }
+
+    .more-icon {
+      box-sizing: content-box;
+      padding: 12px;
+      margin: -4px -8px -4px 0;
+    }
+  }
+
+  :deep(.email-row) {
+    .checkbox, .all-email-checkbox {
+      flex-shrink: 0;
+      padding-left: 12px;
+      padding-right: 12px;
+    }
+
+    .title, .title-column, .email-text {
+      grid-template-columns: minmax(0, 1fr) !important;
+    }
+
+    .email-sender {
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      column-gap: 6px;
+    }
+
+    .phone-time {
+      white-space: nowrap;
+    }
   }
 }
 

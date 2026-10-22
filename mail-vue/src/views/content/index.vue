@@ -268,6 +268,7 @@ const handleDelete = () => {
 <style scoped lang="scss">
 .box {
   height: 100%;
+  min-width: 0;
   overflow: hidden;
 }
 
@@ -306,6 +307,7 @@ const handleDelete = () => {
   }
 
   .email-title {
+    overflow-wrap: anywhere;
     font-size: 20px;
     font-weight: bold;
     margin-bottom: 10px;
@@ -319,6 +321,7 @@ const handleDelete = () => {
     flex-direction: column;
 
     .att {
+      max-width: 100%;
       margin-top: 30px;
       margin-bottom: 30px;
       border: 1px solid var(--light-border-color);
@@ -326,7 +329,8 @@ const handleDelete = () => {
       border-radius: 6px;
       width: fit-content;
       .att-box {
-        min-width: min(410px,calc(100vw - 60px));
+        width: min(410px, 100%);
+        min-width: 0;
         max-width: 600px;
         display: grid;
         gap: 12px;
@@ -352,7 +356,7 @@ const handleDelete = () => {
         border-radius: 4px;
         align-self: start;
         display: grid;
-        grid-template-columns: auto 1fr auto auto;
+        grid-template-columns: auto minmax(0, 1fr) auto auto;
         .att-icon {
           display: grid;
         }
@@ -416,6 +420,8 @@ const handleDelete = () => {
         margin-bottom: 6px;
 
         .send-name {
+          min-width: 0;
+          overflow-wrap: anywhere;
           color: var(--regular-text-color);
           display: flex;
           flex-wrap: wrap;

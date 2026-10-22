@@ -42,3 +42,13 @@ orm_log = true
 domain = ["example.com", "example2.com", "example3.com", "example4.com"]
 admin = "admin@example.com"
 jwt_secret = "b7f29a1d-18e2-4d3b-941f-f6b2c97c02fd"
+
+
+# Per-user WebSocket notifications for friends and private chat.
+[[durable_objects.bindings]]
+name = "CHAT_NOTIFICATIONS"
+class_name = "ChatNotifications"
+
+[[migrations]]
+tag = "chat-notifications-v1"
+new_sqlite_classes = ["ChatNotifications"]

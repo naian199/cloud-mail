@@ -112,7 +112,12 @@ app.use('*', async (c, next) => {
 	}
 
 
-	const jwt = c.req.header(constant.TOKEN_HEADER);
+	// Browser WebSockets cannot set Authorization. Accept the token subprotocol
+	// only for this endpoint, then apply the same JWT and KV session checks.
+	const protocols = path === '/chat/socket' && c.req.header('Upgrade')?.toLowerCase() === 'websocket'
+		? (c.req.header('Sec-WebSocket-Protocol') || '').split(',').map(p => p.trim()) : [];
+	const jwt = c.req.header(constant.TOKEN_HEADER)
+		|| (protocols.includes('cloud-mail-chat') ? protocols.find(p => p.startsWith('auth.'))?.slice(5) : undefined);
 
 	const result = await jwtUtils.verifyToken(c, jwt);
 

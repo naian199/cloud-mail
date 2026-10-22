@@ -476,4 +476,37 @@ function formatName(email) {
 .el-tooltip__trigger:first-child:focus-visible {
   outline: unset;
 }
+
+@media (max-width: 767px) {
+  .header {
+    gap: 4px;
+    grid-template-columns: minmax(0, auto) auto 1fr;
+  }
+
+  .header.not-send {
+    grid-template-columns: minmax(0, auto) 1fr;
+  }
+
+  .writer-box {
+    margin-left: 0;
+  }
+
+  .toolbar {
+    gap: 4px;
+
+    .icon-item {
+      width: 36px;
+      height: 40px;
+    }
+
+    .notice {
+      margin-right: 0;
+    }
+
+    .avatar .setting-icon {
+      margin-right: 4px;
+      width: 16px;
+    }
+  }
+}
 </style>

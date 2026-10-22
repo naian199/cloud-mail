@@ -12,6 +12,12 @@ const routes = [
         component: () => import('@/layout/index.vue'),
         children: [
             {
+                path: '/chat',
+                name: 'chat',
+                component: () => import('@/views/chat/index.vue'),
+                meta: { title: 'chatTitle', name: 'chat', menu: true }
+            },
+            {
                 path: '/inbox',
                 name: 'email',
                 component: () => import('@/views/email/index.vue'),

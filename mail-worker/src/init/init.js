@@ -1,6 +1,7 @@
 import settingService from '../service/setting-service';
 import emailUtils from '../utils/email-utils';
 import {emailConst} from "../const/entity-const";
+import { chatSchema } from './chat-schema';
 
 const dbInit = {
 	async init(c) {
@@ -32,6 +33,7 @@ const dbInit = {
 		await this.v3_1DB(c);
 		await this.v3_2DB(c);
 		await this.v3_3DB(c);
+		await c.env.db.batch(chatSchema.map(sql => c.env.db.prepare(sql)));
 		await settingService.refresh(c);
 		return c.text('success');
 	},

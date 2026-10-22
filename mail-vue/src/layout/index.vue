@@ -33,8 +33,11 @@ const uiStore = useUiStore();
 const writerRef = ref({})
 const isMobile = ref(window.innerWidth < 1025)
 const handleResize = () => {
-  isMobile.value = window.innerWidth < 1025
-  uiStore.asideShow = window.innerWidth > 1024;
+  const mobile = window.innerWidth < 1025
+  if (mobile !== isMobile.value) {
+    uiStore.asideShow = !mobile
+    isMobile.value = mobile
+  }
 }
 
 onMounted(() => {
@@ -65,7 +68,7 @@ onBeforeUnmount(() => {
   transform: translateX(0);
   transition: all 100ms ease;
   z-index: 101;
-  @media (max-width: 1025px) {
+  @media (max-width: 1024px) {
     position: fixed;
     top: 0;
     left: 0;
@@ -82,25 +85,34 @@ onBeforeUnmount(() => {
 
 .layout {
   height: 100%;
+  height: 100dvh;
   position: fixed;
   width: 100%;
   top: 0;
   left: 0;
   overflow: hidden;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
 }
 
 .main-container {
-  min-height: 100%;
+  min-width: 0;
+  min-height: 0;
   background: var(--el-bg-color);
-  overflow-y: auto;
+  overflow: hidden;
   -webkit-overflow-scrolling: touch;
 }
 
 .el-main {
   padding: 0;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .el-header {
+  flex-shrink: 0;
   background: var(--el-bg-color);
   border-bottom: solid 1px var(--el-border-color);
   padding: 0 0 0 0;
