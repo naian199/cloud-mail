@@ -3,6 +3,8 @@ const en = {
     mailChatImageError: "Image could not load",
     mailChatImageRetry: "Retry image",
     mailChatImageLoading: "Loading image…",
+    mailChatQuoteReply: "Quote reply",
+    mailChatCancelQuote: "Cancel quote",
     mailChatCollapse: 'Collapse text',
     mailChatTitle: "Mail conversations",
     mailChatNew: "New conversation",

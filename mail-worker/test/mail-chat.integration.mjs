@@ -105,7 +105,7 @@ await test(
 						},
 						{
 							filename: 'photo.png',
-							contentType: 'image/png',
+							contentType: 'application/octet-stream',
 							content:
 								'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a/1cAAAAASUVORK5CYII='
 						}
@@ -169,7 +169,8 @@ await test(
 					replyId: incoming.emailId,
 					recipients: [a.email],
 					subject: 'Re: First subject',
-					text: 'This is an email reply'
+					text: 'This is an email reply',
+					quote: true
 				});
 				assert.equal(result.code, 200);
 				const rows = await list(a);
@@ -178,6 +179,26 @@ await test(
 				const history = await messages(a, rows[0].key);
 				assert.equal(history.messages.length, 2);
 				assert.equal(history.messages[1].inReplyTo, incoming.messageId);
+				assert.equal(history.messages[1].replyText, 'This is an email reply');
+				assert.equal(history.messages[1].quote.text, 'Hello by email');
+				assert.equal(history.messages[1].quote.messageId, incoming.messageId);
+				const quotedRetry = await send(b, {
+					recipients: [c.email],
+					subject: 'Re: First subject',
+					text: '',
+					attachments: [
+						{
+							filename: 'only.png',
+							contentType: 'application/octet-stream',
+							content:
+								'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a/1cAAAAASUVORK5CYII='
+						}
+					]
+				});
+				assert.equal(quotedRetry.code, 200);
+				const onlyImage = (await messages(c, (await list(c))[0].key)).messages.at(-1);
+				assert.equal(onlyImage.replyText, '');
+				assert.equal(onlyImage.images.length, 1);
 				assert(history.messages[1].relation.includes(incoming.messageId));
 				assert.equal(
 					(

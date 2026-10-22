@@ -240,7 +240,13 @@ const mailChat = {
 			fail('Invalid request ID / 无效请求标识');
 		const body = typeof params.text === 'string' ? params.text.trim() : '';
 		const subject = typeof params.subject === 'string' ? params.subject.trim() : '';
-		if (!body || body.length > 20000 || !subject || subject.length > 300 || /[\r\n]/.test(subject))
+		if (
+			(!body && !params.attachments?.length) ||
+			body.length > 20000 ||
+			!subject ||
+			subject.length > 300 ||
+			/[\r\n]/.test(subject)
+		)
 			fail('Invalid text or subject / 请检查正文和标题');
 		// Normalize domains for delivery, but keep case-sensitive local parts.
 		// Conversation identity may be case-folded without rewriting SMTP targets.
@@ -270,7 +276,7 @@ const mailChat = {
 		if (params.replyId) {
 			parent = await c.env.db
 				.prepare(
-					`SELECT email_id, send_email, recipient, cc, reply_to, account_id FROM email
+					`SELECT email_id, send_email, recipient, cc, reply_to, account_id, text, content, message_id FROM email
         WHERE email_id = ? AND user_id = ? AND account_id = ? AND is_del = 0 AND status != 6`
 				)
 				.bind(id(params.replyId), account.user_id, account.account_id)
@@ -312,6 +318,7 @@ const mailChat = {
 				subject,
 				recipients,
 				replyId: params.replyId || null,
+				...(params.quote === true ? { quote: true } : {}),
 				attachments
 			})
 		);
@@ -349,6 +356,15 @@ const mailChat = {
 					/[&<>"']/g,
 					(c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]
 				);
+			if (params.quote === true && !parent) fail('Reply unavailable / 请先选择引用消息');
+			const excerpt =
+				params.quote === true
+					? chatBody(parent.text, parent.content).replyText.slice(0, 300) || '🖼'
+					: '';
+			const quoteHtml =
+				params.quote === true
+					? `<blockquote class="cloud-mail-reference" data-message-id="${escape(parent.message_id || '')}" data-author="${escape(parent.send_email || '')}">${escape(excerpt)}</blockquote>`
+					: '';
 			const [sent] = await emailService.send(
 				c,
 				{
@@ -356,7 +372,7 @@ const mailChat = {
 					receiveEmail: recipients,
 					subject,
 					text: body,
-					content: `<div style="white-space:pre-wrap">${escape(body)}</div>`,
+					content: `<div style="white-space:pre-wrap">${escape(body)}</div>${quoteHtml}`,
 					sendType: parent ? 'reply' : 'send',
 					emailId: parent?.email_id,
 					attachments: attachments.map((att) => ({

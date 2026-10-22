@@ -79,10 +79,10 @@
         }}</el-button>
         <template v-for="(m, index) in messages" :key="m.emailId">
           <p
-            v-if="index === 0 || date(m.createTime) !== date(messages[index - 1].createTime)"
+            v-if="showChatTime(m.createTime, messages[index - 1]?.createTime)"
             class="date-divider"
           >
-            {{ date(m.createTime) }}
+            {{ chatTimeLabel(m.createTime, locale) }}
           </p>
           <article
             v-if="
@@ -93,8 +93,13 @@
             "
             class="mail-message"
             :class="{ mine: m.type === 1 }"
+            :data-email-id="m.emailId"
           >
-            <div class="bubble">
+            <div class="bubble" @contextmenu.prevent="quoteMessage(m)">
+              <button v-if="m.quote" class="quote-card" type="button" @click="jumpToQuote(m.quote)">
+                <strong translate="no">{{ m.quote.author }}</strong
+                ><span>{{ m.quote.text }}</span>
+              </button>
               <p v-if="m.type === 1 && m.message" class="delivery-error">
                 {{ deliveryError(m.message) }}
               </p>
@@ -147,9 +152,16 @@
                 >
               </div>
             </div>
-            <div class="message-meta">
-              <time>{{ time(m.createTime) }}</time
-              ><span v-if="m.type === 1" :class="{ failed: [3, 4, 8].includes(m.status) }">{{
+            <el-button
+              v-if="hasPerm('email:send')"
+              class="quote-action"
+              text
+              size="small"
+              @click="quoteMessage(m)"
+              >{{ t('mailChatQuoteReply') }}</el-button
+            >
+            <div v-if="m.type === 1 && [3, 4, 5, 8].includes(m.status)" class="message-meta">
+              <span :class="{ failed: [3, 4, 8].includes(m.status) }">{{
                 statusText(m.status)
               }}</span>
             </div>
@@ -160,6 +172,18 @@
         t('chatNewest')
       }}</el-button>
       <form v-if="hasPerm('email:send')" class="composer" @submit.prevent="send">
+        <div v-if="quoteTarget" class="compose-quote">
+          <div>
+            <strong
+              >{{ t('mailChatQuoteReply') }} ·
+              <span translate="no">{{ quoteTarget.sendEmail }}</span></strong
+            >
+            <p>{{ quoteTarget.replyText || '🖼' }}</p>
+          </div>
+          <el-button text :aria-label="t('mailChatCancelQuote')" @click="quoteTarget = null"
+            >×</el-button
+          >
+        </div>
         <div v-if="selected.peers.length > 1" class="reply-heading">
           <el-checkbox v-model="replyAll">{{ t('mailChatReplyAll') }}</el-checkbox>
         </div>
@@ -187,7 +211,7 @@
             type="primary"
             native-type="submit"
             :loading="sending"
-            :disabled="!drafts[draftKey]?.trim() || messageLoading"
+            :disabled="(!drafts[draftKey]?.trim() && !files[draftKey]?.length) || messageLoading"
             >{{ t('mailChatSend') }}</el-button
           >
         </div>
@@ -263,8 +287,9 @@ import {
 } from '@/request/mail-chat';
 import { useMailSync } from '@/composables/use-mail-sync';
 import { fileToBase64, formatBytes } from '@/utils/file-utils';
+import { mailDate, showChatTime, chatTimeLabel } from '@/utils/mail-chat-display';
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const user = useUserStore(),
   accountStore = useAccountStore();
 const accountId = ref(accountStore.currentAccountId || user.user.account.accountId);
@@ -292,8 +317,9 @@ const indexing = ref(false),
   hasOlder = ref(false),
   atBottom = ref(true),
   scroll = ref(null);
+const quoteTarget = ref(null);
 const replyAll = ref(false),
-  target = computed(() => messages.value.at(-1));
+  target = computed(() => quoteTarget.value || messages.value.at(-1));
 const newOpen = ref(false),
   newMail = reactive({ to: '', subject: '', text: '' });
 let version = 0,
@@ -347,9 +373,8 @@ watch(
 const pendingRequests = new Map();
 const readThrough = new Map();
 const { connected } = useMailSync(sync);
-const utc = (value) => new Date(value.replace(' ', 'T') + (value.endsWith('Z') ? '' : 'Z'));
+const utc = mailDate;
 const date = (value) => utc(value).toLocaleDateString();
-const time = (value) => utc(value).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 const shortTime = (value) => (value ? date(value) : '');
 function parseAddresses(value) {
   try {
@@ -380,7 +405,20 @@ function deliveryError(value) {
     return String(value);
   }
 }
+function quoteMessage(message) {
+  if (!hasPerm('email:send')) return;
+  quoteTarget.value = message;
+  nextTick(() => document.querySelector('.composer textarea')?.focus());
+}
+function jumpToQuote(quote) {
+  const found = messages.value.find((message) => message.messageId === quote.messageId);
+  if (found) {
+    const el = scroll.value?.querySelector(`[data-email-id="${found.emailId}"]`);
+    el?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  }
+}
 function closeThread() {
+  quoteTarget.value = null;
   version++;
   selected.value = null;
   messages.value = [];
@@ -431,6 +469,7 @@ function onScroll() {
   if (atBottom.value) markRead().catch(() => {});
 }
 async function select(c) {
+  quoteTarget.value = null;
   const mine = ++version;
   selected.value = c;
   messages.value = [];
@@ -661,7 +700,12 @@ async function showSent(account, result) {
   if (sentConversation) await select(sentConversation);
 }
 async function send() {
-  if (sending.value || !drafts[draftKey.value]?.trim() || !target.value) return;
+  if (
+    sending.value ||
+    (!drafts[draftKey.value]?.trim() && !files[draftKey.value]?.length) ||
+    !target.value
+  )
+    return;
   const account = accounts.value.find((a) => a.accountId === accountId.value),
     m = target.value,
     current = draftKey.value,
@@ -677,18 +721,20 @@ async function send() {
         (e) => e.toLowerCase() !== account.email.toLowerCase()
       )
     : peer;
-  const text = drafts[current];
+  const text = drafts[current] || '';
   sending.value = true;
   const intent = JSON.stringify({
     text,
     attachments: files[current] || [],
-    replyAll: replyAll.value
+    replyAll: replyAll.value,
+    quoteId: quoteTarget.value?.emailId || null
   });
   try {
     const result = await deliver(
       {
         accountId: a,
         replyId: m.emailId,
+        quote: !!quoteTarget.value,
         recipients,
         subject: /^re:/i.test(m.subject || '')
           ? m.subject
@@ -701,6 +747,7 @@ async function send() {
     );
     if (drafts[current] === text) drafts[current] = '';
     files[current] = [];
+    quoteTarget.value = null;
     await showSent(a, result);
   } catch {
   } finally {
@@ -955,6 +1002,62 @@ pre {
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+.quote-action {
+  opacity: 0;
+  height: 22px;
+  margin-top: 2px;
+}
+.mail-message:hover .quote-action,
+.mail-message:focus-within .quote-action {
+  opacity: 1;
+}
+@media (hover: none) {
+  .quote-action {
+    opacity: 1;
+  }
+}
+.quote-card,
+.compose-quote {
+  background: rgba(0, 0, 0, 0.055);
+  border: 0;
+  border-radius: 5px;
+  padding: 8px 10px;
+  text-align: left;
+  color: inherit;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+.quote-card {
+  display: block;
+  margin-bottom: 8px;
+  cursor: pointer;
+}
+.quote-card strong,
+.quote-card span {
+  display: block;
+  font-size: 12px;
+}
+.quote-card span {
+  white-space: pre-wrap;
+  max-height: 54px;
+  overflow: hidden;
+  margin-top: 4px;
+}
+.compose-quote {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+  font-size: 12px;
+}
+.compose-quote > div {
+  min-width: 0;
+}
+.compose-quote p {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .message-meta {
   display: flex;
   gap: 10px;
@@ -968,7 +1071,8 @@ pre {
 .mail-message.mine {
   align-items: flex-end;
   .bubble {
-    background: var(--el-color-primary-light-9);
+    background: #95ec69;
+    color: #161616;
     border-radius: 12px 12px 2px 12px;
   }
 }

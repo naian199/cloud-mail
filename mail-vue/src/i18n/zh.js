@@ -3,6 +3,8 @@ const zh = {
     mailChatImageError: "图片加载失败",
     mailChatImageRetry: "重新加载图片",
     mailChatImageLoading: "图片加载中…",
+    mailChatQuoteReply: "引用回复",
+    mailChatCancelQuote: "取消引用",
     mailChatCollapse: '收起正文',
     mailChatTitle: "邮件会话",
     mailChatNew: "新会话",

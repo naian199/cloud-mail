@@ -164,3 +164,55 @@ test('chat images resolve authenticated embedded pictures and raster attachments
 		{ attId: 2, alt: 'picture.jpg' }
 	]);
 });
+
+test('real-world inline reply headers without whitespace and English dates are hidden', () => {
+	for (const value of [
+		'我爱你❤️10 月 17 日，星期六，下午4:02 188 <188@naian.edu.kg> 写道：',
+		'😘😘10月17日星期六下午4:04 199 <199@naian.edu.kg>写道：',
+		'😘😘Sat, Oct 17, 4:04 PM 199 <199@naian.edu.kg> wrote:',
+		'😘😘2026/10/17 16:04 199 <199@naian.edu.kg> 写道：'
+	])
+		assert.equal(replyText(value), value.startsWith('我') ? '我爱你❤️' : '😘😘');
+	assert.equal(
+		chatBody(
+			'',
+			'<div>😘😘<span>10月17日星期六下午4:04 199 &lt;199@naian.edu.kg&gt;写道：</span></div>'
+		).replyText,
+		'😘😘'
+	);
+});
+
+test('legacy image URLs resolve to private attachments even with generic MIME and URL-encoded CID', () => {
+	const atts = [
+		{
+			attId: 10,
+			key: 'attachments/photo.jpg',
+			type: 0,
+			filename: 'photo.jpg',
+			mimeType: 'application/octet-stream'
+		},
+		{ attId: 11, contentId: '<photo@host>', key: 'attachments/inline.png', type: 1 }
+	];
+	for (const src of [
+		'{{domain}}/attachments/photo.jpg',
+		'attachments/photo.jpg',
+		'https://old.example/attachments/photo.jpg'
+	]) {
+		assert.deepEqual(chatBody('', `<img src="${src}">`, atts).images, [{ attId: 10, alt: '' }]);
+	}
+	assert.equal(chatBody('', '<img src="cid:photo%40host">', atts).images[0].attId, 11);
+	assert.doesNotThrow(() => chatBody('', '<img src="cid:bad%">', atts));
+});
+
+test('explicit quote is a separate card and never repeats inside the new reply text', () => {
+	const body = chatBody(
+		'',
+		'<div>这是回复</div><blockquote class="cloud-mail-reference" data-message-id="&lt;one@host&gt;" data-author="friend@example.com">之前的内容</blockquote>'
+	);
+	assert.equal(body.replyText, '这是回复');
+	assert.deepEqual(body.quote, {
+		messageId: '<one@host>',
+		author: 'friend@example.com',
+		text: '之前的内容'
+	});
+});

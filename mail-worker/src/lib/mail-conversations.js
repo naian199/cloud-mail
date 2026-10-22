@@ -123,12 +123,17 @@ export function safeMailHtml(html = '') {
 
 // Presentation only: retain the complete original mail for the standard mailbox view.
 export function replyText(text = '') {
-	const value = String(text).replace(/\r\n?/g, '\n');
+	const value = String(text)
+		.replace(/\r\n?/g, '\n')
+		.replace(/\u200b|\ufeff/g, '');
 	const boundaries = [
 		/^\s*>/m,
-		/^\s*On\s+[\s\S]{0,300}?wrote\s*[:：]/im,
-		/(?:^|\s)(?:在\s*)?\d{4}年\d{1,2}月\d{1,2}日[^\n]{0,220}写道\s*[:：]/m,
-		/(?:^|\s)(?:在\s*)?\d{1,2}\s*月\s*\d{1,2}\s*日[^\n]{0,220}写道\s*[:：]/m,
+		/\bOn\s+[\s\S]{0,300}?wrote\s*[:：]/im,
+		/(?:Mon(?:day)?|Tue(?:sday)?|Wed(?:nesday)?|Thu(?:rsday)?|Fri(?:day)?|Sat(?:urday)?|Sun(?:day)?)[,]?\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+\d{1,2}[^\n]{0,250}?wrote\s*[:：]/i,
+		/(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+\d{1,2}[^\n]{0,250}?wrote\s*[:：]/i,
+		/\d{4}[-/]\d{1,2}[-/]\d{1,2}[^\n]{0,220}?(?:写道|wrote)\s*[:：]/i,
+		/(?:在\s*)?\d{4}年\d{1,2}月\d{1,2}日[^\n]{0,220}写道\s*[:：]/m,
+		/(?:在\s*)?\d{1,2}\s*月\s*\d{1,2}\s*日[^\n]{0,220}写道\s*[:：]/m,
 		/(?:^|\n)\s*在[^\n]{0,250}写道\s*[:：]/m,
 		/^\s*-{2,}\s*(?:Original Message|原始邮件|Forwarded message|转发邮件)/im,
 		/^\s*(?:From|发件人)\s*[:：][^\n]*\n\s*(?:Sent|发送时间|Date|日期)\s*[:：]/im,
@@ -138,8 +143,24 @@ export function replyText(text = '') {
 	return value.slice(0, positions.length ? Math.min(...positions) : value.length).trim();
 }
 
+function decodeCid(value) {
+	try {
+		return decodeURIComponent(value).replace(/^<|>$/g, '');
+	} catch {
+		return value;
+	}
+}
+
 export function chatBody(text = '', html = '', attachments = []) {
 	const { document } = parseHTML(`<html><body>${html}</body></html>`);
+	const reference = document.querySelector('blockquote.cloud-mail-reference');
+	const quote = reference
+		? {
+				messageId: reference.getAttribute('data-message-id') || '',
+				author: reference.getAttribute('data-author') || '',
+				text: plainMail(reference.innerHTML).trim().slice(0, 300)
+			}
+		: null;
 	document
 		.querySelectorAll(
 			'blockquote,.gmail_quote,.gmail_signature,.yahoo_quoted,.moz-signature,script,style,iframe,object,template'
@@ -154,13 +175,22 @@ export function chatBody(text = '', html = '', attachments = []) {
 	const images = [];
 	const seen = new Set();
 	for (const img of document.querySelectorAll('img')) {
-		const src = img.getAttribute('src') || '';
+		const src = img.getAttribute('src') || img.getAttribute('data-src') || '';
 		if (Number(img.getAttribute('width')) === 1 || Number(img.getAttribute('height')) === 1)
 			continue;
 		const att = attachments.find(
 			(a) =>
-				(src.startsWith('cid:') && a.contentId?.replace(/^<|>$/g, '') === src.slice(4)) ||
-				(src.startsWith('{{domain}}') && a.key === src.slice(10))
+				(src.startsWith('cid:') &&
+					a.contentId?.replace(/^<|>$/g, '') === decodeCid(src.slice(4))) ||
+				(a.key &&
+					(src.replace(/^\{\{domain\}\}/, '').replace(/^\//, '') === a.key ||
+						(() => {
+							try {
+								return new URL(src).pathname.replace(/^\//, '') === a.key;
+							} catch {
+								return false;
+							}
+						})()))
 		);
 		const image = att
 			? { attId: att.attId }
@@ -176,12 +206,13 @@ export function chatBody(text = '', html = '', attachments = []) {
 		if (
 			!att.contentId &&
 			att.type === 0 &&
-			/^image\/(png|jpeg|gif|webp)$/i.test(att.mimeType || '') &&
+			(/^image\/(png|jpe?g|pjpeg|gif|webp)(?:;|$)/i.test(att.mimeType || '') ||
+				/\.(png|jpe?g|gif|webp)$/i.test(att.filename || '')) &&
 			!seen.has(att.attId)
 		) {
 			images.push({ attId: att.attId, alt: att.filename || '' });
 			seen.add(att.attId);
 		}
 	}
-	return { replyText: replyText(html ? plainMail(document.body.innerHTML) : text), images };
+	return { replyText: replyText(html ? plainMail(document.body.innerHTML) : text), images, quote };
 }
