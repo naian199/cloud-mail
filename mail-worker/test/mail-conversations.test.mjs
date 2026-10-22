@@ -4,7 +4,9 @@ import {
 	conversation,
 	safeMailHtml,
 	plainMail,
-	threadReferences
+	threadReferences,
+	chatBody,
+	replyText
 } from '../src/lib/mail-conversations.js';
 import { migrateMailChat, ensureMailChat } from '../src/init/mail-chat-schema.js';
 import { DatabaseSync } from 'node:sqlite';
@@ -99,4 +101,66 @@ test('schema gate handles concurrent first requests, preserves mail, and caches 
 	} finally {
 		sqlite.close();
 	}
+});
+
+test('chat bubbles contain only the new reply, including inline Chinese nested history', () => {
+	assert.equal(
+		replyText('我爱你❤️ 10 月 17 日，星期六，下午4:02 188 <188@naian.edu.kg> 写道：嗨'),
+		'我爱你❤️'
+	);
+	assert.equal(
+		replyText(
+			'😘😘 10月17日星期六下午4:04 199 <199@naian.edu.kg> 写道：我爱你❤️ 10月17日188写道：嗨'
+		),
+		'😘😘'
+	);
+	assert.equal(
+		replyText('收到\nOn Sat, Oct 17, 2026 at 4:02 PM\nFriend <friend@example.com> wrote:\n> Hello'),
+		'收到'
+	);
+	assert.equal(replyText('好的\n在2026年10月17日 188写道：你好'), '好的');
+	assert.equal(
+		replyText('讨论 10月17日的安排，不是引用\n第二行'),
+		'讨论 10月17日的安排，不是引用\n第二行'
+	);
+	assert.equal(replyText('保留我的 > 比较符号和正文'), '保留我的 > 比较符号和正文');
+	assert.equal(
+		chatBody(
+			'fallback',
+			'<div>新回复</div><div class="gmail_quote">旧内容<img src="https://old.example/pic.png"></div>'
+		).replyText,
+		'新回复'
+	);
+	assert.deepEqual(
+		chatBody(
+			'',
+			'<div>新回复</div><blockquote>旧内容<img src="https://old.example/pic.png"></blockquote>'
+		).images,
+		[]
+	);
+});
+
+test('chat images resolve authenticated embedded pictures and raster attachments, rejecting unsafe URLs', () => {
+	const atts = [
+		{
+			attId: 1,
+			contentId: '<photo>',
+			key: 'attachments/photo.png',
+			type: 1,
+			mimeType: 'image/png'
+		},
+		{ attId: 2, filename: 'picture.jpg', type: 0, mimeType: 'image/jpeg' },
+		{ attId: 3, filename: 'script.svg', type: 0, mimeType: 'image/svg+xml' }
+	];
+	const body = chatBody(
+		'',
+		'<p>照片</p><img src="cid:photo"><img src="{{domain}}attachments/photo.png"><img src="https://example.com/p.png"><img src="javascript:alert(1)"><img src="data:text/html;base64,PHNjcmlwdD4="><img width="1" src="https://tracker.example/pixel">',
+		atts
+	);
+	assert.equal(body.replyText, '照片');
+	assert.deepEqual(body.images, [
+		{ attId: 1, alt: '' },
+		{ src: 'https://example.com/p.png', alt: '' },
+		{ attId: 2, alt: 'picture.jpg' }
+	]);
 });

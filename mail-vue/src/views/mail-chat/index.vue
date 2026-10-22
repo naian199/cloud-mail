@@ -34,9 +34,9 @@
           :class="{ selected: selected?.key === c.key }"
           @click="select(c)"
         >
-          <span class="avatar">{{ c.peers[0]?.[0]?.toUpperCase() || '@' }}</span>
+          <span class="avatar" translate="no">{{ c.peers[0]?.[0]?.toUpperCase() || '@' }}</span>
           <span class="contact-summary"
-            ><span class="peers">{{ c.peers.join(', ') }}</span
+            ><span class="peers" translate="no">{{ c.peers.join(', ') }}</span
             ><span class="preview">{{ c.preview || c.subject }}</span></span
           >
           <span class="contact-meta"
@@ -66,7 +66,7 @@
           ><Icon icon="material-symbols:arrow-back-rounded" width="24"
         /></el-button>
         <div class="thread-title">
-          <strong>{{ selected.peers.join(', ') }}</strong
+          <strong translate="no">{{ selected.peers.join(', ') }}</strong
           ><span>{{ connected ? t('mailChatLive') : t('chatReconnecting') }}</span>
         </div>
         <el-button text :aria-label="t('mailChatPin')" @click="togglePin">{{
@@ -84,39 +84,67 @@
           >
             {{ date(m.createTime) }}
           </p>
-          <article class="mail-message" :class="{ mine: m.type === 1 }">
-            <span class="sender">{{ m.name || m.sendEmail }}</span>
+          <article
+            v-if="
+              (m.replyText ?? m.text)?.trim() ||
+              m.images?.length ||
+              m.attachments?.length ||
+              m.message
+            "
+            class="mail-message"
+            :class="{ mine: m.type === 1 }"
+          >
             <div class="bubble">
-              <p class="subject">{{ m.subject }}</p>
               <p v-if="m.type === 1 && m.message" class="delivery-error">
                 {{ deliveryError(m.message) }}
               </p>
-              <p class="body-text" :class="{ collapsed: !expanded[m.emailId] }">
-                {{ bodySummary(m.text) }}
+              <p
+                v-if="m.replyText ?? m.text"
+                class="body-text"
+                :class="{ collapsed: !expanded[m.emailId] }"
+              >
+                {{ m.replyText ?? m.text }}
               </p>
               <el-button
-                v-if="m.text.length > 500 || m.truncated"
+                v-if="(m.replyText ?? m.text).length > 500 || m.truncated"
                 text
                 size="small"
                 @click="expand(m)"
                 >{{ expanded[m.emailId] ? t('mailChatCollapse') : t('mailChatExpand') }}</el-button
               >
-              <details v-if="quoted(m.text)">
-                <summary>{{ t('mailChatQuote') }}</summary>
-                <pre>{{ quoted(m.text) }}</pre>
-              </details>
+              <div
+                v-for="image in m.images || []"
+                :key="image.attId || image.src"
+                class="inline-image"
+              >
+                <el-image
+                  v-if="image.src || imageUrls[image.attId]"
+                  :src="image.src || imageUrls[image.attId]"
+                  @click="imagePreview = image.src || imageUrls[image.attId]"
+                  @keydown.enter="imagePreview = image.src || imageUrls[image.attId]"
+                  role="button"
+                  tabindex="0"
+                  fit="contain"
+                  :alt="image.alt"
+                  referrerpolicy="no-referrer"
+                  @load="imageLoaded"
+                >
+                  <template #error
+                    ><span>{{ t('mailChatImageError') }}</span></template
+                  >
+                </el-image>
+                <el-button
+                  v-else-if="imageErrors[image.attId]"
+                  text
+                  @click="loadImage(image.attId)"
+                  >{{ t('mailChatImageRetry') }}</el-button
+                >
+                <span v-else>{{ t('mailChatImageLoading') }}</span>
+              </div>
               <div v-for="att in m.attachments" :key="att.attId" class="attachment">
                 <el-button text @click="download(att)"
                   >{{ att.filename }} · {{ formatBytes(att.size) }}</el-button
                 >
-              </div>
-              <div class="message-actions">
-                <el-button text size="small" @click="viewOriginal(m)">{{
-                  t('mailChatOriginal')
-                }}</el-button
-                ><el-button v-perm="'email:send'" text size="small" @click="replyTarget = m">{{
-                  t('reply')
-                }}</el-button>
               </div>
             </div>
             <div class="message-meta">
@@ -132,11 +160,8 @@
         t('chatNewest')
       }}</el-button>
       <form v-if="hasPerm('email:send')" class="composer" @submit.prevent="send">
-        <div class="reply-heading">
-          <span>{{ t('mailChatReplying') }} {{ target?.subject || selected.subject }}</span
-          ><el-checkbox v-if="selected.peers.length > 1" v-model="replyAll">{{
-            t('mailChatReplyAll')
-          }}</el-checkbox>
+        <div v-if="selected.peers.length > 1" class="reply-heading">
+          <el-checkbox v-model="replyAll">{{ t('mailChatReplyAll') }}</el-checkbox>
         </div>
         <el-input
           v-model="drafts[draftKey]"
@@ -207,35 +232,13 @@
       </form>
     </el-dialog>
     <el-dialog
-      v-model="originalOpen"
-      :title="t('mailChatOriginal')"
-      width="min(800px, calc(100% - 24px))"
+      :model-value="!!imagePreview"
+      @close="imagePreview = ''"
+      class="image-preview"
+      width="min(900px, calc(100% - 24px))"
+      :title="t('mailChatImage')"
     >
-      <template v-if="original"
-        ><dl class="original-meta">
-          <dt>From</dt>
-          <dd>{{ original.sendEmail }}</dd>
-          <dt>To / Cc</dt>
-          <dd>{{ original.recipient }} {{ original.cc }}</dd>
-          <dt>Reply-To</dt>
-          <dd>{{ original.replyTo }}</dd>
-          <dt>Message-ID</dt>
-          <dd>{{ original.messageId }}</dd>
-          <dt>In-Reply-To</dt>
-          <dd>{{ original.inReplyTo }}</dd>
-          <dt>References</dt>
-          <dd>{{ original.relation }}</dd>
-        </dl>
-        <h3>{{ original.subject }}</h3>
-        <pre class="original-text">{{ original.text }}</pre>
-        <iframe
-          v-if="original.content"
-          class="rich-mail"
-          sandbox="allow-popups allow-popups-to-escape-sandbox"
-          referrerpolicy="no-referrer"
-          :srcdoc="richDocument(original.content)"
-          :title="t('mailChatRich')"
-      /></template>
+      <img :src="imagePreview" :alt="t('mailChatImage')" referrerpolicy="no-referrer" />
     </el-dialog>
   </section>
 </template>
@@ -289,19 +292,58 @@ const indexing = ref(false),
   hasOlder = ref(false),
   atBottom = ref(true),
   scroll = ref(null);
-const replyTarget = ref(null),
-  replyAll = ref(false),
-  target = computed(() => replyTarget.value || messages.value.at(-1));
+const replyAll = ref(false),
+  target = computed(() => messages.value.at(-1));
 const newOpen = ref(false),
   newMail = reactive({ to: '', subject: '', text: '' });
-const originalOpen = ref(false),
-  original = ref(null);
 let version = 0,
   stopped = false,
   busy = false,
   dirty = false,
   searchTimer,
   indexTimer;
+const imagePreview = ref('');
+const imageUrls = reactive({}),
+  imageErrors = reactive({});
+const imageRequests = new Set();
+async function loadImage(id) {
+  if (imageUrls[id] || imageRequests.has(id)) return;
+  imageRequests.add(id);
+  delete imageErrors[id];
+  try {
+    const blob = await mailAttachment(id);
+    const bytes = new Uint8Array(await blob.slice(0, 12).arrayBuffer());
+    // Sniff raster formats; never display active SVG/HTML from an attachment.
+    const mime =
+      bytes[0] === 137 && bytes[1] === 80 && bytes[2] === 78 && bytes[3] === 71
+        ? 'image/png'
+        : bytes[0] === 255 && bytes[1] === 216 && bytes[2] === 255
+          ? 'image/jpeg'
+          : String.fromCharCode(...bytes.slice(0, 6)).match(/^GIF8[79]a$/)
+            ? 'image/gif'
+            : String.fromCharCode(...bytes.slice(0, 4)) === 'RIFF' &&
+                String.fromCharCode(...bytes.slice(8, 12)) === 'WEBP'
+              ? 'image/webp'
+              : '';
+    if (!mime) throw new Error('Invalid image');
+    if (!stopped) imageUrls[id] = URL.createObjectURL(new Blob([blob], { type: mime }));
+  } catch {
+    if (!stopped) imageErrors[id] = true;
+  } finally {
+    imageRequests.delete(id);
+  }
+}
+function imageLoaded() {
+  if (atBottom.value) bottom();
+}
+watch(
+  messages,
+  (rows) => {
+    for (const row of rows)
+      for (const image of row.images || []) if (image.attId) loadImage(image.attId);
+  },
+  { deep: true }
+);
 const pendingRequests = new Map();
 const readThrough = new Map();
 const { connected } = useMailSync(sync);
@@ -338,23 +380,10 @@ function deliveryError(value) {
     return String(value);
   }
 }
-function splitBody(text = '') {
-  const lines = text.split('\n'),
-    at = lines.findIndex((line) =>
-      /^\s*>|^On .+wrote:|^在.+写道|^--\s*$|^-{2,}\s*(Original Message|原始邮件)/i.test(line)
-    );
-  return at < 0 ? [text, ''] : [lines.slice(0, at).join('\n'), lines.slice(at).join('\n')];
-}
-const bodySummary = (text) => splitBody(text)[0] || t('mailChatQuotedOnly');
-const quoted = (text) => splitBody(text)[1];
-function richDocument(html) {
-  return `<html><head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data:; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'"><style>body{font:14px sans-serif;overflow-wrap:anywhere}table{max-width:100%}img{max-width:100%}pre{white-space:pre-wrap}</style></head><body>${html}</body></html>`;
-}
 function closeThread() {
   version++;
   selected.value = null;
   messages.value = [];
-  replyTarget.value = null;
   messageLoading.value = false;
 }
 async function bottom() {
@@ -405,7 +434,6 @@ async function select(c) {
   const mine = ++version;
   selected.value = c;
   messages.value = [];
-  replyTarget.value = null;
   replyAll.value = false;
   messageLoading.value = true;
   atBottom.value = true;
@@ -541,15 +569,10 @@ async function expand(m) {
     if (m.truncated) {
       const data = await mailDetail(m.emailId);
       m.text = data.text;
+      m.replyText = data.replyText;
       m.truncated = false;
     }
     expanded[m.emailId] = true;
-  } catch {}
-}
-async function viewOriginal(m) {
-  try {
-    original.value = await mailDetail(m.emailId);
-    originalOpen.value = true;
   } catch {}
 }
 async function download(att) {
@@ -659,8 +682,7 @@ async function send() {
   const intent = JSON.stringify({
     text,
     attachments: files[current] || [],
-    replyAll: replyAll.value,
-    explicitReply: replyTarget.value?.emailId || null
+    replyAll: replyAll.value
   });
   try {
     const result = await deliver(
@@ -734,6 +756,7 @@ onMounted(async () => {
   sync();
 });
 onBeforeUnmount(() => {
+  Object.values(imageUrls).forEach((url) => URL.revokeObjectURL(url));
   stopped = true;
   version++;
   clearTimeout(searchTimer);
@@ -913,29 +936,12 @@ onBeforeUnmount(() => {
   margin: 16px 0;
   min-width: 0;
 }
-.sender {
-  font-size: 12px;
-  color: var(--el-text-color-secondary);
-  max-width: 90%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  margin-bottom: 4px;
-}
 .bubble {
-  max-width: 85%;
+  max-width: min(72%, 640px);
   padding: 12px 14px;
   border-radius: 12px 12px 12px 2px;
   background: var(--el-fill-color);
   min-width: 0;
-}
-.subject {
-  font-size: 12px;
-  opacity: 0.75;
-  border-bottom: 1px solid var(--el-border-color);
-  padding-bottom: 6px;
-  margin-bottom: 8px;
-  overflow-wrap: anywhere;
 }
 .body-text,
 pre {
@@ -948,12 +954,6 @@ pre {
   -webkit-line-clamp: 8;
   -webkit-box-orient: vertical;
   overflow: hidden;
-}
-.message-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 4px;
-  margin-top: 6px;
 }
 .message-meta {
   display: flex;
@@ -972,15 +972,25 @@ pre {
     border-radius: 12px 12px 2px 12px;
   }
 }
-details {
-  margin-top: 8px;
-  font-size: 12px;
-  color: var(--el-text-color-secondary);
-  summary {
-    cursor: pointer;
+:deep(.image-preview img) {
+  display: block;
+  max-width: 100%;
+  max-height: 75dvh;
+  margin: auto;
+  object-fit: contain;
+}
+.inline-image {
+  margin: 6px 0;
+  max-width: 100%;
+  .el-image {
+    cursor: zoom-in;
+    display: block;
+    max-width: 100%;
+    width: 320px;
   }
-  pre {
-    margin-top: 8px;
+  :deep(img) {
+    max-height: 360px;
+    object-fit: contain;
   }
 }
 .attachment {
@@ -1054,29 +1064,6 @@ details {
   position: absolute;
   right: 16px;
   bottom: 180px;
-}
-.original-meta {
-  font-size: 12px;
-  dt {
-    font-weight: bold;
-    margin-top: 8px;
-  }
-  dd {
-    overflow-wrap: anywhere;
-  }
-}
-.original-text {
-  margin: 15px 0;
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-  max-height: 300px;
-  overflow: auto;
-}
-.rich-mail {
-  width: 100%;
-  height: 400px;
-  border: 1px solid var(--el-border-color);
-  background: white;
 }
 :deep(.el-dialog form) {
   display: grid;

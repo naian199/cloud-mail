@@ -1,4 +1,8 @@
 const en = {
+    mailChatImage: "Image",
+    mailChatImageError: "Image could not load",
+    mailChatImageRetry: "Retry image",
+    mailChatImageLoading: "Loading image…",
     mailChatCollapse: 'Collapse text',
     mailChatTitle: "Mail conversations",
     mailChatNew: "New conversation",

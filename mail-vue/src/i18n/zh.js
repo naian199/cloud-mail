@@ -1,4 +1,8 @@
 const zh = {
+    mailChatImage: "图片",
+    mailChatImageError: "图片加载失败",
+    mailChatImageRetry: "重新加载图片",
+    mailChatImageLoading: "图片加载中…",
     mailChatCollapse: '收起正文',
     mailChatTitle: "邮件会话",
     mailChatNew: "新会话",

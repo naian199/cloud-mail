@@ -102,6 +102,12 @@ await test(
 							filename: 'hello.txt',
 							content: Buffer.from('attachment contents').toString('base64'),
 							contentType: 'text/plain'
+						},
+						{
+							filename: 'photo.png',
+							contentType: 'image/png',
+							content:
+								'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a/1cAAAAASUVORK5CYII='
 						}
 					]
 				};
@@ -127,6 +133,22 @@ await test(
 				incoming = history.messages[0];
 				assert.equal(incoming.type, 0);
 				assert.equal(incoming.text, 'Hello by email');
+				assert.equal(incoming.replyText, 'Hello by email');
+				assert.equal(incoming.images.length, 1);
+				const image = await fetch(
+					new URL(`api/mail-chat/attachment/${incoming.images[0].attId}`, root),
+					{ headers: { Authorization: b.token } }
+				);
+				assert.equal(
+					Buffer.from(await image.arrayBuffer())
+						.subarray(0, 4)
+						.toString('hex'),
+					'89504e47'
+				);
+				assert.equal(
+					(await api(`mail-chat/attachment/${incoming.images[0].attId}`, c.token)).code,
+					404
+				);
 				assert.match(incoming.messageId, /@example.com>/);
 				assert.equal(history.messages[0].attachments.length, 1);
 				const att = history.messages[0].attachments[0];
@@ -237,7 +259,10 @@ await test(
 			'actual RFC822 ingress, Reply-To, HTML safety and duplicate delivery',
 			async () => {
 				const mid = `<${randomUUID()}@outside.example>`;
-				const raw = `From: External <sender@outside.example>\r\nTo: ${b.email}\r\nReply-To: reply@outside.example\r\nMessage-ID: ${mid}\r\nSubject: HTML inbound\r\nMIME-Version: 1.0\r\nContent-Type: text/html; charset=UTF-8\r\n\r\n<p onclick="alert(1)">HTML incoming</p><script>alert(1)</script><img src="https://tracker.invalid/pixel">`;
+				const png =
+					'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a/1cAAAAASUVORK5CYII=';
+				const raw = `From: External <sender@outside.example>\r\nTo: ${b.email}\r\nReply-To: reply@outside.example\r\nMessage-ID: ${mid}\r\nSubject: HTML inbound\r\nMIME-Version: 1.0\r\nContent-Type: multipart/related; boundary=mailpicture\r\n\r\n--mailpicture\r\nContent-Type: text/html; charset=UTF-8\r\n\r\n<p onclick="alert(1)">HTML incoming</p><img src="cid:sample"><blockquote>Old reply<img src="https://tracker.invalid/old.png"></blockquote><script>alert(1)</script><img width="1" src="https://tracker.invalid/pixel">\r\n--mailpicture\r\nContent-Type: image/png\r\nContent-ID: <sample>\r\nContent-Disposition: inline; filename="embedded.png"\r\nContent-Transfer-Encoding: base64\r\n\r\n${png}\r\n--mailpicture--`;
+
 				const url = new URL('cdn-cgi/handler/email', root);
 				url.searchParams.set('from', 'sender@outside.example');
 				url.searchParams.set('to', b.email);
@@ -249,6 +274,15 @@ await test(
 				assert(conv);
 				const data = await messages(b, conv.key);
 				assert.equal(data.messages.length, 1);
+				assert.equal(data.messages[0].replyText, 'HTML incoming');
+				assert.equal(data.messages[0].images.length, 1);
+				const pictureId = data.messages[0].images[0].attId;
+				const picture = await fetch(new URL(`api/mail-chat/attachment/${pictureId}`, root), {
+					headers: { Authorization: b.token }
+				});
+				assert.equal(Buffer.from(await picture.arrayBuffer()).toString('base64'), png);
+				assert.equal((await api(`mail-chat/attachment/${pictureId}`, c.token)).code, 404);
+
 				assert(data.messages[0].replyTo.includes('reply@outside.example'));
 				const detail = await api(`mail-chat/message/${data.messages[0].emailId}`, b.token);
 				assert.equal(detail.code, 200);

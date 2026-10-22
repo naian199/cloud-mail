@@ -6,7 +6,8 @@ import {
 	conversation,
 	digest,
 	plainMail,
-	safeMailHtml
+	safeMailHtml,
+	chatBody
 } from '../lib/mail-conversations';
 import verify from '../utils/verify-utils';
 import { notifyMail } from '../chat/mail-notify';
@@ -25,7 +26,7 @@ const key = (value) => {
 	return value;
 };
 const fields = `email_id AS emailId, send_email AS sendEmail, name, account_id AS accountId,
- subject, substr(text, 1, 10000) AS text, substr(content, 1, 20000) AS htmlPreview,
+ subject, substr(text, 1, 10000) AS text, content AS htmlPreview,
  recipient, cc, reply_to AS replyTo, in_reply_to AS inReplyTo, message_id AS messageId,
  relation, type, status, message, unread, create_time AS createTime, conversation_key AS conversationKey,
  conversation_peers AS conversationPeers, length(coalesce(text, '')) > 10000 AS truncated`;
@@ -136,20 +137,31 @@ const mailChat = {
 		for (const row of messages) {
 			row.text = row.text || plainMail(row.htmlPreview || '');
 			row.hasHtml = !!row.htmlPreview;
-			delete row.htmlPreview;
 			row.attachments = [];
 		}
 		if (messages.length) {
 			const { results: atts } = await c.env.db
 				.prepare(
-					`SELECT att_id AS attId, email_id AS emailId, filename, size FROM attachments
-        WHERE user_id = ? AND account_id = ? AND type = 0 AND content_id IS NULL
+					`SELECT att_id AS attId, email_id AS emailId, filename, size, mime_type AS mimeType, content_id AS contentId, type, key FROM attachments
+        WHERE user_id = ? AND account_id = ? AND type IN (0,1)
         AND email_id IN (${messages.map(() => '?').join(',')})`
 				)
 				.bind(account.user_id, account.account_id, ...messages.map((m) => m.emailId))
 				.all();
 			for (const att of atts)
 				messages.find((m) => m.emailId === att.emailId)?.attachments.push(att);
+		}
+		for (const row of messages) {
+			Object.assign(row, chatBody(row.text, row.htmlPreview || '', row.attachments));
+			delete row.htmlPreview;
+			row.attachments = row.attachments
+				.filter(
+					(att) =>
+						!att.contentId &&
+						att.type === 0 &&
+						!row.images.some((image) => image.attId === att.attId)
+				)
+				.map(({ key, ...att }) => att);
 		}
 		return { messages, hasMore };
 	},
@@ -169,6 +181,7 @@ const mailChat = {
 		return {
 			...row,
 			text: row.text || plainMail(row.content || ''),
+			...chatBody(row.text, row.content || ''),
 			content: safeMailHtml(row.content || '')
 		};
 	},
@@ -178,7 +191,7 @@ const mailChat = {
 		const row = await c.env.db
 			.prepare(
 				`SELECT a.key, a.account_id AS accountId FROM attachments a JOIN email e ON e.email_id = a.email_id
-      WHERE a.att_id = ? AND a.user_id = ? AND e.user_id = ? AND a.account_id = e.account_id AND e.is_del = 0 AND a.type = 0`
+      WHERE a.att_id = ? AND a.user_id = ? AND e.user_id = ? AND a.account_id = e.account_id AND e.is_del = 0 AND a.type IN (0,1)`
 			)
 			.bind(id(rawId), userId, userId)
 			.first();

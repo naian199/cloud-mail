@@ -120,3 +120,68 @@ export function safeMailHtml(html = '') {
 	}
 	return document.body.innerHTML;
 }
+
+// Presentation only: retain the complete original mail for the standard mailbox view.
+export function replyText(text = '') {
+	const value = String(text).replace(/\r\n?/g, '\n');
+	const boundaries = [
+		/^\s*>/m,
+		/^\s*On\s+[\s\S]{0,300}?wrote\s*[:：]/im,
+		/(?:^|\s)(?:在\s*)?\d{4}年\d{1,2}月\d{1,2}日[^\n]{0,220}写道\s*[:：]/m,
+		/(?:^|\s)(?:在\s*)?\d{1,2}\s*月\s*\d{1,2}\s*日[^\n]{0,220}写道\s*[:：]/m,
+		/(?:^|\n)\s*在[^\n]{0,250}写道\s*[:：]/m,
+		/^\s*-{2,}\s*(?:Original Message|原始邮件|Forwarded message|转发邮件)/im,
+		/^\s*(?:From|发件人)\s*[:：][^\n]*\n\s*(?:Sent|发送时间|Date|日期)\s*[:：]/im,
+		/^--\s*$/m
+	];
+	const positions = boundaries.map((pattern) => value.search(pattern)).filter((at) => at >= 0);
+	return value.slice(0, positions.length ? Math.min(...positions) : value.length).trim();
+}
+
+export function chatBody(text = '', html = '', attachments = []) {
+	const { document } = parseHTML(`<html><body>${html}</body></html>`);
+	document
+		.querySelectorAll(
+			'blockquote,.gmail_quote,.gmail_signature,.yahoo_quoted,.moz-signature,script,style,iframe,object,template'
+		)
+		.forEach((node) => node.remove());
+	// Outlook's reply header is followed by the quoted history as sibling nodes.
+	const header = document.querySelector('#divRplyFwdMsg');
+	if (header) {
+		while (header.nextSibling) header.nextSibling.remove();
+		header.remove();
+	}
+	const images = [];
+	const seen = new Set();
+	for (const img of document.querySelectorAll('img')) {
+		const src = img.getAttribute('src') || '';
+		if (Number(img.getAttribute('width')) === 1 || Number(img.getAttribute('height')) === 1)
+			continue;
+		const att = attachments.find(
+			(a) =>
+				(src.startsWith('cid:') && a.contentId?.replace(/^<|>$/g, '') === src.slice(4)) ||
+				(src.startsWith('{{domain}}') && a.key === src.slice(10))
+		);
+		const image = att
+			? { attId: att.attId }
+			: /^(https?:\/\/[^\s]+|data:image\/(?:png|jpeg|gif|webp);base64,[a-z0-9+/=\s]+)$/i.test(src)
+				? { src }
+				: null;
+		if (image && !seen.has(image.attId || image.src)) {
+			images.push({ ...image, alt: img.getAttribute('alt') || '' });
+			seen.add(image.attId || image.src);
+		}
+	}
+	for (const att of attachments) {
+		if (
+			!att.contentId &&
+			att.type === 0 &&
+			/^image\/(png|jpeg|gif|webp)$/i.test(att.mimeType || '') &&
+			!seen.has(att.attId)
+		) {
+			images.push({ attId: att.attId, alt: att.filename || '' });
+			seen.add(att.attId);
+		}
+	}
+	return { replyText: replyText(html ? plainMail(document.body.innerHTML) : text), images };
+}
