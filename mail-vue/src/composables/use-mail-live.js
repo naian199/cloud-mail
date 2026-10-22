@@ -1,9 +1,10 @@
+import { randomUUID } from '@/utils/uuid';
 import { ref, watch, onMounted, onBeforeUnmount } from 'vue';
 import { mailLive, mailPresence } from '@/request/mail-chat';
 
 export function useMailLive(accountId, selected, connected) {
   const state = ref({ internal: false });
-  const sessionId = crypto.randomUUID();
+  const sessionId = randomUUID();
   let stopped = false,
     timer,
     typingTimer,

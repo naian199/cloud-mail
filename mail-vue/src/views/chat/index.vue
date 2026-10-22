@@ -81,6 +81,8 @@
 </template>
 
 <script setup>
+import { randomUUID } from '@/utils/uuid';
+
 import { computed, nextTick, onMounted, onBeforeUnmount, reactive, ref } from 'vue';
 import { Icon } from '@iconify/vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
@@ -124,7 +126,7 @@ async function scrollBottom() {
 }
 async function markRead(id) {
   if (id !== activeId.value || document.hidden || !atBottom.value) return;
-  const latest = messages.value.at(-1)?.id;
+  const latest = messages.value[messages.value.length - 1]?.id;
   if (!latest || latest <= (lastRead.get(id) || 0)) return;
   await readMessages(id, latest);
   lastRead.set(id, latest);
@@ -173,7 +175,7 @@ async function sync() {
         const wasAtBottom = atBottom.value;
         let more;
         do {
-          const after = messages.value.at(-1)?.id;
+          const after = messages.value[messages.value.length - 1]?.id;
           const data = await listMessages(id, after ? { after } : {});
           if (stopped || version !== generation) break;
           merge(data.messages);
@@ -245,7 +247,7 @@ function onComposerKey(event) {
 async function send() {
   const id = activeId.value, body = drafts[id]?.trim();
   if (!id || !body || sending.value || messagesLoading.value) return;
-  if (!pendingSend || pendingSend.id !== id || pendingSend.body !== body) pendingSend = { id, body, clientId: crypto.randomUUID() };
+  if (!pendingSend || pendingSend.id !== id || pendingSend.body !== body) pendingSend = { id, body, clientId: randomUUID() };
   const attempt = pendingSend;
   sending.value = true;
   try {

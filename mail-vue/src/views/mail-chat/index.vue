@@ -385,6 +385,8 @@
 </template>
 
 <script setup>
+import { randomUUID } from '@/utils/uuid';
+
 import { computed, nextTick, onMounted, onBeforeUnmount, reactive, ref, watch } from 'vue';
 import MailBody from '@/components/mail-body.vue';
 import { Icon } from '@iconify/vue';
@@ -449,7 +451,7 @@ const replyAll = ref(false),
   target = computed(
     () =>
       quoteTarget.value ||
-      messages.value.at(-1) ||
+      messages.value[messages.value.length - 1] ||
       (selected.value
         ? {
             type: 1,
@@ -623,7 +625,7 @@ async function removeBoth(message) {
     k = selected.value?.key,
     v = version;
   if (!k || !messages.value.length) return;
-  const through = messages.value.at(-1).emailId;
+  const through = messages.value[messages.value.length - 1].emailId;
   try {
     await ElMessageBox.confirm(
       t(message ? 'mailChatDeleteBothConfirm' : 'mailChatClearBothConfirm'),
@@ -797,7 +799,7 @@ async function sync() {
         dirty = true;
         continue;
       }
-      const oldestFresh = list.conversations.at(-1);
+      const oldestFresh = list.conversations[list.conversations.length - 1];
       const retained = list.conversations.length
         ? conversations.value.filter(
             (c) =>
@@ -832,7 +834,7 @@ async function sync() {
           stick = atBottom.value;
         let more;
         do {
-          const after = messages.value.at(-1)?.emailId;
+          const after = messages.value[messages.value.length - 1]?.emailId;
           const data = await mailMessages({ accountId: a, key: k, ...(after ? { after } : {}) });
           if (mine !== version || stopped) break;
           applyMessages(data);
@@ -985,7 +987,7 @@ function keyDown(e) {
 async function deliver(payload, context, intent) {
   let pending = pendingRequests.get(context);
   if (!pending || pending.intent !== intent) {
-    pending = { intent, payload, clientId: crypto.randomUUID() };
+    pending = { intent, payload, clientId: randomUUID() };
     pendingRequests.set(context, pending);
   }
   // Notifications may change the default reply target during a lost response.
@@ -1104,8 +1106,8 @@ onMounted(async () => {
         const rows = await accountList(cursor, 50, sort);
         all.push(...rows);
         if (rows.length < 50) break;
-        cursor = rows.at(-1).accountId;
-        sort = rows.at(-1).sort;
+        cursor = rows[rows.length - 1].accountId;
+        sort = rows[rows.length - 1].sort;
       }
       if (!stopped) accounts.value = all.filter((a) => a.status === 0);
     } catch {}

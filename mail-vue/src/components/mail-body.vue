@@ -12,6 +12,8 @@
   </div>
 </template>
 <script setup>
+import { randomUUID } from '@/utils/uuid';
+
 import { computed, ref, watch, onMounted, onBeforeUnmount } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { mailAttachment } from '@/request/mail-chat';
@@ -26,7 +28,7 @@ const frame = ref(null),
   height = ref(180),
   sources = ref({}),
   failed = ref(false);
-const nonce = crypto.randomUUID();
+const nonce = randomUUID();
 let version = 0,
   stopped = false;
 function revoke() {

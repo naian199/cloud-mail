@@ -400,8 +400,8 @@ function getAccountList() {
 
   let start = Date.now();
 
-  const accountId = accounts.length > 0 ? accounts.at(-1).accountId : 0;
-  const lastSort = accounts.length > 0 ? accounts.at(-1).sort : null;
+  const accountId = accounts.length > 0 ? accounts[accounts.length - 1].accountId : 0;
+  const lastSort = accounts.length > 0 ? accounts[accounts.length - 1].sort : null;
 
   accountList(accountId, queryParams.size, lastSort).then(async list => {
 
