@@ -116,12 +116,12 @@
               m.richHtml
             "
             class="mail-message"
-            :class="{ mine: m.type === 1, external: !m.internal }"
+            :class="{ mine: m.type === 1, external: !isChat(m) }"
             :data-email-id="m.emailId"
           >
             <div
               class="bubble"
-              :class="{ 'internal-bubble': m.internal }"
+              :class="{ 'internal-bubble': isChat(m) }"
               :tabindex="m.internal ? 0 : undefined"
               @contextmenu="openMessageMenu($event, m)"
               @pointerdown="startPress($event, m)"
@@ -132,7 +132,7 @@
               @keydown.esc="closeMenu"
               @click.capture="suppressAfterPress"
             >
-              <h3 v-if="!m.internal" class="external-subject">{{ m.subject }}</h3>
+              <h3 v-if="!isChat(m)" class="external-subject">{{ m.subject }}</h3>
               <MailBody
                 v-if="m.richHtml"
                 :html="m.richHtml"
@@ -155,12 +155,12 @@
                 <p
                   v-if="m.replyText ?? m.text"
                   class="body-text"
-                  :class="{ collapsed: m.internal && !expanded[m.emailId] }"
+                  :class="{ collapsed: isChat(m) && !expanded[m.emailId] }"
                 >
                   {{ m.replyText ?? m.text }}
                 </p>
                 <el-button
-                  v-if="(m.internal && (m.replyText ?? m.text).length > 500) || m.truncated"
+                  v-if="(isChat(m) && (m.replyText ?? m.text).length > 500) || m.truncated"
                   text
                   size="small"
                   @click="expand(m)"
@@ -424,6 +424,7 @@ const conversations = ref([]),
   messages = ref([]),
   search = ref('');
 const active = computed(() => !!selected.value);
+const isChat = (message) => message.chatStyle ?? message.internal;
 const sortedConversations = computed(() =>
   [...conversations.value].sort(
     (a, b) =>
@@ -915,7 +916,7 @@ async function expand(m) {
     if (m.truncated) {
       const data = await mailDetail(m.emailId);
       m.text = data.text;
-      m.replyText = m.internal ? data.replyText : data.text;
+      m.replyText = isChat(m) ? data.replyText : data.text;
       m.truncated = false;
     }
     expanded[m.emailId] = true;

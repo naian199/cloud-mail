@@ -212,12 +212,24 @@ const mailChat = {
 		}
 		await redactRemovedQuotes(c, messages, 'htmlPreview');
 		const peer = await live.resolve(c, account, conversationKey);
+		// Own-mailbox conversations use chat presentation too, without peer presence or deletion rights.
+		const peers = addresses(messages[0]?.conversationPeers);
+		const ownPeer =
+			!peer && peers.length === 1
+				? await c.env.db
+						.prepare(
+							'SELECT 1 FROM account WHERE user_id=? AND email=? COLLATE NOCASE AND is_del=0 AND status=0 LIMIT 1'
+						)
+						.bind(account.user_id, peers[0])
+						.first()
+				: null;
 		for (const row of messages) {
 			row.internal = !!peer;
-			if (!peer && row.htmlPreview)
+			row.chatStyle = !!peer || !!ownPeer;
+			if (!row.chatStyle && row.htmlPreview)
 				Object.assign(row, displayMail(row.htmlPreview, row.attachments));
 			Object.assign(row, chatBody(row.text, row.htmlPreview || '', row.attachments));
-			if (!peer) row.replyText = row.text;
+			if (!row.chatStyle) row.replyText = row.text;
 			if (row.richHtml)
 				row.images = row.images.filter(
 					(image) => image.attId && !row.richImages.some((inline) => inline.attId === image.attId)

@@ -83,6 +83,35 @@ await test(
 			}
 		);
 		await t.test(
+			'self mail uses reply-only chat bubbles without peer-only capabilities',
+			async () => {
+				const raw = `From: ${a.email}\r\nTo: ${a.email}\r\nSubject: Re: QW\r\nMessage-ID: <${randomUUID()}@self.example>\r\nContent-Type: text/html; charset=UTF-8\r\n\r\n<div>这是本次回复<img src="https://example.com/current.png"></div><blockquote>2026年10月18日 周日 晚上22:41 ${a.email} 来信：<blockquote>历史邮件<img src="https://example.com/old.png"></blockquote></blockquote>`;
+				assert(
+					(
+						await fetch(new URL(`cdn-cgi/handler/email?from=${a.email}&to=${a.email}`, root), {
+							method: 'POST',
+							body: raw
+						})
+					).ok
+				);
+				const c = (await conversations(a)).find((c) => c.peers.includes(a.email));
+				const m = (await messages(a, c.key))[0];
+				assert.equal(m.chatStyle, true);
+				assert.equal(m.replyText, '这是本次回复');
+				assert.equal(m.richHtml, undefined);
+				assert.deepEqual(m.images, [{ src: 'https://example.com/current.png', alt: '' }]);
+				const status = await api(`mail-chat/live?accountId=${a.account}&key=${c.key}`, a);
+				assert.equal(status.data.internal, false);
+				const deletion = await api('mail-chat/delete', a, 'POST', {
+					accountId: a.account,
+					key: c.key,
+					through: m.emailId,
+					emailId: m.emailId
+				});
+				assert.equal(deletion.code, 403);
+			}
+		);
+		await t.test(
 			'deletion hides body, attachments, public object URLs and quoted excerpts from ordinary users',
 			async () => {
 				const req = await api('chat/friends', a, 'POST', { email: b.email });
