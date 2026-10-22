@@ -6,6 +6,11 @@
         <div>{{settingStore.settings.title}}</div>
       </div>
       <el-menu :collapse="false" text-color="#fff" active-text-color="#fff" style="margin-top: 10px">
+        <el-menu-item @click="router.push({name: 'mail-chat'})" index="mail-chat"
+                      :class="route.meta.name === 'mail-chat' ? 'choose-item' : ''">
+          <Icon icon="solar:letter-opened-linear" width="20" height="20" />
+          <span class="menu-name" style="margin-left: 16px">{{$t('mailChatTitle')}}</span>
+        </el-menu-item>
         <el-menu-item @click="router.push({name: 'chat'})" index="chat"
                       :class="route.meta.name === 'chat' ? 'choose-item' : ''">
           <Icon icon="solar:chat-round-dots-linear" width="20" height="20" />

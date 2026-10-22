@@ -1,0 +1,62 @@
+"""Read-only production checks run by the normal GitHub deployment workflow."""
+import json
+import os
+import time
+import urllib.parse
+import urllib.request
+from html.parser import HTMLParser
+from pathlib import Path
+
+class Scripts(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.modules = []
+    def handle_starttag(self, tag, attributes):
+        attrs = dict(attributes)
+        if tag == 'script' and attrs.get('type') == 'module' and attrs.get('src'):
+            self.modules.append(attrs['src'])
+
+def modules(html):
+    parser = Scripts()
+    parser.feed(html)
+    return parser.modules
+
+base = os.environ['DEPLOY_URL'].strip().rstrip('/') + '/'
+parsed = urllib.parse.urlsplit(base)
+if parsed.scheme != 'https' or not parsed.hostname or parsed.username or parsed.password:
+    raise RuntimeError('A credential-free HTTPS deployment URL is required')
+expected = modules(Path('mail-worker/dist/index.html').read_text())
+if not expected:
+    raise RuntimeError('No built frontend entry found')
+
+def get(path):
+    request = urllib.request.Request(urllib.parse.urljoin(base, path), headers={
+        'Cache-Control': 'no-cache', 'User-Agent': 'Cloud-Mail-Deployment-Check'
+    })
+    with urllib.request.urlopen(request, timeout=15) as response:
+        if response.status != 200:
+            raise RuntimeError('Unexpected HTTP status')
+        return response.read()
+
+for attempt in range(12):
+    try:
+        actual = modules(get('').decode())
+        if not all(src in actual for src in expected):
+            raise RuntimeError('Frontend version has not propagated yet')
+        for src in expected:
+            if not get(src):
+                raise RuntimeError('Empty frontend entry')
+        config = json.loads(get('api/setting/websiteConfig'))
+        if config.get('code') != 200 or not isinstance(config.get('data'), dict):
+            raise RuntimeError('Website configuration check failed')
+        for endpoint in ['api/mail-chat/conversations?accountId=1', 'api/chat/socket']:
+            if json.loads(get(endpoint)).get('code') != 401:
+                raise RuntimeError('Authentication protection check failed')
+        print('PASS: production frontend matches this build; entry assets, website configuration, and chat authentication checks passed.')
+        break
+    except Exception as error:
+        if attempt == 11:
+            # No URLs, response bodies, or credentials in diagnostic output.
+            raise RuntimeError(f'Production checks failed: {type(error).__name__}') from None
+        print('Waiting for deployment readiness...', flush=True)
+        time.sleep(5)

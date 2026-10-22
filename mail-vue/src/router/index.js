@@ -8,9 +8,14 @@ const routes = [
     {
         path: '/',
         name: 'layout',
-        redirect: '/inbox',
+        redirect: '/mail-chat',
         component: () => import('@/layout/index.vue'),
         children: [
+            {
+                path: '/mail-chat', name: 'mail-chat',
+                component: () => import('@/views/mail-chat/index.vue'),
+                meta: { title: 'mailChatTitle', name: 'mail-chat', menu: true }
+            },
             {
                 path: '/chat',
                 name: 'chat',

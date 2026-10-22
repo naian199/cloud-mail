@@ -12,6 +12,7 @@ import userService from '../service/user-service';
 import telegramService from '../service/telegram-service';
 import aiService from '../service/ai-service';
 import webhookService from '../service/webhook-service';
+import { notifyMail } from '../chat/mail-notify';
 
 export async function email(message, env, ctx) {
 
@@ -119,7 +120,8 @@ export async function email(message, env, ctx) {
 			bcc: email.bcc ? JSON.stringify(email.bcc) : '[]',
 			recipient: JSON.stringify(email.to),
 			inReplyTo: email.inReplyTo,
-			relation: email.references,
+			replyTo: JSON.stringify(email.replyTo || []),
+			relation: Array.isArray(email.references) ? email.references.join(' ') : email.references,
 			messageId: email.messageId,
 			userId: account ? account.userId : 0,
 			accountId: account ? account.accountId : 0,
@@ -141,6 +143,7 @@ export async function email(message, env, ctx) {
 		}
 
 		let emailRow = await emailService.receive({ env }, params, cidAttachments, r2Domain);
+		if (emailRow.duplicate) return;
 
 		attachments.forEach(attachment => {
 			attachment.emailId = emailRow.emailId;
@@ -157,6 +160,7 @@ export async function email(message, env, ctx) {
 		}
 
 		emailRow = await emailService.completeReceive({ env }, account ? emailConst.status.RECEIVE : emailConst.status.NOONE, emailRow.emailId);
+		ctx.waitUntil(notifyMail(env, emailRow.userId));
 
 
 		if (ruleType === settingConst.ruleType.RULE) {

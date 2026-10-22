@@ -23,6 +23,8 @@ import domainUtils from '../utils/domain-uitls';
 import account from "../entity/account";
 import { att } from '../entity/att';
 import telegramService from './telegram-service';
+import { digest, indexMail, threadReferences } from '../lib/mail-conversations';
+import { notifyMail } from '../chat/mail-notify';
 
 const emailService = {
 
@@ -241,13 +243,32 @@ const emailService = {
 			.run();
 	},
 
-	receive(c, params, cidAttList, r2domain) {
+	async receive(c, params, cidAttList, r2domain) {
 		params.content = this.imgReplace(params.content, cidAttList, r2domain)
-		return orm(c).insert(email).values({ ...params }).returning().get();
+		if (params.accountId && params.messageId) {
+			const old = await orm(c).select().from(email).where(and(
+				eq(email.accountId, params.accountId), eq(email.messageId, params.messageId), eq(email.type, emailConst.type.RECEIVE)
+			)).orderBy(asc(email.emailId)).limit(1).get();
+			if (old) {
+				if (old.status === emailConst.status.SAVING) return old;
+				return { ...old, duplicate: true };
+			}
+			params.ingestKey = await digest(`${params.accountId}:${params.messageId}`);
+		}
+		const saved = await orm(c).insert(email).values({ ...params }).onConflictDoNothing().returning().get();
+		if (!saved && params.ingestKey) {
+			const existing = await orm(c).select().from(email).where(eq(email.ingestKey, params.ingestKey)).get();
+			// Retry an interrupted ingest using the same email record. Completed
+			// deliveries skip attachment writes, forwarding and notifications.
+			if (existing?.status === emailConst.status.SAVING) return existing;
+			return { ...existing, duplicate: true };
+		}
+		await indexMail(c, saved);
+		return saved;
 	},
 
 	//邮件发送
-	async send(c, params, userId) {
+	async send(c, params, userId, options = {}) {
 
 		let {
 			accountId, //发送账号id
@@ -352,10 +373,16 @@ const emailService = {
 			if (!emailRow) {
 				throw new BizError(t('notExistEmailReply'));
 			}
+			if (emailRow.userId !== userId || Number(emailRow.accountId) !== Number(accountId)) {
+				throw new BizError(t('notExistEmailReply'), 403);
+			}
 
 		}
 
 		let sendResult = {};
+		const outgoingMessageId = `<${crypto.randomUUID()}@${domain}>`;
+		const references = threadReferences(emailRow);
+		options.beforeDelivery?.();
 
 		//存在站外邮箱时，如果配置了 Cloudflare Email Service 就优先使用，否则使用 Resend
 		if (!allInternal) {
@@ -370,7 +397,8 @@ const emailService = {
 					html,
 					attachments: [...imageDataList, ...attachments],
 					sendType,
-					messageId: emailRow.messageId
+					messageId: emailRow.messageId,
+					references, outgoingMessageId
 				});
 			} else {
 				sendResult = await this.sendByResend(resendToken, {
@@ -382,7 +410,8 @@ const emailService = {
 					html,
 					attachments: [...imageDataList, ...attachments],
 					sendType,
-					messageId: emailRow.messageId
+					messageId: emailRow.messageId,
+					references, outgoingMessageId
 				});
 			}
 
@@ -408,7 +437,11 @@ const emailService = {
 		emailData.content = html;
 		emailData.text = text;
 		emailData.accountId = accountId;
-		emailData.status = useCloudflareEmail ? emailConst.status.DELIVERED : emailConst.status.SENT;
+		// Provider acceptance is not proof of delivery. Internal recipients and
+		// delivery webhooks update the status when delivery is actually known.
+		emailData.status = emailConst.status.SENT;
+		emailData.messageId = data?.messageId || outgoingMessageId;
+		emailData.sendKey = options.sendKey || null;
 		emailData.type = emailConst.type.SEND;
 		emailData.userId = userId;
 		emailData.resendEmailId = data?.id;
@@ -423,7 +456,7 @@ const emailService = {
 
 		if (sendType === 'reply') {
 			emailData.inReplyTo = emailRow.messageId;
-			emailData.relation = emailRow.messageId;
+			emailData.relation = references;
 		}
 
 		//如果权限有发送次数增加用户发送次数
@@ -433,6 +466,7 @@ const emailService = {
 
 		//保存到数据库并返回结果
 		const emailResult = await orm(c).insert(email).values(emailData).returning().get();
+		await indexMail(c, emailResult);
 
 		//保存内嵌附件
 		if (imageDataList.length > 0) {
@@ -457,6 +491,7 @@ const emailService = {
 		if (allInternal) {
 			await this.HandleOnSiteEmail(c, receiveEmail, emailResult, attList);
 		}
+		await notifyMail(c.env, userId);
 
 		const dateStr = dayjs().format('YYYY-MM-DD');
 		let daySendTotal = await c.env.kv.get(kvConst.SEND_DAY_COUNT + dateStr);
@@ -476,7 +511,8 @@ const emailService = {
 		const sendForm = {
 			from: { email: params.accountEmail, name: params.name },
 			to: [...params.receiveEmail],
-			subject: params.subject
+			subject: params.subject,
+			headers: { 'message-id': params.outgoingMessageId }
 		};
 
 		if (params.text) {
@@ -493,17 +529,18 @@ const emailService = {
 		}
 
 		if (params.sendType === 'reply' && params.messageId) {
-			sendForm.headers = {
+			Object.assign(sendForm.headers, {
 				'in-reply-to': params.messageId,
-				'references': params.messageId
-			};
+				'references': params.references || params.messageId
+			});
 		}
 
 		const result = await c.env.email.send(sendForm);
 
 		return {
 			data: {
-				id: result.messageId
+				id: result.messageId,
+				messageId: result.messageId
 			}
 		};
 	},
@@ -517,14 +554,15 @@ const emailService = {
 			subject: params.subject,
 			text: params.text,
 			html: params.html,
-			attachments: await this.toResendAttachments(params.attachments)
+			attachments: await this.toResendAttachments(params.attachments),
+			headers: { 'message-id': params.outgoingMessageId }
 		};
 
-		if (params.sendType === 'reply') {
-			sendForm.headers = {
+		if (params.sendType === 'reply' && params.messageId) {
+			Object.assign(sendForm.headers, {
 				'in-reply-to': params.messageId,
-				'references': params.messageId
-			};
+				'references': params.references || params.messageId
+			});
 		}
 
 		return await resend.emails.send(sendForm);
@@ -682,6 +720,11 @@ const emailService = {
 			emailValues.toEmail = email;
 			emailValues.toName = emailUtils.getName(email);
 			emailValues.emailId = null;
+			emailValues.sendKey = null;
+			emailValues.ingestKey = null;
+			emailValues.conversationKey = '';
+			emailValues.conversationPeers = '[]';
+			emailValues.unread = emailConst.unread.UNREAD;
 
 			let accountRow = allAccounts.find(accountRow => accountRow.email === email);
 
@@ -745,6 +788,7 @@ const emailService = {
 		for (const emailData of receiveEmailList) {
 
 			const emailRow = await orm(c).insert(email).values(emailData).returning().get();
+			await indexMail(c, emailRow);
 
 			//设置附件保存
 			for (const attRow of attList) {
@@ -755,6 +799,7 @@ const emailService = {
 				attValues.attId = null;
 				await orm(c).insert(att).values(attValues).run();
 			}
+			await notifyMail(c.env, emailRow.userId);
 
 		}
 
@@ -870,12 +915,14 @@ const emailService = {
 		await orm(c).delete(email).where(inArray(email.userId, userIds)).run();
 	},
 
-	updateEmailStatus(c, params) {
+	async updateEmailStatus(c, params) {
 		const { status, resendEmailId, message } = params;
-		return orm(c).update(email).set({
+		const updated = await orm(c).update(email).set({
 			status: status,
 			message: message
 		}).where(eq(email.resendEmailId, resendEmailId)).returning().get();
+		if (updated) await notifyMail(c.env, updated.userId);
+		return updated;
 	},
 
 	async selectUserEmailCountList(c, userIds, type, del = isDel.NORMAL) {
