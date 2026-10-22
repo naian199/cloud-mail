@@ -7,6 +7,7 @@ import kvObjService from './service/kv-obj-service';
 import oauthService from './service/oauth-service';
 import analysisService from './service/analysis-service';
 import { ensureMailChat } from './init/mail-chat-schema';
+import {revokedAttachment} from './service/removed-mail-service';
 export { ChatNotifications } from './chat/notifications';
 export default {
 	 async fetch(req, env, ctx) {
@@ -21,7 +22,8 @@ export default {
 		}
 
 		 if (['/static/','/attachments/'].some(p => url.pathname.startsWith(p))) {
-			 return await kvObjService.toObjResp( { env }, url.pathname.substring(1));
+			 if(url.pathname.startsWith('/attachments/')&&await revokedAttachment(env,decodeURIComponent(url.pathname.substring(1)))) return new Response(null,{status:404,headers:{'Cache-Control':'no-store'}});
+             return await kvObjService.toObjResp( { env }, url.pathname.substring(1));
 		 }
 
 		return env.assets.fetch(req);

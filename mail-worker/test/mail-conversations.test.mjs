@@ -6,7 +6,8 @@ import {
 	plainMail,
 	threadReferences,
 	chatBody,
-	replyText
+	replyText,
+	displayMail
 } from '../src/lib/mail-conversations.js';
 import { migrateMailChat, ensureMailChat } from '../src/init/mail-chat-schema.js';
 import { DatabaseSync } from 'node:sqlite';
@@ -215,4 +216,19 @@ test('explicit quote is a separate card and never repeats inside the new reply t
 		author: 'friend@example.com',
 		text: '之前的内容'
 	});
+});
+
+test('external mail keeps layout, styles, real links and image sizes without active content', () => {
+	const html =
+		'<style>.note{color:#123456}</style><table width="600" style="max-width:100%"><tr><td><a href="https://example.com/task?tracking=long" onclick="alert(1)">SCRUM-1</a><img width="84" height="30" src="https://example.com/logo.png"><img src="cid:photo"></td></tr></table><script>alert(1)</script><iframe src="https://example.com"></iframe><img width="1" src="https://example.com/pixel">';
+	const result = displayMail(html, [{ attId: 42, contentId: '<photo>', key: 'attachments/p.png' }]);
+	assert.match(result.richHtml, /<table/);
+	assert.match(result.richHtml, /width="84"/);
+	assert.match(result.richHtml, /style="max-width:100%"/);
+	assert.match(result.richHtml, /href="https:\/\/example.com\/task\?tracking=long"/);
+	assert.match(result.richHtml, /src="https:\/\/example.com\/logo.png"/);
+	assert.match(result.richHtml, /src="mail-image:42"/);
+	assert(!/script|onclick|iframe|pixel/.test(result.richHtml));
+	assert.deepEqual(result.richImages, [{ attId: 42, alt: '' }]);
+	assert(!safeMailHtml('<img src="https://example.com/logo.png">').includes('https:'));
 });

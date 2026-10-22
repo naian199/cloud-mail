@@ -25,6 +25,7 @@ import { att } from '../entity/att';
 import telegramService from './telegram-service';
 import { digest, indexMail, threadReferences } from '../lib/mail-conversations';
 import { notifyMail } from '../chat/mail-notify';
+import {redactRemovedQuotes} from './removed-mail-service';
 
 const emailService = {
 
@@ -973,7 +974,7 @@ const emailService = {
 		const countFilters = this.allEmailListFilters({ emailId, name, subject, accountEmail, userEmail, type, timeSort, withCursor: false });
 		const columns = full ? emailListColumns : emailBriefColumns;
 
-		const query = orm(c).select({ ...columns, userEmail: user.email })
+		const query = orm(c).select({ ...columns, userEmail: user.email, chatRemoved:sql`EXISTS(SELECT 1 FROM mail_removed_message m WHERE m.email_id=${email.emailId})` })
 			.from(email)
 			.leftJoin(user, eq(email.userId, user.userId))
 			.where(and(...filters));
@@ -1007,7 +1008,7 @@ const emailService = {
 		let [list, totalRow, latestEmail] = await Promise.all([listQuery, totalQuery, latestEmailQuery]);
 
 		if (full) {
-			await this.emailAddAtt(c, list);
+			await this.emailAddAtt(c, list, false);
 		} else {
 			this.applyListText(list);
 		}
@@ -1037,14 +1038,15 @@ const emailService = {
 			.orderBy(desc(email.emailId))
 			.limit(20);
 
-		await this.emailAddAtt(c, list);
+		await this.emailAddAtt(c, list, false);
 		for (const item of list) {
 			item.listText = this.toListText(item);
 		}
 		return list;
 	},
 
-	async emailAddAtt(c, list) {
+	async emailAddAtt(c, list, redact = true) {
+    if(redact)await redactRemovedQuotes(c,list);
 
 		const emailIds = list.map(item => item.emailId);
 
@@ -1112,7 +1114,7 @@ const emailService = {
 		const batchSize = 95;
 
 		while (true) {
-			const conditions = [lt(email.createTime, cutoff)];
+			const conditions = [lt(email.createTime, cutoff),sql`NOT EXISTS(SELECT 1 FROM mail_removed_message m WHERE m.email_id=${email.emailId})`];
 			if (excludeUserIds.length) {
 				conditions.push(notInArray(email.userId, excludeUserIds));
 			}

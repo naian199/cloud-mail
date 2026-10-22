@@ -80,22 +80,63 @@ export function plainMail(html = '') {
 	return document.body.textContent || '';
 }
 
-export function safeMailHtml(html = '') {
+export function safeMailHtml(html = '', options = {}) {
 	const { document } = parseHTML(`<html><body>${html}</body></html>`);
 	const allowed = new Set(
 		'P DIV SPAN BR HR B STRONG I EM U S DEL BLOCKQUOTE PRE CODE TABLE THEAD TBODY TFOOT TR TD TH UL OL LI H1 H2 H3 H4 H5 H6 IMG A'.split(
 			' '
 		)
 	);
-	const dangerous =
-		'script,style,iframe,object,embed,form,input,button,textarea,select,meta,link,base,svg,math,video,audio,source,template';
+	const dangerous = `script,${options.display ? '' : 'style,'}iframe,object,embed,form,input,button,textarea,select,meta,link,base,svg,math,video,audio,source,template`;
 	document.querySelectorAll(dangerous).forEach((node) => node.remove());
 	for (const node of document.body.querySelectorAll('*')) {
+		if (node.tagName === 'STYLE' && options.display) {
+			for (const attr of [...node.attributes]) node.removeAttribute(attr.name);
+			if (
+				node.textContent.length > 50000 ||
+				/url\s*\(|@import|expression|javascript:|behavior|-moz-binding|[\\]|<\//i.test(
+					node.textContent
+				)
+			)
+				node.remove();
+			continue;
+		}
 		if (!allowed.has(node.tagName)) {
 			node.replaceWith(...node.childNodes);
 			continue;
 		}
 		for (const attr of [...node.attributes]) {
+			if (
+				options.display &&
+				attr.name === 'style' &&
+				!/url\s*\(|expression|javascript:|behavior|-moz-binding|@|[<>\\]/i.test(attr.value)
+			)
+				continue;
+			if (
+				options.display &&
+				['width', 'height', 'cellpadding', 'cellspacing', 'border'].includes(attr.name) &&
+				/^\d{1,4}(?:%|px)?$/i.test(attr.value)
+			)
+				continue;
+			if (
+				options.display &&
+				['align', 'valign', 'bgcolor'].includes(attr.name) &&
+				/^[#a-z0-9 -]{1,30}$/i.test(attr.value)
+			)
+				continue;
+			if (
+				options.display &&
+				['class', 'id'].includes(attr.name) &&
+				/^[a-z0-9 _-]{1,200}$/i.test(attr.value)
+			)
+				continue;
+			if (
+				options.display &&
+				attr.name === 'src' &&
+				node.tagName === 'IMG' &&
+				(/^https?:\/\/[^\s]+$/i.test(attr.value) || /^mail-image:\d+$/.test(attr.value))
+			)
+				continue;
 			if (['colspan', 'rowspan'].includes(attr.name) && /^\d{1,2}$/.test(attr.value)) continue;
 			if (attr.name === 'alt' && node.tagName === 'IMG') continue;
 			if (
@@ -111,6 +152,17 @@ export function safeMailHtml(html = '') {
 			)
 				continue;
 			node.removeAttribute(attr.name);
+		}
+		if (options.display && node.tagName === 'IMG') {
+			if (
+				!node.hasAttribute('src') ||
+				Number(node.getAttribute('width')) === 1 ||
+				Number(node.getAttribute('height')) === 1
+			) {
+				node.remove();
+				continue;
+			}
+			node.setAttribute('referrerpolicy', 'no-referrer');
 		}
 		if (node.tagName === 'A' && node.hasAttribute('href')) {
 			node.setAttribute('target', '_blank');
@@ -157,6 +209,7 @@ export function chatBody(text = '', html = '', attachments = []) {
 	const quote = reference
 		? {
 				messageId: reference.getAttribute('data-message-id') || '',
+				...(reference.getAttribute('data-deleted') === 'true' ? { deleted: true } : {}),
 				author: reference.getAttribute('data-author') || '',
 				text: plainMail(reference.innerHTML).trim().slice(0, 300)
 			}
@@ -215,4 +268,31 @@ export function chatBody(text = '', html = '', attachments = []) {
 		}
 	}
 	return { replyText: replyText(html ? plainMail(document.body.innerHTML) : text), images, quote };
+}
+
+export function displayMail(html = '', attachments = []) {
+	const { document } = parseHTML(`<html><body>${html}</body></html>`);
+	const images = [];
+	for (const img of document.querySelectorAll('img')) {
+		const src = img.getAttribute('src') || img.getAttribute('data-src') || '';
+		const att = attachments.find(
+			(a) =>
+				(src.startsWith('cid:') &&
+					a.contentId?.replace(/^<|>$/g, '') === decodeCid(src.slice(4))) ||
+				(a.key &&
+					(src.replace(/^\{\{domain\}\}/, '').replace(/^\//, '') === a.key ||
+						(() => {
+							try {
+								return new URL(src).pathname.slice(1) === a.key;
+							} catch {
+								return false;
+							}
+						})()))
+		);
+		if (att) {
+			img.setAttribute('src', `mail-image:${att.attId}`);
+			images.push({ attId: att.attId, alt: img.getAttribute('alt') || '' });
+		} else img.setAttribute('src', src);
+	}
+	return { richHtml: safeMailHtml(document.body.innerHTML, { display: true }), richImages: images };
 }

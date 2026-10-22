@@ -1,3 +1,4 @@
+import {redactRemovedQuotes} from './removed-mail-service';
 import orm from '../entity/orm';
 import { star } from '../entity/star';
 import emailService from './email-service';
@@ -64,6 +65,7 @@ const starService = {
 			.all();
 
 		if (full) {
+      await redactRemovedQuotes(c,list);
 			const emailIds = list.map(item => item.emailId);
 			const attsList = await attService.selectByEmailIds(c, emailIds);
 			list.forEach(emailRow => {

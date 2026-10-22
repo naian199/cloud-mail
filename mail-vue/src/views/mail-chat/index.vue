@@ -70,7 +70,14 @@
       </div>
     </aside>
     <main v-if="active" class="thread">
-      <header class="thread-header">
+      <header
+        class="thread-header"
+        @contextmenu="openMessageMenu($event, null)"
+        @pointerdown="startPress($event, null)"
+        @pointermove="movePress"
+        @pointerup="cancelPress"
+        @pointercancel="cancelPress"
+      >
         <el-button class="back" text :aria-label="t('chatBack')" @click="closeThread"
           ><Icon icon="material-symbols:arrow-back-rounded" width="24"
         /></el-button>
@@ -88,13 +95,6 @@
         <el-button text :aria-label="t('mailChatPin')" @click="togglePin">{{
           selected.pinned ? '★' : '☆'
         }}</el-button>
-        <el-button
-          v-if="live.internal && messages.length"
-          text
-          type="danger"
-          @click="removeBoth()"
-          >{{ t('mailChatClearBoth') }}</el-button
-        >
       </header>
       <div ref="scroll" class="messages" v-loading="messageLoading" @scroll="onScroll">
         <el-button v-if="hasOlder" class="load-more" text :loading="olderLoading" @click="older">{{
@@ -112,34 +112,63 @@
               (m.replyText ?? m.text)?.trim() ||
               m.images?.length ||
               m.attachments?.length ||
-              m.message
+              m.message ||
+              m.richHtml
             "
             class="mail-message"
-            :class="{ mine: m.type === 1 }"
+            :class="{ mine: m.type === 1, external: !m.internal }"
             :data-email-id="m.emailId"
           >
-            <div class="bubble" @contextmenu.prevent="quoteMessage(m)">
-              <button v-if="m.quote" class="quote-card" type="button" @click="jumpToQuote(m.quote)">
-                <strong translate="no">{{ m.quote.author }}</strong
-                ><span>{{ m.quote.text }}</span>
-              </button>
-              <p v-if="m.type === 1 && m.message" class="delivery-error">
-                {{ deliveryError(m.message) }}
-              </p>
-              <p
-                v-if="m.replyText ?? m.text"
-                class="body-text"
-                :class="{ collapsed: !expanded[m.emailId] }"
-              >
-                {{ m.replyText ?? m.text }}
-              </p>
-              <el-button
-                v-if="(m.replyText ?? m.text).length > 500 || m.truncated"
-                text
-                size="small"
-                @click="expand(m)"
-                >{{ expanded[m.emailId] ? t('mailChatCollapse') : t('mailChatExpand') }}</el-button
-              >
+            <div
+              class="bubble"
+              :class="{ 'internal-bubble': m.internal }"
+              :tabindex="m.internal ? 0 : undefined"
+              @contextmenu="openMessageMenu($event, m)"
+              @pointerdown="startPress($event, m)"
+              @pointermove="movePress"
+              @pointerup="cancelPress"
+              @pointercancel="cancelPress"
+              @keydown.shift.f10.prevent="openMessageMenu($event, m)"
+              @keydown.esc="closeMenu"
+              @click.capture="suppressAfterPress"
+            >
+              <h3 v-if="!m.internal" class="external-subject">{{ m.subject }}</h3>
+              <MailBody
+                v-if="m.richHtml"
+                :html="m.richHtml"
+                :images="m.richImages"
+                :title="m.subject"
+              />
+              <template v-else>
+                <button
+                  v-if="m.quote"
+                  class="quote-card"
+                  type="button"
+                  @click="jumpToQuote(m.quote)"
+                >
+                  <strong translate="no">{{ m.quote.author }}</strong
+                  ><span>{{ m.quote.text }}</span>
+                </button>
+                <p v-if="m.type === 1 && m.message" class="delivery-error">
+                  {{ deliveryError(m.message) }}
+                </p>
+                <p
+                  v-if="m.replyText ?? m.text"
+                  class="body-text"
+                  :class="{ collapsed: m.internal && !expanded[m.emailId] }"
+                >
+                  {{ m.replyText ?? m.text }}
+                </p>
+                <el-button
+                  v-if="(m.internal && (m.replyText ?? m.text).length > 500) || m.truncated"
+                  text
+                  size="small"
+                  @click="expand(m)"
+                  >{{
+                    expanded[m.emailId] ? t('mailChatCollapse') : t('mailChatExpand')
+                  }}</el-button
+                >
+              </template>
               <div
                 v-for="image in m.images || []"
                 :key="image.attId || image.src"
@@ -175,23 +204,6 @@
                 >
               </div>
             </div>
-            <el-button
-              v-if="canSend"
-              class="quote-action"
-              text
-              size="small"
-              @click="quoteMessage(m)"
-              >{{ t('mailChatQuoteReply') }}</el-button
-            >
-            <el-button
-              v-if="live.internal"
-              class="quote-action"
-              text
-              size="small"
-              type="danger"
-              @click="removeBoth(m)"
-              >{{ t('mailChatDeleteBoth') }}</el-button
-            >
             <span
               v-if="live.internal && m.type === 1 && m.read !== undefined"
               class="read-receipt"
@@ -317,6 +329,49 @@
         <span v-else>{{ t('mailChatPending') }}</span>
       </div>
     </el-drawer>
+    <Teleport to="body">
+      <div
+        v-if="messageMenu"
+        class="mail-menu-backdrop"
+        @pointerdown="closeMenu"
+        @contextmenu.prevent="closeMenu"
+      >
+        <div
+          class="mail-message-menu"
+          role="menu"
+          :style="{ left: messageMenu.x + 'px', top: messageMenu.y + 'px' }"
+          @pointerdown.stop
+          @contextmenu.prevent
+        >
+          <button v-if="messageMenu.message" role="menuitem" @click="menuAction('copy')">
+            {{ t('mailChatCopy') }}
+          </button>
+          <button
+            v-if="messageMenu.message && canSend"
+            role="menuitem"
+            @click="menuAction('quote')"
+          >
+            {{ t('mailChatQuoteReply') }}
+          </button>
+          <button
+            v-if="messageMenu.message"
+            role="menuitem"
+            class="danger"
+            @click="menuAction('delete')"
+          >
+            {{ t('mailChatDeleteBoth') }}
+          </button>
+          <button
+            v-if="messages.length"
+            role="menuitem"
+            class="danger"
+            @click="menuAction('clear')"
+          >
+            {{ t('mailChatClearBoth') }}
+          </button>
+        </div>
+      </div>
+    </Teleport>
     <el-dialog
       :model-value="!!imagePreview"
       @close="imagePreview = ''"
@@ -331,6 +386,7 @@
 
 <script setup>
 import { computed, nextTick, onMounted, onBeforeUnmount, reactive, ref, watch } from 'vue';
+import MailBody from '@/components/mail-body.vue';
 import { Icon } from '@iconify/vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { useI18n } from 'vue-i18n';
@@ -410,6 +466,65 @@ let version = 0,
   dirty = false,
   searchTimer,
   indexTimer;
+const messageMenu = ref(null);
+let pressTimer,
+  pressStart,
+  suppressUntil = 0;
+function closeMenu() {
+  messageMenu.value = null;
+}
+function cancelPress() {
+  clearTimeout(pressTimer);
+  pressStart = null;
+}
+function startPress(event, message) {
+  if (!live.value.internal || event.pointerType !== 'touch') return;
+  cancelPress();
+  pressStart = { x: event.clientX, y: event.clientY };
+  pressTimer = setTimeout(() => {
+    suppressUntil = Date.now() + 800;
+    openMessageMenu(event, message);
+  }, 550);
+}
+function movePress(event) {
+  if (pressStart && Math.hypot(event.clientX - pressStart.x, event.clientY - pressStart.y) > 10)
+    cancelPress();
+}
+function suppressAfterPress(event) {
+  if (Date.now() < suppressUntil) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+}
+function openMessageMenu(event, message) {
+  if (!live.value.internal) return;
+  event.preventDefault();
+  cancelPress();
+  const box = event.currentTarget?.getBoundingClientRect();
+  const x = event.clientX || box?.left || 16,
+    y = event.clientY || box?.top || 80;
+  messageMenu.value = {
+    message,
+    x: Math.max(8, Math.min(x, innerWidth - 210)),
+    y: Math.max(8, Math.min(y, innerHeight - 190))
+  };
+}
+async function menuAction(action) {
+  const message = messageMenu.value?.message;
+  closeMenu();
+  if (action === 'copy') {
+    try {
+      await navigator.clipboard.writeText(message.replyText || message.text || '');
+    } catch {}
+    return;
+  }
+  if (action === 'quote') quoteMessage(message);
+  else if (action === 'delete') removeBoth(message);
+  else if (action === 'clear') removeBoth();
+}
+function menuEscape(event) {
+  if (event.key === 'Escape') closeMenu();
+}
 const imagePreview = ref('');
 const imageUrls = reactive({}),
   imageErrors = reactive({});
@@ -575,6 +690,8 @@ function jumpToQuote(quote) {
   }
 }
 function closeThread() {
+  closeMenu();
+  cancelPress();
   quoteTarget.value = null;
   version++;
   selected.value = null;
@@ -630,11 +747,15 @@ async function markRead() {
   if (row) row.unread = 0;
 }
 function onScroll() {
+  closeMenu();
+  cancelPress();
   const el = scroll.value;
   if (el) atBottom.value = el.scrollHeight - el.scrollTop - el.clientHeight < 60;
   if (atBottom.value) markRead().catch(() => {});
 }
 async function select(c) {
+  closeMenu();
+  cancelPress();
   quoteTarget.value = null;
   const mine = ++version;
   selected.value = c;
@@ -792,7 +913,7 @@ async function expand(m) {
     if (m.truncated) {
       const data = await mailDetail(m.emailId);
       m.text = data.text;
-      m.replyText = data.replyText;
+      m.replyText = m.internal ? data.replyText : data.text;
       m.truncated = false;
     }
     expanded[m.emailId] = true;
@@ -973,6 +1094,7 @@ watch(search, () => {
   }, 300);
 });
 onMounted(async () => {
+  document.addEventListener('keydown', menuEscape);
   if (hasPerm('account:query')) {
     try {
       let all = [],
@@ -991,6 +1113,8 @@ onMounted(async () => {
   sync();
 });
 onBeforeUnmount(() => {
+  cancelPress();
+  document.removeEventListener('keydown', menuEscape);
   Object.values(imageUrls).forEach((url) => URL.revokeObjectURL(url));
   stopped = true;
   version++;
@@ -1189,6 +1313,66 @@ pre {
   -webkit-line-clamp: 8;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+.external .bubble {
+  width: min(100%, 850px);
+  max-width: 100%;
+  padding: 0;
+  overflow: hidden;
+  background: var(--el-bg-color);
+  border: 1px solid var(--el-border-color-light);
+}
+.external .body-text,
+.external .bubble > .el-button,
+.external .attachment {
+  margin: 12px 16px;
+}
+.external-subject {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.5;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--el-border-color-light);
+  overflow-wrap: anywhere;
+}
+.internal-bubble {
+  -webkit-touch-callout: none;
+}
+@media (pointer: coarse) {
+  .internal-bubble {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+}
+:global(.mail-menu-backdrop) {
+  position: fixed;
+  inset: 0;
+  z-index: 4000;
+}
+:global(.mail-message-menu) {
+  position: fixed;
+  width: 200px;
+  border-radius: 9px;
+  padding: 5px;
+  background: var(--el-bg-color-overlay);
+  border: 1px solid var(--el-border-color);
+  box-shadow: var(--el-box-shadow);
+}
+:global(.mail-message-menu button) {
+  display: block;
+  width: 100%;
+  padding: 10px 12px;
+  text-align: left;
+  border: 0;
+  background: transparent;
+  color: var(--el-text-color-primary);
+  cursor: pointer;
+}
+:global(.mail-message-menu button:hover) {
+  background: var(--el-fill-color);
+}
+:global(.mail-message-menu button.danger) {
+  color: var(--el-color-danger);
 }
 .read-receipt {
   font-size: 11px;

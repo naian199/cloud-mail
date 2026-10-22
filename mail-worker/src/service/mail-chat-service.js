@@ -2,12 +2,14 @@ import BizError from '../error/biz-error';
 import userContext from '../security/user-context';
 import emailService from './email-service';
 import live from './mail-live-service';
+import { redactRemovedQuotes } from './removed-mail-service';
 import {
 	addresses,
 	conversation,
 	digest,
 	plainMail,
 	safeMailHtml,
+	displayMail,
 	chatBody
 } from '../lib/mail-conversations';
 import verify from '../utils/verify-utils';
@@ -208,8 +210,18 @@ const mailChat = {
 			for (const att of atts)
 				messages.find((m) => m.emailId === att.emailId)?.attachments.push(att);
 		}
+		await redactRemovedQuotes(c, messages, 'htmlPreview');
+		const peer = await live.resolve(c, account, conversationKey);
 		for (const row of messages) {
+			row.internal = !!peer;
+			if (!peer && row.htmlPreview)
+				Object.assign(row, displayMail(row.htmlPreview, row.attachments));
 			Object.assign(row, chatBody(row.text, row.htmlPreview || '', row.attachments));
+			if (!peer) row.replyText = row.text;
+			if (row.richHtml)
+				row.images = row.images.filter(
+					(image) => image.attId && !row.richImages.some((inline) => inline.attId === image.attId)
+				);
 			delete row.htmlPreview;
 			row.attachments = row.attachments
 				.filter(
@@ -220,7 +232,6 @@ const mailChat = {
 				)
 				.map(({ key, ...att }) => att);
 		}
-		const peer = await live.resolve(c, account, conversationKey);
 		if (peer) {
 			const ids = messages.filter((m) => m.type === 1 && m.messageId).map((m) => m.messageId);
 			const read = new Set();
@@ -252,6 +263,7 @@ const mailChat = {
 			.first();
 		if (!row) fail('Email unavailable / 邮件不可用', 404);
 		await this.account(c, row.accountId);
+		await redactRemovedQuotes(c, [row]);
 		return {
 			...row,
 			text: row.text || plainMail(row.content || ''),

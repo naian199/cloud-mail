@@ -1,6 +1,7 @@
 import orm from '../entity/orm';
 import { att } from '../entity/att';
-import { and, eq, isNull, inArray, desc } from 'drizzle-orm';
+import email from '../entity/email';
+import { and, eq, isNull, inArray, desc, getTableColumns } from 'drizzle-orm';
 import r2Service from './r2-service';
 import constant from '../const/constant';
 import fileUtils from '../utils/file-utils';
@@ -37,7 +38,7 @@ const attService = {
 	list(c, params, userId) {
 		const { emailId } = params;
 
-		return orm(c).select().from(att).where(
+		return orm(c).select(getTableColumns(att)).from(att).innerJoin(email,and(eq(email.emailId,att.emailId),eq(email.userId,userId),eq(email.isDel,0))).where(
 			and(
 				eq(att.emailId, emailId),
 				eq(att.userId, userId),

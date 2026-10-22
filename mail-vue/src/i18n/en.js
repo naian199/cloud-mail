@@ -24,6 +24,8 @@ const en = {
     mailChatDeleteTitle: "Delete for both",
     mailChatConfirmDelete: "Delete",
     mailChatCancelDelete: "Cancel",
+    mailChatCopy: "Copy text",
+    mailChatRemovedRecord: "Deleted chat record (administrator)",
     mailChatCollapse: 'Collapse text',
     mailChatTitle: "Mail conversations",
     mailChatNew: "New conversation",

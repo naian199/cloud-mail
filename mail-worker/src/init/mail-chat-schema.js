@@ -3,6 +3,9 @@ export const MAIL_CHAT_SCHEMA_MARKER = 'mail_chat_schema_v2';
 export async function migrateMailChat(db) {
 	const { results } = await db.prepare('PRAGMA table_info(email)').all();
 	const names = new Set(results.map((row) => row.name));
+	const { results: attachmentTables } = await db
+		.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='attachments'")
+		.all();
 	for (const [name, type] of [
 		['conversation_key', "TEXT NOT NULL DEFAULT ''"],
 		['conversation_peers', "TEXT NOT NULL DEFAULT '[]'"],
@@ -22,6 +25,9 @@ export async function migrateMailChat(db) {
 		}
 	}
 	await db.batch([
+		...(attachmentTables.length
+			? [db.prepare('CREATE INDEX IF NOT EXISTS idx_mail_attachment_key ON attachments(key)')]
+			: []),
 		db.prepare(
 			'CREATE INDEX IF NOT EXISTS idx_mail_conversation ON email(user_id, account_id, conversation_key, email_id)'
 		),

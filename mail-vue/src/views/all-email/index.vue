@@ -84,6 +84,12 @@
         </div>
       </div>
     </el-dialog>
+    <el-dialog v-model="removedOpen" :title="t('mailChatRemovedRecord')" width="min(900px, calc(100% - 24px))">
+      <template v-if="removedRecord"><p class="removed-owner">{{ removedRecord.owner }} · {{ removedRecord.sendEmail }}</p><h3>{{removedRecord.subject}}</h3>
+        <MailBody :html="removedRecord.richHtml" :images="removedRecord.richImages" :title="removedRecord.subject" :attachment-loader="loadRemovedAttachment"/>
+        <el-button v-for="att in removedRecord.attachments" :key="att.attId" text @click="downloadRemoved(att)">{{att.filename}}</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -96,7 +102,7 @@ import {
   allEmailList,
   allEmailDelete,
   allEmailBatchDelete,
-  allEmailLatest
+  allEmailLatest, removedMailDetail, removedMailAttachment
 } from "@/request/all-email.js";
 import {Icon} from "@iconify/vue";
 import router from "@/router/index.js";
@@ -105,6 +111,11 @@ import {toUtc} from "@/utils/day.js";
 import {sleep} from "@/utils/time-utils.js";
 import {useSettingStore} from "@/store/setting.js";
 import { useRoute } from 'vue-router'
+
+import MailBody from '@/components/mail-body.vue';
+const removedOpen=ref(false),removedRecord=ref(null);
+const loadRemovedAttachment=id=>removedMailAttachment(removedRecord.value.emailId,id);
+async function downloadRemoved(att){const blob=await loadRemovedAttachment(att.attId);const url=URL.createObjectURL(blob);const link=document.createElement('a');link.href=url;link.download=att.filename||'attachment';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
 
 defineOptions({
   name: 'all-email'
@@ -281,7 +292,8 @@ function typeSelectChange() {
   search()
 }
 
-function jumpContent(email) {
+async function jumpContent(email) {
+  if(email.chatRemoved){removedRecord.value=await removedMailDetail(email.emailId);removedOpen.value=true;return;}
   emailStore.contentData.email = emailStore.toContentEmail(email)
   emailStore.contentData.delType = 'physics'
   emailStore.contentData.showStar = false

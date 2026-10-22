@@ -295,9 +295,10 @@ await test(
 				assert(conv);
 				const data = await messages(b, conv.key);
 				assert.equal(data.messages.length, 1);
-				assert.equal(data.messages[0].replyText, 'HTML incoming');
-				assert.equal(data.messages[0].images.length, 1);
-				const pictureId = data.messages[0].images[0].attId;
+				assert(data.messages[0].richHtml.includes('HTML incoming'));
+				assert(data.messages[0].richHtml.includes('Old reply'));
+				assert.equal(data.messages[0].richImages.length, 1);
+				const pictureId = data.messages[0].richImages[0].attId;
 				const picture = await fetch(new URL(`api/mail-chat/attachment/${pictureId}`, root), {
 					headers: { Authorization: b.token }
 				});

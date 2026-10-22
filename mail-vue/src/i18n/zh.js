@@ -24,6 +24,8 @@ const zh = {
     mailChatDeleteTitle: "双方删除",
     mailChatConfirmDelete: "确认删除",
     mailChatCancelDelete: "取消",
+    mailChatCopy: "复制内容",
+    mailChatRemovedRecord: "已删除聊天记录（管理员）",
     mailChatCollapse: '收起正文',
     mailChatTitle: "邮件会话",
     mailChatNew: "新会话",
