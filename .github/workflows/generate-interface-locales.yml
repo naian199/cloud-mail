@@ -15,6 +15,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
+      - name: Reuse completed base translations
+        run: |
+          git fetch origin i18n/generated-39878121816
+          git restore --source=FETCH_HEAD --worktree -- mail-vue/src/i18n/locales
       - name: Generate public UI drafts
         run: |
           mkdir -p mail-vue/src/i18n/locales

@@ -23,7 +23,10 @@ def request(text, target):
 
 def generate(lang):
     # Numbered boundaries and protected interpolation parameters are validated before writing.
-    items=list(source.items()); translated={}; batch=[]; length=0
+    file=path/((('pt-BR' if lang == 'pt' else lang))+'.json')
+    if not file.exists() and lang=='pt':file=path/'pt.json'
+    translated=json.loads(file.read_text()) if file.exists() else {}
+    items=[(key,value) for key,value in source.items() if key not in translated]; batch=[]; length=0
     def flush():
         if not batch:return
         text='\n'.join(f'[{index:04d}] {value}' for index,key,value in batch)
