@@ -857,6 +857,8 @@ async function jumpToResult(emailId) {
     const data = await mailMessages({ accountId: accountId.value, key: conversationKey, around: emailId });
     if (mine !== version || stopped) return;
     if (!data.messages.some(message => message.emailId === emailId)) return;
+    // Discard any live refresh that started before switching to this history window.
+    version++;
     historyAnchor.value = emailId;
     messages.value = [];
     applyMessages(data);
