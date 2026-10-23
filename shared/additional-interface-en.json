@@ -48,5 +48,11 @@
   "exploreEnd": "To date",
   "deleteSelf": "Delete for me",
   "deleteSelfConfirm": "Remove this message from your account only? The other participant keeps their copy.",
-  "mailChatCompactInput": "Message…"
+  "mailChatCompactInput": "Message…",
+  "stickersTitle": "Stickers",
+  "stickersEmoji": "Emoji",
+  "stickersLink": "Telegram sticker pack link",
+  "stickersImport": "Import",
+  "stickersUpload": "Upload WebP, TGS or WebM",
+  "stickersError": "Cannot load this pack. Check the link or the platform Telegram bot configuration."
 }

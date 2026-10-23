@@ -580,5 +580,11 @@
   "exploreEnd": "समाप्ति तिथि",
   "deleteSelf": "केवल मेरे लिए हटाएँ",
   "deleteSelfConfirm": "यह संदेश केवल अपने खाते से हटाएँ? दूसरे व्यक्ति की प्रति बनी रहेगी।",
-  "mailChatCompactInput": "संदेश…"
+  "mailChatCompactInput": "संदेश…",
+  "stickersTitle": "स्टिकर",
+  "stickersEmoji": "इमोजी",
+  "stickersLink": "Telegram स्टिकर पैक लिंक",
+  "stickersImport": "आयात करें",
+  "stickersUpload": "WebP, TGS या WebM अपलोड करें",
+  "stickersError": "लिंक या प्लेटफ़ॉर्म के Telegram बॉट की सेटिंग जाँचें।"
 }

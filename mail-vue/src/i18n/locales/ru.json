@@ -580,5 +580,11 @@
   "exploreEnd": "По дату",
   "deleteSelf": "Удалить у меня",
   "deleteSelfConfirm": "Удалить сообщение только из вашего аккаунта? У собеседника оно останется.",
-  "mailChatCompactInput": "Сообщение…"
+  "mailChatCompactInput": "Сообщение…",
+  "stickersTitle": "Стикеры",
+  "stickersEmoji": "Эмодзи",
+  "stickersLink": "Ссылка на набор Telegram",
+  "stickersImport": "Добавить",
+  "stickersUpload": "Загрузить WebP, TGS или WebM",
+  "stickersError": "Проверьте ссылку или настройки Telegram-бота платформы."
 }

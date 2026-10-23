@@ -580,5 +580,11 @@
   "exploreEnd": "Bis Datum",
   "deleteSelf": "Für mich löschen",
   "deleteSelfConfirm": "Diese Nachricht nur aus Ihrem Konto entfernen? Die andere Person behält ihre Kopie.",
-  "mailChatCompactInput": "Nachricht…"
+  "mailChatCompactInput": "Nachricht…",
+  "stickersTitle": "Sticker",
+  "stickersEmoji": "Emojis",
+  "stickersLink": "Telegram-Stickerpaket-Link",
+  "stickersImport": "Importieren",
+  "stickersUpload": "WebP, TGS oder WebM hochladen",
+  "stickersError": "Bitte Link oder Telegram-Bot-Konfiguration der Plattform prüfen."
 }

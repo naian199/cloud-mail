@@ -580,5 +580,11 @@
   "exploreEnd": "Data final",
   "deleteSelf": "Excluir para mim",
   "deleteSelfConfirm": "Excluir esta mensagem apenas da sua conta? A outra pessoa mantém a cópia.",
-  "mailChatCompactInput": "Mensagem…"
+  "mailChatCompactInput": "Mensagem…",
+  "stickersTitle": "Figurinhas",
+  "stickersEmoji": "Emojis",
+  "stickersLink": "Link do pacote do Telegram",
+  "stickersImport": "Importar",
+  "stickersUpload": "Enviar WebP, TGS ou WebM",
+  "stickersError": "Verifique o link ou a configuração do bot do Telegram da plataforma."
 }

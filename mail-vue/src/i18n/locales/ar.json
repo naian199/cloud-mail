@@ -580,5 +580,11 @@
   "exploreEnd": "إلى تاريخ",
   "deleteSelf": "حذف لدي فقط",
   "deleteSelfConfirm": "هل تريد حذف هذه الرسالة من حسابك فقط؟ يحتفظ الطرف الآخر بنسخته.",
-  "mailChatCompactInput": "رسالة…"
+  "mailChatCompactInput": "رسالة…",
+  "stickersTitle": "الملصقات",
+  "stickersEmoji": "الرموز التعبيرية",
+  "stickersLink": "رابط حزمة ملصقات Telegram",
+  "stickersImport": "استيراد",
+  "stickersUpload": "تحميل WebP أو TGS أو WebM",
+  "stickersError": "تحقق من الرابط أو إعدادات بوت Telegram الخاص بالمنصة."
 }

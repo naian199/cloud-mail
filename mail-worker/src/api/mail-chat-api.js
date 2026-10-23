@@ -4,6 +4,9 @@ import mail from '../service/mail-chat-service';
 import r2Service from '../service/r2-service';
 import live from '../service/mail-live-service';
 import translation from '../service/translation-service';
+import stickers from '../service/sticker-service';
+app.get('/mail-chat/stickers/pack', async c => c.json(result.ok(await stickers.pack(c, c.req.query('name')))));
+app.get('/mail-chat/stickers/file', async c => stickers.file(c,c.req.query('name'),c.req.query('id')));
 
 app.get('/mail-chat/translation/config', async (c) => c.json(result.ok(translation.publicConfig(await translation.config(c)))));
 app.post('/mail-chat/translate', async (c) => c.json(result.ok(await translation.translate(c, await c.req.json()))));

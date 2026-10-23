@@ -48,5 +48,11 @@
   "exploreEnd": "结束日期",
   "deleteSelf": "仅为自己删除",
   "deleteSelfConfirm": "只删除自己账号中的这条消息？对方仍保留其消息。",
-  "mailChatCompactInput": "输入消息…"
+  "mailChatCompactInput": "输入消息…",
+  "stickersTitle": "表情包",
+  "stickersEmoji": "表情",
+  "stickersLink": "Telegram 表情包链接",
+  "stickersImport": "导入",
+  "stickersUpload": "上传 WebP、TGS 或 WebM",
+  "stickersError": "无法加载表情包，请检查链接或平台 Telegram 机器人配置。"
 }

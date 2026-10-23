@@ -580,5 +580,11 @@
   "exploreEnd": "Đến ngày",
   "deleteSelf": "Xóa ở phía tôi",
   "deleteSelfConfirm": "Chỉ xóa tin nhắn này khỏi tài khoản của bạn? Người kia vẫn giữ bản sao.",
-  "mailChatCompactInput": "Tin nhắn…"
+  "mailChatCompactInput": "Tin nhắn…",
+  "stickersTitle": "Nhãn dán",
+  "stickersEmoji": "Biểu tượng cảm xúc",
+  "stickersLink": "Liên kết bộ nhãn dán Telegram",
+  "stickersImport": "Nhập",
+  "stickersUpload": "Tải lên WebP, TGS hoặc WebM",
+  "stickersError": "Kiểm tra liên kết hoặc cấu hình bot Telegram của nền tảng."
 }

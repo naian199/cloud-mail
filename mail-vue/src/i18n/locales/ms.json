@@ -580,5 +580,11 @@
   "exploreEnd": "Tarikh akhir",
   "deleteSelf": "Padam untuk saya",
   "deleteSelfConfirm": "Padam mesej ini daripada akaun anda sahaja? Peserta lain masih menyimpan salinannya.",
-  "mailChatCompactInput": "Mesej…"
+  "mailChatCompactInput": "Mesej…",
+  "stickersTitle": "Pelekat",
+  "stickersEmoji": "Emoji",
+  "stickersLink": "Pautan pek pelekat Telegram",
+  "stickersImport": "Import",
+  "stickersUpload": "Muat naik WebP, TGS atau WebM",
+  "stickersError": "Semak pautan atau tetapan bot Telegram platform."
 }

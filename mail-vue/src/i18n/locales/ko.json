@@ -580,5 +580,11 @@
   "exploreEnd": "종료 날짜",
   "deleteSelf": "나에게서만 삭제",
   "deleteSelfConfirm": "내 계정에서만 이 메시지를 삭제할까요? 상대방의 메시지는 유지됩니다.",
-  "mailChatCompactInput": "메시지…"
+  "mailChatCompactInput": "메시지…",
+  "stickersTitle": "스티커",
+  "stickersEmoji": "이모지",
+  "stickersLink": "Telegram 스티커 팩 링크",
+  "stickersImport": "가져오기",
+  "stickersUpload": "WebP, TGS 또는 WebM 업로드",
+  "stickersError": "링크 또는 플랫폼의 Telegram 봇 설정을 확인하세요."
 }

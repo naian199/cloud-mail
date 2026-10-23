@@ -580,5 +580,11 @@
   "exploreEnd": "Tot datum",
   "deleteSelf": "Voor mij verwijderen",
   "deleteSelfConfirm": "Dit bericht alleen uit uw account verwijderen? De andere persoon behoudt een kopie.",
-  "mailChatCompactInput": "Bericht…"
+  "mailChatCompactInput": "Bericht…",
+  "stickersTitle": "Stickers",
+  "stickersEmoji": "Emoji",
+  "stickersLink": "Link naar Telegram-stickerpakket",
+  "stickersImport": "Importeren",
+  "stickersUpload": "WebP, TGS of WebM uploaden",
+  "stickersError": "Controleer de link of de Telegram-botinstellingen van het platform."
 }

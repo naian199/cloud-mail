@@ -580,5 +580,11 @@
   "exploreEnd": "Tanggal akhir",
   "deleteSelf": "Hapus untuk saya",
   "deleteSelfConfirm": "Hapus pesan ini hanya dari akun Anda? Peserta lain tetap menyimpan salinannya.",
-  "mailChatCompactInput": "Pesan…"
+  "mailChatCompactInput": "Pesan…",
+  "stickersTitle": "Stiker",
+  "stickersEmoji": "Emoji",
+  "stickersLink": "Tautan paket stiker Telegram",
+  "stickersImport": "Impor",
+  "stickersUpload": "Unggah WebP, TGS atau WebM",
+  "stickersError": "Periksa tautan atau konfigurasi bot Telegram platform."
 }

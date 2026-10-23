@@ -197,6 +197,7 @@
                 v-for="image in m.images || []"
                 :key="image.attId || image.src"
                 class="inline-image"
+                :class="{ 'sticker-image': /^sticker.*\.webp$/i.test(image.alt || '') }"
               >
                 <el-image
                   v-if="image.src || imageUrls[image.attId]"
@@ -223,6 +224,7 @@
                 <span v-else>{{ t('mailChatImageLoading') }}</span>
               </div>
               <div v-for="att in m.attachments" :key="att.attId" class="attachment">
+                <StickerMedia v-if="/\.(tgs|webm)$/i.test(att.filename)" :format="att.filename.toLowerCase().endsWith('.tgs') ? 'tgs' : 'webm'" :label="'🙂'" :load="()=>mailAttachment(att.attId)" />
                 <el-button text @click="download(att)">
                   <Icon icon="cloud-mail:file" width="26" aria-hidden="true" />
                   <span class="attachment-detail"><strong>{{ att.filename }}</strong><small>{{ formatBytes(att.size) }}</small></span>
@@ -282,8 +284,9 @@
           @input="liveInput"
         />
         <div class="composer-footer">
+          <StickerPicker :disabled="sending" @emoji="insertEmoji" @attachment="addSticker" @upload="chooseFiles" />
           <label class="attach-label" :aria-label="t('mailChatAttach')" tabindex="0" @keydown.enter.prevent="$event.currentTarget.querySelector('input').click()" @keydown.space.prevent="$event.currentTarget.querySelector('input').click()">
-            <Icon class="attach-icon" icon="cloud-mail:attach" width="22" aria-hidden="true" /><span>{{ t('mailChatAttach') }}</span><input type="file" multiple @change="chooseFiles" /></label
+            <Icon class="attach-icon" icon="cloud-mail:attach" width="22" aria-hidden="true" /><span>{{ t('mailChatAttach') }}</span><input type="file" multiple :disabled="sending" @change="chooseFiles" /></label
           ><span>{{ t('chatEnterHint') }}</span
           ><el-button
             type="primary"
@@ -440,6 +443,8 @@ import { useMediaQuery } from '@vueuse/core';
 import { useUiStore } from '@/store/ui';
 import ConversationExplorer from '@/components/conversation-explorer.vue';
 import MessageTranslation from '@/components/message-translation.vue';
+import StickerPicker from '@/components/sticker-picker.vue';
+import StickerMedia from '@/components/sticker-media.vue';
 import { autoTranslation } from '@/composables/use-auto-translation';
 import { useRoute, useRouter } from 'vue-router';
 import { Icon } from '@iconify/vue';
@@ -1101,6 +1106,20 @@ function switchMailbox(value) {
   search.value = '';
   sync();
 }
+function insertEmoji(value) {
+  const current = draftKey.value, text = drafts[current] || '';
+  const input = document.querySelector('.composer textarea');
+  const start = input?.selectionStart ?? text.length, end = input?.selectionEnd ?? text.length;
+  if (text.length - (end - start) + value.length > 20000) return;
+  drafts[current] = text.slice(0, start) + value + text.slice(end);
+  liveInput();
+  nextTick(() => { input?.focus(); input?.setSelectionRange(start + value.length, start + value.length); });
+}
+function addSticker(file) {
+  const current = draftKey.value, existing = files[current] || [];
+  if (existing.length >= 10 || existing.reduce((n,f)=>n+f.size,0)+file.size > 10*1024*1024) { ElMessage.error(t('mailChatFileLimit')); return; }
+  files[current] = [...existing, file];
+}
 async function chooseFiles(event, current = draftKey.value) {
   const chosen = [...event.target.files];
   event.target.value = '';
@@ -1118,7 +1137,7 @@ async function chooseFiles(event, current = draftKey.value) {
       chosen.map(async (f) => ({
         filename: f.name,
         size: f.size,
-        contentType: f.type || 'application/octet-stream',
+        contentType: /\.tgs$/i.test(f.name) ? 'application/x-tgsticker' : f.type || 'application/octet-stream',
         content: await fileToBase64(f)
       }))
     );
@@ -1694,6 +1713,7 @@ pre {
     object-fit: contain;
   }
 }
+.inline-image.sticker-image :deep(.el-image) { width: 160px; height: 160px; }
 .attachment {
   max-width: 100%;
   .el-button {
@@ -1885,14 +1905,15 @@ pre {
   .thread-header { min-height: 54px; }
   .thread-title > span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .composer { padding: 6px 8px max(6px, env(safe-area-inset-bottom)); }
-  .compose-input-row { display: grid; grid-template-columns: 36px minmax(0, 1fr) 42px; align-items: end; gap: 6px; }
-  .compose-input-row > .el-textarea { grid-column: 2; grid-row: 1; }
+  .compose-input-row { display: grid; grid-template-columns: 36px 34px minmax(0, 1fr) 42px; align-items: end; gap: 6px; }
+  .compose-input-row > .el-textarea { grid-column: 3; grid-row: 1; }
   .composer :deep(.el-textarea__inner) { min-height: 40px; padding: 9px 12px; line-height: 22px; }
   .composer-footer { display: contents; }
   .attach-label { grid-column: 1; grid-row: 1; height: 40px; justify-content: center; padding: 0; }
+  .composer-footer :deep(.sticker-trigger) { grid-column: 2; grid-row: 1; margin: 0; height: 40px; }
   .attach-icon { display: block; }
   .attach-label > span { display: none; }
-  .composer-footer > .el-button { grid-column: 3; grid-row: 1; width: 42px; height: 40px; padding: 0; margin: 0; }
+  .composer-footer > .el-button { grid-column: 4; grid-row: 1; width: 42px; height: 40px; padding: 0; margin: 0; }
   .composer-footer > .el-button :deep(> span > span) { display: none; }
   .composer-footer > .el-button :deep(> span) { gap: 0; }
   .chosen-files { margin-bottom: 6px; }

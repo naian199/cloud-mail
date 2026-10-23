@@ -580,5 +580,11 @@
   "exploreEnd": "วันที่สิ้นสุด",
   "deleteSelf": "ลบเฉพาะฉัน",
   "deleteSelfConfirm": "ลบข้อความนี้จากบัญชีของคุณเท่านั้นหรือไม่ อีกฝ่ายยังคงเก็บข้อความไว้",
-  "mailChatCompactInput": "ข้อความ…"
+  "mailChatCompactInput": "ข้อความ…",
+  "stickersTitle": "สติกเกอร์",
+  "stickersEmoji": "อีโมจิ",
+  "stickersLink": "ลิงก์ชุดสติกเกอร์ Telegram",
+  "stickersImport": "นำเข้า",
+  "stickersUpload": "อัปโหลด WebP, TGS หรือ WebM",
+  "stickersError": "ตรวจสอบลิงก์หรือการตั้งค่าบอต Telegram ของแพลตฟอร์ม"
 }

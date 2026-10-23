@@ -580,5 +580,11 @@
   "exploreEnd": "終了日",
   "deleteSelf": "自分側のみ削除",
   "deleteSelfConfirm": "自分のアカウントからのみこのメッセージを削除しますか？相手側には残ります。",
-  "mailChatCompactInput": "メッセージ…"
+  "mailChatCompactInput": "メッセージ…",
+  "stickersTitle": "スタンプ",
+  "stickersEmoji": "絵文字",
+  "stickersLink": "Telegram スタンプのリンク",
+  "stickersImport": "追加",
+  "stickersUpload": "WebP・TGS・WebM をアップロード",
+  "stickersError": "リンクまたはプラットフォームの Telegram ボット設定を確認してください。"
 }

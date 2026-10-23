@@ -580,5 +580,11 @@
   "exploreEnd": "Кінцева дата",
   "deleteSelf": "Видалити в мене",
   "deleteSelfConfirm": "Видалити повідомлення лише з вашого облікового запису? У співрозмовника воно залишиться.",
-  "mailChatCompactInput": "Повідомлення…"
+  "mailChatCompactInput": "Повідомлення…",
+  "stickersTitle": "Наліпки",
+  "stickersEmoji": "Емодзі",
+  "stickersLink": "Посилання на набір Telegram",
+  "stickersImport": "Імпортувати",
+  "stickersUpload": "Завантажити WebP, TGS або WebM",
+  "stickersError": "Перевірте посилання або налаштування Telegram-бота платформи."
 }
