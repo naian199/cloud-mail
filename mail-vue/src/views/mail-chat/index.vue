@@ -281,10 +281,11 @@
           :placeholder="t(compactChat ? 'mailChatCompactInput' : 'mailChatInput')"
           :aria-label="t('mailChatInput')"
           @keydown="keyDown"
+          @focus="stickerPicker?.close()"
           @input="liveInput"
         />
         <div class="composer-footer">
-          <StickerPicker :disabled="sending" @emoji="insertEmoji" @attachment="addSticker" @upload="chooseFiles" />
+          <StickerPicker ref="stickerPicker" :compact="compactChat" :dock="stickerDock" :context="draftKey" :disabled="sending" @visibility="stickerVisibility" @emoji="insertEmoji" @attachment="addSticker" @upload="chooseFiles" />
           <label class="attach-label" :aria-label="t('mailChatAttach')" tabindex="0" @keydown.enter.prevent="$event.currentTarget.querySelector('input').click()" @keydown.space.prevent="$event.currentTarget.querySelector('input').click()">
             <Icon class="attach-icon" icon="cloud-mail:attach" width="22" aria-hidden="true" /><span>{{ t('mailChatAttach') }}</span><input type="file" multiple :disabled="sending" @change="chooseFiles" /></label
           ><span>{{ t('chatEnterHint') }}</span
@@ -298,6 +299,7 @@
           >
         </div>
         </div>
+        <div ref="stickerDock" class="sticker-dock"></div>
       </form>
     </main>
     <ConversationExplorer v-if="selected" ref="explorer" :account-id="Number(accountId)" :conversation-key="selected.key" :peer="selected.profile?.displayName || selected.peers.join(', ')" :revision="explorerRevision" @jump="jumpToResult" />
@@ -1107,6 +1109,11 @@ function switchMailbox(value) {
   search.value = '';
   sync();
 }
+const stickerDock = ref(null), stickerPicker = ref(null), pickerOpen = ref(false);
+function stickerVisibility(value) {
+  pickerOpen.value = value;
+  if (value && compactChat.value) document.activeElement?.blur();
+}
 function insertEmoji(value) {
   const current = draftKey.value, text = drafts[current] || '';
   const input = document.querySelector('.composer textarea');
@@ -1114,7 +1121,7 @@ function insertEmoji(value) {
   if (text.length - (end - start) + value.length > 20000) return;
   drafts[current] = text.slice(0, start) + value + text.slice(end);
   liveInput();
-  nextTick(() => { input?.focus(); input?.setSelectionRange(start + value.length, start + value.length); });
+  nextTick(() => { if (!pickerOpen.value) input?.focus({preventScroll:true}); input?.setSelectionRange(start + value.length, start + value.length); });
 }
 function addSticker(file) {
   const current = draftKey.value, existing = files[current] || [];
@@ -1914,7 +1921,7 @@ pre {
   .composer-footer :deep(.sticker-trigger) { grid-column: 2; grid-row: 1; margin: 0; height: 40px; }
   .attach-icon { display: block; }
   .attach-label > span { display: none; }
-  .composer-footer > .el-button { grid-column: 4; grid-row: 1; width: 42px; height: 40px; padding: 0; margin: 0; }
+  .composer-footer > .el-button:not(.sticker-trigger) { grid-column: 4; grid-row: 1; width: 42px; height: 40px; padding: 0; margin: 0; }
   .composer-footer > .el-button :deep(> span > span) { display: none; }
   .composer-footer > .el-button :deep(> span) { gap: 0; }
   .chosen-files { margin-bottom: 6px; }
