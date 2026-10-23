@@ -1,0 +1,27 @@
+name: Generate interface language drafts
+on:
+  push:
+    branches: [main]
+    paths: ['scripts/generate-interface-locales.py']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Generate public UI drafts
+        run: python scripts/generate-interface-locales.py
+      - name: Save drafts on an isolated review branch
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git checkout -b "i18n/generated-${GITHUB_RUN_ID}"
+          git add mail-vue/src/i18n/locales
+          git commit -m 'chore: generate multilingual interface drafts'
+          git push origin "HEAD:refs/heads/i18n/generated-${GITHUB_RUN_ID}"
