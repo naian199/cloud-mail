@@ -80,7 +80,8 @@ export default {
 		const config = await this.config(c);
 		if (!config.enabled || !config.apiKey) fail('translateErrorDisabled', 503);
 		if (!c.env.CHAT_NOTIFICATIONS) fail('translateErrorBinding', 503);
-		const selected = Array.from(text).slice(0, 5000).join('');
+    // 10,000 UTF-16 units contain at least the first 5,000 Unicode characters.
+    const selected = Array.from(text.slice(0, 10000)).slice(0, 5000).join('');
 		const stub = c.env.CHAT_NOTIFICATIONS.get(
 			c.env.CHAT_NOTIFICATIONS.idFromName('translation-site-quota')
 		);
