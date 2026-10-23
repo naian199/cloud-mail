@@ -3,6 +3,7 @@ import { defineStore } from 'pinia'
 export const useUiStore = defineStore('ui', {
     state: () => ({
         mobileChatFocused: false,
+        mobileContactsCollapsed: false,
         asideShow: window.innerWidth > 1024,
         accountShow: false,
         backgroundLoading: true,

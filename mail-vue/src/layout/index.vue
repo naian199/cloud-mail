@@ -1,5 +1,5 @@
 <template>
-  <el-container class="layout" :class="{ 'mobile-chat-focused': uiStore.mobileChatFocused }" :style="{ '--chat-viewport-height': viewportHeight + 'px', '--chat-viewport-top': viewportTop + 'px' }">
+  <el-container class="layout" :class="{ 'mobile-chat-focused': uiStore.mobileChatFocused, 'mobile-contacts-collapsed': uiStore.mobileContactsCollapsed }" :style="{ '--chat-viewport-height': viewportHeight + 'px', '--chat-viewport-top': viewportTop + 'px' }">
     <el-aside
         class="aside"
         :class="uiStore.asideShow ? 'aside-show' : 'el-aside-hide'">
@@ -161,6 +161,6 @@ onBeforeUnmount(() => {
     top: var(--chat-viewport-top, 0px);
     padding-bottom: 0;
   }
-  .mobile-chat-focused .el-header { display: none; }
+  .mobile-chat-focused .el-header, .mobile-contacts-collapsed .el-header { display: none; }
 }
 </style>

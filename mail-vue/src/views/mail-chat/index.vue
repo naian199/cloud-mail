@@ -1,6 +1,7 @@
 <template>
   <section class="mail-chat" :class="{ 'conversation-open': active }">
     <aside class="conversations">
+      <div v-show="!compactChat || !ui.mobileContactsCollapsed" class="contact-controls">
       <div class="list-title">
         <h2>{{ t('mailChatTitle') }}</h2>
         <el-button
@@ -40,7 +41,8 @@
       </el-popover>
       <AutoTranslationSettings v-else />
       <p v-if="indexing" class="indexing">{{ t('mailChatIndexing') }}</p>
-      <div class="conversation-list" v-loading="listLoading">
+      </div>
+      <div ref="contactScroll" class="conversation-list" v-loading="listLoading" @scroll.passive="contactListScroll" @wheel.passive="contactWheel" @touchstart.passive="contactTouchStart" @touchmove.passive="contactTouchMove" @touchend="contactTouchEnd" @touchcancel="contactTouchEnd" @keydown.home="restoreContactControls">
         <button
           v-for="c in sortedConversations"
           :key="c.key"
@@ -75,6 +77,7 @@
           >{{ t('mailChatMoreConversations') }}</el-button
         >
       </div>
+      <el-button v-if="compactChat && ui.mobileContactsCollapsed" class="contact-controls-restore" text @click="restoreContactControls"><Icon icon="cloud-mail:search" width="18" />{{ t('mailChatSearch') }}</el-button>
     </aside>
     <main v-if="active" class="thread">
       <header
@@ -498,8 +501,42 @@ const conversations = ref([]),
   search = ref('');
 const compactChat = useMediaQuery('(max-width: 767px), (max-width: 1024px) and (max-height: 500px) and (pointer: coarse)');
 const ui = useUiStore();
+const contactScroll = ref(null);
+let contactLastTop = 0, contactUp = 0, contactTouchY = null, contactScrollIgnoreUntil = 0;
+function setContactControls(collapsed) {
+  if (!compactChat.value || active.value || ui.mobileContactsCollapsed === collapsed) return;
+  ui.mobileContactsCollapsed = collapsed;
+  contactUp = 0;
+  contactScrollIgnoreUntil = performance.now() + 180;
+  nextTick(() => { contactLastTop = contactScroll.value?.scrollTop || 0; });
+}
+function restoreContactControls() { setContactControls(false); }
+function contactListScroll(event) {
+  const top = Math.max(0, event.currentTarget.scrollTop), delta = top - contactLastTop;
+  contactLastTop = top;
+  if (performance.now() < contactScrollIgnoreUntil || !compactChat.value) return;
+  if (delta > 12) setContactControls(true);
+  else if (delta < 0) { contactUp -= delta; if (contactUp > 28) restoreContactControls(); }
+  else contactUp = 0;
+}
+function contactWheel(event) {
+  if (event.deltaY > 12) setContactControls(true);
+  else if (event.deltaY < -12) restoreContactControls();
+}
+function contactTouchStart(event) {
+  contactTouchY = event.touches.length === 1 ? event.touches[0].clientY : null;
+}
+function contactTouchMove(event) {
+  if (contactTouchY === null || event.touches.length !== 1) return;
+  const y = event.touches[0].clientY, delta = contactTouchY - y;
+  if (Math.abs(delta) < 28) return;
+  setContactControls(delta > 0);
+  contactTouchY = y;
+}
+function contactTouchEnd() { contactTouchY = null; }
+watch(compactChat, compact => { if (!compact) ui.mobileContactsCollapsed = false; });
 const active = computed(() => !!selected.value);
-watch(active, value => { ui.mobileChatFocused = value; }, { immediate: true });
+watch(active, value => { ui.mobileChatFocused = value; ui.mobileContactsCollapsed = false; contactLastTop = 0; }, { immediate: true });
 const isChat = (message) => message.chatStyle ?? message.internal;
 const sortedConversations = computed(() =>
   [...conversations.value].sort(
@@ -1290,6 +1327,7 @@ onMounted(async () => {
 });
 onBeforeUnmount(() => {
   ui.mobileChatFocused = false;
+  ui.mobileContactsCollapsed = false;
   cancelPress();
   document.removeEventListener('keydown', menuEscape);
   Object.values(imageUrls).forEach((url) => URL.revokeObjectURL(url));
@@ -1327,6 +1365,7 @@ onBeforeUnmount(() => {
   min-width: 0;
   overflow: hidden;
 }
+.contact-controls { flex-shrink: 0; }
 .conversations {
   display: flex;
   flex-direction: column;
@@ -1881,6 +1920,7 @@ pre {
   .composer :deep(.el-textarea__inner) { min-height: 48px; }
   .composer-footer { margin-top: 5px; }
 }
+.contact-controls-restore { flex-shrink: 0; height: 36px; margin: 0; border-top: 1px solid var(--el-border-color-light); border-radius: 0; }
 .compose-input-row { display: contents; }
 .attach-icon { display: none; }
 @media (max-width: 767px), (max-width: 1024px) and (max-height: 500px) and (pointer: coarse) {
