@@ -1729,7 +1729,7 @@ pre {
   --chat-shadow: 0 1px 2px rgba(24, 55, 78, .09);
   grid-template-columns: 330px minmax(0, 1fr);
 }
-:global(html.dark) .mail-chat {
+:global(html.dark .mail-chat) {
   --chat-canvas: #101c28;
   --chat-accent: #63b3ed;
   --chat-outgoing: #234864;
