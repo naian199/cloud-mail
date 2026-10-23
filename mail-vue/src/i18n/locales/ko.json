@@ -577,5 +577,7 @@
   "exploreLinks": "링크",
   "exploreJump": "메시지로 이동",
   "exploreStart": "시작 날짜",
-  "exploreEnd": "종료 날짜"
+  "exploreEnd": "종료 날짜",
+  "deleteSelf": "나에게서만 삭제",
+  "deleteSelfConfirm": "내 계정에서만 이 메시지를 삭제할까요? 상대방의 메시지는 유지됩니다."
 }

@@ -577,5 +577,7 @@
   "exploreLinks": "Pautan",
   "exploreJump": "Pergi ke mesej",
   "exploreStart": "Tarikh mula",
-  "exploreEnd": "Tarikh akhir"
+  "exploreEnd": "Tarikh akhir",
+  "deleteSelf": "Padam untuk saya",
+  "deleteSelfConfirm": "Padam mesej ini daripada akaun anda sahaja? Peserta lain masih menyimpan salinannya."
 }

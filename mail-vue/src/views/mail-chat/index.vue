@@ -80,6 +80,10 @@
         @pointermove="movePress"
         @pointerup="cancelPress"
         @pointercancel="cancelPress"
+        @touchstart.passive="startTouch($event, null)"
+        @touchmove.passive="moveTouch"
+        @touchend="endTouch"
+        @touchcancel="cancelPress"
       >
         <el-button class="back" text :aria-label="t('chatBack')" @click="closeThread"
           ><Icon icon="cloud-mail:back" width="24"
@@ -95,7 +99,7 @@
           <strong translate="no" :title="selected.peers.join(', ')">{{
             selected.profile?.displayName || selected.peers.join(', ')
           }}</strong
-          ><span v-if="live.internal" class="live-status" :class="{ online: live.online }">{{
+          ><span v-if="live.internal || messages.some(message => message.internal)" class="live-status" :class="{ online: live.online }">{{
             live.typing
               ? t('mailChatTyping')
               : live.online
@@ -151,6 +155,10 @@
               @pointermove="movePress"
               @pointerup="cancelPress"
               @pointercancel="cancelPress"
+              @touchstart.passive="startTouch($event, m)"
+              @touchmove.passive="moveTouch"
+              @touchend="endTouch"
+              @touchcancel="cancelPress"
               @keydown.shift.f10.prevent="openMessageMenu($event, m)"
               @keydown.esc="closeMenu"
               @click.capture="suppressAfterPress"
@@ -231,7 +239,7 @@
               <MessageTranslation :ref="el => setTranslationRef(m.emailId, el)" v-if="(m.replyText ?? m.text)?.trim()" :email-id="m.emailId" :text="m.replyText ?? m.text" :chat-style="isChat(m)" :incoming="m.type !== 1" />
             </div>
             <span
-              v-if="live.internal && m.type === 1 && m.read !== undefined"
+              v-if="m.internal && m.type === 1 && m.read !== undefined"
               class="read-receipt"
               >{{ m.read ? t('mailChatRead') : t('mailChatUnread') }}</span
             >
@@ -383,8 +391,11 @@
           <button v-if="messageMenu.message && (messageMenu.message.replyText ?? messageMenu.message.text)?.trim()" role="menuitem" @click="menuAction('translate')">
             <Icon icon="cloud-mail:translate" width="20" aria-hidden="true" />{{ t('translateTitle') }}
           </button>
+          <button v-if="messageMenu.message" role="menuitem" class="danger" @click="menuAction('delete-self')">
+            <Icon icon="cloud-mail:delete" width="20" aria-hidden="true" />{{ t('deleteSelf') }}
+          </button>
           <button
-            v-if="live.internal && messageMenu.message?.internal"
+            v-if="messageMenu.message?.internal"
             role="menuitem"
             class="danger"
             @click="menuAction('delete')"
@@ -392,7 +403,7 @@
             <Icon icon="cloud-mail:delete" width="20" aria-hidden="true" />{{ t('mailChatDeleteBoth') }}
           </button>
           <button
-            v-if="live.internal && messages.length"
+            v-if="(live.internal || messages.some(message => message.internal)) && messages.length"
             role="menuitem"
             class="danger"
             @click="menuAction('clear')"
@@ -449,6 +460,7 @@ import {
   mailSend,
   mailAttachment,
   mailRemoveBoth,
+  mailRemoveSelf,
   mailOpen,
   mailInstant
 } from '@/request/mail-chat';
@@ -546,7 +558,21 @@ function startPress(event, message) {
   pressTimer = setTimeout(() => {
     suppressUntil = Date.now() + 800;
     openMessageMenu(event, message);
-  }, 550);
+  }, 450);
+}
+function startTouch(event, message) {
+  if (event.touches.length !== 1) { cancelPress(); return; }
+  const touch = event.touches[0];
+  startPress({ pointerType: 'touch', target: event.target, currentTarget: event.currentTarget,
+    clientX: touch.clientX, clientY: touch.clientY, preventDefault() {} }, message);
+}
+function moveTouch(event) {
+  if (event.touches.length !== 1) { cancelPress(); return; }
+  movePress(event.touches[0]);
+}
+function endTouch(event) {
+  cancelPress();
+  if (messageMenu.value && Date.now() < suppressUntil && event.cancelable) event.preventDefault();
 }
 function movePress(event) {
   if (pressStart && Math.hypot(event.clientX - pressStart.x, event.clientY - pressStart.y) > 10)
@@ -568,7 +594,7 @@ function openMessageMenu(event, message) {
   messageMenu.value = {
     message,
     x: Math.max(8, Math.min(x, innerWidth - 210)),
-    y: Math.max(8, Math.min(y, innerHeight - 250))
+    y: Math.max(8, Math.min(y, innerHeight - 310))
   };
 }
 async function menuAction(action) {
@@ -583,6 +609,7 @@ async function menuAction(action) {
   }
   if (action === 'translate') translationRefs.get(message.emailId)?.open();
   else if (action === 'quote') quoteMessage(message);
+  else if (action === 'delete-self') removeSelf(message);
   else if (action === 'delete') removeBoth(message);
   else if (action === 'clear') removeBoth();
 }
@@ -682,6 +709,18 @@ async function openFriend(friend) {
     friendsOpen.value = false;
     await select(c);
   } catch {}
+}
+async function removeSelf(message) {
+  const a = accountId.value, k = selected.value?.key, v = version;
+  if (!message || !k) return;
+  try {
+    await ElMessageBox.confirm(t('deleteSelfConfirm'), t('deleteSelf'), {
+      type: 'warning', confirmButtonText: t('mailChatConfirmDelete'), cancelButtonText: t('mailChatCancelDelete')
+    });
+    if (a !== accountId.value || k !== selected.value?.key || v !== version) return;
+    await mailRemoveSelf({ accountId: a, key: k, emailId: message.emailId });
+    await sync();
+  } catch { /* Cancellation preserves the message. */ }
 }
 async function removeBoth(message) {
   const a = accountId.value,
@@ -1490,8 +1529,9 @@ pre {
   border-bottom: 1px solid var(--el-border-color-light);
   overflow-wrap: anywhere;
 }
-.internal-bubble {
+.bubble {
   -webkit-touch-callout: none;
+  touch-action: pan-y pinch-zoom;
 }
 @media (pointer: coarse) {
   .internal-bubble {

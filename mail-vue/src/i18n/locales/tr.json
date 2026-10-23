@@ -577,5 +577,7 @@
   "exploreLinks": "Bağlantılar",
   "exploreJump": "Mesaja git",
   "exploreStart": "Başlangıç tarihi",
-  "exploreEnd": "Bitiş tarihi"
+  "exploreEnd": "Bitiş tarihi",
+  "deleteSelf": "Benden sil",
+  "deleteSelfConfirm": "Bu mesaj yalnızca hesabınızdan silinsin mi? Diğer kişi kendi kopyasını korur."
 }

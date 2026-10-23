@@ -577,5 +577,7 @@
   "exploreLinks": "Link",
   "exploreJump": "Vai al messaggio",
   "exploreStart": "Data iniziale",
-  "exploreEnd": "Data finale"
+  "exploreEnd": "Data finale",
+  "deleteSelf": "Elimina per me",
+  "deleteSelfConfirm": "Eliminare questo messaggio solo dal tuo account? L’altra persona conserva la sua copia."
 }

@@ -40,12 +40,12 @@ const chatService = {
     const { results } = await c.env.db.prepare(`SELECT f.id, f.status, f.requester_id AS requesterId,
       peer.user_id AS userId, peer.email,
       (SELECT COUNT(*) FROM chat_message m WHERE m.friendship_id = f.id AND m.sender_id != ?
-       AND m.id > CASE WHEN f.low_user_id = ? THEN f.low_read_id ELSE f.high_read_id END) AS unread,
-      (SELECT body FROM chat_message m WHERE m.friendship_id = f.id ORDER BY m.id DESC LIMIT 1) AS lastMessage
+       AND m.id > CASE WHEN f.low_user_id = ? THEN f.low_read_id ELSE f.high_read_id END AND NOT EXISTS (SELECT 1 FROM email hidden JOIN mail_removed_message removed ON removed.email_id=hidden.email_id WHERE hidden.user_id=? AND hidden.message_id='<legacy-chat-'||m.id||'@cloud-mail.internal>')) AS unread,
+      (SELECT body FROM chat_message m WHERE m.friendship_id = f.id AND NOT EXISTS (SELECT 1 FROM email hidden JOIN mail_removed_message removed ON removed.email_id=hidden.email_id WHERE hidden.user_id=? AND hidden.message_id='<legacy-chat-'||m.id||'@cloud-mail.internal>') ORDER BY m.id DESC LIMIT 1) AS lastMessage
       FROM chat_friendship f
       JOIN user peer ON peer.user_id = CASE WHEN f.low_user_id = ? THEN f.high_user_id ELSE f.low_user_id END
       WHERE (f.low_user_id = ? OR f.high_user_id = ?) AND peer.status = 0 AND peer.is_del = 0
-      ORDER BY f.id DESC`).bind(user.user_id, user.user_id, user.user_id, user.user_id, user.user_id).all();
+      ORDER BY f.id DESC`).bind(user.user_id, user.user_id, user.user_id, user.user_id, user.user_id, user.user_id, user.user_id).all();
     return results;
   },
 
@@ -90,8 +90,8 @@ const chatService = {
     const before = query.before ? positiveId(query.before) : null;
     const comparison = after ? 'AND id > ?' : before ? 'AND id < ?' : '';
     let stmt = c.env.db.prepare(`SELECT id, sender_id AS senderId, client_id AS clientId, body, created_at AS createdAt
-      FROM chat_message WHERE friendship_id = ? ${comparison} ORDER BY id ${after ? 'ASC' : 'DESC'} LIMIT 51`);
-    stmt = after || before ? stmt.bind(f.id, after || before) : stmt.bind(f.id);
+      FROM chat_message m WHERE friendship_id = ? AND NOT EXISTS (SELECT 1 FROM email hidden JOIN mail_removed_message removed ON removed.email_id=hidden.email_id WHERE hidden.user_id=? AND hidden.message_id='<legacy-chat-'||m.id||'@cloud-mail.internal>') ${comparison} ORDER BY id ${after ? 'ASC' : 'DESC'} LIMIT 51`);
+    stmt = after || before ? stmt.bind(f.id, user.user_id, after || before) : stmt.bind(f.id, user.user_id);
     const { results } = await stmt.all();
     const hasMore = results.length > 50;
     const messages = results.slice(0, 50);

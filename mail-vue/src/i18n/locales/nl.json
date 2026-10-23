@@ -577,5 +577,7 @@
   "exploreLinks": "Links",
   "exploreJump": "Naar bericht",
   "exploreStart": "Vanaf datum",
-  "exploreEnd": "Tot datum"
+  "exploreEnd": "Tot datum",
+  "deleteSelf": "Voor mij verwijderen",
+  "deleteSelfConfirm": "Dit bericht alleen uit uw account verwijderen? De andere persoon behoudt een kopie."
 }

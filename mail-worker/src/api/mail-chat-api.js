@@ -50,6 +50,10 @@ app.put('/mail-chat/presence', async (c) => {
 	await live.pulse(c, await mail.account(c, p.accountId), p);
 	return c.json(result.ok());
 });
+app.post('/mail-chat/delete-self', async c => {
+  await mail.removeSelf(c, await c.req.json());
+  return c.json(result.ok());
+});
 app.post('/mail-chat/delete', async (c) => {
 	const p = await c.req.json();
 	if (typeof p.key !== 'string' || !/^[a-f0-9]{64}$/.test(p.key))

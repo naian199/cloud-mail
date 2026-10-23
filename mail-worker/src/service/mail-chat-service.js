@@ -358,6 +358,23 @@ const mailChat = {
 		return row;
 	},
 
+  async removeSelf(c, params) {
+    const account = await this.account(c, params.accountId);
+    const conversationKey = key(params.key), emailId = id(params.emailId);
+    const row = await c.env.db.prepare('SELECT status, type, message_id FROM email WHERE email_id=? AND user_id=? AND account_id=? AND conversation_key=? AND is_del=0')
+      .bind(emailId, account.user_id, account.account_id, conversationKey).first();
+    if (!row) fail('Message unavailable', 404);
+    if (row.type === 1 && [1,6].includes(row.status)) fail('Message delivery pending',409);
+    const clause = "user_id=? AND account_id=? AND conversation_key=? AND (email_id=? OR (?!='' AND message_id=?))";
+    const args = [account.user_id,account.account_id,conversationKey,emailId,row.message_id || '',row.message_id || ''];
+    await c.env.db.batch([
+      c.env.db.prepare(`INSERT OR IGNORE INTO mail_removed_message(email_id) SELECT email_id FROM email WHERE ${clause}`).bind(...args),
+      c.env.db.prepare(`UPDATE email SET is_del=1 WHERE ${clause}`).bind(...args),
+      c.env.db.prepare('INSERT INTO mail_conversation_revision(user_id,account_id,conversation_key,revision) VALUES(?,?,?,1) ON CONFLICT(user_id,account_id,conversation_key) DO UPDATE SET revision=revision+1').bind(account.user_id,account.account_id,conversationKey)
+    ]);
+    await notifyMail(c.env, account.user_id);
+  },
+
 	async read(c, params) {
 		const account = await this.account(c, params?.accountId);
 		const conversationKey = key(params.key),

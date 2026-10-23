@@ -45,5 +45,7 @@
   "exploreLinks": "链接",
   "exploreJump": "跳到原消息",
   "exploreStart": "开始日期",
-  "exploreEnd": "结束日期"
+  "exploreEnd": "结束日期",
+  "deleteSelf": "仅为自己删除",
+  "deleteSelfConfirm": "只删除自己账号中的这条消息？对方仍保留其消息。"
 }

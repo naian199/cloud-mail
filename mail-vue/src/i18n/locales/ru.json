@@ -577,5 +577,7 @@
   "exploreLinks": "Ссылки",
   "exploreJump": "Перейти к сообщению",
   "exploreStart": "С даты",
-  "exploreEnd": "По дату"
+  "exploreEnd": "По дату",
+  "deleteSelf": "Удалить у меня",
+  "deleteSelfConfirm": "Удалить сообщение только из вашего аккаунта? У собеседника оно останется."
 }

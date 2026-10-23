@@ -577,5 +577,7 @@
   "exploreLinks": "連結",
   "exploreJump": "跳至原訊息",
   "exploreStart": "開始日期",
-  "exploreEnd": "結束日期"
+  "exploreEnd": "結束日期",
+  "deleteSelf": "僅為自己刪除",
+  "deleteSelfConfirm": "只刪除自己帳號中的這則訊息？對方仍保留其訊息。"
 }

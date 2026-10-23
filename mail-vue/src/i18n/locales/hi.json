@@ -577,5 +577,7 @@
   "exploreLinks": "लिंक",
   "exploreJump": "संदेश पर जाएँ",
   "exploreStart": "आरंभ तिथि",
-  "exploreEnd": "समाप्ति तिथि"
+  "exploreEnd": "समाप्ति तिथि",
+  "deleteSelf": "केवल मेरे लिए हटाएँ",
+  "deleteSelfConfirm": "यह संदेश केवल अपने खाते से हटाएँ? दूसरे व्यक्ति की प्रति बनी रहेगी।"
 }

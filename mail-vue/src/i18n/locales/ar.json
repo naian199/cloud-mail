@@ -577,5 +577,7 @@
   "exploreLinks": "الروابط",
   "exploreJump": "انتقل إلى الرسالة",
   "exploreStart": "من تاريخ",
-  "exploreEnd": "إلى تاريخ"
+  "exploreEnd": "إلى تاريخ",
+  "deleteSelf": "حذف لدي فقط",
+  "deleteSelfConfirm": "هل تريد حذف هذه الرسالة من حسابك فقط؟ يحتفظ الطرف الآخر بنسخته."
 }

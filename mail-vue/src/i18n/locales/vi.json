@@ -577,5 +577,7 @@
   "exploreLinks": "Liên kết",
   "exploreJump": "Đến tin nhắn",
   "exploreStart": "Từ ngày",
-  "exploreEnd": "Đến ngày"
+  "exploreEnd": "Đến ngày",
+  "deleteSelf": "Xóa ở phía tôi",
+  "deleteSelfConfirm": "Chỉ xóa tin nhắn này khỏi tài khoản của bạn? Người kia vẫn giữ bản sao."
 }
