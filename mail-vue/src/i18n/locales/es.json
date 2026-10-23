@@ -569,5 +569,13 @@
   "server_notConfigOss": "Almacenamiento de objetos no configurado",
   "translateAuto": "Traducción automática",
   "translateAutoConsent": "Los mensajes recibidos visibles se envían a Google para traducir: solo texto, hasta 5000 caracteres, sin imágenes, archivos adjuntos ni citas del chat interno. Se conservan los originales. La preferencia se guarda en este navegador.",
-  "translateAutoEnable": "Activar traducción automática"
+  "translateAutoEnable": "Activar traducción automática",
+  "exploreTitle": "Búsqueda y contenido compartido",
+  "exploreSearch": "Buscar mensajes",
+  "exploreImages": "Imágenes",
+  "exploreFiles": "Archivos",
+  "exploreLinks": "Enlaces",
+  "exploreJump": "Ir al mensaje",
+  "exploreStart": "Desde",
+  "exploreEnd": "Hasta"
 }

@@ -104,6 +104,7 @@
           }}</span>
           <span v-else>{{ connected ? t('mailChatLive') : t('chatReconnecting') }}</span>
         </div>
+        <el-button text :aria-label="t('exploreTitle')" :title="t('exploreTitle')" @click="explorer?.open()"><Icon icon="cloud-mail:search" width="22" /></el-button>
         <el-button text :aria-label="t('mailChatPin')" @click="togglePin">{{
           selected.pinned ? '★' : '☆'
         }}</el-button>
@@ -242,7 +243,7 @@
           </article>
         </template>
       </div>
-      <el-button v-if="!atBottom" class="latest" round @click="bottom">{{
+      <el-button v-if="!atBottom || historyAnchor" class="latest" round @click="bottom">{{
         t('chatNewest')
       }}</el-button>
       <form v-if="canSend" class="composer" @submit.prevent="send">
@@ -292,7 +293,8 @@
         </div>
       </form>
     </main>
-    <div v-else class="empty-thread"><el-empty :description="t('mailChatChoose')" /></div>
+    <ConversationExplorer v-if="selected" ref="explorer" :account-id="Number(accountId)" :conversation-key="selected.key" :peer="selected.profile?.displayName || selected.peers.join(', ')" :revision="explorerRevision" @jump="jumpToResult" />
+    <div v-if="!active" class="empty-thread"><el-empty :description="t('mailChatChoose')" /></div>
     <el-dialog v-model="newOpen" :title="t('mailChatNew')" width="min(500px, calc(100% - 24px))">
       <form @submit.prevent="sendNew">
         <p>{{ accounts.find((a) => a.accountId === accountId)?.email }}</p>
@@ -427,6 +429,7 @@ import { computed, nextTick, onMounted, onBeforeUnmount, reactive, ref, watch } 
 import MailBody from '@/components/mail-body.vue';
 import UserAvatar from '@/components/user-avatar.vue';
 import '@/icons/chat';
+import ConversationExplorer from '@/components/conversation-explorer.vue';
 import MessageTranslation from '@/components/message-translation.vue';
 import AutoTranslationSettings from '@/components/auto-translation-settings.vue';
 import { useRoute, useRouter } from 'vue-router';
@@ -519,6 +522,7 @@ let version = 0,
   searchTimer,
   indexTimer;
 const messageMenu = ref(null);
+const explorer = ref(null), explorerRevision = ref(0), historyAnchor = ref(null);
 const translationRefs = new Map();
 function setTranslationRef(id, element) {
   if (element) translationRefs.set(id, element);
@@ -617,7 +621,7 @@ async function loadImage(id) {
   }
 }
 function imageLoaded() {
-  if (atBottom.value) bottom();
+  if (atBottom.value && !historyAnchor.value) bottom();
 }
 watch(
   messages,
@@ -640,6 +644,7 @@ function applyMessages(data) {
   const marker = `${accountId.value}:${selected.value?.key}`;
   if (revisions.has(marker) && revisions.get(marker) !== data.revision) {
     messages.value = [];
+    explorerRevision.value++;
     quoteTarget.value = null;
     readThrough.delete(marker);
     hasOlder.value = !!data.hasMore;
@@ -750,6 +755,7 @@ function jumpToQuote(quote) {
   }
 }
 function closeThread() {
+  historyAnchor.value = null;
   closeMenu();
   cancelPress();
   quoteTarget.value = null;
@@ -759,6 +765,7 @@ function closeThread() {
   messageLoading.value = false;
 }
 async function bottom() {
+  if (historyAnchor.value && selected.value) { await select(selected.value); return; }
   await nextTick();
   if (scroll.value) {
     scroll.value.scrollTop = scroll.value.scrollHeight;
@@ -781,6 +788,7 @@ function merge(rows) {
 async function markRead() {
   if (
     !selected.value ||
+    historyAnchor.value ||
     !atBottom.value ||
     document.hidden ||
     friendsOpen.value ||
@@ -814,6 +822,7 @@ function onScroll() {
   if (atBottom.value) markRead().catch(() => {});
 }
 async function select(c) {
+  historyAnchor.value = null;
   closeMenu();
   cancelPress();
   quoteTarget.value = null;
@@ -839,6 +848,26 @@ async function select(c) {
       sync();
     }
   }
+}
+async function jumpToResult(emailId) {
+  const mine = version;
+  const conversationKey = selected.value?.key;
+  if (!conversationKey) return;
+  try {
+    const data = await mailMessages({ accountId: accountId.value, key: conversationKey, around: emailId });
+    if (mine !== version || stopped) return;
+    if (!data.messages.some(message => message.emailId === emailId)) return;
+    historyAnchor.value = emailId;
+    messages.value = [];
+    applyMessages(data);
+    hasOlder.value = data.hasMore;
+    atBottom.value = false;
+    await nextTick();
+    const element = scroll.value?.querySelector(`[data-email-id="${emailId}"]`);
+    element?.scrollIntoView({ block: 'center' });
+    element?.classList.add('search-result-focus');
+    setTimeout(() => element?.classList.remove('search-result-focus'), 2200);
+  } catch { /* Shared API error handling leaves the current conversation intact. */ }
 }
 async function sync() {
   if (stopped) return;
@@ -890,6 +919,11 @@ async function sync() {
         const mine = version,
           k = selected.value.key,
           stick = atBottom.value;
+        if (historyAnchor.value) {
+          const data = await mailMessages({ accountId: a, key: k, around: historyAnchor.value });
+          if (mine === version && !stopped) applyMessages(data);
+          continue;
+        }
         let more;
         do {
           const after = messages.value[messages.value.length - 1]?.emailId;
@@ -1752,6 +1786,7 @@ pre {
 .messages { padding: 8px clamp(12px, 3vw, 44px) 20px; scroll-padding-block: 20px; }
 .date-divider { width: fit-content; max-width: 90%; margin: 16px auto; padding: 4px 12px; border-radius: 20px; background: var(--el-bg-color-overlay); box-shadow: var(--chat-shadow); font-size: 11px; }
 .mail-message { margin: 8px 0; padding-left: 46px; }
+.search-result-focus .bubble { outline: 2px solid var(--chat-accent); outline-offset: 3px; }
 .message-avatar { top: auto; bottom: 0; }
 .bubble { padding: 9px 12px; border-radius: 15px 15px 15px 5px; background: var(--chat-incoming); box-shadow: var(--chat-shadow); line-height: 1.6; max-width: min(82%, 640px); }
 .mail-message.mine { padding-right: 46px; }

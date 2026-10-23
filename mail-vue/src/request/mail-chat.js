@@ -25,3 +25,5 @@ export const mailPresence = (data) => http.put('/mail-chat/presence', data);
 export const mailRemoveBoth = (data) => http.post('/mail-chat/delete', data);
 export const mailOpen = (data) => http.post('/mail-chat/open', data);
 export const mailInstant = (data) => http.post('/mail-chat/instant', data, { timeout: 60000 });
+
+export const mailExplore = (params) => http.get('/mail-chat/explore', { params });

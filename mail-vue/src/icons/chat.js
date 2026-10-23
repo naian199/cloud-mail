@@ -9,6 +9,7 @@ addCollection({
   width: 24,
   height: 24,
   icons: {
+    search: outline('<circle cx="10" cy="10" r="6"/><path d="m15 15 6 6"/>'),
     send: outline('<path d="m3 3 18 9-18 9 4-9-4-9Zm4 9h14"/>'),
     file: outline('<path d="M14 3H6v18h12V7l-4-4Zm0 0v5h4M9 12h6m-6 4h6"/>'),
     copy: outline('<rect x="8" y="8" width="12" height="13" rx="2"/><path d="M16 8V3H3v13h5"/>'),

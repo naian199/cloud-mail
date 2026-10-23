@@ -569,5 +569,13 @@
   "server_notConfigOss": "未配置物件存儲",
   "translateAuto": "自動翻譯",
   "translateAutoConsent": "開啟後，畫面內收到的訊息會自動將正文傳送至 Google 翻譯。每則最多5000字元，不傳送圖片或附件；站內聊天不傳送引用歷史。保留原文，設定儲存在目前瀏覽器。",
-  "translateAutoEnable": "開啟自動翻譯"
+  "translateAutoEnable": "開啟自動翻譯",
+  "exploreTitle": "搜尋與會話相簿",
+  "exploreSearch": "搜尋訊息",
+  "exploreImages": "圖片",
+  "exploreFiles": "檔案",
+  "exploreLinks": "連結",
+  "exploreJump": "跳至原訊息",
+  "exploreStart": "開始日期",
+  "exploreEnd": "結束日期"
 }

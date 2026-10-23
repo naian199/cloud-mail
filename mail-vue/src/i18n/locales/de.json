@@ -569,5 +569,13 @@
   "server_notConfigOss": "Objektspeicher nicht konfiguriert",
   "translateAuto": "Automatische Übersetzung",
   "translateAutoConsent": "Sichtbare empfangene Nachrichten werden an Google übersetzt übermittelt: nur Text, bis zu 5000 Zeichen, ohne Bilder, Anhänge oder Zitate im internen Chat. Originale bleiben erhalten. Diese Einstellung wird in diesem Browser gespeichert.",
-  "translateAutoEnable": "Automatische Übersetzung aktivieren"
+  "translateAutoEnable": "Automatische Übersetzung aktivieren",
+  "exploreTitle": "Suche und geteilte Medien",
+  "exploreSearch": "Nachrichten suchen",
+  "exploreImages": "Bilder",
+  "exploreFiles": "Dateien",
+  "exploreLinks": "Links",
+  "exploreJump": "Zur Nachricht",
+  "exploreStart": "Ab Datum",
+  "exploreEnd": "Bis Datum"
 }

@@ -569,5 +569,13 @@
   "server_notConfigOss": "لم يتم تكوين تخزين الكائنات",
   "translateAuto": "الترجمة التلقائية",
   "translateAutoConsent": "تُرسل الرسائل المستلمة الظاهرة إلى Google لترجمتها: النص فقط حتى 5000 حرف، دون صور أو مرفقات أو اقتباسات المحادثة الداخلية. يُحفظ النص الأصلي ويُحفظ هذا الإعداد في هذا المتصفح.",
-  "translateAutoEnable": "تفعيل الترجمة التلقائية"
+  "translateAutoEnable": "تفعيل الترجمة التلقائية",
+  "exploreTitle": "البحث والوسائط المشتركة",
+  "exploreSearch": "البحث في الرسائل",
+  "exploreImages": "الصور",
+  "exploreFiles": "الملفات",
+  "exploreLinks": "الروابط",
+  "exploreJump": "انتقل إلى الرسالة",
+  "exploreStart": "من تاريخ",
+  "exploreEnd": "إلى تاريخ"
 }

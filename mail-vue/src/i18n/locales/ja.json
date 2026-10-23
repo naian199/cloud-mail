@@ -569,5 +569,13 @@
   "server_notConfigOss": "オブジェクトストレージが構成されていません",
   "translateAuto": "自動翻訳",
   "translateAutoConsent": "有効にすると、画面内の受信メッセージの本文を Google に送信して翻訳します。最大5000文字で、画像や添付ファイル、内部チャットの引用履歴は送信しません。原文は保持され、設定はこのブラウザーに保存されます。",
-  "translateAutoEnable": "自動翻訳を有効にする"
+  "translateAutoEnable": "自動翻訳を有効にする",
+  "exploreTitle": "検索と共有メディア",
+  "exploreSearch": "メッセージを検索",
+  "exploreImages": "画像",
+  "exploreFiles": "ファイル",
+  "exploreLinks": "リンク",
+  "exploreJump": "元のメッセージへ",
+  "exploreStart": "開始日",
+  "exploreEnd": "終了日"
 }

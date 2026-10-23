@@ -37,5 +37,13 @@
   "serviceUnavailable": "服务暂不可用，请稍后重试。",
   "translateAuto": "自动翻译",
   "translateAutoConsent": "开启后，屏幕内收到的消息会自动将正文发送给 Google 翻译。每条最多5000字符，不发送图片或附件；站内聊天不发送引用历史。原文保留，设置保存在当前浏览器。",
-  "translateAutoEnable": "开启自动翻译"
+  "translateAutoEnable": "开启自动翻译",
+  "exploreTitle": "搜索与会话相册",
+  "exploreSearch": "搜索消息",
+  "exploreImages": "图片",
+  "exploreFiles": "文件",
+  "exploreLinks": "链接",
+  "exploreJump": "跳到原消息",
+  "exploreStart": "开始日期",
+  "exploreEnd": "结束日期"
 }

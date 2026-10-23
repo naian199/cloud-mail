@@ -569,5 +569,13 @@
   "server_notConfigOss": "Penyimpanan objek tidak dikonfigurasi",
   "translateAuto": "Terjemahan otomatis",
   "translateAutoConsent": "Pesan masuk yang terlihat dikirim ke Google: hanya teks hingga 5000 karakter, tanpa gambar, lampiran, atau kutipan obrolan internal. Teks asli tetap disimpan. Pengaturan disimpan di peramban ini.",
-  "translateAutoEnable": "Aktifkan terjemahan otomatis"
+  "translateAutoEnable": "Aktifkan terjemahan otomatis",
+  "exploreTitle": "Pencarian dan media bersama",
+  "exploreSearch": "Cari pesan",
+  "exploreImages": "Gambar",
+  "exploreFiles": "Berkas",
+  "exploreLinks": "Tautan",
+  "exploreJump": "Ke pesan",
+  "exploreStart": "Tanggal mulai",
+  "exploreEnd": "Tanggal akhir"
 }

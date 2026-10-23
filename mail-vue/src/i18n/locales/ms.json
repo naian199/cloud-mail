@@ -569,5 +569,13 @@
   "server_notConfigOss": "Storan objek tidak dikonfigurasikan",
   "translateAuto": "Terjemahan automatik",
   "translateAutoConsent": "Mesej diterima yang kelihatan dihantar ke Google: teks sahaja sehingga 5000 aksara, tanpa imej, lampiran atau petikan sembang dalaman. Teks asal dikekalkan. Tetapan disimpan dalam pelayar ini.",
-  "translateAutoEnable": "Aktifkan terjemahan automatik"
+  "translateAutoEnable": "Aktifkan terjemahan automatik",
+  "exploreTitle": "Carian dan media dikongsi",
+  "exploreSearch": "Cari mesej",
+  "exploreImages": "Imej",
+  "exploreFiles": "Fail",
+  "exploreLinks": "Pautan",
+  "exploreJump": "Pergi ke mesej",
+  "exploreStart": "Tarikh mula",
+  "exploreEnd": "Tarikh akhir"
 }

@@ -569,5 +569,13 @@
   "server_notConfigOss": "Objectopslag niet geconfigureerd",
   "translateAuto": "Automatisch vertalen",
   "translateAutoConsent": "Zichtbare ontvangen berichten worden naar Google gestuurd: alleen tekst, maximaal 5000 tekens, zonder afbeeldingen, bijlagen of citaten uit interne chats. Originelen blijven behouden. De voorkeur wordt in deze browser opgeslagen.",
-  "translateAutoEnable": "Automatisch vertalen inschakelen"
+  "translateAutoEnable": "Automatisch vertalen inschakelen",
+  "exploreTitle": "Zoeken en gedeelde media",
+  "exploreSearch": "Berichten zoeken",
+  "exploreImages": "Afbeeldingen",
+  "exploreFiles": "Bestanden",
+  "exploreLinks": "Links",
+  "exploreJump": "Naar bericht",
+  "exploreStart": "Vanaf datum",
+  "exploreEnd": "Tot datum"
 }

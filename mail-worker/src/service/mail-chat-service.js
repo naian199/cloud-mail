@@ -1,4 +1,5 @@
 import BizError from '../error/biz-error';
+import { sharedLinks, sharedImages } from '../lib/mail-shared-links';
 import userContext from '../security/user-context';
 import emailService from './email-service';
 import live from './mail-live-service';
@@ -163,11 +164,11 @@ const mailChat = {
 		};
 	},
 
-	async messages(c, query) {
+	async messages(c, query, filter = {}) {
 		const account = await this.account(c, query.accountId);
 		const conversationKey = key(query.key);
-		if (query.before && query.after) fail('Invalid pagination / 无效分页');
-		const cursor = query.before ? id(query.before) : query.after ? id(query.after) : null;
+		if ([query.before, query.after, query.around].filter(Boolean).length > 1) fail('Invalid pagination / 无效分页');
+		const cursor = query.before ? id(query.before) : query.after ? id(query.after) : query.around ? id(query.around) : null;
 		const cursorRow = cursor
 			? await c.env.db
 					.prepare(
@@ -177,24 +178,28 @@ const mailChat = {
 					.first()
 			: null;
 		if (cursor && !cursorRow) fail('Invalid cursor');
-		const cmp = query.after ? '>' : '<',
+		const cmp = query.after ? '>' : query.around ? '<=' : '<',
 			order = query.after ? 'ASC' : 'DESC';
 		const { results } = await c.env.db
 			.prepare(
-				`SELECT ${fields} FROM email e WHERE user_id = ? AND account_id = ?
+				`SELECT ${filter.fullText ? fields.replace('substr(text, 1, 10000)', 'text') : fields} FROM email e WHERE user_id = ? AND account_id = ?
       AND conversation_key = ? AND is_del = 0 AND type IN (0,1) AND status != 6
       AND (coalesce(e.message_id, '') = '' OR NOT EXISTS (
         SELECT 1 FROM email prior WHERE prior.user_id = e.user_id AND prior.account_id = e.account_id
         AND prior.type = e.type AND prior.message_id = e.message_id AND prior.is_del = 0 AND prior.status != 6
         AND prior.email_id < e.email_id
       ))
-      ${cursor ? `AND (e.create_time ${cmp} ? OR (e.create_time = ? AND email_id ${cmp} ?))` : ''} ORDER BY e.create_time ${order},email_id ${order} LIMIT 21`
+      ${filter.start ? 'AND julianday(e.create_time) >= julianday(?)' : ''}
+      ${filter.end ? 'AND julianday(e.create_time) < julianday(?)' : ''}
+      ${cursor ? `AND (e.create_time ${query.around ? '<' : cmp} ? OR (e.create_time = ? AND email_id ${cmp} ?))` : ''} ORDER BY e.create_time ${order},email_id ${order} LIMIT 21`
 			)
 			.bind(
 				...[
 					account.user_id,
 					account.account_id,
 					conversationKey,
+          ...(filter.start ? [filter.start] : []),
+          ...(filter.end ? [filter.end] : []),
 					...(cursor ? [cursorRow.create_time, cursorRow.create_time, cursor] : [])
 				]
 			)
@@ -245,6 +250,10 @@ const mailChat = {
 				row.images = row.images.filter(
 					(image) => image.attId && !row.richImages.some((inline) => inline.attId === image.attId)
 				);
+      if (filter.fullText) {
+        row.sharedLinks = sharedLinks(row.replyText || '', row.chatStyle ? '' : row.richHtml || '');
+        row.sharedImages = sharedImages(row.chatStyle ? '' : row.richHtml || '');
+      }
 			delete row.htmlPreview;
 			row.attachments = row.attachments
 				.filter(
@@ -273,6 +282,45 @@ const mailChat = {
 		}
 		return { messages, hasMore, revision: await live.revision(c, account, conversationKey) };
 	},
+
+  async explore(c, query) {
+    const term = String(query.search || '').trim().toLocaleLowerCase();
+    if (term.length > 200) fail('invalidInput');
+    const filter = { fullText: true };
+    for (const name of ['start', 'end']) {
+      if (!query[name]) continue;
+      const value = new Date(query[name]);
+      if (!Number.isFinite(value.getTime())) fail('invalidInput');
+      filter[name] = value.toISOString();
+    }
+    if (filter.start && filter.end && filter.start >= filter.end) fail('invalidInput');
+    let before = query.before;
+    const account = await this.account(c, query.accountId);
+    const conversationKey = key(query.key);
+    let data, cursor;
+    const snapshot = await live.revision(c, account, conversationKey);
+    const items = [];
+    // Bounded scans reuse the exact permission, deletion, quote and attachment rules of the chat.
+    for (let page = 0; page < 3; page++) {
+      data = await this.messages(c, { accountId: query.accountId, key: query.key, before }, filter);
+      if (snapshot !== data.revision) fail('serviceUnavailable', 409);
+      cursor = data.messages[0]?.emailId;
+      for (const message of [...data.messages].reverse()) {
+        const text = message.replyText ?? message.text ?? '';
+        if (term && !text.toLocaleLowerCase().includes(term) &&
+            !(message.chatStyle ? '' : message.subject || '').toLocaleLowerCase().includes(term) &&
+            ![...(message.attachments || []), ...(message.images || [])].some(file => (file.filename || file.alt || '').toLocaleLowerCase().includes(term))) continue;
+        const links = message.sharedLinks;
+        items.push({ emailId: message.emailId, createTime: message.createTime,
+          sendEmail: message.sendEmail, text: text.slice(0, 500),
+          images: [...(message.images || []), ...(message.richImages || []), ...(message.sharedImages || [])],
+          attachments: message.attachments, links });
+      }
+      if (!data.hasMore || !cursor) break;
+      before = cursor;
+    }
+    return { items, hasMore: !!data.hasMore, before: cursor, revision: data.revision };
+  },
 
 	async detail(c, rawId) {
 		const userId = userContext.getUserId(c);

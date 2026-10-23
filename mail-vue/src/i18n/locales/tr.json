@@ -569,5 +569,13 @@
   "server_notConfigOss": "Nesne depolaması yapılandırılmamış",
   "translateAuto": "Otomatik çeviri",
   "translateAutoConsent": "Ekranda görünen alınan iletiler Google’a gönderilir: yalnızca metin, en fazla 5000 karakter; resimler, ekler ve dahili sohbet alıntıları hariçtir. Özgün metin korunur. Tercih bu tarayıcıda saklanır.",
-  "translateAutoEnable": "Otomatik çeviriyi etkinleştir"
+  "translateAutoEnable": "Otomatik çeviriyi etkinleştir",
+  "exploreTitle": "Arama ve paylaşılan medya",
+  "exploreSearch": "Mesaj ara",
+  "exploreImages": "Resimler",
+  "exploreFiles": "Dosyalar",
+  "exploreLinks": "Bağlantılar",
+  "exploreJump": "Mesaja git",
+  "exploreStart": "Başlangıç tarihi",
+  "exploreEnd": "Bitiş tarihi"
 }

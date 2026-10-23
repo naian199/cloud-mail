@@ -569,5 +569,13 @@
   "server_notConfigOss": "Bộ nhớ đối tượng không được định cấu hình",
   "translateAuto": "Dịch tự động",
   "translateAutoConsent": "Tin nhắn nhận được đang hiển thị sẽ được gửi đến Google: chỉ văn bản, tối đa 5000 ký tự, không gửi ảnh, tệp đính kèm hoặc trích dẫn trò chuyện nội bộ. Giữ nguyên bản gốc. Cài đặt được lưu trong trình duyệt này.",
-  "translateAutoEnable": "Bật dịch tự động"
+  "translateAutoEnable": "Bật dịch tự động",
+  "exploreTitle": "Tìm kiếm và nội dung chung",
+  "exploreSearch": "Tìm tin nhắn",
+  "exploreImages": "Hình ảnh",
+  "exploreFiles": "Tệp",
+  "exploreLinks": "Liên kết",
+  "exploreJump": "Đến tin nhắn",
+  "exploreStart": "Từ ngày",
+  "exploreEnd": "Đến ngày"
 }

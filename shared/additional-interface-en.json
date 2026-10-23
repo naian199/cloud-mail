@@ -37,5 +37,13 @@
   "serviceUnavailable": "The service is temporarily unavailable. Please try again later.",
   "translateAuto": "Automatic translation",
   "translateAutoConsent": "When enabled, received messages visible on screen are automatically sent to Google for translation. Only text (up to 5000 characters) is sent, without images or attachments; internal chat quotes are excluded. Originals are kept. This preference is saved on this browser.",
-  "translateAutoEnable": "Enable automatic translation"
+  "translateAutoEnable": "Enable automatic translation",
+  "exploreTitle": "Search and shared media",
+  "exploreSearch": "Search messages",
+  "exploreImages": "Images",
+  "exploreFiles": "Files",
+  "exploreLinks": "Links",
+  "exploreJump": "Go to message",
+  "exploreStart": "From date",
+  "exploreEnd": "To date"
 }

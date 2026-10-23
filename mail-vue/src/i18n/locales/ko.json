@@ -569,5 +569,13 @@
   "server_notConfigOss": "객체 스토리지가 구성되지 않았습니다.",
   "translateAuto": "자동 번역",
   "translateAutoConsent": "사용하면 화면에 보이는 수신 메시지의 본문을 Google로 전송해 번역합니다. 최대 5000자이며 이미지, 첨부 파일 및 내부 채팅의 인용 기록은 제외됩니다. 원문은 유지되고 설정은 이 브라우저에 저장됩니다.",
-  "translateAutoEnable": "자동 번역 켜기"
+  "translateAutoEnable": "자동 번역 켜기",
+  "exploreTitle": "검색 및 공유 미디어",
+  "exploreSearch": "메시지 검색",
+  "exploreImages": "이미지",
+  "exploreFiles": "파일",
+  "exploreLinks": "링크",
+  "exploreJump": "메시지로 이동",
+  "exploreStart": "시작 날짜",
+  "exploreEnd": "종료 날짜"
 }
