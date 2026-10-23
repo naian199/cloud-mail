@@ -10,7 +10,7 @@
             <div class="left">
               <div>{{ $t('totalReceived') }}</div>
               <div>
-                <el-statistic :formatter="value => Math.round(value)" :value="receiveData"/>
+                <el-statistic :formatter="value => $n(Math.round(value))" :value="receiveData"/>
               </div>
             </div>
             <div class="right">
@@ -20,8 +20,8 @@
             </div>
           </div>
           <div class="delete-ratio">
-            <div>{{ $t('active') }} <span class="normal">{{ numberCount.normalReceiveTotal }}</span></div>
-            <div>{{ $t('deleted') }} <span class="deleted">{{ numberCount.delReceiveTotal }}</span></div>
+            <div>{{ $t('active') }} <span class="normal">{{ $n(numberCount.normalReceiveTotal) }}</span></div>
+            <div>{{ $t('deleted') }} <span class="deleted">{{ $n(numberCount.delReceiveTotal) }}</span></div>
           </div>
         </div>
         <div class="number-item">
@@ -29,7 +29,7 @@
             <div class="left">
               <div>{{ $t('totalSent') }}</div>
               <div>
-                <el-statistic :formatter="value => Math.round(value)" :value="sendData"/>
+                <el-statistic :formatter="value => $n(Math.round(value))" :value="sendData"/>
               </div>
             </div>
             <div class="right">
@@ -39,8 +39,8 @@
             </div>
           </div>
           <div class="delete-ratio">
-            <div>{{ $t('active') }} <span class="normal">{{ numberCount.normalSendTotal }}</span></div>
-            <div>{{ $t('deleted') }} <span class="deleted">{{ numberCount.delSendTotal }}</span></div>
+            <div>{{ $t('active') }} <span class="normal">{{ $n(numberCount.normalSendTotal) }}</span></div>
+            <div>{{ $t('deleted') }} <span class="deleted">{{ $n(numberCount.delSendTotal) }}</span></div>
           </div>
         </div>
         <div class="number-item">
@@ -48,7 +48,7 @@
             <div class="left">
               <div>{{ $t('totalMailboxes') }}</div>
               <div>
-                <el-statistic :formatter="value => Math.round(value)" :value="accountData"/>
+                <el-statistic :formatter="value => $n(Math.round(value))" :value="accountData"/>
               </div>
             </div>
             <div class="right">
@@ -58,8 +58,8 @@
             </div>
           </div>
           <div class="delete-ratio">
-            <div>{{ $t('active') }} <span class="normal">{{ numberCount.normalAccountTotal }}</span></div>
-            <div>{{ $t('deleted') }} <span class="deleted">{{ numberCount.delAccountTotal }}</span></div>
+            <div>{{ $t('active') }} <span class="normal">{{ $n(numberCount.normalAccountTotal) }}</span></div>
+            <div>{{ $t('deleted') }} <span class="deleted">{{ $n(numberCount.delAccountTotal) }}</span></div>
           </div>
         </div>
         <div class="number-item">
@@ -67,7 +67,7 @@
             <div class="left">
               <div>{{ $t('totalUsers') }}</div>
               <div>
-                <el-statistic :formatter="value => Math.round(value)" :value="userData"/>
+                <el-statistic :formatter="value => $n(Math.round(value))" :value="userData"/>
               </div>
             </div>
             <div class="right">
@@ -77,8 +77,8 @@
             </div>
           </div>
           <div class="delete-ratio">
-            <div>{{ $t('active') }} <span class="normal">{{ numberCount.normalUserTotal }}</span></div>
-            <div>{{ $t('deleted') }} <span class="deleted">{{ numberCount.delUserTotal }}</span></div>
+            <div>{{ $t('active') }} <span class="normal">{{ $n(numberCount.normalUserTotal) }}</span></div>
+            <div>{{ $t('deleted') }} <span class="deleted">{{ $n(numberCount.delUserTotal) }}</span></div>
           </div>
         </div>
       </div>
@@ -88,8 +88,8 @@
             <span>{{ $t('emailSource') }}</span>
             <span class="source-button" v-if="false">
               <el-radio-group v-model="checkedSourceType">
-                <el-radio-button label="发件人" value="sender"/>
-                <el-radio-button label="邮箱" value="email"/>
+                <el-radio-button :label="$t('sender')" value="sender"/>
+                <el-radio-button :label="$t('emailAccount')" value="email"/>
               </el-radio-group>
             </span>
           </div>

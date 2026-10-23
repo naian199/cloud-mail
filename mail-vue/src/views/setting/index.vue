@@ -16,15 +16,7 @@
     </div>
     <div class="language">
       <div class="title">{{$t('language')}}</div>
-      <el-select
-          :model-value="langSelect"
-          class="language-select"
-          placeholder="Select"
-          @change="changeLang"
-      >
-        <el-option label="中文" value="zh" @pointerdown.prevent.stop="changeLang('zh')"/>
-        <el-option label="English" value="en" @pointerdown.prevent.stop="changeLang('en')"/>
-      </el-select>
+      <LanguageSelect hint />
     </div>
     <div class="del-email" v-perm="'my:delete'">
       <div class="title">{{$t('deleteUser')}}</div>
@@ -50,6 +42,7 @@ import {resetPassword, userDelete} from "@/request/my.js";
 import {useUserStore} from "@/store/user.js";
 import router from "@/router/index.js";
 import ProfileEditor from '@/components/profile-editor.vue';
+import LanguageSelect from '@/components/language-select.vue';
 import {useI18n} from "vue-i18n";
 import {useSettingStore} from "@/store/setting.js";
 
@@ -57,22 +50,10 @@ const { t } = useI18n()
 const settingStore = useSettingStore()
 const userStore = useUserStore();
 const setPwdLoading = ref(false)
-const langSelect = ref(settingStore.lang)
 
 defineOptions({
   name: 'setting'
 })
-
-function changeLang(lang) {
-  let setting = {}
-  try {
-    setting = JSON.parse(localStorage.getItem('setting') || '{}')
-  } catch (e) {
-    setting = {}
-  }
-  localStorage.setItem('setting', JSON.stringify({...setting, lang}))
-  window.location.reload()
-}
 
 const pwdShow = ref(false)
 const form = reactive({

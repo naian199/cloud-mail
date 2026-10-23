@@ -168,4 +168,6 @@ async function save() {
   justify-items: start;
   gap: 10px;
 }
+:deep(.el-switch) { max-width: 100%; height: auto; }
+:deep(.el-switch__label), :deep(.el-switch__label span) { white-space: normal; height: auto; line-height: 1.5; }
 </style>

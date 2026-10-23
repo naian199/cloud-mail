@@ -114,7 +114,7 @@
         >
           <template #default="{ node, data }">
             <div>
-              <span>{{ node.label }}</span>
+              <span>{{ data.nameKey ? $t(data.nameKey) : node.label }}</span>
               <span class="send-num" v-if="data.permKey === 'email:send'" @click.stop>
                 <el-input-number v-if="form.sendType === 'day' || form.sendType === 'count'" v-model="form.sendCount" controls-position="right" :min="0" :max="99999" size="small"
                                  :placeholder="$t('total')">

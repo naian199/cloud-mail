@@ -53,7 +53,7 @@
           <span class="contact-meta"
             ><span>{{ shortTime(c.createTime) }}</span
             ><span v-if="c.pinned">★</span
-            ><span v-if="c.unread" class="badge">{{ c.unread > 99 ? '99+' : c.unread }}</span></span
+            ><span v-if="c.unread" class="badge">{{ c.unread > 99 ? $n(99) + '+' : $n(c.unread) }}</span></span
           >
         </button>
         <el-empty
@@ -175,7 +175,7 @@
                 </p>
                 <p
                   v-if="m.replyText ?? m.text"
-                  class="body-text"
+                  class="body-text" dir="auto"
                   :class="{ collapsed: isChat(m) && !expanded[m.emailId] }"
                 >
                   {{ m.replyText ?? m.text }}
@@ -224,6 +224,7 @@
                   >{{ att.filename }} · {{ formatBytes(att.size) }}</el-button
                 >
               </div>
+              <MessageTranslation v-if="(m.replyText ?? m.text)?.trim()" :email-id="m.emailId" :text="m.replyText ?? m.text" :chat-style="isChat(m)" />
             </div>
             <span
               v-if="live.internal && m.type === 1 && m.read !== undefined"
@@ -419,6 +420,7 @@ import { randomUUID } from '@/utils/uuid';
 import { computed, nextTick, onMounted, onBeforeUnmount, reactive, ref, watch } from 'vue';
 import MailBody from '@/components/mail-body.vue';
 import UserAvatar from '@/components/user-avatar.vue';
+import MessageTranslation from '@/components/message-translation.vue';
 import { useRoute, useRouter } from 'vue-router';
 import { Icon } from '@iconify/vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
@@ -688,7 +690,7 @@ async function removeBoth(message) {
   } catch {}
 }
 const utc = mailDate;
-const date = (value) => utc(value).toLocaleDateString();
+const date = (value) => utc(value).toLocaleDateString(locale.value);
 const shortTime = (value) => (value ? date(value) : '');
 function parseAddresses(value) {
   try {
@@ -1224,7 +1226,7 @@ onBeforeUnmount(() => {
   flex-direction: column;
   min-width: 0;
   min-height: 0;
-  border-right: 1px solid var(--el-border-color);
+  border-inline-end: 1px solid var(--el-border-color);
 }
 .list-title {
   display: flex;
@@ -1358,6 +1360,7 @@ onBeforeUnmount(() => {
   margin: 16px;
 }
 .mail-message {
+  direction: ltr;
   position: relative;
   padding-left: 48px;
   display: flex;
@@ -1421,6 +1424,7 @@ pre {
   background: var(--el-bg-color);
   border: 1px solid var(--el-border-color-light);
 }
+.external :deep(.message-translation) { padding: 12px 16px; }
 .external .body-text,
 .external .bubble > .el-button,
 .external .attachment {

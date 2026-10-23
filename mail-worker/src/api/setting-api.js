@@ -2,6 +2,10 @@ import app from '../hono/hono';
 import result from '../model/result';
 import settingService from '../service/setting-service';
 import userContext from "../security/user-context";
+import translation from '../service/translation-service';
+
+app.get('/setting/translation', async (c) => c.json(result.ok(translation.publicConfig(await translation.config(c)))));
+app.put('/setting/translation', async (c) => c.json(result.ok(await translation.save(c, await c.req.json()))));
 
 app.put('/setting/set', async (c) => {
 	await settingService.set(c, await c.req.json());

@@ -21,6 +21,6 @@ export function chatTimeLabel(value, locale = 'zh-CN', now = new Date()) {
   const yesterday = new Date(now);
   yesterday.setDate(yesterday.getDate() - 1);
   if (at.toDateString() === yesterday.toDateString())
-    return `${locale.startsWith('zh') ? '昨天' : 'Yesterday'} ${clock}`;
+    return `${new Intl.RelativeTimeFormat(locale, { numeric: 'auto' }).format(-1, 'day')} ${clock}`;
   return `${at.toLocaleDateString(locale, { ...(at.getFullYear() !== now.getFullYear() ? { year: 'numeric' } : {}), month: 'short', day: 'numeric' })} ${clock}`;
 }

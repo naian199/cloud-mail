@@ -1,6 +1,7 @@
 import http from '@/axios/index.js';
 
 export const myProfile = () => http.get('/my/profile');
+export const saveLocale = (locale) => http.put('/my/locale', { locale }, { noMsg: true });
 export const saveProfile = (data) => http.put('/my/profile', data);
 export const messageAlerts = (params) => http.get('/my/notifications', { params, noMsg: true });
 

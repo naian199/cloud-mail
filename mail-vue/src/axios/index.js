@@ -20,6 +20,16 @@ http.interceptors.response.use((res) => {
 
             const noMsg = res.config.noMsg;
             const data = res.data
+            const translateError = () => {
+                if (data.errorKey && i18n.global.te(data.errorKey)) return i18n.global.t(data.errorKey, data.errorParams || {});
+                if (i18n.global.te(data.message)) return i18n.global.t(data.message);
+                if (!['zh', 'en'].includes(i18n.global.locale.value)) {
+                    if (data.code === 403) return i18n.global.t('unauthorized');
+                    if (data.code === 400) return i18n.global.t('invalidInput');
+                    if (data.code >= 500) return i18n.global.t('serviceUnavailable');
+                }
+                return data.message;
+            };
 
             if (noMsg) {
 
@@ -27,7 +37,7 @@ http.interceptors.response.use((res) => {
 
             } else if (data.code === 401) {
                 ElMessage({
-                    message: data.message,
+                    message: translateError(),
                     type: 'error',
                     plain: true,
                     grouping: true,
@@ -38,7 +48,7 @@ http.interceptors.response.use((res) => {
                 reject(data)
             } else if (data.code === 403) {
                 ElMessage({
-                    message: data.message,
+                    message: translateError(),
                     type: 'warning',
                     plain: true,
                     grouping: true,
@@ -49,7 +59,7 @@ http.interceptors.response.use((res) => {
             } else if (data.code === 502) {
                 ElMessage({
                     dangerouslyUseHTMLString: true,
-                    message: data.message,
+                    message: translateError(),
                     type: 'error',
                     plain: true,
                     grouping: true,
@@ -58,7 +68,7 @@ http.interceptors.response.use((res) => {
                 reject(data)
             } else if (data.code !== 200) {
                 ElMessage({
-                    message: data.message,
+                    message: translateError(),
                     type: 'error',
                     plain: true,
                     grouping: true,

@@ -6,11 +6,11 @@ export function getExtName(fileName) {
 }
 
 export function formatBytes(bytes) {
-    if (bytes === 0) return '0 B';
+    if (!Number.isFinite(bytes) || bytes <= 0) return `${new Intl.NumberFormat(document.documentElement.lang || 'en').format(0)} B`;
     const k = 1024;
     const units = ['B', 'KB', 'MB', 'GB', 'TB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    const size = (bytes / Math.pow(k, i)).toFixed(2);
+    const i = Math.min(units.length - 1, Math.floor(Math.log(bytes) / Math.log(k)));
+    const size = new Intl.NumberFormat(document.documentElement.lang || 'en', { maximumFractionDigits: 2 }).format(bytes / Math.pow(k, i));
     return `${size} ${units[i]}`;
 }
 

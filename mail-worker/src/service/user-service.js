@@ -21,6 +21,7 @@ import oauthService from "./oauth-service";
 import settingService from './setting-service';
 import starService from './star-service';
 import profileService from './profile-service';
+import localeService from './locale-service';
 
 const userService = {
 
@@ -45,6 +46,7 @@ const userService = {
 		user.account = account;
 		user.name = account.name;
 		user.profile = await profileService.get(c);
+		user.locale = (await localeService.get(c)).locale;
 		user.permKeys = permKeys;
 		user.role = roleRow;
 		user.type = userRow.type;

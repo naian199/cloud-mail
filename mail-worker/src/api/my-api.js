@@ -3,6 +3,9 @@ import userService from '../service/user-service';
 import result from '../model/result';
 import userContext from '../security/user-context';
 import profile from '../service/profile-service';
+import locale from '../service/locale-service';
+app.get('/my/locale', async (c) => c.json(result.ok(await locale.get(c))));
+app.put('/my/locale', async (c) => c.json(result.ok(await locale.save(c, await c.req.json()))));
 
 app.get('/my/profile', async (c) => c.json(result.ok(await profile.get(c))));
 app.put('/my/profile', async (c) => c.json(result.ok(await profile.save(c, await c.req.json()))));

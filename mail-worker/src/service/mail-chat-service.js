@@ -279,6 +279,7 @@ const mailChat = {
 		const row = await c.env.db
 			.prepare(
 				`SELECT email_id AS emailId, account_id AS accountId, subject, text, content,
+      to_email AS toEmail, conversation_key AS conversationKey, conversation_peers AS conversationPeers,
       send_email AS sendEmail, recipient, cc, reply_to AS replyTo, message_id AS messageId, in_reply_to AS inReplyTo, relation
       FROM email WHERE email_id = ? AND user_id = ? AND is_del = 0`
 			)

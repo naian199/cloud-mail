@@ -8,11 +8,12 @@ export const useSettingStore = defineStore('setting', {
             loginOpacity: 1.00,
         },
         lang: '',
+        languageManual: false,
     }),
     actions: {
 
     },
     persist: {
-        pick: ['lang'],
+        pick: ['lang', 'languageManual'],
     },
 })

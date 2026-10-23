@@ -1,5 +1,5 @@
 <template>
-  <div id="login-box" :style=" background ? 'background: var(--el-bg-color)' : ''" v-loading="oauthLoading" element-loading-text="登录中...">
+  <div id="login-box" :style=" background ? 'background: var(--el-bg-color)' : ''" v-loading="oauthLoading" :element-loading-text="$t('loginBtn')">
     <div id="background-wrap" v-if="!settingStore.settings.background">
       <div class="x1 cloud"></div>
       <div class="x2 cloud"></div>
@@ -10,6 +10,7 @@
     <div v-else :style="background"></div>
     <div class="form-wrapper">
       <div class="container">
+        <LanguageSelect class="login-language" />
         <span class="form-title">{{ settingStore.settings.title }}</span>
         <span class="form-desc" v-if="show === 'login'">{{ $t('loginTitle') }}</span>
         <span class="form-desc" v-else>{{ $t('regTitle') }}</span>
@@ -110,7 +111,7 @@
         </template>
       </div>
     </div>
-    <el-dialog class="bind-dialog" v-model="showBindForm"  title="注册邮箱" >
+    <el-dialog class="bind-dialog" v-model="showBindForm"  :title="$t('regBtn')" >
       <div class="bind-container">
         <el-input :class="!hideLoginDomain ? 'email-input' : ''" v-model="bindForm.email" type="text" :placeholder="$t('emailAccount')" autocomplete="off" @keyup.enter="bind">
           <template #append v-if="!hideLoginDomain">
@@ -140,7 +141,7 @@
         <el-input v-if="settingStore.settings.regKey === 2" v-model="bindForm.code"
                   :placeholder="$t('regKeyOptional')" type="text" autocomplete="off" @keyup.enter="bind"/>
         <el-button class="btn" type="primary" @click="bind" :loading="bindLoading"
-        >绑定
+        >{{ $t('confirm') }}
         </el-button>
       </div>
     </el-dialog>
@@ -151,6 +152,7 @@
 </template>
 
 <script setup>
+import LanguageSelect from '@/components/language-select.vue';
 import router from "@/router";
 import {useRoute} from "vue-router";
 import {computed, nextTick, reactive, ref} from "vue";
@@ -324,7 +326,7 @@ async function oauthGetUser() {
       showBindForm.value = true
       oauthLoading.value = false
       ElMessage({
-        message: '请注册绑定一个邮箱',
+        message: t('regTitle'),
         type: 'warning',
         duration: 4000,
         plain: true,

@@ -1,9 +1,10 @@
-import { ref, onMounted, onBeforeUnmount } from 'vue';
+import { ref, watch, onMounted, onBeforeUnmount } from 'vue';
 import { ElNotification } from 'element-plus';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { messageAlerts } from '@/request/my';
 import { useMailSync } from './use-mail-sync';
+import { useSettingStore } from '@/store/setting';
 
 export const alertsEnabled = ref(localStorage.getItem('mail-alerts') !== 'off');
 export const notificationPermission = ref(
@@ -19,14 +20,29 @@ export async function enableBrowserAlerts() {
 }
 export function useMessageAlerts() {
   const router = useRouter(),
-    { t } = useI18n();
-  const baseTitle = document.title;
+    { t, te, locale } = useI18n();
+  const settings = useSettingStore();
+  let baseTitle = document.title;
   let cursor,
     busy = false,
     dirty = false,
     stopped = false,
     count = 0;
   const notices = new Set();
+  watch(
+    [locale, () => router.currentRoute.value.meta.title],
+    () => {
+      const key = router.currentRoute.value.meta.title;
+      baseTitle = [key && te(key) ? t(key) : '', settings.settings.title]
+        .filter(Boolean)
+        .join(' · ');
+      document.title =
+        document.hidden && count
+          ? `(${count}) ${t('profileNewMessage')} · ${baseTitle}`
+          : baseTitle;
+    },
+    { immediate: true }
+  );
   function clearTitle() {
     if (!document.hidden) {
       count = 0;

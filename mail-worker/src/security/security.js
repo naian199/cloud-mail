@@ -22,6 +22,7 @@ const exclude = [
 ];
 
 const requirePerms = [
+  '/setting/translation',
 	'/mail-chat/send',
 	'/email/send',
 	'/email/delete',
@@ -84,7 +85,7 @@ const premKey = {
 	'all-email:query': ['/allEmail/list','/allEmail/latest','/allEmail/removed'],
 	'all-email:delete': ['/allEmail/delete','/allEmail/batchDelete'],
 	'setting:query': ['/setting/query'],
-	'setting:set': ['/setting/set', '/setting/setBackground','/setting/deleteBackground','/setting/setBlacklist'],
+	'setting:set': ['/setting/translation', '/setting/set', '/setting/setBackground','/setting/deleteBackground','/setting/setBlacklist'],
 	'analysis:query': ['/analysis/echarts'],
 	'reg-key:add': ['/regKey/add'],
 	'reg-key:query': ['/regKey/list','/regKey/history'],

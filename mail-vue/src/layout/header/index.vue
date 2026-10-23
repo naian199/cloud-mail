@@ -40,6 +40,7 @@
             <div class="detail-user-type">
               <el-tag>{{ userStore.user.role.name }}</el-tag>
             </div>
+            <div class="language-control" @click.stop><LanguageSelect /></div>
             <div class="action-info">
               <div>
                 <span style="margin-right: 10px">{{ $t('sendCount') }}</span>
@@ -74,6 +75,7 @@
 
 <script setup>
 import UserAvatar from '@/components/user-avatar.vue';
+import LanguageSelect from '@/components/language-select.vue';
 import router from "@/router";
 import hanburger from '@/components/hamburger/index.vue'
 import {logout} from "@/request/login.js";
@@ -85,7 +87,6 @@ import {computed, ref} from "vue";
 import {useSettingStore} from "@/store/setting.js";
 import {hasPerm} from "@/perm/perm.js"
 import {useI18n} from "vue-i18n";
-import {setExtend} from "@/utils/day.js"
 
 const {t} = useI18n();
 const route = useRoute();
@@ -181,11 +182,6 @@ async function copyEmail(email) {
       plain: true,
     })
   }
-}
-
-function changeLang(lang) {
-  setExtend(lang === 'en' ? 'en' : 'zh-cn')
-  settingStore.lang = lang
 }
 
 function openNotice() {

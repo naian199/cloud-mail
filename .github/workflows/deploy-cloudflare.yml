@@ -6,6 +6,7 @@ on:
     paths:
       - "mail-worker/**"
       - "mail-vue/**"
+      - "shared/**"
   workflow_dispatch:
 
 jobs:
@@ -57,6 +58,11 @@ jobs:
       - name: 📡 禁用 Wrangler 遥测 / Disable wrangler telemetry
         working-directory: ./mail-worker
         run: pnpm wrangler telemetry disable
+
+      - name: Verify language catalogs and translation logic
+        run: |
+          node scripts/check-locales.mjs
+          node --test mail-worker/test/google-translation.test.mjs mail-worker/test/mail-conversations.test.mjs mail-worker/test/mail-chat-display.test.mjs mail-worker/test/browser-uuid.test.mjs
 
       - name: 🛠️ 设置环境 / Set up environment
         working-directory: ./mail-worker

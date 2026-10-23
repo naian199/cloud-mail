@@ -216,3 +216,15 @@ html[data-theme-to="light"]::view-transition-old(root) {
     from { clip-path: circle(var(--vt-end-radius, 0px) at var(--vt-x) var(--vt-y)); }
     to   { clip-path: circle(0px at var(--vt-x) var(--vt-y)); }
 }
+
+/* Language direction changes never reverse sender/recipient chat positions. */
+html[dir="rtl"] .layout > .aside-show { left: auto; right: 0; }
+html[dir="rtl"] .layout > .el-aside-hide { left: auto; right: 0; transform: translateX(100%); }
+html[dir="rtl"] .back svg { transform: scaleX(-1); }
+html[dir="rtl"] .conversations { border-right: 0; }
+html[dir="rtl"] input[type="email"],
+html[dir="rtl"] .email-input input,
+html[dir="rtl"] .detail-email,
+html[dir="rtl"] .profile-card p[translate="no"] { direction: ltr; unicode-bidi: isolate; }
+[translate="no"] { unicode-bidi: isolate; }
+.login-language { margin-bottom: 16px; }

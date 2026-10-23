@@ -5,6 +5,7 @@
     </div>
     <el-scrollbar class="scroll" v-if="!firstLoading">
       <div class="scroll-body">
+        <TranslationSettings v-if="hasPerm('setting:set')" />
         <div class="card-grid">
           <!-- Basic Settings Card -->
           <div class="settings-card">
@@ -944,6 +945,8 @@ import {storeToRefs} from "pinia";
 import {debounce} from 'lodash-es'
 import {isDomain, isEmail, isIpUrl} from "@/utils/verify-utils.js";
 import loading from "@/components/loading/index.vue";
+import TranslationSettings from '@/components/translation-settings.vue';
+import { hasPerm } from '@/perm/perm';
 import {getTextWidth} from "@/utils/text.js";
 import {fileToBase64} from "@/utils/file-utils.js"
 import {useI18n} from 'vue-i18n';

@@ -247,7 +247,7 @@
           </span>
         </div>
         <div v-if="!sendNumShow"><span
-            class="details-item-title">{{ $t('tabSent') }}:</span>{{ userDetails.sendEmailCount }}
+            class="details-item-title">{{ $t('tabSent') }}:</span>{{ $n(userDetails.sendEmailCount || 0) }}
         </div>
         <div v-if="!accountNumShow"><span class="details-item-title">{{ $t('tabMailboxes') }}:</span>{{
             userDetails.accountCount

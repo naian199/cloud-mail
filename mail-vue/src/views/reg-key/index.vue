@@ -105,7 +105,7 @@ import {useRoleStore} from "@/store/role.js";
 import {regKeyAdd, regKeyList, regKeyClearNotUse, regKeyDelete, regKeyHistory} from "@/request/reg-key.js";
 import {getTextWidth} from "@/utils/text.js";
 import dayjs from "dayjs";
-import {tzDayjs} from "@/utils/day.js";
+import {formatCalendarDate, tzDayjs} from "@/utils/day.js";
 import {useI18n} from "vue-i18n";
 
 defineOptions({
@@ -190,50 +190,8 @@ const compareByLengthAndUpperCase = (a, b, key) => {
   return a[key].length > b[key].length ? a : b;
 };
 
-function formatUserCreateTime(regKey) {
-  const createTime = tzDayjs(regKey.createTime);
-  const currentYear = dayjs().year();
-  const expireYear = createTime.year();
-
-  if (settingStore.lang === 'en') {
-
-    if (expireYear === currentYear) {
-      return createTime.format('MMM D, HH:mm');
-    } else {
-      return createTime.format('MMM D, YYYY HH:mm');
-    }
-
-  } else {
-
-    if (expireYear === currentYear) {
-      return createTime.format('M月D日 HH:mm');
-    } else {
-      return createTime.format('YYYY年M月D日 HH:mm');
-    }
-
-  }
-
-}
-
-function formatExpireTime(expireTime) {
-  const expireDate = tzDayjs(expireTime);
-  const currentYear = dayjs().year();
-  const expireYear = expireDate.year();
-
-  if (settingStore.lang === 'en') {
-
-    return expireYear === currentYear
-        ? expireDate.format('MMM D')
-        : expireDate.format('MMM D, YYYY');
-
-  } else {
-
-    return expireYear === currentYear
-        ? expireDate.format('M月D日')
-        : expireDate.format('YYYY年M月D日');
-
-  }
-}
+function formatUserCreateTime(regKey) { return formatCalendarDate(regKey.createTime, true); }
+function formatExpireTime(expireTime) { return formatCalendarDate(expireTime); }
 
 function refresh() {
   params.code = null
@@ -269,7 +227,7 @@ async function copyCode(code) {
   } catch (err) {
     console.error('复制失败:', err);
     ElMessage({
-      message: '复制失败',
+      message: t('copyFailMsg'),
       type: 'error',
       plain: true,
     })

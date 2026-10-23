@@ -57,6 +57,8 @@ onBeforeUnmount(() => {
 
 <style lang="scss" scoped>
 .el-aside-hide {
+  visibility: hidden;
+  pointer-events: none;
   position: fixed;
   left: 0;
   height: 100%;

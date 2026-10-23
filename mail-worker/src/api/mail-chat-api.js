@@ -3,6 +3,10 @@ import result from '../model/result';
 import mail from '../service/mail-chat-service';
 import r2Service from '../service/r2-service';
 import live from '../service/mail-live-service';
+import translation from '../service/translation-service';
+
+app.get('/mail-chat/translation/config', async (c) => c.json(result.ok(translation.publicConfig(await translation.config(c)))));
+app.post('/mail-chat/translate', async (c) => c.json(result.ok(await translation.translate(c, await c.req.json()))));
 
 app.get('/mail-chat/conversations', async (c) =>
 	c.json(result.ok(await mail.list(c, c.req.query())))
