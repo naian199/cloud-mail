@@ -362,8 +362,8 @@ export default {
 		const statements = [
 			c.env.db
 				.prepare(
-					`INSERT INTO email(user_id,account_id,send_email,recipient,text,content,subject,type,status,unread,message_id,in_reply_to,conversation_key,conversation_peers,send_key)
-      SELECT ?,?,?,?,?,?,'站内聊天',1,2,1,?,?,?,?,? FROM account sender JOIN account receiver ON receiver.account_id=? JOIN user a ON a.user_id=sender.user_id JOIN user b ON b.user_id=receiver.user_id
+					`INSERT INTO email(user_id,account_id,send_email,recipient,text,content,subject,type,status,unread,message_id,in_reply_to,relation,conversation_key,conversation_peers,send_key)
+      SELECT ?,?,?,?,?,?,'站内聊天',1,2,1,?,?,?,?,?,? FROM account sender JOIN account receiver ON receiver.account_id=? JOIN user a ON a.user_id=sender.user_id JOIN user b ON b.user_id=receiver.user_id
       WHERE sender.account_id=? AND a.status=0 AND a.is_del=0 AND b.status=0 AND b.is_del=0
       AND sender.user_id=? AND sender.status=0 AND sender.is_del=0 AND receiver.user_id=? AND receiver.status=0 AND receiver.is_del=0`
 				)
@@ -376,6 +376,7 @@ export default {
 					html,
 					mid,
 					parent?.message_id || '',
+                    [...new Set(`${parent?.relation || ''} ${parent?.message_id || ''}`.match(/<[^<>\s]+>/g) || [])].slice(-50).join(' '),
 					ownKey,
 					JSON.stringify([peer.email.toLowerCase()]),
 					requestKey,
@@ -386,8 +387,8 @@ export default {
 				),
 			c.env.db
 				.prepare(
-					`INSERT INTO email(user_id,account_id,send_email,to_email,recipient,text,content,subject,type,status,unread,message_id,in_reply_to,conversation_key,conversation_peers,ingest_key)
-      SELECT ?,?,send_email,?,recipient,text,content,subject,0,0,0,message_id,in_reply_to,?,?,? FROM email WHERE send_key=? AND user_id=?`
+					`INSERT INTO email(user_id,account_id,send_email,to_email,recipient,text,content,subject,type,status,unread,message_id,in_reply_to,relation,conversation_key,conversation_peers,ingest_key)
+      SELECT ?,?,send_email,?,recipient,text,content,subject,0,0,0,message_id,in_reply_to,relation,?,?,? FROM email WHERE send_key=? AND user_id=?`
 				)
 				.bind(
 					peer.user_id,

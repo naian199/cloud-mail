@@ -149,7 +149,7 @@ await test(
 					(await api(`mail-chat/attachment/${incoming.images[0].attId}`, c.token)).code,
 					404
 				);
-				assert.match(incoming.messageId, /@example.com>/);
+				assert.match(incoming.messageId, /@cloud-mail\.internal>/);
 				assert.equal(history.messages[0].attachments.length, 1);
 				const att = history.messages[0].attachments[0];
 				const data = await fetch(new URL(`api/mail-chat/attachment/${att.attId}`, root), {

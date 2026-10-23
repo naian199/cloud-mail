@@ -465,7 +465,7 @@ const mailChat = {
 		if (params.replyId) {
 			parent = await c.env.db
 				.prepare(
-					`SELECT email_id, send_email, recipient, cc, reply_to, account_id, text, content, message_id FROM email
+					`SELECT email_id, send_email, recipient, cc, reply_to, account_id, text, content, message_id, relation FROM email
         WHERE email_id = ? AND user_id = ? AND account_id = ? AND is_del = 0 AND status != 6`
 				)
 				.bind(id(params.replyId), account.user_id, account.account_id)
