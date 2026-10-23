@@ -1,6 +1,7 @@
 import BizError from '../error/biz-error';
 import { sharedLinks, sharedImages } from '../lib/mail-shared-links';
 import userContext from '../security/user-context';
+import permService from './perm-service';
 import emailService from './email-service';
 import live from './mail-live-service';
 import { profilesFor } from './profile-service';
@@ -451,14 +452,15 @@ const mailChat = {
 			recipients.some((email) => !verify.isEmail(email))
 		)
 			fail('Invalid recipients / 请检查收件人');
-		let instantPeer;
-		if (instant) {
-			if (recipients.length !== 1) fail('Internal one-to-one only', 403);
-			const contact = await live.open(c, account, recipients[0]);
-			instantPeer = await live.resolve(c, account, contact.key);
-			if (!instantPeer?.friendship_id)
-				fail('Accepted friendship required / 请先添加好友并由对方接受', 403);
-		}
+    let instantPeer = recipients.length === 1 ? await live.lookupPeer(c, account, recipients[0]) : null;
+    if (instant && (!instantPeer || recipients.length !== 1)) fail('Registered mailbox unavailable', 403);
+    if (instantPeer) instant = true;
+    if (!instant) {
+      const owner = await c.env.db.prepare('SELECT email FROM user WHERE user_id=?').bind(account.user_id).first();
+      if (owner?.email !== c.env.admin && !(await permService.userPermKeys(c, account.user_id)).includes('email:send'))
+        fail('Unauthorized', 403);
+    }
+
 		let parent;
 		if (params.replyId) {
 			parent = await c.env.db

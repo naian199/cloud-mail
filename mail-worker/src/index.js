@@ -1,4 +1,5 @@
 import app from './hono/webs';
+import { httpsRedirect, secureResponse } from './lib/transport-security';
 import { email } from './email/email';
 import userService from './service/user-service';
 import verifyRecordService from './service/verify-record-service';
@@ -12,21 +13,25 @@ export { ChatNotifications } from './chat/notifications';
 export default {
 	 async fetch(req, env, ctx) {
 
+		const redirect = httpsRedirect(req);
+		if (redirect) return redirect;
+		const requestUrl = req.url;
+		const finish = response => secureResponse(response, requestUrl);
 		const url = new URL(req.url)
 		if (!url.pathname.startsWith('/api/init/')) await ensureMailChat(env);
 
 		if (url.pathname.startsWith('/api/')) {
 			url.pathname = url.pathname.replace('/api', '')
 			req = new Request(url.toString(), req)
-			return app.fetch(req, env, ctx);
+			return finish(await app.fetch(req, env, ctx));
 		}
 
 		 if (['/static/','/attachments/'].some(p => url.pathname.startsWith(p))) {
-			 if(url.pathname.startsWith('/attachments/')&&await revokedAttachment(env,decodeURIComponent(url.pathname.substring(1)))) return new Response(null,{status:404,headers:{'Cache-Control':'no-store'}});
-             return await kvObjService.toObjResp( { env }, url.pathname.substring(1));
+			 if(url.pathname.startsWith('/attachments/')&&await revokedAttachment(env,decodeURIComponent(url.pathname.substring(1)))) return finish(new Response(null,{status:404,headers:{'Cache-Control':'no-store'}}));
+             return finish(await kvObjService.toObjResp( { env }, url.pathname.substring(1)));
 		 }
 
-		return env.assets.fetch(req);
+		return finish(await env.assets.fetch(req));
 	},
 	email: email,
 	async scheduled(c, env, ctx) {

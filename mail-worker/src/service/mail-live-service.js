@@ -30,6 +30,9 @@ export default {
 					.first();
 		const peers = row ? addresses(row.peers) : contact ? [contact.peer_email] : [];
 		if (peers.length !== 1) return null;
+    return this.lookupPeer(c, account, peers[0]);
+  },
+  async lookupPeer(c, account, email) {
 		const peer = await c.env.db
 			.prepare(
 				`SELECT a.account_id, a.user_id, a.email, u.email AS primary_email, f.id AS friendship_id
@@ -37,9 +40,9 @@ export default {
       LEFT JOIN chat_friendship f ON f.low_user_id=min(?,a.user_id) AND f.high_user_id=max(?,a.user_id) AND f.status='accepted'
       WHERE a.email=? COLLATE NOCASE AND a.is_del=0 AND a.status=0 AND u.is_del=0 AND u.status=0 AND a.user_id!=? LIMIT 1`
 			)
-			.bind(account.user_id, account.user_id, peers[0], account.user_id)
+			.bind(account.user_id, account.user_id, email.trim(), account.user_id)
 			.first();
-		return !row && !peer?.friendship_id ? null : peer;
+		return peer;
 	},
 	async status(c, account, key) {
 		const peer = await this.resolve(c, account, key);
@@ -333,6 +336,7 @@ export default {
 			.run();
 		return {
 			key,
+      internal: true,
 			peers: [peer.email.toLowerCase()],
 			latestId: 0,
 			unread: 0,
@@ -359,9 +363,8 @@ export default {
 			c.env.db
 				.prepare(
 					`INSERT INTO email(user_id,account_id,send_email,recipient,text,content,subject,type,status,unread,message_id,in_reply_to,conversation_key,conversation_peers,send_key)
-      SELECT ?,?,?,?,?,?,'站内聊天',1,2,1,?,?,?,?,? FROM chat_friendship f JOIN user a ON a.user_id=f.low_user_id JOIN user b ON b.user_id=f.high_user_id
-      JOIN account sender ON sender.account_id=? JOIN account receiver ON receiver.account_id=?
-      WHERE f.id=? AND f.status='accepted' AND a.status=0 AND a.is_del=0 AND b.status=0 AND b.is_del=0
+      SELECT ?,?,?,?,?,?,'站内聊天',1,2,1,?,?,?,?,? FROM account sender JOIN account receiver ON receiver.account_id=? JOIN user a ON a.user_id=sender.user_id JOIN user b ON b.user_id=receiver.user_id
+      WHERE sender.account_id=? AND a.status=0 AND a.is_del=0 AND b.status=0 AND b.is_del=0
       AND sender.user_id=? AND sender.status=0 AND sender.is_del=0 AND receiver.user_id=? AND receiver.status=0 AND receiver.is_del=0`
 				)
 				.bind(
@@ -376,9 +379,8 @@ export default {
 					ownKey,
 					JSON.stringify([peer.email.toLowerCase()]),
 					requestKey,
-					account.account_id,
 					peer.account_id,
-					peer.friendship_id,
+					account.account_id,
 					account.user_id,
 					peer.user_id
 				),
@@ -432,7 +434,7 @@ export default {
 			.prepare('SELECT email_id AS emailId FROM email WHERE send_key=?')
 			.bind(requestKey)
 			.first();
-		if (!saved) fail('Friendship changed', 403);
+		if (!saved) fail('Account unavailable', 403);
 		await notifyMail(c.env, account.user_id, peer.user_id);
 		return [saved];
 	}

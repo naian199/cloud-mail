@@ -15,7 +15,7 @@
           "
           >{{ t('mailChatContacts') }}</el-button
         >
-        <el-button v-perm="'email:send'" type="primary" size="small" @click="newOpen = true">{{
+        <el-button v-if="accounts.length" type="primary" size="small" @click="newOpen = true">{{
           t('mailChatNew')
         }}</el-button>
       </div>
@@ -695,7 +695,7 @@ const pendingRequests = new Map();
 const readThrough = new Map();
 const { connected } = useMailSync(sync);
 const { live, refreshLive, liveInput, stopTyping } = useMailLive(accountId, selected, connected);
-const canSend = computed(() => hasPerm('email:send') || live.value.friend);
+const canSend = computed(() => hasPerm('email:send') || live.value.internal || selected.value?.internal || messages.value.some(message => message.internal));
 const friendsOpen = ref(false),
   friends = ref([]),
   friendEmail = ref('');
@@ -1202,13 +1202,13 @@ async function send() {
     attachments: files[current] || [],
     replyAll: replyAll.value,
     quoteId: quoteTarget.value?.emailId || null,
-    instant: !!live.value.friend
+    instant: !!(live.value.internal || selected.value?.internal || messages.value.some(message => message.internal))
   });
   try {
     const result = await deliver(
       {
         accountId: a,
-        instant: !!live.value.friend,
+        instant: !!(live.value.internal || selected.value?.internal || messages.value.some(message => message.internal)),
         replyId: m.emailId,
         quote: !!quoteTarget.value,
         recipients,
@@ -1239,7 +1239,7 @@ async function sendNew() {
     payload = {
       accountId: a,
       recipients: newMail.to.split(/[,;，；\s]+/).filter(Boolean),
-      subject: newMail.subject,
+      subject: newMail.subject.trim() || t('mailChatDefaultSubject'),
       text: newMail.text,
       attachments: files[context] || []
     };

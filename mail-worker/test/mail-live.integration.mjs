@@ -86,9 +86,9 @@ await test(
 			sb2 = randomUUID();
 		let friendship, first;
 		await t.test(
-			'instant delivery keeps mutual friend authorization while normal mail permissions stay enforced',
+			'registered site users send directly while external mail permissions stay enforced',
 			async () => {
-				assert.equal((await instant(a, b, 'Before acceptance')).code, 403);
+				assert.equal((await instant(a, c, 'Before acceptance')).code, 200);
 				const req = await api('chat/friends', a, 'POST', { email: b.email });
 				assert.equal(req.code, 200);
 				friendship = req.data.id;
@@ -100,7 +100,7 @@ await test(
 					(
 						await api('mail-chat/send', a, 'POST', {
 							accountId: a.account,
-							recipients: [b.email],
+							recipients: ['outside@example.net'],
 							subject: 'Not permitted',
 							text: 'mail',
 							clientId: randomUUID()
@@ -127,7 +127,7 @@ await test(
 				assert.equal(incoming.length, 1);
 				assert.equal(incoming[0].replyText, 'Instant hello');
 				assert.equal(incoming[0].images.length, 1);
-				assert.equal((await instant(a, c, 'Not a friend')).code, 403);
+				assert.equal((await instant(a, c, 'Not a friend')).code, 200);
 				assert.equal(
 					(
 						await api('mail-chat/instant', c, 'POST', {

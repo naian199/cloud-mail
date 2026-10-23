@@ -62,7 +62,7 @@ jobs:
       - name: Verify language catalogs and translation logic
         run: |
           node scripts/check-locales.mjs
-          node --test mail-worker/test/mail-shared-links.test.mjs mail-worker/test/google-translation.test.mjs mail-worker/test/mail-conversations.test.mjs mail-worker/test/mail-chat-display.test.mjs mail-worker/test/browser-uuid.test.mjs
+          node --test mail-worker/test/transport-security.test.mjs mail-worker/test/mail-shared-links.test.mjs mail-worker/test/google-translation.test.mjs mail-worker/test/mail-conversations.test.mjs mail-worker/test/mail-chat-display.test.mjs mail-worker/test/browser-uuid.test.mjs
 
       - name: 🛠️ 设置环境 / Set up environment
         working-directory: ./mail-worker

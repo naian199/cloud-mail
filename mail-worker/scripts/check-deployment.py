@@ -36,6 +36,10 @@ def get(path):
     with urllib.request.urlopen(request, timeout=15) as response:
         if response.status != 200:
             raise RuntimeError('Unexpected HTTP status')
+        if not response.headers.get('Strict-Transport-Security'):
+            raise RuntimeError('HTTPS transport policy missing')
+        if path.startswith('api/') and 'no-store' not in response.headers.get('Cache-Control', '').lower():
+            raise RuntimeError('Private API cache protection missing')
         return response.read()
 
 for attempt in range(12):
@@ -52,7 +56,7 @@ for attempt in range(12):
         for endpoint in ['api/mail-chat/conversations?accountId=1', 'api/chat/socket']:
             if json.loads(get(endpoint)).get('code') != 401:
                 raise RuntimeError('Authentication protection check failed')
-        print('PASS: production frontend matches this build; entry assets, website configuration, and chat authentication checks passed.')
+        print('PASS: production frontend matches this build; entry assets, website configuration, chat authentication, HTTPS transport policy, and private API cache protection checks passed.')
         break
     except Exception as error:
         if attempt == 11:
