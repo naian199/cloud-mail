@@ -3,6 +3,7 @@ Never use this development script for user messages or runtime translation.
 """
 import concurrent.futures, json, re, subprocess, time, urllib.parse, urllib.request
 from pathlib import Path
+# Draft generation errors are saved on the isolated branch for review.
 source = json.loads(subprocess.check_output(['node','--input-type=module','-e',"import en from './mail-vue/src/i18n/en.js'; import server from './mail-worker/src/i18n/en.js'; import fs from 'node:fs'; const extra=JSON.parse(fs.readFileSync('shared/additional-interface-en.json')); const errors=Object.fromEntries(Object.entries(server).map(([k,v])=>['server_'+k,v.replace(/\{\{(\w+)\}\}/g,'{$1}')])); console.log(JSON.stringify({...en,...extra,...errors}))"], text=True))
 langs = ['zh-TW','ja','ko','fr','de','es','pt','ru','ar','hi','id','vi','th','tr','it','nl','uk','ms']
 path = Path('mail-vue/src/i18n/locales'); path.mkdir(exist_ok=True)

@@ -16,8 +16,11 @@ jobs:
         with:
           node-version: '24'
       - name: Generate public UI drafts
-        run: python scripts/generate-interface-locales.py
+        run: |
+          mkdir -p mail-vue/src/i18n/locales
+          python scripts/generate-interface-locales.py 2> mail-vue/src/i18n/locales/generation-error.txt
       - name: Save drafts on an isolated review branch
+        if: always()
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
