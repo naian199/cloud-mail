@@ -43,9 +43,11 @@
           :class="{ selected: selected?.key === c.key }"
           @click="select(c)"
         >
-          <span class="avatar" translate="no">{{ c.peers[0]?.[0]?.toUpperCase() || '@' }}</span>
+          <UserAvatar :profile="c.profile" :email="c.peers[0]" />
           <span class="contact-summary"
-            ><span class="peers" translate="no">{{ c.peers.join(', ') }}</span
+            ><span class="peers" translate="no" :title="c.peers.join(', ')">{{
+              c.profile?.displayName || c.peers.join(', ')
+            }}</span
             ><span class="preview">{{ c.preview || c.subject }}</span></span
           >
           <span class="contact-meta"
@@ -81,8 +83,17 @@
         <el-button class="back" text :aria-label="t('chatBack')" @click="closeThread"
           ><Icon icon="material-symbols:arrow-back-rounded" width="24"
         /></el-button>
+        <button
+          class="profile-button"
+          :aria-label="t('profileView')"
+          @click="viewProfile(selected.profile, selected.peers.join(', '))"
+        >
+          <UserAvatar :profile="selected.profile" :email="selected.peers[0]" />
+        </button>
         <div class="thread-title">
-          <strong translate="no">{{ selected.peers.join(', ') }}</strong
+          <strong translate="no" :title="selected.peers.join(', ')">{{
+            selected.profile?.displayName || selected.peers.join(', ')
+          }}</strong
           ><span v-if="live.internal" class="live-status" :class="{ online: live.online }">{{
             live.typing
               ? t('mailChatTyping')
@@ -119,6 +130,16 @@
             :class="{ mine: m.type === 1, external: !isChat(m) }"
             :data-email-id="m.emailId"
           >
+            <button
+              class="profile-button message-avatar"
+              :aria-label="t('profileView')"
+              @click="viewProfile(m.type === 1 ? user.user.profile : m.profile, m.sendEmail)"
+            >
+              <UserAvatar
+                :profile="m.type === 1 ? user.user.profile : m.profile"
+                :email="m.sendEmail"
+              />
+            </button>
             <div
               class="bubble"
               :class="{ 'internal-bubble': isChat(m) }"
@@ -381,6 +402,14 @@
     >
       <img :src="imagePreview" :alt="t('mailChatImage')" referrerpolicy="no-referrer" />
     </el-dialog>
+    <el-dialog v-model="profileOpen" :title="t('profile')" width="min(380px, calc(100% - 24px))">
+      <div class="profile-card">
+        <UserAvatar :profile="shownProfile" :email="shownProfile.email" :size="72" />
+        <h3>{{ shownProfile.displayName || shownProfile.email }}</h3>
+        <p translate="no">{{ shownProfile.email }}</p>
+        <p>{{ shownProfile.bio || t('profileNoBio') }}</p>
+      </div>
+    </el-dialog>
   </section>
 </template>
 
@@ -389,6 +418,8 @@ import { randomUUID } from '@/utils/uuid';
 
 import { computed, nextTick, onMounted, onBeforeUnmount, reactive, ref, watch } from 'vue';
 import MailBody from '@/components/mail-body.vue';
+import UserAvatar from '@/components/user-avatar.vue';
+import { useRoute, useRouter } from 'vue-router';
 import { Icon } from '@iconify/vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { useI18n } from 'vue-i18n';
@@ -415,6 +446,14 @@ import { fileToBase64, formatBytes } from '@/utils/file-utils';
 import { mailDate, showChatTime, chatTimeLabel } from '@/utils/mail-chat-display';
 
 const { t, locale } = useI18n();
+const route = useRoute(),
+  router = useRouter();
+const profileOpen = ref(false),
+  shownProfile = ref({});
+function viewProfile(profile, email) {
+  shownProfile.value = { ...profile, email };
+  profileOpen.value = true;
+}
 const user = useUserStore(),
   accountStore = useAccountStore();
 const accountId = ref(accountStore.currentAccountId || user.user.account.accountId);
@@ -1096,6 +1135,33 @@ watch(search, () => {
     sync();
   }, 300);
 });
+let openingLink = false;
+watch(
+  [() => route.query.accountId, () => route.query.conversation, accounts, conversations],
+  async () => {
+    const requested = Number(route.query.accountId),
+      key = route.query.conversation;
+    if (
+      openingLink ||
+      !requested ||
+      !accounts.value.some((account) => account.accountId === requested)
+    )
+      return;
+    if (accountId.value !== requested) {
+      switchMailbox(requested);
+      return;
+    }
+    const found = conversations.value.find((conversation) => conversation.key === key);
+    if (!found) return;
+    openingLink = true;
+    try {
+      if (selected.value?.key !== found.key) await select(found);
+      await router.replace({ path: '/mail-chat', query: {} });
+    } finally {
+      openingLink = false;
+    }
+  }
+);
 onMounted(async () => {
   document.addEventListener('keydown', menuEscape);
   if (hasPerm('account:query')) {
@@ -1292,11 +1358,41 @@ onBeforeUnmount(() => {
   margin: 16px;
 }
 .mail-message {
+  position: relative;
+  padding-left: 48px;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   margin: 16px 0;
   min-width: 0;
+}
+.mail-message.mine {
+  padding-left: 0;
+  padding-right: 48px;
+}
+.profile-button {
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.message-avatar {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+.mine .message-avatar {
+  left: auto;
+  right: 0;
+}
+.profile-card {
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+.profile-card p {
+  margin-top: 12px;
+  white-space: pre-wrap;
 }
 .bubble {
   max-width: min(72%, 640px);

@@ -2,23 +2,7 @@
   <div class="box">
     <div class="container">
       <div class="title">{{$t('profile')}}</div>
-      <div class="item">
-        <div>{{$t('username')}}</div>
-        <div>
-          <span v-if="setNameShow" class="edit-name-input">
-            <el-input v-model="accountName"  ></el-input>
-            <span class="edit-name" @click="setName">
-             {{$t('save')}}
-            </span>
-          </span>
-          <span v-else class="user-name">
-            <span >{{ userStore.user.name }}</span>
-            <span class="edit-name" @click="showSetName">
-             {{$t('change')}}
-            </span>
-          </span>
-        </div>
-      </div>
+      <ProfileEditor />
       <div class="item">
         <div>{{$t('emailAccount')}}</div>
         <div>{{ userStore.user.email }}</div>
@@ -65,62 +49,19 @@ import {reactive, ref, defineOptions} from 'vue'
 import {resetPassword, userDelete} from "@/request/my.js";
 import {useUserStore} from "@/store/user.js";
 import router from "@/router/index.js";
-import {accountSetName} from "@/request/account.js";
-import {useAccountStore} from "@/store/account.js";
+import ProfileEditor from '@/components/profile-editor.vue';
 import {useI18n} from "vue-i18n";
 import {useSettingStore} from "@/store/setting.js";
 
 const { t } = useI18n()
-const accountStore = useAccountStore()
 const settingStore = useSettingStore()
 const userStore = useUserStore();
 const setPwdLoading = ref(false)
-const setNameShow = ref(false)
-const accountName = ref(null)
 const langSelect = ref(settingStore.lang)
 
 defineOptions({
   name: 'setting'
 })
-
-function showSetName() {
-  accountName.value = userStore.user.name
-  setNameShow.value = true
-}
-
-function setName() {
-
-  if (!accountName.value) {
-    ElMessage({
-      message: t('emptyUserNameMsg'),
-      type: 'error',
-      plain: true,
-    })
-    return;
-  }
-
-  setNameShow.value = false
-  let name = accountName.value
-
-  if (name === userStore.user.name) {
-    return
-  }
-
-  userStore.user.name = accountName.value
-
-  accountSetName(userStore.user.account.accountId,name).then(() => {
-    ElMessage({
-      message: t('saveSuccessMsg'),
-      type: 'success',
-      plain: true,
-    })
-
-    accountStore.changeUserAccountName = name
-
-  }).catch(() => {
-    userStore.user.name = name
-  })
-}
 
 function changeLang(lang) {
   let setting = {}
@@ -210,6 +151,9 @@ function submitPwd() {
 <style scoped lang="scss">
 .box {
   padding: 40px 40px;
+  overflow-y: auto;
+  min-height: 0;
+  box-sizing: border-box;
 
   @media (max-width: 767px) {
     padding: 30px 30px;

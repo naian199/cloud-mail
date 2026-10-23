@@ -2,6 +2,11 @@ import app from '../hono/hono';
 import userService from '../service/user-service';
 import result from '../model/result';
 import userContext from '../security/user-context';
+import profile from '../service/profile-service';
+
+app.get('/my/profile', async (c) => c.json(result.ok(await profile.get(c))));
+app.put('/my/profile', async (c) => c.json(result.ok(await profile.save(c, await c.req.json()))));
+app.get('/my/notifications', async (c) => c.json(result.ok(await profile.alerts(c, c.req.query()))));
 
 app.get('/my/loginUserInfo', async (c) => {
 	const user = await userService.loginUserInfo(c, userContext.getUserId(c));

@@ -22,7 +22,7 @@
       <el-dropdown ref="userinfoRef" @visible-change="e => userInfoShow = e" :teleported="false" popper-class="detail-dropdown">
         <div class="avatar" @click="userInfoHide" >
           <div class="avatar-text">
-            <div>{{ formatName(userStore.user.email) }}</div>
+            <UserAvatar :profile="userStore.user.profile" :email="userStore.user.email" :size="32" />
           </div>
           <Icon class="setting-icon" icon="mingcute:down-small-fill" width="24" height="24"/>
         </div>
@@ -32,7 +32,7 @@
               {{ formatName(userStore.user.email) }}
             </div>
             <div class="user-name">
-              {{ userStore.user.name }}
+              {{ userStore.user.profile?.displayName || userStore.user.name }}
             </div>
             <div class="detail-email" @click="copyEmail(userStore.user.email)">
               {{ userStore.user.email }}
@@ -73,6 +73,7 @@
 </template>
 
 <script setup>
+import UserAvatar from '@/components/user-avatar.vue';
 import router from "@/router";
 import hanburger from '@/components/hamburger/index.vue'
 import {logout} from "@/request/login.js";

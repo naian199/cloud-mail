@@ -2,6 +2,7 @@ import BizError from '../error/biz-error';
 import userContext from '../security/user-context';
 import emailService from './email-service';
 import live from './mail-live-service';
+import { profilesFor } from './profile-service';
 import { redactRemovedQuotes } from './removed-mail-service';
 import {
 	addresses,
@@ -134,12 +135,20 @@ const mailChat = {
 			)
 			.bind(account.user_id, account.account_id)
 			.all();
+		const profiles = await profilesFor(c, [
+			...results.flatMap((row) => addresses(row.peers)),
+			...contacts.map((row) => row.peer_email)
+		]);
 		return {
-			conversations: results.slice(0, 30).map((row) => ({ ...row, peers: addresses(row.peers) })),
+			conversations: results.slice(0, 30).map((row) => ({
+				...row, peers: addresses(row.peers),
+				profile: addresses(row.peers).length === 1 ? profiles.get(addresses(row.peers)[0]) : null
+			})),
 			contacts: !query.before
 				? contacts.map((r) => ({
 						key: r.key,
 						peers: [r.peer_email],
+						profile: profiles.get(r.peer_email.toLowerCase()),
 						latestId: 0,
 						unread: 0,
 						preview: '',
@@ -212,6 +221,7 @@ const mailChat = {
 		}
 		await redactRemovedQuotes(c, messages, 'htmlPreview');
 		const peer = await live.resolve(c, account, conversationKey);
+		const profiles = await profilesFor(c, messages.map((row) => row.sendEmail));
 		// Own-mailbox conversations use chat presentation too, without peer presence or deletion rights.
 		const peers = addresses(messages[0]?.conversationPeers);
 		const ownPeer =
@@ -224,6 +234,7 @@ const mailChat = {
 						.first()
 				: null;
 		for (const row of messages) {
+			row.profile = profiles.get(row.sendEmail?.toLowerCase());
 			row.internal = !!peer;
 			row.chatStyle = !!peer || !!ownPeer;
 			if (!row.chatStyle && row.htmlPreview)

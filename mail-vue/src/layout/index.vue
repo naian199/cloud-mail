@@ -28,6 +28,9 @@ import Main from '@/layout/main/index.vue'
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 import {useUiStore} from "@/store/ui.js";
 import writer from '@/layout/write/index.vue'
+import { useMessageAlerts } from '@/composables/use-message-alerts';
+
+useMessageAlerts();
 
 const uiStore = useUiStore();
 const writerRef = ref({})

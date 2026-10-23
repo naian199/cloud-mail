@@ -67,6 +67,8 @@ test('schema gate handles concurrent first requests, preserves mail, and caches 
 		"PRAGMA foreign_keys=ON;CREATE TABLE user(user_id INTEGER PRIMARY KEY);CREATE TABLE account(account_id INTEGER PRIMARY KEY);CREATE TABLE email(email_id INTEGER PRIMARY KEY,user_id INTEGER,account_id INTEGER,subject TEXT,type INTEGER,message_id TEXT);INSERT INTO email VALUES(1,1,1,'original',0,'<old@test>');"
 	);
 	let queries = 0;
+	// Existing deployments have the v2 marker and must still receive the new profile table.
+	sqlite.exec('CREATE TABLE mail_chat_schema_v2(id INTEGER PRIMARY KEY)');
 	const db = {
 		prepare(sql) {
 			queries++;
@@ -93,6 +95,7 @@ test('schema gate handles concurrent first requests, preserves mail, and caches 
 	};
 	try {
 		await Promise.all([ensureMailChat({ db }), ensureMailChat({ db })]);
+		assert(sqlite.prepare("SELECT name FROM sqlite_master WHERE name='mail_user_profile'").get());
 		const readyQueries = queries;
 		await ensureMailChat({ db });
 		assert.equal(queries, readyQueries);

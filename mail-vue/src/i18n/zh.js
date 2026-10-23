@@ -1,4 +1,23 @@
 const zh = {
+    profileMessagesCount: '收到 {count} 条新消息',
+
+    profileUpload: "上传头像",
+    profileRemoveAvatar: "移除头像",
+    profileNickname: "昵称",
+    profileBio: "个人简介",
+    profileShared: "头像、昵称和简介会展示给与你交流的用户。",
+    profileAlerts: "消息提醒",
+    profileWebAlerts: "接收网页内新消息提醒",
+    profileEnableBrowser: "开启系统通知",
+    profileBrowserGranted: "系统通知已允许。网页保持运行时，可在切换标签页后提醒。",
+    profileBrowserDenied: "系统通知已被阻止，可在浏览器的网站设置中允许。",
+    profileBrowserHint: "网页内可实时提醒。iPhone 的系统通知需将网站添加到主屏幕；关闭网页后的离线推送暂不支持。",
+    profileImageLimit: "请选择小于5MB的 PNG、JPEG 或 WebP 图片",
+    profileView: "查看个人资料",
+    profileNoBio: "还没有填写简介",
+    profileNewMessage: "新消息",
+    profileMessageFrom: "{name} 发来新消息",
+
     mailChatImage: "图片",
     mailChatImageError: "图片加载失败",
     mailChatImageRetry: "重新加载图片",

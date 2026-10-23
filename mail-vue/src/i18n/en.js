@@ -1,4 +1,23 @@
 const en = {
+    profileMessagesCount: '{count} new messages received',
+
+    profileUpload: "Upload avatar",
+    profileRemoveAvatar: "Remove avatar",
+    profileNickname: "Display name",
+    profileBio: "About me",
+    profileShared: "Your avatar, name and bio are visible to people you talk to.",
+    profileAlerts: "Message alerts",
+    profileWebAlerts: "Show new message alerts",
+    profileEnableBrowser: "Enable system notifications",
+    profileBrowserGranted: "System notifications enabled while the website is running.",
+    profileBrowserDenied: "Allow notifications in your browser site settings.",
+    profileBrowserHint: "Live alerts work in the website. iPhone system notifications require adding the site to the Home Screen. Offline push after closing the site is not supported.",
+    profileImageLimit: "Choose a PNG, JPEG or WebP image under 5MB",
+    profileView: "View profile",
+    profileNoBio: "No bio yet",
+    profileNewMessage: "New message",
+    profileMessageFrom: "New message from {name}",
+
     mailChatImage: "Image",
     mailChatImageError: "Image could not load",
     mailChatImageRetry: "Retry image",

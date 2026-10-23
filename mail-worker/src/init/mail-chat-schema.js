@@ -1,4 +1,4 @@
-export const MAIL_CHAT_SCHEMA_MARKER = 'mail_chat_schema_v2';
+export const MAIL_CHAT_SCHEMA_MARKER = 'mail_chat_schema_v3';
 
 export async function migrateMailChat(db) {
 	const { results } = await db.prepare('PRAGMA table_info(email)').all();
@@ -25,6 +25,10 @@ export async function migrateMailChat(db) {
 		}
 	}
 	await db.batch([
+		db.prepare(`CREATE TABLE IF NOT EXISTS mail_user_profile (
+      user_id INTEGER PRIMARY KEY REFERENCES user(user_id) ON DELETE CASCADE,
+      display_name TEXT NOT NULL DEFAULT '', bio TEXT NOT NULL DEFAULT '', avatar TEXT NOT NULL DEFAULT ''
+    )`),
 		...(attachmentTables.length
 			? [db.prepare('CREATE INDEX IF NOT EXISTS idx_mail_attachment_key ON attachments(key)')]
 			: []),

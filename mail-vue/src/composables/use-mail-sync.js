@@ -1,7 +1,7 @@
 import { ref, onMounted, onBeforeUnmount } from 'vue';
 import { openChatSocket } from '@/request/chat';
 
-export function useMailSync(refresh) {
+export function useMailSync(refresh, { background = false } = {}) {
   const connected = ref(false);
   let stopped = false,
     socket,
@@ -11,7 +11,7 @@ export function useMailSync(refresh) {
     delay = 1000,
     pong = 0;
   const sync = () => {
-    if (!stopped && !document.hidden) Promise.resolve(refresh()).catch(() => {});
+    if (!stopped && (background || !document.hidden)) Promise.resolve(refresh()).catch(() => {});
   };
   function connect() {
     if (stopped || !localStorage.getItem('token')) return;

@@ -20,6 +20,7 @@ import {oauth} from "../entity/oauth";
 import oauthService from "./oauth-service";
 import settingService from './setting-service';
 import starService from './star-service';
+import profileService from './profile-service';
 
 const userService = {
 
@@ -43,6 +44,7 @@ const userService = {
 		user.email = userRow.email;
 		user.account = account;
 		user.name = account.name;
+		user.profile = await profileService.get(c);
 		user.permKeys = permKeys;
 		user.role = roleRow;
 		user.type = userRow.type;

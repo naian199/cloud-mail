@@ -45,6 +45,14 @@
 
 生产验证需要使用获准的测试邮箱，检查站外投递、邮件客户端线程关联、投递回调及 Cloudflare Email Routing 的真实来信。仅本地通过不代表站外邮件服务已验证。
 
+## 头像、个人资料与消息提醒
+
+个人设置中可上传头像、填写昵称及200字以内的简介。头像在浏览器居中裁剪为256像素 JPEG，服务端限制为64KB并拒绝SVG；公开资料只包含昵称、头像、简介及已有会话中使用的邮箱。会话列表、聊天头像及头像资料卡使用该资料。数据库通过v3标记自动补充资料表，保留原有邮件、好友及删除记录。
+
+登录后各页面使用现有WebSocket接收更新，再通过认证的`/my/notifications`增量查询当前用户的新收件。首次打开不弹出历史未读邮件；发送记录、已读及已删除邮件不触发提醒。点击提醒打开对应邮箱和会话。个人设置可关闭提醒，系统通知权限仅在用户点击按钮时申请；不在通知中展示邮件正文。
+
+网页保持运行时支持网页内提示、后台标签页标题及浏览器允许的系统通知。iPhone系统通知通常需添加网站到主屏幕；当前没有在网页关闭后的Web Push服务，不能保证锁屏或关闭网页后的提醒。
+
 ## 本地测试
 
 Node.js 24、pnpm 11，启动并初始化使用本地 D1/KV/Durable Objects 的 Wrangler，前端使用 Vite。测试只允许环回地址，不会发出站外邮件。
@@ -52,7 +60,7 @@ Node.js 24、pnpm 11，启动并初始化使用本地 D1/KV/Durable Objects 的 
 ```sh
 node --test test/mail-conversations.test.mjs
 MAIL_CHAT_TEST_SQLITE=/absolute/path/to/local-d1.sqlite \
-  node --test --test-concurrency=1 test/mail-chat.integration.mjs test/mail-live.integration.mjs test/mail-chat-display.test.mjs test/mail-presentation.integration.mjs
+  node --test --test-concurrency=1 test/mail-chat.integration.mjs test/mail-live.integration.mjs test/mail-chat-display.test.mjs test/mail-presentation.integration.mjs test/profile-alerts.integration.mjs
 ```
 
 以上命令在 `mail-worker` 目录执行。`MAIL_CHAT_TEST_SQLITE` 指向当前本地 Wrangler 的 D1 SQLite 文件；默认在本地持久化目录的 `v3/d1/miniflare-D1DatabaseObject/` 下，选择包含 `user` 表的数据库，不要使用 `metadata.sqlite`。集成测试创建独立的本地测试角色与随机邮箱，不修改默认角色；测试数据保留在本地数据库。
