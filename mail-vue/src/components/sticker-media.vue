@@ -9,7 +9,7 @@
       muted
       playsinline
       :aria-label="label"
-      @error="failed = true"
+      @error="fail"
     />
     <div
       v-else-if="format === 'tgs' && !failed"
@@ -27,6 +27,8 @@ const props = defineProps({
   format: String,
   label: String
 });
+const emit = defineEmits(['error']);
+function fail() { failed.value = true; emit('error'); }
 const host = ref(null),
   animationHost = ref(null),
   url = ref(''),
@@ -118,7 +120,7 @@ async function start() {
       );
     }
   } catch {
-    if (!disposed) failed.value = true;
+    if (!disposed) fail();
   } finally {
     if (!disposed) loading.value = false;
   }

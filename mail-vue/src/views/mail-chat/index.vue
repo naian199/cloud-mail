@@ -224,8 +224,8 @@
                 <span v-else>{{ t('mailChatImageLoading') }}</span>
               </div>
               <div v-for="att in m.attachments" :key="att.attId" class="attachment">
-                <StickerMedia v-if="/\.(tgs|webm)$/i.test(att.filename)" :format="att.filename.toLowerCase().endsWith('.tgs') ? 'tgs' : 'webm'" :label="'🙂'" :load="()=>mailAttachment(att.attId)" />
-                <el-button text @click="download(att)">
+                <StickerMedia v-if="/\.(tgs|webm)$/i.test(att.filename)" :format="att.filename.toLowerCase().endsWith('.tgs') ? 'tgs' : 'webm'" :label="'🙂'" :load="()=>mailAttachment(att.attId)" @error="stickerErrors[att.attId] = true" />
+                <el-button v-if="! /\.(tgs|webm)$/i.test(att.filename) || stickerErrors[att.attId]" text @click="download(att)">
                   <Icon icon="cloud-mail:file" width="26" aria-hidden="true" />
                   <span class="attachment-detail"><strong>{{ att.filename }}</strong><small>{{ formatBytes(att.size) }}</small></span>
                 </el-button
@@ -637,6 +637,7 @@ async function menuAction(action) {
 function menuEscape(event) {
   if (event.key === 'Escape') closeMenu();
 }
+const stickerErrors = reactive({});
 const imagePreview = ref('');
 const imageUrls = reactive({}),
   imageErrors = reactive({});
