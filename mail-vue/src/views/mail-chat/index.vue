@@ -82,7 +82,7 @@
         @pointercancel="cancelPress"
       >
         <el-button class="back" text :aria-label="t('chatBack')" @click="closeThread"
-          ><Icon icon="material-symbols:arrow-back-rounded" width="24"
+          ><Icon icon="cloud-mail:back" width="24"
         /></el-button>
         <button
           class="profile-button"
@@ -144,7 +144,7 @@
             <div
               class="bubble"
               :class="{ 'internal-bubble': isChat(m) }"
-              :tabindex="m.internal ? 0 : undefined"
+              :tabindex="0"
               @contextmenu="openMessageMenu($event, m)"
               @pointerdown="startPress($event, m)"
               @pointermove="movePress"
@@ -221,11 +221,13 @@
                 <span v-else>{{ t('mailChatImageLoading') }}</span>
               </div>
               <div v-for="att in m.attachments" :key="att.attId" class="attachment">
-                <el-button text @click="download(att)"
-                  >{{ att.filename }} · {{ formatBytes(att.size) }}</el-button
+                <el-button text @click="download(att)">
+                  <Icon icon="cloud-mail:file" width="26" aria-hidden="true" />
+                  <span class="attachment-detail"><strong>{{ att.filename }}</strong><small>{{ formatBytes(att.size) }}</small></span>
+                </el-button
                 >
               </div>
-              <MessageTranslation v-if="(m.replyText ?? m.text)?.trim()" :email-id="m.emailId" :text="m.replyText ?? m.text" :chat-style="isChat(m)" :incoming="m.type !== 1" />
+              <MessageTranslation :ref="el => setTranslationRef(m.emailId, el)" v-if="(m.replyText ?? m.text)?.trim()" :email-id="m.emailId" :text="m.replyText ?? m.text" :chat-style="isChat(m)" :incoming="m.type !== 1" />
             </div>
             <span
               v-if="live.internal && m.type === 1 && m.read !== undefined"
@@ -285,7 +287,7 @@
             native-type="submit"
             :loading="sending"
             :disabled="(!drafts[draftKey]?.trim() && !files[draftKey]?.length) || messageLoading"
-            >{{ t('mailChatSend') }}</el-button
+            ><Icon icon="cloud-mail:send" width="19" aria-hidden="true" /><span>{{ t('mailChatSend') }}</span></el-button
           >
         </div>
       </form>
@@ -367,25 +369,28 @@
           @contextmenu.prevent
         >
           <button v-if="messageMenu.message" role="menuitem" @click="menuAction('copy')">
-            {{ t('mailChatCopy') }}
+            <Icon icon="cloud-mail:copy" width="20" aria-hidden="true" />{{ t('mailChatCopy') }}
           </button>
           <button
             v-if="messageMenu.message && canSend"
             role="menuitem"
             @click="menuAction('quote')"
           >
-            {{ t('mailChatQuoteReply') }}
+            <Icon icon="cloud-mail:reply" width="20" aria-hidden="true" />{{ t('mailChatQuoteReply') }}
+          </button>
+          <button v-if="messageMenu.message && (messageMenu.message.replyText ?? messageMenu.message.text)?.trim()" role="menuitem" @click="menuAction('translate')">
+            <Icon icon="cloud-mail:translate" width="20" aria-hidden="true" />{{ t('translateTitle') }}
           </button>
           <button
-            v-if="messageMenu.message"
+            v-if="live.internal && messageMenu.message?.internal"
             role="menuitem"
             class="danger"
             @click="menuAction('delete')"
           >
-            {{ t('mailChatDeleteBoth') }}
+            <Icon icon="cloud-mail:delete" width="20" aria-hidden="true" />{{ t('mailChatDeleteBoth') }}
           </button>
           <button
-            v-if="messages.length"
+            v-if="live.internal && messages.length"
             role="menuitem"
             class="danger"
             @click="menuAction('clear')"
@@ -421,6 +426,7 @@ import { randomUUID } from '@/utils/uuid';
 import { computed, nextTick, onMounted, onBeforeUnmount, reactive, ref, watch } from 'vue';
 import MailBody from '@/components/mail-body.vue';
 import UserAvatar from '@/components/user-avatar.vue';
+import '@/icons/chat';
 import MessageTranslation from '@/components/message-translation.vue';
 import AutoTranslationSettings from '@/components/auto-translation-settings.vue';
 import { useRoute, useRouter } from 'vue-router';
@@ -513,6 +519,11 @@ let version = 0,
   searchTimer,
   indexTimer;
 const messageMenu = ref(null);
+const translationRefs = new Map();
+function setTranslationRef(id, element) {
+  if (element) translationRefs.set(id, element);
+  else translationRefs.delete(id);
+}
 let pressTimer,
   pressStart,
   suppressUntil = 0;
@@ -524,7 +535,8 @@ function cancelPress() {
   pressStart = null;
 }
 function startPress(event, message) {
-  if (!live.value.internal || event.pointerType !== 'touch') return;
+  if ((!message && !live.value.internal) || event.pointerType !== 'touch') return;
+  if (event.target?.closest('button, a, input, textarea, select, .message-translation')) return;
   cancelPress();
   pressStart = { x: event.clientX, y: event.clientY };
   pressTimer = setTimeout(() => {
@@ -543,7 +555,7 @@ function suppressAfterPress(event) {
   }
 }
 function openMessageMenu(event, message) {
-  if (!live.value.internal) return;
+  if (!message && !live.value.internal) return;
   event.preventDefault();
   cancelPress();
   const box = event.currentTarget?.getBoundingClientRect();
@@ -552,7 +564,7 @@ function openMessageMenu(event, message) {
   messageMenu.value = {
     message,
     x: Math.max(8, Math.min(x, innerWidth - 210)),
-    y: Math.max(8, Math.min(y, innerHeight - 190))
+    y: Math.max(8, Math.min(y, innerHeight - 250))
   };
 }
 async function menuAction(action) {
@@ -561,10 +573,12 @@ async function menuAction(action) {
   if (action === 'copy') {
     try {
       await navigator.clipboard.writeText(message.replyText || message.text || '');
-    } catch {}
+      ElMessage.success(t('copySuccessMsg'));
+    } catch { ElMessage.error(t('copyFailMsg')); }
     return;
   }
-  if (action === 'quote') quoteMessage(message);
+  if (action === 'translate') translationRefs.get(message.emailId)?.open();
+  else if (action === 'quote') quoteMessage(message);
   else if (action === 'delete') removeBoth(message);
   else if (action === 'clear') removeBoth();
 }
@@ -1704,5 +1718,75 @@ pre {
   .composer-footer > span {
     display: none;
   }
+}
+
+/* Chat surface; external email content continues to use its original mail card. */
+.mail-chat {
+  --chat-canvas: #eaf1f5;
+  --chat-accent: #248bce;
+  --chat-outgoing: #e0f2ff;
+  --chat-incoming: var(--el-bg-color-overlay);
+  --chat-shadow: 0 1px 2px rgba(24, 55, 78, .09);
+  grid-template-columns: 330px minmax(0, 1fr);
+}
+:global(html.dark) .mail-chat {
+  --chat-canvas: #101c28;
+  --chat-accent: #63b3ed;
+  --chat-outgoing: #234864;
+  --chat-incoming: #20303f;
+  --chat-shadow: 0 1px 2px rgba(0, 0, 0, .18);
+}
+.conversations { background: var(--el-bg-color); }
+.contact { padding: 12px; min-height: 72px; border-radius: 10px; width: calc(100% - 12px); margin: 2px 6px; }
+.contact.selected { background: var(--el-color-primary); color: white; }
+.contact.selected .preview, .contact.selected .contact-meta { color: rgba(255,255,255,.85); }
+.contact.selected .badge { background: white; color: var(--el-color-primary); }
+.contact :deep(.user-avatar) { width: 46px !important; height: 46px !important; font-size: 18px; }
+.mail-chat :deep(.user-avatar) { border-radius: 50%; border: 0; font-weight: 600; }
+.peers { font-weight: 600; font-size: 14px; }
+.badge { background: var(--el-color-primary); min-width: 20px; text-align: center; line-height: 20px; padding: 0 5px; }
+.thread, .empty-thread { background: var(--chat-canvas); }
+.thread-header { background: var(--el-bg-color); min-height: 64px; padding-inline: 18px; z-index: 1; }
+.thread-title strong { font-size: 15px; line-height: 24px; }
+.thread-title span { font-size: 12px; }
+.messages { padding: 8px clamp(12px, 3vw, 44px) 20px; scroll-padding-block: 20px; }
+.date-divider { width: fit-content; max-width: 90%; margin: 16px auto; padding: 4px 12px; border-radius: 20px; background: var(--el-bg-color-overlay); box-shadow: var(--chat-shadow); font-size: 11px; }
+.mail-message { margin: 8px 0; padding-left: 46px; }
+.message-avatar { top: auto; bottom: 0; }
+.bubble { padding: 9px 12px; border-radius: 15px 15px 15px 5px; background: var(--chat-incoming); box-shadow: var(--chat-shadow); line-height: 1.6; max-width: min(82%, 640px); }
+.mail-message.mine { padding-right: 46px; }
+.mail-message.mine .internal-bubble { background: var(--chat-outgoing); color: var(--el-text-color-primary); border-radius: 15px 15px 5px 15px; }
+.body-text { margin: 0; font-size: 14px; }
+.quote-card, .compose-quote { border-inline-start: 3px solid var(--chat-accent); background: var(--el-color-primary-light-9); border-radius: 5px; }
+.quote-card strong, .compose-quote strong { color: var(--chat-accent); }
+.read-receipt { color: var(--chat-accent); padding-inline: 4px; }
+.attachment .el-button { display: flex; align-items: center; gap: 10px; border-radius: 10px; padding: 10px; background: var(--el-color-primary-light-9); }
+.attachment-detail { display: grid; gap: 2px; text-align: start; min-width: 0; }
+.attachment-detail strong { white-space: normal; overflow-wrap: anywhere; font-weight: 500; }
+.attachment-detail small { color: var(--el-text-color-secondary); }
+.composer { background: var(--el-bg-color); padding: 12px 20px max(12px, env(safe-area-inset-bottom)); }
+.composer :deep(.el-textarea__inner) { border-radius: 14px; padding: 12px 14px; background: var(--el-fill-color-extra-light); }
+.composer-footer .el-button { border-radius: 22px; gap: 7px; }
+.composer-footer .el-button :deep(> span) { gap: 7px; }
+.attach-label { display: inline-flex; align-items: center; min-height: 36px; padding-inline: 4px; }
+.quote-card:focus-visible, .profile-button:focus-visible, .contact:focus-visible { outline: 2px solid var(--chat-accent); outline-offset: 2px; }
+.external .bubble { box-shadow: var(--chat-shadow); }
+.mail-message.mine.external .bubble { background: var(--el-bg-color); color: var(--el-text-color-primary); }
+:global(.mail-message-menu) { border-radius: 14px; padding: 6px; }
+:global(.mail-message-menu button) { display: flex; align-items: center; gap: 10px; border-radius: 8px; min-height: 44px; text-align: start; }
+@media (max-width: 767px) {
+  .mail-chat { grid-template-columns: minmax(0, 1fr); }
+  .thread-header { min-height: 60px; padding: 6px 10px; gap: 8px; }
+  .thread-title strong { font-size: 14px; }
+  .messages { padding: 6px 10px 14px; }
+  .mail-message { padding-left: 34px; }
+  .mail-message.mine { padding-right: 0; }
+  .message-avatar :deep(.user-avatar) { width: 28px !important; height: 28px !important; font-size: 12px; }
+  .mine .message-avatar { display: none; }
+  .bubble { max-width: 92%; padding: 8px 11px; }
+  .external .bubble { max-width: 100%; padding: 0; }
+  .composer { padding: 8px 10px max(8px, env(safe-area-inset-bottom)); }
+  .composer :deep(.el-textarea__inner) { min-height: 48px; }
+  .composer-footer { margin-top: 5px; }
 }
 </style>

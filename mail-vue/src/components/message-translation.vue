@@ -1,8 +1,19 @@
 <template>
-  <div ref="element" class="message-translation" @pointerdown.stop @contextmenu.stop>
-    <el-button text size="small" :aria-label="t('translateTitle')" @click="toggle">{{
-      t('translateTitle')
-    }}</el-button>
+  <div
+    ref="element"
+    class="message-translation"
+    :class="{ 'translation-empty': chatStyle && !opened && !result && !error }"
+    @pointerdown.stop
+    @contextmenu.stop
+  >
+    <el-button
+      v-if="!chatStyle"
+      text
+      size="small"
+      :aria-label="t('translateTitle')"
+      @click="toggle"
+      >{{ t('translateTitle') }}</el-button
+    >
     <div v-if="opened" class="translation-controls">
       <p v-if="!config?.enabled" role="status">
         {{ t('translateNotEnabled') }}
@@ -79,6 +90,12 @@ async function toggle() {
     }
   }
 }
+defineExpose({
+  open: async () => {
+    if (!opened.value) await toggle();
+    element.value?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  }
+});
 async function translate(automatic = false) {
   if ((!consent.value && automatic !== true) || loading.value) return;
   error.value = '';
@@ -113,7 +130,8 @@ async function translate(automatic = false) {
           : 'translateErrorProvider');
     if (
       automatic === true &&
-      !stopped && revision === generation &&
+      !stopped &&
+      revision === generation &&
       ['translateErrorQuota', 'translateErrorDisabled', 'translateErrorKey'].includes(error.value)
     ) {
       autoTranslation.enabled = false;
@@ -181,6 +199,10 @@ onBeforeUnmount(() => {
 .message-translation {
   margin-top: 8px;
   min-width: 0;
+}
+.translation-empty {
+  margin-top: 0;
+  height: 1px;
 }
 .translation-controls {
   display: flex;
