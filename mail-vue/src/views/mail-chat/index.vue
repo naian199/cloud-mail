@@ -4,45 +4,28 @@
       <div ref="contactScroll" class="conversation-list" @scroll.passive="contactListScroll" @keydown.home="restoreContactControls">
       <div v-if="compactChat" ref="contactHeaderHost" class="contact-header-host"></div>
       <div ref="contactControls" class="contact-controls">
-      <div class="list-title">
-        <h2>{{ t('mailChatTitle') }}</h2>
-        <el-button
-          text
-          size="small"
-          @click="
-            friendsOpen = true;
-            loadFriends();
-          "
-          >{{ t('mailChatContacts') }}</el-button
-        >
-        <el-button v-if="accounts.length" type="primary" size="small" @click="newOpen = true">{{
-          t('mailChatNew')
-        }}</el-button>
-      </div>
-      <el-select
-        class="mailbox-select"
-        :model-value="accountId"
-        :aria-label="t('mailChatMailbox')"
-        @change="switchMailbox"
-      >
-        <el-option v-for="a in accounts" :key="a.accountId" :label="a.email" :value="a.accountId" />
-      </el-select>
       <el-input
         class="search"
         v-model="search"
         clearable
         :placeholder="t('mailChatSearch')"
         :aria-label="t('mailChatSearch')"
-      />
-      <p class="connection" role="status">
-        {{ connected ? t('mailChatLive') : t('chatReconnecting') }}
-      </p>
-      <el-popover v-if="compactChat" trigger="click" placement="bottom-start" :width="280">
-        <template #reference><el-button class="mobile-translation-settings" text><Icon icon="cloud-mail:translate" width="18" />{{ t('translateAuto') }}</el-button></template>
-        <AutoTranslationSettings />
-      </el-popover>
-      <AutoTranslationSettings v-else />
-      <p v-if="indexing" class="indexing">{{ t('mailChatIndexing') }}</p>
+      >
+        <template #prefix><Icon icon="cloud-mail:search" width="18" /></template>
+        <template #suffix>
+          <el-dropdown trigger="click" placement="bottom-end">
+            <el-button class="search-actions" text :aria-label="t('mailChatNew')"><span aria-hidden="true">＋</span></el-button>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item @click="newOpen = true">{{ t('mailChatNew') }}</el-dropdown-item>
+                <el-dropdown-item @click="friendsOpen = true; loadFriends()">{{ t('mailChatContacts') }}</el-dropdown-item>
+                <el-dropdown-item @click="router.push('/settings')">{{ t('profile') }}</el-dropdown-item>
+                <el-dropdown-item v-for="a in accounts.length > 1 ? accounts : []" :key="a.accountId" @click="switchMailbox(a.accountId)">{{ a.email }}</el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
+        </template>
+      </el-input>
       </div>
       <div class="contact-entries" v-loading="listLoading">
         <button
@@ -80,7 +63,6 @@
         >
       </div>
       </div>
-      <el-button v-if="compactChat && ui.mobileContactsCollapsed" class="contact-controls-restore" text @click="restoreContactControls"><Icon icon="cloud-mail:search" width="18" />{{ t('mailChatSearch') }}</el-button>
     </aside>
     <main v-if="active" class="thread">
       <header
@@ -118,6 +100,7 @@
           }}</span>
           <span v-else>{{ connected ? t('mailChatLive') : t('chatReconnecting') }}</span>
         </div>
+        <span v-if="autoTranslation.enabled" class="translation-notice" role="status" :title="t('translateAuto')"><Icon icon="cloud-mail:translate" width="16" /></span>
         <el-button text :aria-label="t('exploreTitle')" :title="t('exploreTitle')" @click="explorer?.open()"><Icon icon="cloud-mail:search" width="22" /></el-button>
         <el-button text :aria-label="t('mailChatPin')" @click="togglePin">{{
           selected.pinned ? '★' : '☆'
@@ -457,7 +440,7 @@ import { useMediaQuery } from '@vueuse/core';
 import { useUiStore } from '@/store/ui';
 import ConversationExplorer from '@/components/conversation-explorer.vue';
 import MessageTranslation from '@/components/message-translation.vue';
-import AutoTranslationSettings from '@/components/auto-translation-settings.vue';
+import { autoTranslation } from '@/composables/use-auto-translation';
 import { useRoute, useRouter } from 'vue-router';
 import { Icon } from '@iconify/vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
@@ -1348,7 +1331,9 @@ onBeforeUnmount(() => {
   min-width: 0;
   overflow: hidden;
 }
-.contact-controls { flex-shrink: 0; }
+.contact-controls { flex-shrink: 0; padding-top: 10px; }
+.search-actions { padding: 0 4px; height: 24px; font-size: 22px; }
+.translation-notice { display: inline-flex; color: var(--el-text-color-secondary); }
 .conversations {
   display: flex;
   flex-direction: column;
@@ -1356,26 +1341,9 @@ onBeforeUnmount(() => {
   min-height: 0;
   border-inline-end: 1px solid var(--el-border-color);
 }
-.list-title {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 14px 12px;
-  gap: 8px;
-  h2 {
-    font-size: 16px;
-  }
-}
-.mailbox-select,
 .search {
   margin: 0 12px 10px;
   width: calc(100% - 24px);
-}
-.connection,
-.indexing {
-  font-size: 12px;
-  color: var(--el-text-color-secondary);
-  padding: 0 12px 10px;
 }
 .conversation-list {
   min-height: 0;
@@ -1907,7 +1875,6 @@ pre {
   .composer :deep(.el-textarea__inner) { min-height: 48px; }
   .composer-footer { margin-top: 5px; }
 }
-.contact-controls-restore { flex-shrink: 0; height: 36px; margin: 0; border-top: 1px solid var(--el-border-color-light); border-radius: 0; }
 @media (max-width: 767px), (max-width: 1024px) and (max-height: 500px) and (pointer: coarse) {
   .conversation-list { display: block; overflow-y: auto; overscroll-behavior-y: contain; }
   .contact-entries { overflow: visible; min-height: 100%; }
@@ -1915,7 +1882,6 @@ pre {
 .compose-input-row { display: contents; }
 .attach-icon { display: none; }
 @media (max-width: 767px), (max-width: 1024px) and (max-height: 500px) and (pointer: coarse) {
-  .mobile-translation-settings { margin: 0 12px 8px; justify-content: flex-start; gap: 6px; width: fit-content; }
   .thread-header { min-height: 54px; }
   .thread-title > span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .composer { padding: 6px 8px max(6px, env(safe-area-inset-bottom)); }

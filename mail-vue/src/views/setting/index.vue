@@ -18,6 +18,10 @@
       <div class="title">{{$t('language')}}</div>
       <LanguageSelect hint />
     </div>
+    <div class="language translation-settings">
+      <div class="title">{{$t('translateAuto')}}</div>
+      <AutoTranslationSettings />
+    </div>
     <div class="del-email" v-perm="'my:delete'">
       <div class="title">{{$t('deleteUser')}}</div>
       <div style="color: var(--regular-text-color);">
@@ -43,6 +47,7 @@ import {useUserStore} from "@/store/user.js";
 import router from "@/router/index.js";
 import ProfileEditor from '@/components/profile-editor.vue';
 import LanguageSelect from '@/components/language-select.vue';
+import AutoTranslationSettings from '@/components/auto-translation-settings.vue';
 import {useI18n} from "vue-i18n";
 import {useSettingStore} from "@/store/setting.js";
 

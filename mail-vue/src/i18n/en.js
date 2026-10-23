@@ -49,7 +49,7 @@ const en = {
     mailChatTitle: "Mail conversations",
     mailChatNew: "New conversation",
     mailChatMailbox: "Current mailbox",
-    mailChatSearch: "Search contacts or subjects",
+    mailChatSearch: "Search contacts, messages and mail",
     mailChatLive: "Live mail updates · sent via email",
     mailChatIndexing: "Organizing older mail; conversations will appear gradually…",
     mailChatEmpty: "No mail conversations yet",

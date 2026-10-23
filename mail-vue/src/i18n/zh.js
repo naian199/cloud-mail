@@ -49,7 +49,7 @@ const zh = {
     mailChatTitle: "邮件会话",
     mailChatNew: "新会话",
     mailChatMailbox: "当前邮箱",
-    mailChatSearch: "搜索联系人或邮件标题",
+    mailChatSearch: "搜索联系人、消息和邮件",
     mailChatLive: "新邮件实时同步 · 通过邮件收发",
     mailChatIndexing: "正在整理历史邮件，会话将逐步出现…",
     mailChatEmpty: "暂无邮件会话",

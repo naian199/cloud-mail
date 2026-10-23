@@ -85,6 +85,14 @@ await test('conversation search and media keep ownership, pagination, dates and 
 	);
 	for (let i = 0; i < 64; i++) await send('recent filler ' + i);
 	await send('x'.repeat(11000) + ' fullbodyneedle');
+	const searchConversations = (u, search, accountId = u.account) => api('mail-chat/conversations?' + new URLSearchParams({ accountId, search }), u);
+	assert.equal((await searchConversations(a, 'old unique archive needle')).data.conversations[0].key, key);
+	assert.equal((await searchConversations(a, 'fullbodyneedle')).data.conversations[0].key, key);
+	assert.equal((await searchConversations(a, 'not-present-anywhere')).data.conversations.length, 0);
+	assert.equal((await searchConversations(outsider, 'fullbodyneedle')).data.conversations.length, 0);
+	assert.equal((await searchConversations(outsider, 'fullbodyneedle', a.account)).code, 403);
+	db.prepare('INSERT INTO mail_user_profile(user_id,display_name,bio,avatar) VALUES(?,?,?,?) ON CONFLICT(user_id) DO UPDATE SET display_name=excluded.display_name').run(b.userId, 'ContactNicknameNeedle', '', '');
+	assert.equal((await searchConversations(a, 'contactnicknameneedle')).data.conversations[0].key, key);
 	const explore = (u, params = {}) =>
 		api('mail-chat/explore?' + new URLSearchParams({ accountId: a.account, key, ...params }), u);
 	assert.equal((await explore(null)).code, 401);
