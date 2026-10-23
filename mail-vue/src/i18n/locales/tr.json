@@ -566,5 +566,8 @@
   "server_publicTokenFail": "Belirteç doğrulaması başarısız oldu",
   "server_notAdmin": "Girilen e-posta bir yönetici e-postası değil",
   "server_emailExistDatabase": "E-posta zaten veritabanında mevcut",
-  "server_notConfigOss": "Nesne depolaması yapılandırılmamış"
+  "server_notConfigOss": "Nesne depolaması yapılandırılmamış",
+  "translateAuto": "Otomatik çeviri",
+  "translateAutoConsent": "Ekranda görünen alınan iletiler Google’a gönderilir: yalnızca metin, en fazla 5000 karakter; resimler, ekler ve dahili sohbet alıntıları hariçtir. Özgün metin korunur. Tercih bu tarayıcıda saklanır.",
+  "translateAutoEnable": "Otomatik çeviriyi etkinleştir"
 }

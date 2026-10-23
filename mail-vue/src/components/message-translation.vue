@@ -1,5 +1,5 @@
 <template>
-  <div class="message-translation" @pointerdown.stop @contextmenu.stop>
+  <div ref="element" class="message-translation" @pointerdown.stop @contextmenu.stop>
     <el-button text size="small" :aria-label="t('translateTitle')" @click="toggle">{{
       t('translateTitle')
     }}</el-button>
@@ -27,6 +27,7 @@
       </template>
       <p v-if="error" role="alert">{{ t(error) }}</p>
     </div>
+    <p v-if="error && !opened" role="alert">{{ t(error) }}</p>
     <div v-if="result && !hidden" class="translated-text" dir="auto">
       <strong>{{ t('translateResult', { language: result.language }) }}</strong>
       <p>{{ result.text }}</p>
@@ -39,13 +40,23 @@
   </div>
 </template>
 <script setup>
-import { ref, watch, onBeforeUnmount } from 'vue';
+import { ref, watch, onMounted, onBeforeUnmount } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { hasPerm } from '@/perm/perm';
 import { languages } from '@/i18n';
 import http from '@/axios';
-const props = defineProps({ emailId: Number, text: String, chatStyle: Boolean });
+import {
+  autoTranslation,
+  saveAutoTranslation,
+  scheduleAutoTranslation
+} from '@/composables/use-auto-translation';
+const props = defineProps({ emailId: Number, text: String, chatStyle: Boolean, incoming: Boolean });
 const { t, locale } = useI18n();
+const element = ref(null);
+const visible = ref(false);
+let observer,
+  generation = 0,
+  queued = '';
 const opened = ref(false),
   config = ref(null),
   consent = ref(false),
@@ -68,8 +79,8 @@ async function toggle() {
     }
   }
 }
-async function translate() {
-  if (!consent.value || loading.value) return;
+async function translate(automatic = false) {
+  if ((!consent.value && automatic !== true) || loading.value) return;
   error.value = '';
   hidden.value = false;
   if (cache.has(target.value)) {
@@ -79,13 +90,14 @@ async function translate() {
   loading.value = true;
   controller = new AbortController();
   const selected = target.value;
+  const revision = generation;
   try {
     const data = await http.post(
       '/mail-chat/translate',
       { emailId: props.emailId, target: selected },
       { noMsg: true, signal: controller.signal, timeout: 20000 }
     );
-    if (stopped) return;
+    if (stopped || revision !== generation) return;
     const value = {
       ...data,
       language: languages.find((language) => language.google === selected)?.name || selected
@@ -93,26 +105,73 @@ async function translate() {
     cache.set(selected, value);
     result.value = value;
   } catch (failure) {
-    if (!stopped)
+    if (!stopped && revision === generation)
       error.value =
         failure?.errorKey ||
         (String(failure?.message).startsWith('translateError')
           ? failure.message
           : 'translateErrorProvider');
+    if (
+      automatic === true &&
+      !stopped && revision === generation &&
+      ['translateErrorQuota', 'translateErrorDisabled', 'translateErrorKey'].includes(error.value)
+    ) {
+      autoTranslation.enabled = false;
+      saveAutoTranslation();
+    }
   } finally {
-    if (!stopped) loading.value = false;
+    if (!stopped && revision === generation) loading.value = false;
   }
 }
+watch([() => props.text, () => autoTranslation.target], () => {
+  generation++;
+  controller?.abort();
+  loading.value = false;
+  queued = '';
+  cache.clear();
+  result.value = null;
+  error.value = '';
+});
+function eligible() {
+  return (
+    !stopped &&
+    autoTranslation.enabled &&
+    props.incoming &&
+    visible.value &&
+    document.visibilityState === 'visible'
+  );
+}
+function queueAutomatic() {
+  if (!eligible() || !props.text?.trim() || !autoTranslation.target) return;
+  const selected = autoTranslation.target;
+  const revision = generation;
+  const identity = `${revision}:${selected}`;
+  if (queued === identity) return;
+  queued = identity;
+  scheduleAutoTranslation(
+    () => eligible() && revision === generation && autoTranslation.target === selected,
+    async () => {
+      target.value = selected;
+      await translate(true);
+    }
+  ).finally(() => {
+    if (queued === identity) queued = '';
+  });
+}
 watch(
-  () => props.text,
-  () => {
-    controller?.abort();
-    cache.clear();
-    result.value = null;
-    error.value = '';
-  }
+  [() => autoTranslation.enabled, () => autoTranslation.target, visible, () => props.text],
+  queueAutomatic
 );
+onMounted(() => {
+  observer = new IntersectionObserver((entries) => {
+    visible.value = entries[0]?.isIntersecting === true;
+  });
+  observer.observe(element.value);
+  document.addEventListener('visibilitychange', queueAutomatic);
+});
 onBeforeUnmount(() => {
+  observer?.disconnect();
+  document.removeEventListener('visibilitychange', queueAutomatic);
   stopped = true;
   controller?.abort();
   cache.clear();

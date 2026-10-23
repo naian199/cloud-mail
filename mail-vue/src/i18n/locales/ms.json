@@ -566,5 +566,8 @@
   "server_publicTokenFail": "Pengesahan token gagal",
   "server_notAdmin": "E-mel yang dimasukkan bukan e-mel pentadbir",
   "server_emailExistDatabase": "E-mel sudah wujud dalam pangkalan data",
-  "server_notConfigOss": "Storan objek tidak dikonfigurasikan"
+  "server_notConfigOss": "Storan objek tidak dikonfigurasikan",
+  "translateAuto": "Terjemahan automatik",
+  "translateAutoConsent": "Mesej diterima yang kelihatan dihantar ke Google: teks sahaja sehingga 5000 aksara, tanpa imej, lampiran atau petikan sembang dalaman. Teks asal dikekalkan. Tetapan disimpan dalam pelayar ini.",
+  "translateAutoEnable": "Aktifkan terjemahan automatik"
 }

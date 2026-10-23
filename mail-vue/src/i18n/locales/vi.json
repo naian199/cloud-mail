@@ -566,5 +566,8 @@
   "server_publicTokenFail": "Xác thực mã thông báo không thành công",
   "server_notAdmin": "Email đã nhập không phải là email của quản trị viên",
   "server_emailExistDatabase": "Email đã tồn tại trong cơ sở dữ liệu",
-  "server_notConfigOss": "Bộ nhớ đối tượng không được định cấu hình"
+  "server_notConfigOss": "Bộ nhớ đối tượng không được định cấu hình",
+  "translateAuto": "Dịch tự động",
+  "translateAutoConsent": "Tin nhắn nhận được đang hiển thị sẽ được gửi đến Google: chỉ văn bản, tối đa 5000 ký tự, không gửi ảnh, tệp đính kèm hoặc trích dẫn trò chuyện nội bộ. Giữ nguyên bản gốc. Cài đặt được lưu trong trình duyệt này.",
+  "translateAutoEnable": "Bật dịch tự động"
 }

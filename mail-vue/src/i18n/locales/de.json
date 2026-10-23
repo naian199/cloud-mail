@@ -566,5 +566,8 @@
   "server_publicTokenFail": "Die Token-Validierung ist fehlgeschlagen",
   "server_notAdmin": "Die eingegebene E-Mail ist keine Administrator-E-Mail",
   "server_emailExistDatabase": "E-Mail ist bereits in der Datenbank vorhanden",
-  "server_notConfigOss": "Objektspeicher nicht konfiguriert"
+  "server_notConfigOss": "Objektspeicher nicht konfiguriert",
+  "translateAuto": "Automatische Übersetzung",
+  "translateAutoConsent": "Sichtbare empfangene Nachrichten werden an Google übersetzt übermittelt: nur Text, bis zu 5000 Zeichen, ohne Bilder, Anhänge oder Zitate im internen Chat. Originale bleiben erhalten. Diese Einstellung wird in diesem Browser gespeichert.",
+  "translateAutoEnable": "Automatische Übersetzung aktivieren"
 }

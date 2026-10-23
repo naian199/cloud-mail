@@ -566,5 +566,8 @@
   "server_publicTokenFail": "Convalida del token non riuscita",
   "server_notAdmin": "L'e-mail inserita non è un'e-mail di amministratore",
   "server_emailExistDatabase": "L'e-mail esiste già nel database",
-  "server_notConfigOss": "Archiviazione oggetti non configurata"
+  "server_notConfigOss": "Archiviazione oggetti non configurata",
+  "translateAuto": "Traduzione automatica",
+  "translateAutoConsent": "I messaggi ricevuti visibili vengono inviati a Google: solo testo, fino a 5000 caratteri, senza immagini, allegati o citazioni della chat interna. Gli originali vengono conservati. La preferenza viene salvata in questo browser.",
+  "translateAutoEnable": "Attiva traduzione automatica"
 }

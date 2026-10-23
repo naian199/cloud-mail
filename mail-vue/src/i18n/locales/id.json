@@ -566,5 +566,8 @@
   "server_publicTokenFail": "Validasi token gagal",
   "server_notAdmin": "Email yang dimasukkan bukan email administrator",
   "server_emailExistDatabase": "Email sudah ada di database",
-  "server_notConfigOss": "Penyimpanan objek tidak dikonfigurasi"
+  "server_notConfigOss": "Penyimpanan objek tidak dikonfigurasi",
+  "translateAuto": "Terjemahan otomatis",
+  "translateAutoConsent": "Pesan masuk yang terlihat dikirim ke Google: hanya teks hingga 5000 karakter, tanpa gambar, lampiran, atau kutipan obrolan internal. Teks asli tetap disimpan. Pengaturan disimpan di peramban ini.",
+  "translateAutoEnable": "Aktifkan terjemahan otomatis"
 }

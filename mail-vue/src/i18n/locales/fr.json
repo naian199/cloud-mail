@@ -566,5 +566,8 @@
   "server_publicTokenFail": "La validation du jeton a échoué",
   "server_notAdmin": "L'email saisi n'est pas un email d'administrateur",
   "server_emailExistDatabase": "L'e-mail existe déjà dans la base de données",
-  "server_notConfigOss": "Stockage d'objets non configuré"
+  "server_notConfigOss": "Stockage d'objets non configuré",
+  "translateAuto": "Traduction automatique",
+  "translateAutoConsent": "Les messages reçus visibles sont envoyés à Google pour traduction : texte uniquement, jusqu’à 5000 caractères, sans images ni pièces jointes ni citations du chat interne. Les originaux sont conservés. Ce choix est enregistré dans ce navigateur.",
+  "translateAutoEnable": "Activer la traduction automatique"
 }

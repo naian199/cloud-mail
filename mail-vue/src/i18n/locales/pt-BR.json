@@ -566,5 +566,8 @@
   "server_publicTokenFail": "Falha na validação do token",
   "server_notAdmin": "O e-mail inserido não é um e-mail de administrador",
   "server_emailExistDatabase": "Email já existe no banco de dados",
-  "server_notConfigOss": "Armazenamento de objetos não configurado"
+  "server_notConfigOss": "Armazenamento de objetos não configurado",
+  "translateAuto": "Tradução automática",
+  "translateAutoConsent": "As mensagens recebidas visíveis são enviadas ao Google: apenas texto, até 5000 caracteres, sem imagens, anexos ou citações do chat interno. Os originais são mantidos. A preferência é salva neste navegador.",
+  "translateAutoEnable": "Ativar tradução automática"
 }

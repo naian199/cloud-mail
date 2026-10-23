@@ -566,5 +566,8 @@
   "server_publicTokenFail": "令牌驗證失敗",
   "server_notAdmin": "輸入的電子郵件不是管理員電子郵件",
   "server_emailExistDatabase": "資料庫中已存在電子郵件",
-  "server_notConfigOss": "未配置物件存儲"
+  "server_notConfigOss": "未配置物件存儲",
+  "translateAuto": "自動翻譯",
+  "translateAutoConsent": "開啟後，畫面內收到的訊息會自動將正文傳送至 Google 翻譯。每則最多5000字元，不傳送圖片或附件；站內聊天不傳送引用歷史。保留原文，設定儲存在目前瀏覽器。",
+  "translateAutoEnable": "開啟自動翻譯"
 }

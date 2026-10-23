@@ -34,6 +34,7 @@
       <p class="connection" role="status">
         {{ connected ? t('mailChatLive') : t('chatReconnecting') }}
       </p>
+      <AutoTranslationSettings />
       <p v-if="indexing" class="indexing">{{ t('mailChatIndexing') }}</p>
       <div class="conversation-list" v-loading="listLoading">
         <button
@@ -224,7 +225,7 @@
                   >{{ att.filename }} · {{ formatBytes(att.size) }}</el-button
                 >
               </div>
-              <MessageTranslation v-if="(m.replyText ?? m.text)?.trim()" :email-id="m.emailId" :text="m.replyText ?? m.text" :chat-style="isChat(m)" />
+              <MessageTranslation v-if="(m.replyText ?? m.text)?.trim()" :email-id="m.emailId" :text="m.replyText ?? m.text" :chat-style="isChat(m)" :incoming="m.type !== 1" />
             </div>
             <span
               v-if="live.internal && m.type === 1 && m.read !== undefined"
@@ -421,6 +422,7 @@ import { computed, nextTick, onMounted, onBeforeUnmount, reactive, ref, watch } 
 import MailBody from '@/components/mail-body.vue';
 import UserAvatar from '@/components/user-avatar.vue';
 import MessageTranslation from '@/components/message-translation.vue';
+import AutoTranslationSettings from '@/components/auto-translation-settings.vue';
 import { useRoute, useRouter } from 'vue-router';
 import { Icon } from '@iconify/vue';
 import { ElMessage, ElMessageBox } from 'element-plus';

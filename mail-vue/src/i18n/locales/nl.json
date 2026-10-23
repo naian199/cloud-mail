@@ -566,5 +566,8 @@
   "server_publicTokenFail": "Tokenvalidatie mislukt",
   "server_notAdmin": "Het ingevoerde e-mailadres is geen beheerders-e-mailadres",
   "server_emailExistDatabase": "E-mail bestaat al in de database",
-  "server_notConfigOss": "Objectopslag niet geconfigureerd"
+  "server_notConfigOss": "Objectopslag niet geconfigureerd",
+  "translateAuto": "Automatisch vertalen",
+  "translateAutoConsent": "Zichtbare ontvangen berichten worden naar Google gestuurd: alleen tekst, maximaal 5000 tekens, zonder afbeeldingen, bijlagen of citaten uit interne chats. Originelen blijven behouden. De voorkeur wordt in deze browser opgeslagen.",
+  "translateAutoEnable": "Automatisch vertalen inschakelen"
 }

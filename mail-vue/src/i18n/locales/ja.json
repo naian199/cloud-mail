@@ -566,5 +566,8 @@
   "server_publicTokenFail": "トークンの検証に失敗しました",
   "server_notAdmin": "入力されたメールアドレスは管理者のメールアドレスではありません",
   "server_emailExistDatabase": "電子メールはデータベースにすでに存在します",
-  "server_notConfigOss": "オブジェクトストレージが構成されていません"
+  "server_notConfigOss": "オブジェクトストレージが構成されていません",
+  "translateAuto": "自動翻訳",
+  "translateAutoConsent": "有効にすると、画面内の受信メッセージの本文を Google に送信して翻訳します。最大5000文字で、画像や添付ファイル、内部チャットの引用履歴は送信しません。原文は保持され、設定はこのブラウザーに保存されます。",
+  "translateAutoEnable": "自動翻訳を有効にする"
 }
