@@ -11,8 +11,10 @@
     ></div>
     <el-container class="main-container">
       <el-main>
-        <el-header>
+        <el-header v-show="!uiStore.mobileContactsHeaderTarget">
+          <Teleport :to="uiStore.mobileContactsHeaderTarget || 'body'" :disabled="!uiStore.mobileContactsHeaderTarget">
             <Header />
+          </Teleport>
         </el-header>
         <Main />
       </el-main>

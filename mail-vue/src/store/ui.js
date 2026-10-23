@@ -4,6 +4,7 @@ export const useUiStore = defineStore('ui', {
     state: () => ({
         mobileChatFocused: false,
         mobileContactsCollapsed: false,
+        mobileContactsHeaderTarget: null,
         asideShow: window.innerWidth > 1024,
         accountShow: false,
         backgroundLoading: true,
