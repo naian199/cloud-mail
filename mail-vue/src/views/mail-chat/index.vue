@@ -1560,7 +1560,7 @@ pre {
 }
 .bubble {
   -webkit-touch-callout: none;
-  touch-action: pan-y pinch-zoom;
+  touch-action: pan-y;
 }
 @media (pointer: coarse) {
   .internal-bubble {

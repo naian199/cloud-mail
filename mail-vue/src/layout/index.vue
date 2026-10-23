@@ -158,9 +158,11 @@ onBeforeUnmount(() => {
   opacity: 0;
 }
 @media (max-width: 767px), (max-width: 1024px) and (max-height: 500px) and (pointer: coarse) {
-  .layout.mobile-chat-focused {
+  .layout {
     height: var(--chat-viewport-height, 100dvh);
     top: var(--chat-viewport-top, 0px);
+  }
+  .layout.mobile-chat-focused {
     padding-bottom: 0;
   }
   .mobile-chat-focused .el-header, .mobile-contacts-collapsed .el-header { display: none; }

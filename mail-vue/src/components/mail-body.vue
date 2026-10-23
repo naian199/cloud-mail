@@ -13,6 +13,7 @@
 </template>
 <script setup>
 import { randomUUID } from '@/utils/uuid';
+import { installMobileViewport } from '@/utils/mobile-viewport';
 
 import { computed, ref, watch, onMounted, onBeforeUnmount } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -78,7 +79,7 @@ const documentHtml = computed(() => {
   const body = props.html.replace(/src="mail-image:(\d+)"/g, (_, id) =>
     sources.value[id] ? `src="${sources.value[id]}"` : ''
   );
-  return `<!doctype html><html><head><meta charset="utf-8"><meta name="referrer" content="no-referrer"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src https: http: data:; style-src 'unsafe-inline'; script-src 'nonce-${nonce}'; base-uri 'none'; form-action 'none'; connect-src 'none'"><style>html,body{margin:0;padding:0;background:white;color:#202124;font:14px/1.6 Arial,sans-serif}#mail-root{padding:16px;display:flow-root;overflow-wrap:anywhere;box-sizing:border-box}img{max-width:100%;height:auto}table{max-width:100%}pre{white-space:pre-wrap}a{overflow-wrap:anywhere}</style></head><body><div id="mail-root">${body}</div><script nonce="${nonce}">const root=document.getElementById('mail-root');function size(){parent.postMessage({kind:'cloud-mail-size',height:Math.ceil(root.getBoundingClientRect().height)},'*')}new ResizeObserver(size).observe(root);addEventListener('load',size);size();<\/script></body></html>`;
+  return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"><meta name="referrer" content="no-referrer"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src https: http: data:; style-src 'unsafe-inline'; script-src 'nonce-${nonce}'; base-uri 'none'; form-action 'none'; connect-src 'none'"><style>html,body{margin:0;padding:0;background:white;color:#202124;font:14px/1.6 Arial,sans-serif;touch-action:pan-x pan-y;-webkit-text-size-adjust:100%}#mail-root{padding:16px;display:flow-root;overflow-wrap:anywhere;box-sizing:border-box}img{max-width:100%;height:auto}table{max-width:100%}pre{white-space:pre-wrap}a{overflow-wrap:anywhere}</style></head><body><div id="mail-root">${body}</div><script nonce="${nonce}">(${installMobileViewport.toString()})(document);const root=document.getElementById('mail-root');function size(){parent.postMessage({kind:'cloud-mail-size',height:Math.ceil(root.getBoundingClientRect().height)},'*')}new ResizeObserver(size).observe(root);addEventListener('load',size);size();<\/script></body></html>`;
 });
 function onSize(event) {
   if (

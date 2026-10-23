@@ -228,3 +228,31 @@ html[dir="rtl"] .detail-email,
 html[dir="rtl"] .profile-card p[translate="no"] { direction: ltr; unicode-bidi: isolate; }
 [translate="no"] { unicode-bidi: isolate; }
 .login-language { margin-bottom: 16px; }
+
+/* Keep the mobile layout at device width and avoid Safari focus/rotation zoom. */
+html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+}
+@media (any-pointer: coarse) {
+    html, body {
+        touch-action: pan-x pan-y;
+    }
+    input, textarea, select,
+    .el-input__inner, .el-textarea__inner, .el-select__input {
+        font-size: 16px !important;
+    }
+    .el-dialog {
+        max-width: calc(100vw - 24px);
+    }
+    .el-drawer {
+        max-width: 100vw;
+    }
+    .el-message {
+        max-width: calc(100vw - 24px);
+        white-space: normal !important;
+    }
+    .el-message__content {
+        overflow-wrap: anywhere;
+    }
+}
