@@ -1,0 +1,22 @@
+[
+ {"code":"zh","html":"zh-CN","name":"简体中文","google":"zh-CN","element":"zh-cn"},
+ {"code":"zh-TW","html":"zh-TW","name":"繁體中文","google":"zh-TW","element":"zh-tw"},
+ {"code":"en","html":"en","name":"English","google":"en","element":"en"},
+ {"code":"ja","html":"ja","name":"日本語","google":"ja","element":"ja"},
+ {"code":"ko","html":"ko","name":"한국어","google":"ko","element":"ko"},
+ {"code":"fr","html":"fr","name":"Français","google":"fr","element":"fr"},
+ {"code":"de","html":"de","name":"Deutsch","google":"de","element":"de"},
+ {"code":"es","html":"es","name":"Español","google":"es","element":"es"},
+ {"code":"pt-BR","html":"pt-BR","name":"Português (Brasil)","google":"pt","element":"pt-br"},
+ {"code":"ru","html":"ru","name":"Русский","google":"ru","element":"ru"},
+ {"code":"ar","html":"ar","name":"العربية","google":"ar","element":"ar","dir":"rtl"},
+ {"code":"hi","html":"hi","name":"हिन्दी","google":"hi","element":"hi"},
+ {"code":"id","html":"id","name":"Bahasa Indonesia","google":"id","element":"id"},
+ {"code":"vi","html":"vi","name":"Tiếng Việt","google":"vi","element":"vi"},
+ {"code":"th","html":"th","name":"ไทย","google":"th","element":"th"},
+ {"code":"tr","html":"tr","name":"Türkçe","google":"tr","element":"tr"},
+ {"code":"it","html":"it","name":"Italiano","google":"it","element":"it"},
+ {"code":"nl","html":"nl","name":"Nederlands","google":"nl","element":"nl"},
+ {"code":"uk","html":"uk","name":"Українська","google":"uk","element":"uk"},
+ {"code":"ms","html":"ms","name":"Bahasa Melayu","google":"ms","element":"ms"}
+]

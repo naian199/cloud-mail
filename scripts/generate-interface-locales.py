@@ -3,7 +3,7 @@ Never use this development script for user messages or runtime translation.
 """
 import concurrent.futures, json, re, subprocess, time, urllib.parse, urllib.request
 from pathlib import Path
-source = json.loads(subprocess.check_output(['node','--input-type=module','-e',"import en from './mail-vue/src/i18n/en.js'; console.log(JSON.stringify(en))"], text=True))
+source = json.loads(subprocess.check_output(['node','--input-type=module','-e',"import en from './mail-vue/src/i18n/en.js'; import server from './mail-worker/src/i18n/en.js'; import fs from 'node:fs'; const extra=JSON.parse(fs.readFileSync('shared/additional-interface-en.json')); const errors=Object.fromEntries(Object.entries(server).map(([k,v])=>['server_'+k,v.replace(/\{\{(\w+)\}\}/g,'{$1}')])); console.log(JSON.stringify({...en,...extra,...errors}))"], text=True))
 langs = ['zh-TW','ja','ko','fr','de','es','pt','ru','ar','hi','id','vi','th','tr','it','nl','uk','ms']
 path = Path('mail-vue/src/i18n/locales'); path.mkdir(exist_ok=True)
 
@@ -31,6 +31,8 @@ def generate(lang):
         found={int(pieces[i]):pieces[i+1].strip() for i in range(1,len(pieces)-1,2)}
         for index,key,value in batch:
             output=found.get(index)
+            if not source[key]:
+                translated[key]='';continue
             required=set(re.findall(r'\{\w+\}',source[key]))
             if output is None or set(re.findall(r'\{\w+\}',output)) != required:
                 output=request(source[key],lang).strip()
@@ -50,7 +52,7 @@ def generate(lang):
             flush();batch=[];length=0
         batch.append((index,key,value));length+=len(value)+8
     flush()
-    (path/(lang+'.json')).write_text(json.dumps(translated,ensure_ascii=False,indent=2)+'\n')
+    (path/(('pt-BR' if lang == 'pt' else lang)+'.json')).write_text(json.dumps(translated,ensure_ascii=False,indent=2)+'\n')
     print('Generated',lang,len(translated),flush=True)
 
 with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
