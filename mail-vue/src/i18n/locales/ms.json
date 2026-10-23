@@ -579,5 +579,6 @@
   "exploreStart": "Tarikh mula",
   "exploreEnd": "Tarikh akhir",
   "deleteSelf": "Padam untuk saya",
-  "deleteSelfConfirm": "Padam mesej ini daripada akaun anda sahaja? Peserta lain masih menyimpan salinannya."
+  "deleteSelfConfirm": "Padam mesej ini daripada akaun anda sahaja? Peserta lain masih menyimpan salinannya.",
+  "mailChatCompactInput": "Mesej…"
 }

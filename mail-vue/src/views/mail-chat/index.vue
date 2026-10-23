@@ -34,7 +34,11 @@
       <p class="connection" role="status">
         {{ connected ? t('mailChatLive') : t('chatReconnecting') }}
       </p>
-      <AutoTranslationSettings />
+      <el-popover v-if="compactChat" trigger="click" placement="bottom-start" :width="280">
+        <template #reference><el-button class="mobile-translation-settings" text><Icon icon="cloud-mail:translate" width="18" />{{ t('translateAuto') }}</el-button></template>
+        <AutoTranslationSettings />
+      </el-popover>
+      <AutoTranslationSettings v-else />
       <p v-if="indexing" class="indexing">{{ t('mailChatIndexing') }}</p>
       <div class="conversation-list" v-loading="listLoading">
         <button
@@ -270,34 +274,37 @@
         <div v-if="selected.peers.length > 1" class="reply-heading">
           <el-checkbox v-model="replyAll">{{ t('mailChatReplyAll') }}</el-checkbox>
         </div>
-        <el-input
-          v-model="drafts[draftKey]"
-          type="textarea"
-          :rows="2"
-          resize="none"
-          maxlength="20000"
-          :placeholder="t('mailChatInput')"
-          :aria-label="t('mailChatInput')"
-          @keydown="keyDown"
-          @input="liveInput"
-        />
-        <div class="chosen-files">
+        <div v-if="files[draftKey]?.length" class="chosen-files">
           <div v-for="(file, i) in files[draftKey] || []" :key="i" class="chosen-file">
             <span>{{ file.filename }}</span
             ><el-button text @click="files[draftKey].splice(i, 1)">×</el-button>
           </div>
         </div>
+        <div class="compose-input-row">
+        <el-input
+          v-model="drafts[draftKey]"
+          type="textarea"
+          :autosize="{ minRows: compactChat ? 1 : 2, maxRows: 4 }"
+          resize="none"
+          maxlength="20000"
+          :placeholder="t(compactChat ? 'mailChatCompactInput' : 'mailChatInput')"
+          :aria-label="t('mailChatInput')"
+          @keydown="keyDown"
+          @input="liveInput"
+        />
         <div class="composer-footer">
-          <label class="attach-label"
-            >{{ t('mailChatAttach') }}<input type="file" multiple @change="chooseFiles" /></label
+          <label class="attach-label" :aria-label="t('mailChatAttach')" tabindex="0" @keydown.enter.prevent="$event.currentTarget.querySelector('input').click()" @keydown.space.prevent="$event.currentTarget.querySelector('input').click()">
+            <Icon class="attach-icon" icon="cloud-mail:attach" width="22" aria-hidden="true" /><span>{{ t('mailChatAttach') }}</span><input type="file" multiple @change="chooseFiles" /></label
           ><span>{{ t('chatEnterHint') }}</span
           ><el-button
             type="primary"
             native-type="submit"
+            :aria-label="t('mailChatSend')"
             :loading="sending"
             :disabled="(!drafts[draftKey]?.trim() && !files[draftKey]?.length) || messageLoading"
             ><Icon icon="cloud-mail:send" width="19" aria-hidden="true" /><span>{{ t('mailChatSend') }}</span></el-button
           >
+        </div>
         </div>
       </form>
     </main>
@@ -440,6 +447,8 @@ import { computed, nextTick, onMounted, onBeforeUnmount, reactive, ref, watch } 
 import MailBody from '@/components/mail-body.vue';
 import UserAvatar from '@/components/user-avatar.vue';
 import '@/icons/chat';
+import { useMediaQuery } from '@vueuse/core';
+import { useUiStore } from '@/store/ui';
 import ConversationExplorer from '@/components/conversation-explorer.vue';
 import MessageTranslation from '@/components/message-translation.vue';
 import AutoTranslationSettings from '@/components/auto-translation-settings.vue';
@@ -487,7 +496,10 @@ const conversations = ref([]),
   selected = ref(null),
   messages = ref([]),
   search = ref('');
+const compactChat = useMediaQuery('(max-width: 767px), (max-width: 1024px) and (max-height: 500px) and (pointer: coarse)');
+const ui = useUiStore();
 const active = computed(() => !!selected.value);
+watch(active, value => { ui.mobileChatFocused = value; }, { immediate: true });
 const isChat = (message) => message.chatStyle ?? message.internal;
 const sortedConversations = computed(() =>
   [...conversations.value].sort(
@@ -591,10 +603,12 @@ function openMessageMenu(event, message) {
   const box = event.currentTarget?.getBoundingClientRect();
   const x = event.clientX || box?.left || 16,
     y = event.clientY || box?.top || 80;
+  const viewport = window.visualViewport;
+  const left = viewport?.offsetLeft || 0, top = viewport?.offsetTop || 0;
   messageMenu.value = {
     message,
-    x: Math.max(8, Math.min(x, innerWidth - 210)),
-    y: Math.max(8, Math.min(y, innerHeight - 310))
+    x: Math.max(left + 8, Math.min(x, left + (viewport?.width || innerWidth) - 210)),
+    y: Math.max(top + 8, Math.min(y, top + (viewport?.height || innerHeight) - 310))
   };
 }
 async function menuAction(action) {
@@ -1275,6 +1289,7 @@ onMounted(async () => {
   sync();
 });
 onBeforeUnmount(() => {
+  ui.mobileChatFocused = false;
   cancelPress();
   document.removeEventListener('keydown', menuEscape);
   Object.values(imageUrls).forEach((url) => URL.revokeObjectURL(url));
@@ -1761,7 +1776,7 @@ pre {
   display: grid;
   gap: 12px;
 }
-@media (max-width: 767px) {
+@media (max-width: 767px), (max-width: 1024px) and (max-height: 500px) and (pointer: coarse) {
   .mail-chat {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -1851,7 +1866,7 @@ pre {
 .mail-message.mine.external .bubble { background: var(--el-bg-color); color: var(--el-text-color-primary); }
 :global(.mail-message-menu) { border-radius: 14px; padding: 6px; }
 :global(.mail-message-menu button) { display: flex; align-items: center; gap: 10px; border-radius: 8px; min-height: 44px; text-align: start; }
-@media (max-width: 767px) {
+@media (max-width: 767px), (max-width: 1024px) and (max-height: 500px) and (pointer: coarse) {
   .mail-chat { grid-template-columns: minmax(0, 1fr); }
   .thread-header { min-height: 60px; padding: 6px 10px; gap: 8px; }
   .thread-title strong { font-size: 14px; }
@@ -1865,5 +1880,24 @@ pre {
   .composer { padding: 8px 10px max(8px, env(safe-area-inset-bottom)); }
   .composer :deep(.el-textarea__inner) { min-height: 48px; }
   .composer-footer { margin-top: 5px; }
+}
+.compose-input-row { display: contents; }
+.attach-icon { display: none; }
+@media (max-width: 767px), (max-width: 1024px) and (max-height: 500px) and (pointer: coarse) {
+  .mobile-translation-settings { margin: 0 12px 8px; justify-content: flex-start; gap: 6px; width: fit-content; }
+  .thread-header { min-height: 54px; }
+  .thread-title > span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .composer { padding: 6px 8px max(6px, env(safe-area-inset-bottom)); }
+  .compose-input-row { display: grid; grid-template-columns: 36px minmax(0, 1fr) 42px; align-items: end; gap: 6px; }
+  .compose-input-row > .el-textarea { grid-column: 2; grid-row: 1; }
+  .composer :deep(.el-textarea__inner) { min-height: 40px; padding: 9px 12px; line-height: 22px; }
+  .composer-footer { display: contents; }
+  .attach-label { grid-column: 1; grid-row: 1; height: 40px; justify-content: center; padding: 0; }
+  .attach-icon { display: block; }
+  .attach-label > span { display: none; }
+  .composer-footer > .el-button { grid-column: 3; grid-row: 1; width: 42px; height: 40px; padding: 0; margin: 0; }
+  .composer-footer > .el-button :deep(> span > span) { display: none; }
+  .composer-footer > .el-button :deep(> span) { gap: 0; }
+  .chosen-files { margin-bottom: 6px; }
 }
 </style>

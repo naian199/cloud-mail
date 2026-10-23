@@ -1,5 +1,5 @@
 <template>
-  <el-container class="layout">
+  <el-container class="layout" :class="{ 'mobile-chat-focused': uiStore.mobileChatFocused }" :style="{ '--chat-viewport-height': viewportHeight + 'px', '--chat-viewport-top': viewportTop + 'px' }">
     <el-aside
         class="aside"
         :class="uiStore.asideShow ? 'aside-show' : 'el-aside-hide'">
@@ -33,6 +33,15 @@ import { useMessageAlerts } from '@/composables/use-message-alerts';
 useMessageAlerts();
 
 const uiStore = useUiStore();
+const viewportHeight = ref(window.visualViewport?.height || window.innerHeight);
+const viewportTop = ref(window.visualViewport?.offsetTop || 0);
+function updateViewport() {
+  const viewport = window.visualViewport;
+  if (viewport && viewport.scale !== 1) return;
+  viewportHeight.value = viewport?.height || window.innerHeight;
+  viewportTop.value = viewport?.offsetTop || 0;
+}
+
 const writerRef = ref({})
 const isMobile = ref(window.innerWidth < 1025)
 const handleResize = () => {
@@ -47,11 +56,18 @@ onMounted(() => {
   uiStore.writerRef = writerRef
 
   window.addEventListener('resize', handleResize)
+  window.addEventListener('resize', updateViewport)
+  window.visualViewport?.addEventListener('resize', updateViewport)
+  window.visualViewport?.addEventListener('scroll', updateViewport)
+  updateViewport()
   handleResize()
 })
 
 onBeforeUnmount(() => {
   window.removeEventListener('resize', handleResize)
+  window.removeEventListener('resize', updateViewport)
+  window.visualViewport?.removeEventListener('resize', updateViewport)
+  window.visualViewport?.removeEventListener('scroll', updateViewport)
 })
 </script>
 
@@ -138,5 +154,13 @@ onBeforeUnmount(() => {
   display: flex;
   pointer-events: none;
   opacity: 0;
+}
+@media (max-width: 767px), (max-width: 1024px) and (max-height: 500px) and (pointer: coarse) {
+  .layout.mobile-chat-focused {
+    height: var(--chat-viewport-height, 100dvh);
+    top: var(--chat-viewport-top, 0px);
+    padding-bottom: 0;
+  }
+  .mobile-chat-focused .el-header { display: none; }
 }
 </style>

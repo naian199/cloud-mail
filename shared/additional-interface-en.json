@@ -47,5 +47,6 @@
   "exploreStart": "From date",
   "exploreEnd": "To date",
   "deleteSelf": "Delete for me",
-  "deleteSelfConfirm": "Remove this message from your account only? The other participant keeps their copy."
+  "deleteSelfConfirm": "Remove this message from your account only? The other participant keeps their copy.",
+  "mailChatCompactInput": "Message…"
 }

@@ -579,5 +579,6 @@
   "exploreStart": "Tanggal mulai",
   "exploreEnd": "Tanggal akhir",
   "deleteSelf": "Hapus untuk saya",
-  "deleteSelfConfirm": "Hapus pesan ini hanya dari akun Anda? Peserta lain tetap menyimpan salinannya."
+  "deleteSelfConfirm": "Hapus pesan ini hanya dari akun Anda? Peserta lain tetap menyimpan salinannya.",
+  "mailChatCompactInput": "Pesan…"
 }

@@ -579,5 +579,6 @@
   "exploreStart": "Data inicial",
   "exploreEnd": "Data final",
   "deleteSelf": "Excluir para mim",
-  "deleteSelfConfirm": "Excluir esta mensagem apenas da sua conta? A outra pessoa mantém a cópia."
+  "deleteSelfConfirm": "Excluir esta mensagem apenas da sua conta? A outra pessoa mantém a cópia.",
+  "mailChatCompactInput": "Mensagem…"
 }

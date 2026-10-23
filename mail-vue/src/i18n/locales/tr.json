@@ -579,5 +579,6 @@
   "exploreStart": "Başlangıç tarihi",
   "exploreEnd": "Bitiş tarihi",
   "deleteSelf": "Benden sil",
-  "deleteSelfConfirm": "Bu mesaj yalnızca hesabınızdan silinsin mi? Diğer kişi kendi kopyasını korur."
+  "deleteSelfConfirm": "Bu mesaj yalnızca hesabınızdan silinsin mi? Diğer kişi kendi kopyasını korur.",
+  "mailChatCompactInput": "Mesaj…"
 }

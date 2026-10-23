@@ -579,5 +579,6 @@
   "exploreStart": "Vanaf datum",
   "exploreEnd": "Tot datum",
   "deleteSelf": "Voor mij verwijderen",
-  "deleteSelfConfirm": "Dit bericht alleen uit uw account verwijderen? De andere persoon behoudt een kopie."
+  "deleteSelfConfirm": "Dit bericht alleen uit uw account verwijderen? De andere persoon behoudt een kopie.",
+  "mailChatCompactInput": "Bericht…"
 }

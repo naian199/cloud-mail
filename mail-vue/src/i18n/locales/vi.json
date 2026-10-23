@@ -579,5 +579,6 @@
   "exploreStart": "Từ ngày",
   "exploreEnd": "Đến ngày",
   "deleteSelf": "Xóa ở phía tôi",
-  "deleteSelfConfirm": "Chỉ xóa tin nhắn này khỏi tài khoản của bạn? Người kia vẫn giữ bản sao."
+  "deleteSelfConfirm": "Chỉ xóa tin nhắn này khỏi tài khoản của bạn? Người kia vẫn giữ bản sao.",
+  "mailChatCompactInput": "Tin nhắn…"
 }
