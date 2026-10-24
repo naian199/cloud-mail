@@ -38,6 +38,7 @@
 import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { languages } from '@/i18n';
+import { prepareLocalTranslation } from '@/utils/local-translation.mjs';
 import {
   autoTranslation,
   saveAutoTranslation,
@@ -60,6 +61,7 @@ async function change(value) {
   }
   checking.value = true;
   try {
+    await prepareLocalTranslation(autoTranslation.target);
     const config = await translationAvailability();
     if (!config.enabled) {
       error.value = 'translateNotEnabled';
@@ -72,7 +74,8 @@ async function change(value) {
     checking.value = false;
   }
 }
-function enable() {
+async function enable() {
+  await prepareLocalTranslation(autoTranslation.target);
   autoTranslation.enabled = true;
   saveAutoTranslation();
   confirming.value = false;

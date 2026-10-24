@@ -593,5 +593,6 @@
   "translateErrorBilling": "此 Google Cloud 專案未啟用計費，或計費目前無法使用。",
   "translateErrorApiDisabled": "請在此金鑰所屬的 Google Cloud 專案中啟用 Cloud Translation API（Basic v2）。",
   "translateErrorRestriction": "金鑰的應用程式或 API 限制封鎖了伺服器請求，請檢查 Google Cloud 中的金鑰限制。",
-  "translateErrorNetwork": "伺服器無法連線至 Google 翻譯，請檢查網路後重試。"
+  "translateErrorNetwork": "伺服器無法連線至 Google 翻譯，請檢查網路後重試。",
+  "translateLocal": "本機翻譯"
 }

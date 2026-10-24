@@ -41,6 +41,7 @@
     <p v-if="error && !opened" role="alert">{{ t(error) }}</p>
     <div v-if="result && !hidden" class="translated-text" dir="auto">
       <strong>{{ t('translateResult', { language: result.language }) }}</strong>
+      <small v-if="result.provider === 'local'"> · {{ t('translateLocal') }}</small>
       <p>{{ result.text }}</p>
       <small v-if="result.truncated">{{ t('translateTruncated') }}</small>
       <el-button text size="small" @click="hidden = true">{{ t('translateHide') }}</el-button>
@@ -56,10 +57,12 @@ import { useI18n } from 'vue-i18n';
 import { hasPerm } from '@/perm/perm';
 import { languages } from '@/i18n';
 import http from '@/axios';
+import { translateLocally } from '@/utils/local-translation.mjs';
 import {
   autoTranslation,
   saveAutoTranslation,
-  scheduleAutoTranslation
+  scheduleAutoTranslation,
+  translationAvailability
 } from '@/composables/use-auto-translation';
 const props = defineProps({ emailId: Number, text: String, chatStyle: Boolean, incoming: Boolean });
 const { t, locale } = useI18n();
@@ -75,7 +78,7 @@ const opened = ref(false),
   error = ref(''),
   result = ref(null),
   hidden = ref(false);
-const target = ref(languages.find((language) => language.code === locale.value)?.google || 'en');
+const target = ref(autoTranslation.target || languages.find((language) => language.code === locale.value)?.google || 'en');
 const cache = new Map();
 let controller,
   stopped = false;
@@ -84,7 +87,7 @@ async function toggle() {
   if (opened.value) {
     error.value = '';
     try {
-      config.value = await http.get('/mail-chat/translation/config', { noMsg: true });
+      config.value = await translationAvailability();
     } catch {
       error.value = 'serviceUnavailable';
     }
@@ -109,7 +112,9 @@ async function translate(automatic = false) {
   const selected = target.value;
   const revision = generation;
   try {
-    const data = await http.post(
+    const local = await translateLocally(props.text, selected, controller.signal);
+    if (stopped || revision !== generation) return;
+    const data = local || await http.post(
       '/mail-chat/translate',
       { emailId: props.emailId, target: selected },
       { noMsg: true, signal: controller.signal, timeout: 20000 }

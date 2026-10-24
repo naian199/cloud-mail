@@ -1,5 +1,7 @@
 import { reactive } from 'vue';
 import http from '@/axios';
+import { languages, chooseLanguage } from '../../../shared/locale-utils.mjs';
+import { localTranslationAvailable } from '@/utils/local-translation.mjs';
 
 const key = 'cloud-mail:auto-translation';
 let saved = {};
@@ -10,7 +12,7 @@ try {
 }
 export const autoTranslation = reactive({
   enabled: saved.enabled === true,
-  target: saved.target || ''
+  target: saved.target || languages.find(language => language.code === chooseLanguage(null, navigator.languages || [navigator.language]))?.google || 'en'
 });
 export function saveAutoTranslation() {
   try {
@@ -36,5 +38,6 @@ export function scheduleAutoTranslation(eligible, run) {
   return queue;
 }
 export async function translationAvailability() {
+  if (await localTranslationAvailable()) return { enabled: true, local: true };
   return http.get('/mail-chat/translation/config', { noMsg: true });
 }

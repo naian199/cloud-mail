@@ -593,5 +593,6 @@
   "translateErrorBilling": "Die Google-Cloud-Abrechnung dieses Projekts ist deaktiviert oder nicht verfügbar.",
   "translateErrorApiDisabled": "Aktivieren Sie Cloud Translation API (Basic v2) im Google-Cloud-Projekt dieses Schlüssels.",
   "translateErrorRestriction": "API-Schlüsselbeschränkungen haben die Serveranfrage blockiert. Prüfen Sie diese in Google Cloud.",
-  "translateErrorNetwork": "Der Server kann Google Übersetzer nicht erreichen. Prüfen Sie das Netzwerk."
+  "translateErrorNetwork": "Der Server kann Google Übersetzer nicht erreichen. Prüfen Sie das Netzwerk.",
+  "translateLocal": "Lokale Übersetzung"
 }

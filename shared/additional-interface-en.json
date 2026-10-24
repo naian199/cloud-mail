@@ -9,7 +9,7 @@
   "translateShow": "Show translation",
   "translateResult": "Translation · {language}",
   "translateConsent": "I agree to send this message's text to Google for translation.",
-  "translatePrivacy": "Only the text of this message is sent, up to 5,000 characters. Images, attachments and quoted messages are not sent. The original is preserved.",
+  "translatePrivacy": "Prefer on-device translation; otherwise send only this message to Google, up to 5000 characters, without images, attachments or quoted history. The original is kept.",
   "translateExternalPrivacy": "For external email, only its plain-text body is sent, up to 5,000 characters. Images and attachments are not sent.",
   "translateTruncated": "Only the first 5,000 characters were translated.",
   "translateNotEnabled": "Google Translate has not been enabled by the administrator.",
@@ -36,7 +36,7 @@
   "invalidInput": "Check the information you entered.",
   "serviceUnavailable": "The service is temporarily unavailable. Please try again later.",
   "translateAuto": "Automatic translation",
-  "translateAutoConsent": "When enabled, received messages visible on screen are automatically sent to Google for translation. Only text (up to 5000 characters) is sent, without images or attachments; internal chat quotes are excluded. Originals are kept. This preference is saved on this browser.",
+  "translateAutoConsent": "Prefer installed on-device browser translation models. When unavailable, send visible incoming message text to Google. Up to 5000 characters per message; no images, attachments or quoted chat history. Originals are kept; preferences are saved in this browser.",
   "translateAutoEnable": "Enable automatic translation",
   "exploreTitle": "Search and shared media",
   "exploreSearch": "Search messages",
@@ -61,5 +61,6 @@
   "translateErrorBilling": "Google Cloud billing is disabled or unavailable for this project.",
   "translateErrorApiDisabled": "Enable Cloud Translation API (Basic v2) in the Google Cloud project that owns this key.",
   "translateErrorRestriction": "API key restrictions blocked this server request. Check API and application restrictions in Google Cloud.",
-  "translateErrorNetwork": "The server could not connect to Google Translation. Check network access and try again."
+  "translateErrorNetwork": "The server could not connect to Google Translation. Check network access and try again.",
+  "translateLocal": "On-device translation"
 }

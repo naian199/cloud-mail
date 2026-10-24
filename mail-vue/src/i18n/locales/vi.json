@@ -593,5 +593,6 @@
   "translateErrorBilling": "Thanh toán của dự án Google Cloud này bị tắt hoặc không khả dụng.",
   "translateErrorApiDisabled": "Bật Cloud Translation API (Basic v2) trong dự án Google Cloud sở hữu khóa này.",
   "translateErrorRestriction": "Giới hạn khóa API đã chặn yêu cầu máy chủ. Kiểm tra giới hạn trong Google Cloud.",
-  "translateErrorNetwork": "Máy chủ không thể kết nối Google Dịch. Hãy kiểm tra mạng."
+  "translateErrorNetwork": "Máy chủ không thể kết nối Google Dịch. Hãy kiểm tra mạng.",
+  "translateLocal": "Dịch trên thiết bị"
 }

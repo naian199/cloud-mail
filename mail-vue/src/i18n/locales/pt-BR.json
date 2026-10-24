@@ -593,5 +593,6 @@
   "translateErrorBilling": "O faturamento deste projeto do Google Cloud está desativado ou indisponível.",
   "translateErrorApiDisabled": "Ative Cloud Translation API (Basic v2) no projeto do Google Cloud desta chave.",
   "translateErrorRestriction": "As restrições da chave de API bloquearam a solicitação do servidor. Verifique-as no Google Cloud.",
-  "translateErrorNetwork": "O servidor não consegue acessar o Google Tradutor. Verifique a rede."
+  "translateErrorNetwork": "O servidor não consegue acessar o Google Tradutor. Verifique a rede.",
+  "translateLocal": "Tradução local"
 }

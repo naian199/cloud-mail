@@ -593,5 +593,6 @@
   "translateErrorBilling": "การเรียกเก็บเงินของโปรเจ็กต์ Google Cloud นี้ปิดอยู่หรือไม่พร้อมใช้งาน",
   "translateErrorApiDisabled": "เปิด Cloud Translation API (Basic v2) ในโปรเจ็กต์ Google Cloud ของคีย์นี้",
   "translateErrorRestriction": "ข้อจำกัดของคีย์ API ปิดกั้นคำขอจากเซิร์ฟเวอร์ ตรวจสอบข้อจำกัดใน Google Cloud",
-  "translateErrorNetwork": "เซิร์ฟเวอร์เชื่อมต่อ Google แปลภาษาไม่ได้ โปรดตรวจสอบเครือข่าย"
+  "translateErrorNetwork": "เซิร์ฟเวอร์เชื่อมต่อ Google แปลภาษาไม่ได้ โปรดตรวจสอบเครือข่าย",
+  "translateLocal": "การแปลบนอุปกรณ์"
 }

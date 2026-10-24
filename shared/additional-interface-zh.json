@@ -9,7 +9,7 @@
   "translateShow": "显示译文",
   "translateResult": "译文 · {language}",
   "translateConsent": "我同意将本条消息正文发送给 Google 进行翻译。",
-  "translatePrivacy": "仅发送本条正文，最多5000字符，不发送图片、附件及引用的历史消息。原文会保留。",
+  "translatePrivacy": "优先在本机翻译；不可用时，仅将本条正文发送给 Google，最多5000字符，不发送图片、附件及引用历史。原文保留。",
   "translateExternalPrivacy": "站外邮件仅发送纯文本正文，最多5000字符，不发送图片或附件。",
   "translateTruncated": "本次仅翻译了前5000个字符。",
   "translateNotEnabled": "管理员尚未启用 Google 翻译。",
@@ -36,7 +36,7 @@
   "invalidInput": "请检查填写的信息。",
   "serviceUnavailable": "服务暂不可用，请稍后重试。",
   "translateAuto": "自动翻译",
-  "translateAutoConsent": "开启后，屏幕内收到的消息会自动将正文发送给 Google 翻译。每条最多5000字符，不发送图片或附件；站内聊天不发送引用历史。原文保留，设置保存在当前浏览器。",
+  "translateAutoConsent": "开启后，优先使用设备上已安装的浏览器翻译模型；不可用时，将屏幕内收到的消息正文发送给 Google 翻译。每条最多5000字符，不发送图片或附件；站内聊天不发送引用历史。原文保留，设置保存在当前浏览器。",
   "translateAutoEnable": "开启自动翻译",
   "exploreTitle": "搜索与会话相册",
   "exploreSearch": "搜索消息",
@@ -61,5 +61,6 @@
   "translateErrorBilling": "此 Google Cloud 项目未开通计费，或计费当前不可用。",
   "translateErrorApiDisabled": "请在此密钥所属的 Google Cloud 项目中启用 Cloud Translation API（Basic v2）。",
   "translateErrorRestriction": "密钥的应用或 API 限制阻止了服务器请求，请检查 Google Cloud 中的密钥限制。",
-  "translateErrorNetwork": "服务器无法连接 Google 翻译，请检查网络连通性后重试。"
+  "translateErrorNetwork": "服务器无法连接 Google 翻译，请检查网络连通性后重试。",
+  "translateLocal": "本机翻译"
 }

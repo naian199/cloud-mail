@@ -593,5 +593,6 @@
   "translateErrorBilling": "Pengebilan projek Google Cloud ini dimatikan atau tidak tersedia.",
   "translateErrorApiDisabled": "Aktifkan Cloud Translation API (Basic v2) dalam projek Google Cloud bagi kunci ini.",
   "translateErrorRestriction": "Sekatan kunci API menyekat permintaan pelayan. Semak sekatan di Google Cloud.",
-  "translateErrorNetwork": "Pelayan tidak dapat menyambung ke Google Terjemah. Semak rangkaian."
+  "translateErrorNetwork": "Pelayan tidak dapat menyambung ke Google Terjemah. Semak rangkaian.",
+  "translateLocal": "Terjemahan pada peranti"
 }

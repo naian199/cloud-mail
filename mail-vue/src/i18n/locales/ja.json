@@ -593,5 +593,6 @@
   "translateErrorBilling": "Google Cloud プロジェクトの課金が無効か利用できません。",
   "translateErrorApiDisabled": "キーの Google Cloud プロジェクトで Cloud Translation API（Basic v2）を有効にしてください。",
   "translateErrorRestriction": "API キーの制限によりサーバーのリクエストが拒否されました。Google Cloud で制限を確認してください。",
-  "translateErrorNetwork": "サーバーから Google 翻訳に接続できません。ネットワークを確認してください。"
+  "translateErrorNetwork": "サーバーから Google 翻訳に接続できません。ネットワークを確認してください。",
+  "translateLocal": "端末内翻訳"
 }
