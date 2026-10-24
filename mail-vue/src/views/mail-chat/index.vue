@@ -275,10 +275,11 @@
         <el-input
           v-model="drafts[draftKey]"
           type="textarea"
-          :autosize="{ minRows: compactChat ? 1 : 2, maxRows: 4 }"
+          :autosize="{ minRows: 1, maxRows: 4 }"
           resize="none"
           maxlength="20000"
-          :placeholder="t(compactChat ? 'mailChatCompactInput' : 'mailChatInput')"
+          :placeholder="t('mailChatCompactInput')"
+          :title="t('chatEnterHint')"
           :aria-label="t('mailChatInput')"
           @keydown="keyDown"
           @focus="stickerPicker?.close()"
@@ -286,13 +287,14 @@
         />
         <div class="composer-footer">
           <StickerPicker ref="stickerPicker" :compact="compactChat" :dock="stickerDock" :context="draftKey" :disabled="sending" @visibility="stickerVisibility" @emoji="insertEmoji" @attachment="addSticker" @upload="chooseFiles" />
-          <label class="attach-label" :aria-label="t('mailChatAttach')" tabindex="0" @keydown.enter.prevent="$event.currentTarget.querySelector('input').click()" @keydown.space.prevent="$event.currentTarget.querySelector('input').click()">
+          <label class="attach-label" :aria-label="t('mailChatAttach')" :title="t('mailChatAttach')" tabindex="0" @keydown.enter.prevent="$event.currentTarget.querySelector('input').click()" @keydown.space.prevent="$event.currentTarget.querySelector('input').click()">
             <Icon class="attach-icon" icon="cloud-mail:attach" width="22" aria-hidden="true" /><span>{{ t('mailChatAttach') }}</span><input type="file" multiple :disabled="sending" @change="chooseFiles" /></label
           ><span>{{ t('chatEnterHint') }}</span
           ><el-button
             type="primary"
             native-type="submit"
             :aria-label="t('mailChatSend')"
+            :title="t('mailChatSend')"
             :loading="sending"
             :disabled="(!drafts[draftKey]?.trim() && !files[draftKey]?.length) || messageLoading"
             ><Icon icon="cloud-mail:send" width="19" aria-hidden="true" /><span>{{ t('mailChatSend') }}</span></el-button
@@ -486,6 +488,25 @@ function viewProfile(profile, email) {
 }
 const user = useUserStore(),
   accountStore = useAccountStore();
+const savedThreadKey = `mail-chat:thread:${user.user.userId}`;
+function rememberThread(conversation) {
+  try {
+    if (conversation) {
+      sessionStorage.setItem(savedThreadKey, JSON.stringify({ accountId: accountId.value, conversation }));
+    } else {
+      sessionStorage.removeItem(savedThreadKey);
+    }
+  } catch { /* Storage restrictions must not prevent opening or closing a chat. */ }
+}
+function rememberedThread() {
+  try {
+    const saved = JSON.parse(sessionStorage.getItem(savedThreadKey) || 'null');
+    if (saved && Number.isSafeInteger(saved.accountId) &&
+        /^[a-f0-9]{64}$/.test(saved.conversation?.key) &&
+        Array.isArray(saved.conversation.peers)) return saved;
+  } catch { /* Ignore obsolete or malformed tab state. */ }
+  return null;
+}
 const accountId = ref(accountStore.currentAccountId || user.user.account.accountId);
 const accounts = ref([user.user.account]);
 const conversations = ref([]),
@@ -824,6 +845,7 @@ function closeThread() {
   quoteTarget.value = null;
   version++;
   selected.value = null;
+  rememberThread(null);
   messages.value = [];
   messageLoading.value = false;
 }
@@ -891,6 +913,7 @@ async function select(c) {
   quoteTarget.value = null;
   const mine = ++version;
   selected.value = c;
+  rememberThread(c);
   messages.value = [];
   replyAll.value = false;
   messageLoading.value = true;
@@ -1173,15 +1196,33 @@ async function deliver(payload, context, intent) {
   pendingRequests.delete(context);
   return result;
 }
-async function showSent(account, result) {
-  if (stopped || accountId.value !== account) return;
+async function showSent(account, result, selectionVersion) {
+  if (stopped || accountId.value !== account || version !== selectionVersion) return;
   search.value = '';
   const data = await mailConversations({ accountId: account });
-  if (stopped || accountId.value !== account) return;
+  if (stopped || accountId.value !== account || version !== selectionVersion) return;
   conversations.value = data.conversations;
   listHasMore.value = data.hasMore;
   const sentConversation = data.conversations.find((c) => c.key === result.conversationKey);
-  if (sentConversation) await select(sentConversation);
+  if (!sentConversation) return;
+  if (selected.value?.key !== sentConversation.key) {
+    await select(sentConversation);
+    return;
+  }
+  // Refresh the current thread without clearing its rendered messages or history.
+  const recent = await mailMessages({ accountId: account, key: sentConversation.key });
+  if (stopped || accountId.value !== account || version !== selectionVersion) return;
+  Object.assign(selected.value, sentConversation);
+  if (historyAnchor.value) {
+    // Replace a search history window atomically when returning to the latest mail.
+    version++;
+    historyAnchor.value = null;
+    messages.value = recent.messages;
+    hasOlder.value = recent.hasMore;
+  }
+  applyMessages(recent);
+  await bottom();
+  await markRead();
 }
 async function send() {
   if (
@@ -1193,7 +1234,8 @@ async function send() {
   const account = accounts.value.find((a) => a.accountId === accountId.value),
     m = target.value,
     current = draftKey.value,
-    a = accountId.value;
+    a = accountId.value,
+    selectionVersion = version;
   const peer =
     m.type === 0
       ? parseAddresses(m.replyTo).length
@@ -1233,9 +1275,9 @@ async function send() {
     );
     if (drafts[current] === text) drafts[current] = '';
     files[current] = [];
-    quoteTarget.value = null;
+    if (version === selectionVersion) quoteTarget.value = null;
     stopTyping();
-    await showSent(a, result);
+    await showSent(a, result, selectionVersion);
   } catch {
   } finally {
     sending.value = false;
@@ -1244,7 +1286,7 @@ async function send() {
 async function sendNew() {
   if (sending.value) return;
   sending.value = true;
-  const a = accountId.value;
+  const a = accountId.value, selectionVersion = version;
   const context = `new:${a}`,
     payload = {
       accountId: a,
@@ -1258,7 +1300,7 @@ async function sendNew() {
     newOpen.value = false;
     files[context] = [];
     Object.assign(newMail, { to: '', subject: '', text: '' });
-    await showSent(a, result);
+    await showSent(a, result, selectionVersion);
   } catch {
   } finally {
     sending.value = false;
@@ -1314,6 +1356,15 @@ onMounted(async () => {
       }
       if (!stopped) accounts.value = all.filter((a) => a.status === 0);
     } catch {}
+  }
+  if (stopped) return;
+  // Explicit conversation links take precedence over this tab's last open chat.
+  if (!selected.value && !route.query.conversation) {
+    const saved = rememberedThread();
+    if (saved && accounts.value.some((account) => account.accountId === saved.accountId)) {
+      if (accountId.value !== saved.accountId) switchMailbox(saved.accountId);
+      await select(saved.conversation);
+    }
   }
   sync();
 });
@@ -1859,7 +1910,7 @@ pre {
 .peers { font-weight: 600; font-size: 14px; }
 .badge { background: var(--el-color-primary); min-width: 20px; text-align: center; line-height: 20px; padding: 0 5px; }
 .thread, .empty-thread { background: var(--chat-canvas); }
-.thread-header { background: var(--el-bg-color); min-height: 64px; padding-inline: 18px; z-index: 1; }
+.thread-header { background: var(--el-bg-color); min-height: 52px; padding: 6px 14px; flex-shrink: 0; z-index: 1; }
 .thread-title strong { font-size: 15px; line-height: 24px; }
 .thread-title span { font-size: 12px; }
 .messages { padding: 8px clamp(12px, 3vw, 44px) 20px; scroll-padding-block: 20px; }
@@ -1907,23 +1958,22 @@ pre {
   .conversation-list { display: block; overflow-y: auto; overscroll-behavior-y: contain; }
   .contact-entries { overflow: visible; min-height: 100%; }
 }
-.compose-input-row { display: contents; }
-.attach-icon { display: none; }
+.composer { padding: 6px 12px max(6px, env(safe-area-inset-bottom)); }
+.compose-input-row { display: grid; grid-template-columns: 36px 34px minmax(0, 1fr) 42px; align-items: end; gap: 6px; }
+.compose-input-row > .el-textarea { grid-column: 3; grid-row: 1; }
+.composer :deep(.el-textarea__inner) { min-height: 40px; padding: 9px 12px; line-height: 22px; }
+.composer-footer { display: contents; }
+.attach-label { grid-column: 1; grid-row: 1; height: 40px; justify-content: center; padding: 0; }
+.composer-footer :deep(.sticker-trigger) { grid-column: 2; grid-row: 1; margin: 0; height: 40px; }
+.attach-icon { display: block; }
+.attach-label > span, .composer-footer > span { display: none; }
+.composer-footer > .el-button:not(.sticker-trigger) { grid-column: 4; grid-row: 1; width: 42px; height: 40px; padding: 0; margin: 0; }
+.composer-footer > .el-button :deep(> span > span) { display: none; }
+.composer-footer > .el-button :deep(> span) { gap: 0; }
+.chosen-files { margin-bottom: 6px; }
 @media (max-width: 767px), (max-width: 1024px) and (max-height: 500px) and (pointer: coarse) {
   .thread-header { min-height: 54px; }
   .thread-title > span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .composer { padding: 6px 8px max(6px, env(safe-area-inset-bottom)); }
-  .compose-input-row { display: grid; grid-template-columns: 36px 34px minmax(0, 1fr) 42px; align-items: end; gap: 6px; }
-  .compose-input-row > .el-textarea { grid-column: 3; grid-row: 1; }
-  .composer :deep(.el-textarea__inner) { min-height: 40px; padding: 9px 12px; line-height: 22px; }
-  .composer-footer { display: contents; }
-  .attach-label { grid-column: 1; grid-row: 1; height: 40px; justify-content: center; padding: 0; }
-  .composer-footer :deep(.sticker-trigger) { grid-column: 2; grid-row: 1; margin: 0; height: 40px; }
-  .attach-icon { display: block; }
-  .attach-label > span { display: none; }
-  .composer-footer > .el-button:not(.sticker-trigger) { grid-column: 4; grid-row: 1; width: 42px; height: 40px; padding: 0; margin: 0; }
-  .composer-footer > .el-button :deep(> span > span) { display: none; }
-  .composer-footer > .el-button :deep(> span) { gap: 0; }
-  .chosen-files { margin-bottom: 6px; }
 }
 </style>
