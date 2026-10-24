@@ -5,7 +5,7 @@
         <Icon icon="mdi:email-outline" width="24" height="24" />
         <div>{{settingStore.settings.title}}</div>
       </div>
-      <el-menu :collapse="false" text-color="#fff" active-text-color="#fff" style="margin-top: 10px">
+      <el-menu ref="menu" :collapse="false" :default-active="route.meta.name" :default-openeds="isManagementPage ? ['management'] : []" text-color="#fff" active-text-color="#fff" style="margin-top: 10px">
         <el-menu-item @click="router.push({name: 'mail-chat'})" index="mail-chat"
                       :class="route.meta.name === 'mail-chat' ? 'choose-item' : ''">
           <Icon icon="solar:letter-opened-linear" width="20" height="20" />
@@ -36,39 +36,42 @@
           <Icon icon="fluent:settings-48-regular" width="20" height="20" />
           <span class="menu-name" style="margin-left: 16px">{{$t('settings')}}</span>
         </el-menu-item>
-        <div class="manage-title" v-perm="['all-email:query','user:query','role:query','setting:query','analysis:query','reg-key:query']">
-          <div>{{$t('manage')}}</div>
-        </div>
-        <el-menu-item @click="router.push({name: 'analysis'})" index="analysis" v-perm="'analysis:query'"
-                      :class="route.meta.name === 'analysis' ? 'choose-item' : ''">
-          <Icon icon="fluent:data-pie-20-regular" width="24" height="24" />
-          <span class="menu-name" style="margin-left: 13px">{{$t('analytics')}}</span>
-        </el-menu-item>
-        <el-menu-item @click="router.push({name: 'user'})" index="setting" v-perm="'user:query'"
-                      :class="route.meta.name === 'user' ? 'choose-item' : ''">
-          <Icon icon="si:user-alt-2-line" width="20" height="20" />
-          <span class="menu-name" style="margin-left: 16px">{{$t('allUsers')}}</span>
-        </el-menu-item>
-        <el-menu-item @click="router.push({name: 'all-email'})" index="all-email" v-perm="'all-email:query'"
-                      :class="route.meta.name === 'all-email' ? 'choose-item' : ''">
-          <Icon icon="fluent:mail-list-28-regular" width="22" height="22" />
-          <span class="menu-name" style="margin-left: 15px">{{$t('allMail')}}</span>
-        </el-menu-item>
-        <el-menu-item @click="router.push({name: 'role'})" index="setting" v-perm="'role:query'"
-                      :class="route.meta.name === 'role' ? 'choose-item' : ''">
-          <Icon icon="fluent:lock-closed-16-regular" width="22" height="22" />
-          <span class="menu-name" style="margin-left: 15px">{{$t('permissions')}}</span>
-        </el-menu-item>
-        <el-menu-item @click="router.push({name: 'reg-key'})" index="reg-key" v-perm="'reg-key:query'"
-                      :class="route.meta.name === 'reg-key' ? 'choose-item' : ''">
-          <Icon icon="fluent:fingerprint-20-filled" width="22" height="22" />
-          <span class="menu-name" style="margin-left: 15px">{{$t('inviteCode')}}</span>
-        </el-menu-item>
-        <el-menu-item @click="router.push({name: 'sys-setting'})" index="sys-setting" v-perm="'setting:query'"
-                      :class="route.meta.name === 'sys-setting' ? 'choose-item' : ''">
-          <Icon icon="eos-icons:system-ok-outlined" width="18" height="18" style="margin-left: 2px" />
-          <span class="menu-name" style="margin-left: 17px">{{$t('SystemSettings')}}</span>
-        </el-menu-item>
+        <el-sub-menu v-if="canManage" index="management" class="management-menu" :class="{ 'management-active': isManagementPage }">
+          <template #title>
+            <Icon icon="fluent:settings-48-regular" width="20" height="20" />
+            <span class="menu-name" style="margin-left: 16px">{{$t('manage')}}</span>
+          </template>
+          <el-menu-item @click="router.push({name: 'analysis'})" index="analysis" v-perm="'analysis:query'"
+                        :class="route.meta.name === 'analysis' ? 'choose-item' : ''">
+            <Icon icon="fluent:data-pie-20-regular" width="24" height="24" />
+            <span class="menu-name" style="margin-left: 13px">{{$t('analytics')}}</span>
+          </el-menu-item>
+          <el-menu-item @click="router.push({name: 'user'})" index="user" v-perm="'user:query'"
+                        :class="route.meta.name === 'user' ? 'choose-item' : ''">
+            <Icon icon="si:user-alt-2-line" width="20" height="20" />
+            <span class="menu-name" style="margin-left: 16px">{{$t('allUsers')}}</span>
+          </el-menu-item>
+          <el-menu-item @click="router.push({name: 'all-email'})" index="all-email" v-perm="'all-email:query'"
+                        :class="route.meta.name === 'all-email' ? 'choose-item' : ''">
+            <Icon icon="fluent:mail-list-28-regular" width="22" height="22" />
+            <span class="menu-name" style="margin-left: 15px">{{$t('allMail')}}</span>
+          </el-menu-item>
+          <el-menu-item @click="router.push({name: 'role'})" index="role" v-perm="'role:query'"
+                        :class="route.meta.name === 'role' ? 'choose-item' : ''">
+            <Icon icon="fluent:lock-closed-16-regular" width="22" height="22" />
+            <span class="menu-name" style="margin-left: 15px">{{$t('permissions')}}</span>
+          </el-menu-item>
+          <el-menu-item @click="router.push({name: 'reg-key'})" index="reg-key" v-perm="'reg-key:query'"
+                        :class="route.meta.name === 'reg-key' ? 'choose-item' : ''">
+            <Icon icon="fluent:fingerprint-20-filled" width="22" height="22" />
+            <span class="menu-name" style="margin-left: 15px">{{$t('inviteCode')}}</span>
+          </el-menu-item>
+          <el-menu-item @click="router.push({name: 'sys-setting'})" index="sys-setting" v-perm="'setting:query'"
+                        :class="route.meta.name === 'sys-setting' ? 'choose-item' : ''">
+            <Icon icon="eos-icons:system-ok-outlined" width="18" height="18" style="margin-left: 2px" />
+            <span class="menu-name" style="margin-left: 17px">{{$t('SystemSettings')}}</span>
+          </el-menu-item>
+        </el-sub-menu>
       </el-menu>
     </div>
   </el-scrollbar>
@@ -79,9 +82,18 @@ import router from "@/router/index.js";
 import { useRoute } from "vue-router";
 import {Icon} from "@iconify/vue";
 import {useSettingStore} from "@/store/setting.js";
+import {computed, ref, watch} from 'vue';
+import {hasPerm} from '@/perm/perm.js';
 
 const settingStore = useSettingStore();
 const route = useRoute();
+const menu = ref(null);
+const managementPages = ['analysis', 'user', 'all-email', 'role', 'reg-key', 'sys-setting'];
+const canManage = computed(() => ['all-email:query', 'user:query', 'role:query', 'setting:query', 'analysis:query', 'reg-key:query'].some(hasPerm));
+const isManagementPage = computed(() => managementPages.includes(route.meta.name));
+watch(() => route.meta.name, () => {
+  if (isManagementPage.value) menu.value?.open('management');
+}, { flush: 'post' });
 
 </script>
 
@@ -126,10 +138,25 @@ const route = useRoute();
 }
 
 
-.manage-title {
-  margin-top: 10px;
-  padding-left: 20px;
-  color: #fff;
+.management-menu {
+  margin-top: 12px;
+  :deep(.el-sub-menu__title) {
+    height: 40px;
+    margin: 3px 10px;
+    padding: 0 36px 0 10px !important;
+    border-radius: 6px;
+    color: #fff;
+    &:hover { background: rgba(255, 255, 255, 0.08); }
+  }
+  :deep(.el-menu) {
+    width: auto;
+    margin: 4px 10px 6px 24px;
+    border-inline-start: 1px solid rgba(128, 128, 128, 0.25);
+  }
+  .el-menu-item { margin: 3px 0 3px 6px !important; }
+}
+.management-active :deep(.el-sub-menu__title) {
+  background: var(--aside-menu-active-background);
 }
 
 .el-menu-item {
