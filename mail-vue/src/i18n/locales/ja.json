@@ -596,5 +596,13 @@
   "translateErrorNetwork": "サーバーから Google 翻訳に接続できません。ネットワークを確認してください。",
   "translateLocal": "端末内翻訳",
   "translateFollowInterface": "表示言語に合わせる",
-  "translateFailed": "翻訳失敗"
+  "translateFailed": "翻訳失敗",
+  "contactUsername": "ユーザー名",
+  "contactUsernameHint": "一意の名前：英字で始まる3～24文字の英数字と下線。大文字と小文字は区別しません。設定すると検索可能になります。空欄で保存すると削除します。",
+  "contactUsernameTaken": "このユーザー名は使用されています。",
+  "contactRemark": "連絡先メモ",
+  "contactRemarkHint": "自分にのみ表示。最大50文字。空欄で保存して削除。",
+  "contactSearchHint": "ユーザー名、{'@'}ユーザー名、登録メール",
+  "contactSearch": "友だちを検索",
+  "contactNotFound": "ユーザーが見つかりません。相手のユーザー名を確認してください。"
 }

@@ -596,5 +596,13 @@
   "translateErrorNetwork": "Le serveur ne peut pas joindre Google Traduction. Vérifiez le réseau.",
   "translateLocal": "Traduction locale",
   "translateFollowInterface": "Langue de l’interface",
-  "translateFailed": "Échec de traduction"
+  "translateFailed": "Échec de traduction",
+  "contactUsername": "Nom d’utilisateur",
+  "contactUsernameHint": "Nom unique : 3–24 caractères a-z, 0-9 ou _, commençant par une lettre, sans distinction de casse. Rend le compte recherchable. Enregistrez vide pour supprimer.",
+  "contactUsernameTaken": "Ce nom est déjà utilisé.",
+  "contactRemark": "Note du contact",
+  "contactRemarkHint": "Visible uniquement par vous, 50 caractères maximum. Enregistrez vide pour effacer.",
+  "contactSearchHint": "Nom, {'@'}nom ou e-mail enregistré",
+  "contactSearch": "Chercher des amis",
+  "contactNotFound": "Aucun utilisateur trouvé. Vérifiez son nom d’utilisateur."
 }

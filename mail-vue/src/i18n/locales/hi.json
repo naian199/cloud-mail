@@ -596,5 +596,13 @@
   "translateErrorNetwork": "सर्वर Google अनुवाद से नहीं जुड़ सका। नेटवर्क जाँचें।",
   "translateLocal": "डिवाइस पर अनुवाद",
   "translateFollowInterface": "इंटरफ़ेस की भाषा",
-  "translateFailed": "अनुवाद विफल"
+  "translateFailed": "अनुवाद विफल",
+  "contactUsername": "उपयोगकर्ता नाम",
+  "contactUsernameHint": "अद्वितीय नाम: 3–24 अक्षर a-z, अंक या _, शुरुआत अक्षर से; बड़े-छोटे अक्षर समान हैं। इससे खाता खोजा जा सकता है। हटाने के लिए खाली सहेजें।",
+  "contactUsernameTaken": "यह उपयोगकर्ता नाम पहले से उपयोग में है।",
+  "contactRemark": "संपर्क नोट",
+  "contactRemarkHint": "केवल आपको दिखेगा, अधिकतम 50 अक्षर। मिटाने के लिए खाली सहेजें।",
+  "contactSearchHint": "उपयोगकर्ता नाम, {'@'}नाम या पंजीकृत ईमेल",
+  "contactSearch": "मित्र खोजें",
+  "contactNotFound": "उपयोगकर्ता नहीं मिला। उसका उपयोगकर्ता नाम जाँचें।"
 }

@@ -1,5 +1,6 @@
 import BizError from '../error/biz-error';
 import userContext from '../security/user-context';
+import { normalizeUsername } from './contact-service';
 
 const fail = (message, code = 400) => { throw new BizError(message, code); };
 const positiveId = value => {
@@ -39,22 +40,28 @@ const chatService = {
     const user = await this.user(c);
     const { results } = await c.env.db.prepare(`SELECT f.id, f.status, f.requester_id AS requesterId,
       peer.user_id AS userId, peer.email,
+      (SELECT remark FROM mail_contact_note WHERE user_id=? AND email=peer.email COLLATE NOCASE) AS remark,
+      (SELECT username FROM mail_user_handle WHERE user_id=peer.user_id) AS username,
+      (SELECT display_name FROM mail_user_profile WHERE user_id=peer.user_id) AS displayName,
       (SELECT COUNT(*) FROM chat_message m WHERE m.friendship_id = f.id AND m.sender_id != ?
        AND m.id > CASE WHEN f.low_user_id = ? THEN f.low_read_id ELSE f.high_read_id END AND NOT EXISTS (SELECT 1 FROM email hidden JOIN mail_removed_message removed ON removed.email_id=hidden.email_id WHERE hidden.user_id=? AND hidden.message_id='<legacy-chat-'||m.id||'@cloud-mail.internal>')) AS unread,
       (SELECT body FROM chat_message m WHERE m.friendship_id = f.id AND NOT EXISTS (SELECT 1 FROM email hidden JOIN mail_removed_message removed ON removed.email_id=hidden.email_id WHERE hidden.user_id=? AND hidden.message_id='<legacy-chat-'||m.id||'@cloud-mail.internal>') ORDER BY m.id DESC LIMIT 1) AS lastMessage
       FROM chat_friendship f
       JOIN user peer ON peer.user_id = CASE WHEN f.low_user_id = ? THEN f.high_user_id ELSE f.low_user_id END
       WHERE (f.low_user_id = ? OR f.high_user_id = ?) AND peer.status = 0 AND peer.is_del = 0
-      ORDER BY f.id DESC`).bind(user.user_id, user.user_id, user.user_id, user.user_id, user.user_id, user.user_id, user.user_id).all();
+      ORDER BY f.id DESC`).bind(user.user_id, user.user_id, user.user_id, user.user_id, user.user_id, user.user_id, user.user_id, user.user_id).all();
     return results;
   },
 
   async request(c, params) {
     const user = await this.user(c);
     const email = typeof params?.email === 'string' ? params.email.trim() : '';
-    if (!email || email.length > 254) fail('请输入注册邮箱 / Enter a registered email');
-    const peer = await c.env.db.prepare('SELECT user_id FROM user WHERE email = ? COLLATE NOCASE AND status = 0 AND is_del = 0').bind(email).first();
-    if (!peer) fail('未找到该注册邮箱 / Registered email not found', 404);
+    if (!params?.username && (!email || email.length > 254)) fail('请输入注册邮箱 / Enter a registered email');
+    const peer = params?.username
+      ? await c.env.db.prepare(`SELECT u.user_id FROM mail_user_handle h JOIN user u ON u.user_id=h.user_id
+          WHERE h.username=? AND u.status=0 AND u.is_del=0`).bind(normalizeUsername(params.username)).first()
+      : await c.env.db.prepare('SELECT user_id FROM user WHERE email = ? COLLATE NOCASE AND status = 0 AND is_del = 0').bind(email).first();
+    if (!peer) fail(params?.username ? 'contactNotFound' : '未找到该注册邮箱 / Registered email not found', 404);
     if (peer.user_id === user.user_id) fail('不能添加自己 / Cannot add yourself');
     const low = Math.min(user.user_id, peer.user_id), high = Math.max(user.user_id, peer.user_id);
     await c.env.db.prepare(`INSERT INTO chat_friendship (low_user_id, high_user_id, requester_id)

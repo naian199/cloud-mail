@@ -596,5 +596,13 @@
   "translateErrorNetwork": "Server tidak dapat terhubung ke Google Terjemahan. Periksa jaringan.",
   "translateLocal": "Terjemahan di perangkat",
   "translateFollowInterface": "Bahasa antarmuka",
-  "translateFailed": "Terjemahan gagal"
+  "translateFailed": "Terjemahan gagal",
+  "contactUsername": "Nama pengguna",
+  "contactUsernameHint": "Nama unik: 3–24 karakter a-z, angka atau _, diawali huruf, tanpa membedakan huruf besar. Membuat akun dapat dicari. Simpan kosong untuk menghapus.",
+  "contactUsernameTaken": "Nama pengguna ini sudah dipakai.",
+  "contactRemark": "Catatan kontak",
+  "contactRemarkHint": "Hanya Anda yang melihat, hingga 50 karakter. Simpan kosong untuk menghapus.",
+  "contactSearchHint": "Nama pengguna, {'@'}nama atau email terdaftar",
+  "contactSearch": "Cari teman",
+  "contactNotFound": "Pengguna tidak ditemukan. Periksa nama penggunanya."
 }

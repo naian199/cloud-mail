@@ -1,6 +1,10 @@
 import app from '../hono/hono';
 import result from '../model/result';
 import chat from '../service/chat-service';
+import contacts from '../service/contact-service';
+
+app.get('/chat/users', async c => c.json(result.ok(await contacts.search(c, c.req.query()))));
+app.put('/chat/contacts/note', async c => c.json(result.ok(await contacts.note(c, await c.req.json()))));
 
 app.get('/chat/socket', c => chat.socket(c));
 app.get('/chat/friends', async c => c.json(result.ok(await chat.list(c))));

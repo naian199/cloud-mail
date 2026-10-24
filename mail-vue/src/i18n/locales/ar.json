@@ -596,5 +596,13 @@
   "translateErrorNetwork": "تعذر اتصال الخادم بترجمة Google. تحقق من الشبكة.",
   "translateLocal": "ترجمة على الجهاز",
   "translateFollowInterface": "لغة الواجهة",
-  "translateFailed": "فشلت الترجمة"
+  "translateFailed": "فشلت الترجمة",
+  "contactUsername": "اسم المستخدم",
+  "contactUsernameHint": "اسم فريد: من 3 إلى 24 حرفًا من a-z أو أرقامًا أو _ ويبدأ بحرف، دون تمييز حالة الأحرف. يتيح البحث عن حسابك. احفظه فارغًا لحذفه.",
+  "contactUsernameTaken": "اسم المستخدم مستخدم بالفعل.",
+  "contactRemark": "ملاحظة جهة الاتصال",
+  "contactRemarkHint": "تظهر لك فقط، حتى 50 حرفًا. احفظها فارغة لحذفها.",
+  "contactSearchHint": "اسم المستخدم أو {'@'}الاسم أو البريد المسجل",
+  "contactSearch": "البحث عن أصدقاء",
+  "contactNotFound": "لم يُعثر على المستخدم. تحقق من اسم المستخدم الخاص به."
 }

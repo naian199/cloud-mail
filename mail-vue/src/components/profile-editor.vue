@@ -14,6 +14,11 @@
         t('profileRemoveAvatar')
       }}</el-button>
     </div>
+    <el-form-item :label="t('contactUsername')">
+      <el-input v-model="username" maxlength="25" :aria-label="t('contactUsername')" placeholder="@username" @keydown.enter.prevent="saveHandle" />
+      <el-button :loading="savingUsername" @click="saveHandle">{{ t('save') }}</el-button>
+    </el-form-item>
+    <p class="hint">{{ t('contactUsernameHint') }}</p>
     <el-form-item :label="t('profileNickname')"
       ><el-input v-model="form.displayName" maxlength="40" :aria-label="t('profileNickname')"
     /></el-form-item>
@@ -58,7 +63,7 @@ import { reactive, ref, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { ElMessage } from 'element-plus';
 import UserAvatar from './user-avatar.vue';
-import { myProfile, saveProfile } from '@/request/my';
+import { myProfile, saveProfile, saveUsername } from '@/request/my';
 import { useUserStore } from '@/store/user';
 import {
   alertsEnabled,
@@ -75,9 +80,21 @@ const form = reactive({
 });
 const saving = ref(false),
   uploading = ref(false);
+const username = ref(user.user.profile?.username || ''), savingUsername = ref(false);
+async function saveHandle() {
+  if (savingUsername.value) return;
+  savingUsername.value = true;
+  try {
+    const result = await saveUsername(username.value);
+    username.value = result.username;
+    user.user.profile = { ...user.user.profile, username: result.username };
+    ElMessage.success(t('saveSuccessMsg'));
+  } catch {} finally { savingUsername.value = false; }
+}
 onMounted(async () => {
   try {
     const profile = await myProfile();
+    username.value = profile.username || '';
     Object.assign(form, profile, { displayName: profile.displayName || user.user.name || '' });
   } catch {}
 });

@@ -596,5 +596,13 @@
   "translateErrorNetwork": "Sunucu Google Çeviri hizmetine bağlanamıyor. Ağı kontrol edin.",
   "translateLocal": "Cihazda çeviri",
   "translateFollowInterface": "Arayüz dili",
-  "translateFailed": "Çeviri başarısız"
+  "translateFailed": "Çeviri başarısız",
+  "contactUsername": "Kullanıcı adı",
+  "contactUsernameHint": "Benzersiz ad: harfle başlayan 3–24 a-z, rakam veya _; büyük-küçük harf ayrımı yoktur. Hesabın aranmasını sağlar. Kaldırmak için boş kaydedin.",
+  "contactUsernameTaken": "Bu kullanıcı adı zaten kullanılıyor.",
+  "contactRemark": "Kişi notu",
+  "contactRemarkHint": "Yalnızca siz görürsünüz, en fazla 50 karakter. Silmek için boş kaydedin.",
+  "contactSearchHint": "Kullanıcı adı, {'@'}ad veya kayıtlı e-posta",
+  "contactSearch": "Arkadaş ara",
+  "contactNotFound": "Kullanıcı bulunamadı. Kullanıcı adını kontrol edin."
 }

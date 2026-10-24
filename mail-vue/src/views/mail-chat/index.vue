@@ -38,7 +38,7 @@
           <UserAvatar :profile="c.profile" :email="c.peers[0]" />
           <span class="contact-summary"
             ><span class="peers" translate="no" :title="c.peers.join(', ')">{{
-              c.profile?.displayName || c.peers.join(', ')
+              c.profile?.remark || c.profile?.displayName || c.peers.join(', ')
             }}</span
             ><span class="preview">{{ c.preview || c.subject }}</span></span
           >
@@ -89,7 +89,7 @@
         </button>
         <div class="thread-title">
           <strong translate="no" :title="selected.peers.join(', ')">{{
-            selected.profile?.displayName || selected.peers.join(', ')
+            selected.profile?.remark || selected.profile?.displayName || selected.peers.join(', ')
           }}</strong
           ><span v-if="live.internal || messages.some(message => message.internal)" class="live-status" :class="{ online: live.online }">{{
             live.typing
@@ -307,7 +307,7 @@
         <div ref="stickerDock" class="sticker-dock"></div>
       </form>
     </main>
-    <ConversationExplorer v-if="selected" ref="explorer" :account-id="Number(accountId)" :conversation-key="selected.key" :peer="selected.profile?.displayName || selected.peers.join(', ')" :revision="explorerRevision" @jump="jumpToResult" />
+    <ConversationExplorer v-if="selected" ref="explorer" :account-id="Number(accountId)" :conversation-key="selected.key" :peer="selected.profile?.remark || selected.profile?.displayName || selected.peers.join(', ')" :revision="explorerRevision" @jump="jumpToResult" />
     <div v-if="!active" class="empty-thread"><el-empty :description="t('mailChatChoose')" /></div>
     <el-dialog v-model="newOpen" :title="t('mailChatNew')" width="min(500px, calc(100% - 24px))">
       <form @submit.prevent="sendNew">
@@ -348,14 +348,20 @@
     </el-dialog>
     <el-drawer v-model="friendsOpen" :title="t('mailChatContacts')" size="min(420px, 100%)">
       <form class="friend-request" @submit.prevent="addFriend">
-        <el-input v-model="friendEmail" :placeholder="t('mailChatFriendEmail')" /><el-button
+        <el-input v-model="friendEmail" :placeholder="t('contactSearchHint')" :aria-label="t('contactSearchHint')" /><el-button
           native-type="submit"
           type="primary"
-          >{{ t('mailChatAddFriend') }}</el-button
+          :loading="searchingFriends"
+          >{{ t('contactSearch') }}</el-button
         >
       </form>
+      <p v-if="friendSearched && !friendResults.length">{{ t('contactNotFound') }}</p>
+      <div v-for="person in friendResults" :key="person.username" class="friend-row">
+        <div><strong>{{ person.displayName || person.username }}</strong><div translate="no">@{{ person.username }}</div></div>
+        <el-button :loading="addingFriend === person.username" :disabled="person.requested || !!addingFriend" @click="addUsername(person)">{{ t(person.requested ? 'mailChatPending' : 'mailChatAddFriend') }}</el-button>
+      </div>
       <div v-for="friend in friends" :key="friend.id" class="friend-row">
-        <span translate="no">{{ friend.email }}</span>
+        <el-button text @click="viewProfile({ displayName: friend.displayName, remark: friend.remark, username: friend.username }, friend.email)">{{ friend.remark || friend.displayName || (friend.username ? '@' + friend.username : friend.email) }}</el-button>
         <template v-if="friend.status === 'accepted'"
           ><el-button text @click="openFriend(friend)">{{
             t('mailChatOpenChat')
@@ -431,9 +437,15 @@
     <el-dialog v-model="profileOpen" :title="t('profile')" width="min(380px, calc(100% - 24px))">
       <div class="profile-card">
         <UserAvatar :profile="shownProfile" :email="shownProfile.email" :size="72" />
-        <h3>{{ shownProfile.displayName || shownProfile.email }}</h3>
+        <h3>{{ shownProfile.remark || shownProfile.displayName || shownProfile.email }}</h3>
         <p translate="no">{{ shownProfile.email }}</p>
+        <p v-if="shownProfile.username" translate="no">@{{ shownProfile.username }}</p>
         <p>{{ shownProfile.bio || t('profileNoBio') }}</p>
+        <form v-if="shownProfile.email && shownProfile.email !== user.user.email" @submit.prevent="saveRemark">
+          <el-input v-model="contactRemark" maxlength="50" :aria-label="t('contactRemark')" :placeholder="t('contactRemark')" />
+          <small>{{ t('contactRemarkHint') }}</small>
+          <el-button native-type="submit" :loading="savingRemark">{{ t('save') }}</el-button>
+        </form>
       </div>
     </el-dialog>
   </section>
@@ -476,7 +488,7 @@ import {
   mailInstant
 } from '@/request/mail-chat';
 import { useMailLive } from '@/composables/use-mail-live';
-import { listFriends, requestFriend, respondFriend } from '@/request/chat';
+import { listFriends, requestFriend, respondFriend, searchUsers, requestFriendByUsername, saveContactNote } from '@/request/chat';
 import { useMailSync } from '@/composables/use-mail-sync';
 import { fileToBase64, formatBytes } from '@/utils/file-utils';
 import { mailDate, showChatTime, chatTimeLabel } from '@/utils/mail-chat-display';
@@ -486,9 +498,24 @@ const route = useRoute(),
   router = useRouter();
 const profileOpen = ref(false),
   shownProfile = ref({});
+const contactRemark = ref(''), savingRemark = ref(false);
 function viewProfile(profile, email) {
   shownProfile.value = { ...profile, email };
+  contactRemark.value = profile?.remark || '';
   profileOpen.value = true;
+}
+async function saveRemark() {
+  if (savingRemark.value) return;
+  const email = shownProfile.value.email;
+  savingRemark.value = true;
+  try {
+    const result = await saveContactNote(email, contactRemark.value);
+    if (shownProfile.value.email === email) { shownProfile.value.remark = result.remark; contactRemark.value = result.remark; }
+    for (const c of [...conversations.value, ...(selected.value ? [selected.value] : [])]) {
+      if (c.peers.length === 1 && c.peers[0].toLowerCase() === email.toLowerCase()) c.profile = { ...c.profile, remark: result.remark };
+    }
+    if (friendsOpen.value) await loadFriends();
+  } catch {} finally { savingRemark.value = false; }
 }
 const user = useUserStore(),
   accountStore = useAccountStore();
@@ -715,6 +742,7 @@ const canSend = computed(() => hasPerm('email:send') || live.value.internal || s
 const friendsOpen = ref(false),
   friends = ref([]),
   friendEmail = ref('');
+const friendResults = ref([]), friendSearched = ref(false), searchingFriends = ref(false), addingFriend = ref('');
 const revisions = new Map();
 function applyMessages(data) {
   const marker = `${accountId.value}:${selected.value?.key}`;
@@ -739,11 +767,29 @@ async function loadFriends() {
   } catch {}
 }
 async function addFriend() {
+  if (searchingFriends.value) return;
+  const query = friendEmail.value.trim();
+  if (!query) return;
+  searchingFriends.value = true;
   try {
-    await requestFriend(friendEmail.value);
-    friendEmail.value = '';
+    if (query.includes('@') && !query.startsWith('@')) {
+      await requestFriend(query);
+      friendEmail.value = '';
+      await loadFriends();
+    } else {
+      const results = await searchUsers(query);
+      if (friendEmail.value.trim() === query) { friendResults.value = results; friendSearched.value = true; }
+    }
+  } catch {} finally { searchingFriends.value = false; }
+}
+async function addUsername(person) {
+  if (addingFriend.value) return;
+  addingFriend.value = person.username;
+  try {
+    await requestFriendByUsername(person.username);
+    person.requested = true;
     await loadFriends();
-  } catch {}
+  } catch {} finally { addingFriend.value = ''; }
 }
 async function answerFriend(friend, accept) {
   try {
@@ -1579,6 +1625,8 @@ onBeforeUnmount(() => {
   margin-top: 12px;
   white-space: pre-wrap;
 }
+.profile-card form { display: grid; gap: 8px; margin-top: 14px; text-align: start; }
+.profile-card form small { color: var(--el-text-color-secondary); font-size: 12px; }
 .bubble {
   max-width: min(72%, 640px);
   padding: 12px 14px;

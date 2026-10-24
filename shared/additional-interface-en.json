@@ -64,5 +64,13 @@
   "translateErrorNetwork": "The server could not connect to Google Translation. Check network access and try again.",
   "translateLocal": "On-device translation",
   "translateFollowInterface": "Follow interface language",
-  "translateFailed": "Translation failed"
+  "translateFailed": "Translation failed",
+  "contactUsername": "Username",
+  "contactUsernameHint": "Unique username: 3–24 letters, digits or underscores, starting with a letter; case-insensitive. Setting it makes you searchable. Save empty to remove.",
+  "contactUsernameTaken": "This username is already taken.",
+  "contactRemark": "Contact note",
+  "contactRemarkHint": "Only you can see this note. Up to 50 characters; save empty to clear.",
+  "contactSearchHint": "Username, {'@'}username or registered email",
+  "contactSearch": "Find friends",
+  "contactNotFound": "No user found. Check that they have set a username."
 }

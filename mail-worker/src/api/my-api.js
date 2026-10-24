@@ -4,6 +4,8 @@ import result from '../model/result';
 import userContext from '../security/user-context';
 import profile from '../service/profile-service';
 import locale from '../service/locale-service';
+import contacts from '../service/contact-service';
+app.put('/my/username', async c => c.json(result.ok(await contacts.username(c, await c.req.json()))));
 app.get('/my/locale', async (c) => c.json(result.ok(await locale.get(c))));
 app.put('/my/locale', async (c) => c.json(result.ok(await locale.save(c, await c.req.json()))));
 

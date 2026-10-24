@@ -64,5 +64,13 @@
   "translateErrorNetwork": "服务器无法连接 Google 翻译，请检查网络连通性后重试。",
   "translateLocal": "本机翻译",
   "translateFollowInterface": "跟随界面语言",
-  "translateFailed": "翻译失败"
+  "translateFailed": "翻译失败",
+  "contactUsername": "用户名",
+  "contactUsernameHint": "唯一用户名：3–24位，以英文字母开头，仅限字母、数字和下划线，不区分大小写。设置后可被搜索，留空保存可取消。",
+  "contactUsernameTaken": "用户名已被使用，请换一个。",
+  "contactRemark": "联系人备注",
+  "contactRemarkHint": "仅自己可见，最多50字；留空保存可清除。",
+  "contactSearchHint": "输入用户名、{'@'}用户名或注册邮箱",
+  "contactSearch": "查找好友",
+  "contactNotFound": "未找到用户，请确认对方已设置用户名。"
 }

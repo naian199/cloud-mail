@@ -596,5 +596,13 @@
   "translateErrorNetwork": "Der Server kann Google Übersetzer nicht erreichen. Prüfen Sie das Netzwerk.",
   "translateLocal": "Lokale Übersetzung",
   "translateFollowInterface": "Sprache der Oberfläche",
-  "translateFailed": "Übersetzung fehlgeschlagen"
+  "translateFailed": "Übersetzung fehlgeschlagen",
+  "contactUsername": "Benutzername",
+  "contactUsernameHint": "Eindeutig: 3–24 Zeichen a-z, 0-9 oder _, beginnend mit einem Buchstaben, ohne Beachtung der Großschreibung. Macht das Konto auffindbar. Leer speichern zum Entfernen.",
+  "contactUsernameTaken": "Dieser Benutzername ist vergeben.",
+  "contactRemark": "Kontaktnotiz",
+  "contactRemarkHint": "Nur für Sie sichtbar, bis zu 50 Zeichen. Leer speichern zum Löschen.",
+  "contactSearchHint": "Benutzername, {'@'}Name oder registrierte E-Mail",
+  "contactSearch": "Freunde suchen",
+  "contactNotFound": "Kein Benutzer gefunden. Prüfen Sie den Benutzernamen."
 }

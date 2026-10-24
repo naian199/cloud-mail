@@ -596,5 +596,13 @@
   "translateErrorNetwork": "O servidor não consegue acessar o Google Tradutor. Verifique a rede.",
   "translateLocal": "Tradução local",
   "translateFollowInterface": "Idioma da interface",
-  "translateFailed": "Falha na tradução"
+  "translateFailed": "Falha na tradução",
+  "contactUsername": "Nome de usuário",
+  "contactUsernameHint": "Único: 3–24 caracteres a-z, 0-9 ou _, começando por letra, sem diferenciar maiúsculas. Permite encontrar sua conta. Salve vazio para remover.",
+  "contactUsernameTaken": "Este nome de usuário já está em uso.",
+  "contactRemark": "Nota do contato",
+  "contactRemarkHint": "Visível apenas para você, até 50 caracteres. Salve vazio para apagar.",
+  "contactSearchHint": "Usuário, {'@'}usuário ou e-mail cadastrado",
+  "contactSearch": "Buscar amigos",
+  "contactNotFound": "Usuário não encontrado. Confira o nome de usuário."
 }

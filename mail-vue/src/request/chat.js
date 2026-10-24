@@ -2,6 +2,9 @@ import http from '@/axios/index.js';
 
 export const listFriends = () => http.get('/chat/friends');
 export const requestFriend = email => http.post('/chat/friends', { email });
+export const requestFriendByUsername = username => http.post('/chat/friends', { username });
+export const searchUsers = username => http.get('/chat/users', { params: { username } });
+export const saveContactNote = (email, remark) => http.put('/chat/contacts/note', { email, remark });
 export const respondFriend = (id, accept) => http.put(`/chat/friends/${id}`, { accept });
 export const removeFriend = id => http.delete(`/chat/friends/${id}`);
 export const listMessages = (id, params = {}) => http.get(`/chat/friends/${id}/messages`, { params });

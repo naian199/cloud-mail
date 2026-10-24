@@ -7,15 +7,20 @@ export async function profilesFor(c, emails) {
 	if (!values.length) return new Map();
 	const { results } = await c.env.db
 		.prepare(
-			`SELECT a.email, p.display_name AS displayName,
+			`SELECT a.email, p.display_name AS displayName, h.username,
     p.bio, p.avatar FROM account a JOIN user u ON u.user_id=a.user_id
-    JOIN mail_user_profile p ON p.user_id=a.user_id
+    LEFT JOIN mail_user_profile p ON p.user_id=a.user_id
+    LEFT JOIN mail_user_handle h ON h.user_id=a.user_id
     WHERE lower(a.email) IN (SELECT value FROM json_each(?))
     AND a.is_del=0 AND a.status=0 AND u.is_del=0 AND u.status=0`
 		)
 		.bind(JSON.stringify(values))
 		.all();
-	return new Map(results.map((row) => [row.email.toLowerCase(), row]));
+	const profiles = new Map(results.map((row) => [row.email.toLowerCase(), row]));
+	const { results: notes } = await c.env.db.prepare('SELECT email, remark FROM mail_contact_note WHERE user_id=? AND lower(email) IN (SELECT value FROM json_each(?))')
+		.bind(userContext.getUserId(c), JSON.stringify(values)).all();
+	for (const note of notes) profiles.set(note.email.toLowerCase(), { ...profiles.get(note.email.toLowerCase()), remark: note.remark });
+	return profiles;
 }
 
 export default {
@@ -23,7 +28,9 @@ export default {
 		return (
 			(await c.env.db
 				.prepare(
-					'SELECT display_name AS displayName, bio, avatar FROM mail_user_profile WHERE user_id=?'
+					`SELECT coalesce(p.display_name,'') AS displayName, coalesce(p.bio,'') AS bio, coalesce(p.avatar,'') AS avatar,
+            coalesce(h.username,'') AS username FROM user u LEFT JOIN mail_user_profile p ON p.user_id=u.user_id
+            LEFT JOIN mail_user_handle h ON h.user_id=u.user_id WHERE u.user_id=?`
 				)
 				.bind(userContext.getUserId(c))
 				.first()) || { displayName: '', bio: '', avatar: '' }
@@ -116,7 +123,7 @@ export default {
 			hasMore: results.length > 50,
 			messages: messages.map((row) => ({
 				...row,
-				displayName: profiles.get(row.email.toLowerCase())?.displayName || row.email
+				displayName: profiles.get(row.email.toLowerCase())?.remark || profiles.get(row.email.toLowerCase())?.displayName || row.email
 			}))
 		};
 	}

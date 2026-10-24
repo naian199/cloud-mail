@@ -596,5 +596,13 @@
   "translateErrorNetwork": "Máy chủ không thể kết nối Google Dịch. Hãy kiểm tra mạng.",
   "translateLocal": "Dịch trên thiết bị",
   "translateFollowInterface": "Ngôn ngữ giao diện",
-  "translateFailed": "Dịch thất bại"
+  "translateFailed": "Dịch thất bại",
+  "contactUsername": "Tên người dùng",
+  "contactUsernameHint": "Tên duy nhất: 3–24 ký tự a-z, số hoặc _, bắt đầu bằng chữ, không phân biệt hoa thường. Cho phép tìm tài khoản. Lưu trống để xóa.",
+  "contactUsernameTaken": "Tên người dùng này đã được sử dụng.",
+  "contactRemark": "Ghi chú liên hệ",
+  "contactRemarkHint": "Chỉ bạn thấy, tối đa 50 ký tự. Lưu trống để xóa.",
+  "contactSearchHint": "Tên người dùng, {'@'}tên hoặc email đăng ký",
+  "contactSearch": "Tìm bạn",
+  "contactNotFound": "Không tìm thấy người dùng. Hãy kiểm tra tên người dùng."
 }

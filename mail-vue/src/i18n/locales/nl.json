@@ -596,5 +596,13 @@
   "translateErrorNetwork": "De server kan Google Translate niet bereiken. Controleer het netwerk.",
   "translateLocal": "Vertaling op apparaat",
   "translateFollowInterface": "Taal van de interface",
-  "translateFailed": "Vertaling mislukt"
+  "translateFailed": "Vertaling mislukt",
+  "contactUsername": "Gebruikersnaam",
+  "contactUsernameHint": "Uniek: 3–24 tekens a-z, cijfers of _, beginnend met een letter, zonder hoofdletterverschil. Maakt je account vindbaar. Sla leeg op om te verwijderen.",
+  "contactUsernameTaken": "Deze gebruikersnaam is al in gebruik.",
+  "contactRemark": "Contactnotitie",
+  "contactRemarkHint": "Alleen voor jou zichtbaar, tot 50 tekens. Sla leeg op om te wissen.",
+  "contactSearchHint": "Gebruikersnaam, {'@'}naam of geregistreerde e-mail",
+  "contactSearch": "Vrienden zoeken",
+  "contactNotFound": "Geen gebruiker gevonden. Controleer de gebruikersnaam."
 }

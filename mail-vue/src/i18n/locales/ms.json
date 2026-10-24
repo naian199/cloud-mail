@@ -596,5 +596,13 @@
   "translateErrorNetwork": "Pelayan tidak dapat menyambung ke Google Terjemah. Semak rangkaian.",
   "translateLocal": "Terjemahan pada peranti",
   "translateFollowInterface": "Bahasa antara muka",
-  "translateFailed": "Terjemahan gagal"
+  "translateFailed": "Terjemahan gagal",
+  "contactUsername": "Nama pengguna",
+  "contactUsernameHint": "Nama unik: 3–24 aksara a-z, nombor atau _, bermula dengan huruf, tanpa mengira huruf besar. Membolehkan akaun dicari. Simpan kosong untuk memadam.",
+  "contactUsernameTaken": "Nama pengguna ini sudah digunakan.",
+  "contactRemark": "Nota kenalan",
+  "contactRemarkHint": "Hanya anda boleh melihat, hingga 50 aksara. Simpan kosong untuk memadam.",
+  "contactSearchHint": "Nama pengguna, {'@'}nama atau e-mel berdaftar",
+  "contactSearch": "Cari rakan",
+  "contactNotFound": "Pengguna tidak ditemui. Semak nama penggunanya."
 }

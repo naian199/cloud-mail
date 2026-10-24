@@ -596,5 +596,13 @@
   "translateErrorNetwork": "เซิร์ฟเวอร์เชื่อมต่อ Google แปลภาษาไม่ได้ โปรดตรวจสอบเครือข่าย",
   "translateLocal": "การแปลบนอุปกรณ์",
   "translateFollowInterface": "ภาษาของหน้าจอ",
-  "translateFailed": "แปลไม่สำเร็จ"
+  "translateFailed": "แปลไม่สำเร็จ",
+  "contactUsername": "ชื่อผู้ใช้",
+  "contactUsernameHint": "ชื่อไม่ซ้ำ: 3–24 ตัวอักษร a-z ตัวเลขหรือ _ เริ่มด้วยตัวอักษร ไม่แยกตัวพิมพ์ใหญ่เล็ก ตั้งค่าแล้วจะค้นหาบัญชีได้ บันทึกว่างเพื่อลบ",
+  "contactUsernameTaken": "ชื่อผู้ใช้นี้ถูกใช้แล้ว",
+  "contactRemark": "บันทึกผู้ติดต่อ",
+  "contactRemarkHint": "เห็นได้เฉพาะคุณ สูงสุด 50 ตัวอักษร บันทึกว่างเพื่อลบ",
+  "contactSearchHint": "ชื่อผู้ใช้ {'@'}ชื่อ หรืออีเมลที่ลงทะเบียน",
+  "contactSearch": "ค้นหาเพื่อน",
+  "contactNotFound": "ไม่พบผู้ใช้ โปรดตรวจสอบชื่อผู้ใช้"
 }
