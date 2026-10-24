@@ -595,5 +595,6 @@
   "translateErrorRestriction": "API anahtarı kısıtlamaları sunucu isteğini engelledi. Google Cloud kısıtlamalarını kontrol edin.",
   "translateErrorNetwork": "Sunucu Google Çeviri hizmetine bağlanamıyor. Ağı kontrol edin.",
   "translateLocal": "Cihazda çeviri",
-  "translateFollowInterface": "Arayüz dili"
+  "translateFollowInterface": "Arayüz dili",
+  "translateFailed": "Çeviri başarısız"
 }

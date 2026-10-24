@@ -16,7 +16,7 @@ export const autoTranslation = reactive({
   followInterface: saved.followInterface !== false,
   target: saved.target || languages.find(language => language.code === chooseLanguage(null, navigator.languages || [navigator.language]))?.google || 'en'
 });
-export const translationStatus = reactive({ error: '' });
+export const translationStatus = reactive({ error: '', settingsOpen: false });
 export function syncTranslationLanguage(locale) {
   if (autoTranslation.followInterface) {
     autoTranslation.target = languages.find(language => language.code === locale)?.google || 'en';

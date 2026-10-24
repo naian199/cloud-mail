@@ -595,5 +595,6 @@
   "translateErrorRestriction": "Les restrictions de la clé API ont bloqué la requête du serveur. Vérifiez-les dans Google Cloud.",
   "translateErrorNetwork": "Le serveur ne peut pas joindre Google Traduction. Vérifiez le réseau.",
   "translateLocal": "Traduction locale",
-  "translateFollowInterface": "Langue de l’interface"
+  "translateFollowInterface": "Langue de l’interface",
+  "translateFailed": "Échec de traduction"
 }

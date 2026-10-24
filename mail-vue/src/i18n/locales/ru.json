@@ -595,5 +595,6 @@
   "translateErrorRestriction": "Ограничения API-ключа заблокировали запрос сервера. Проверьте их в Google Cloud.",
   "translateErrorNetwork": "Сервер не может подключиться к Google Переводчику. Проверьте сеть.",
   "translateLocal": "Перевод на устройстве",
-  "translateFollowInterface": "Язык интерфейса"
+  "translateFollowInterface": "Язык интерфейса",
+  "translateFailed": "Ошибка перевода"
 }

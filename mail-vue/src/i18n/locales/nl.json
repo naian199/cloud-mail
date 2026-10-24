@@ -595,5 +595,6 @@
   "translateErrorRestriction": "API-sleutelbeperkingen hebben het serververzoek geblokkeerd. Controleer deze in Google Cloud.",
   "translateErrorNetwork": "De server kan Google Translate niet bereiken. Controleer het netwerk.",
   "translateLocal": "Vertaling op apparaat",
-  "translateFollowInterface": "Taal van de interface"
+  "translateFollowInterface": "Taal van de interface",
+  "translateFailed": "Vertaling mislukt"
 }

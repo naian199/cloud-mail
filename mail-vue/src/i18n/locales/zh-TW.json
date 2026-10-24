@@ -595,5 +595,6 @@
   "translateErrorRestriction": "金鑰的應用程式或 API 限制封鎖了伺服器請求，請檢查 Google Cloud 中的金鑰限制。",
   "translateErrorNetwork": "伺服器無法連線至 Google 翻譯，請檢查網路後重試。",
   "translateLocal": "本機翻譯",
-  "translateFollowInterface": "跟隨介面語言"
+  "translateFollowInterface": "跟隨介面語言",
+  "translateFailed": "翻譯失敗"
 }

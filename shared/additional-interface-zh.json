@@ -63,5 +63,6 @@
   "translateErrorRestriction": "密钥的应用或 API 限制阻止了服务器请求，请检查 Google Cloud 中的密钥限制。",
   "translateErrorNetwork": "服务器无法连接 Google 翻译，请检查网络连通性后重试。",
   "translateLocal": "本机翻译",
-  "translateFollowInterface": "跟随界面语言"
+  "translateFollowInterface": "跟随界面语言",
+  "translateFailed": "翻译失败"
 }

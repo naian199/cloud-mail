@@ -1,67 +1,27 @@
 <template>
-  <div
-    ref="element"
-    class="message-translation"
-    :class="{ 'translation-empty': chatStyle && !opened && !result && !error }"
-    @pointerdown.stop
-    @contextmenu.stop
-  >
-    <el-button
-      v-if="!chatStyle"
-      text
-      size="small"
-      :aria-label="t('translateTitle')"
-      @click="toggle"
-      >{{ t('translateTitle') }}</el-button
-    >
-    <div v-if="opened" class="translation-controls">
-      <p v-if="!config?.enabled" role="status">
-        {{ t('translateNotEnabled') }}
-        <router-link v-if="hasPerm('setting:set')" to="/system-settings">{{
-          t('translateConfigure')
-        }}</router-link>
-      </p>
-      <template v-else>
-        <el-select v-model="target" filterable :aria-label="t('translateTarget')">
-          <el-option
-            v-for="language in languages"
-            :key="language.code"
-            :label="language.name"
-            :value="language.google"
-          />
-        </el-select>
-        <p class="privacy">{{ t(chatStyle ? 'translatePrivacy' : 'translateExternalPrivacy') }}</p>
-        <el-checkbox v-model="consent">{{ t('translateConsent') }}</el-checkbox>
-        <el-button :loading="loading" :disabled="!consent" @click="translate">{{
-          t('translateAction')
-        }}</el-button>
-      </template>
-      <p v-if="error" role="alert">{{ t(error) }}</p>
-    </div>
-    <p v-if="error && !opened" role="alert">{{ t(error) }}</p>
+  <div ref="element" class="message-translation" :class="{ 'translation-empty': chatStyle && !result && !error && !loading }" @pointerdown.stop @contextmenu.stop>
+    <el-button v-if="!result && (!chatStyle || loading)" text size="small" :loading="loading" :aria-label="t('translateTitle')" @click="translate()">{{ t('translateAction') }}</el-button>
+    <el-button v-if="error" class="translation-error" text size="small" :title="t(error)" :aria-label="t(error)" @click="openSettings">{{ t('translateFailed') }}</el-button>
     <div v-if="result && !hidden" class="translated-text" dir="auto">
-      <strong>{{ t('translateResult', { language: result.language }) }}</strong>
-      <small v-if="result.provider === 'local'"> · {{ t('translateLocal') }}</small>
+      <div class="translation-caption">
+        <small>{{ t('translateResult', { language: result.language }) }}<template v-if="result.provider === 'local'"> · {{ t('translateLocal') }}</template></small>
+        <el-button text size="small" @click="hidden = true">{{ t('translateHide') }}</el-button>
+      </div>
       <p>{{ result.text }}</p>
       <small v-if="result.truncated">{{ t('translateTruncated') }}</small>
-      <el-button text size="small" @click="hidden = true">{{ t('translateHide') }}</el-button>
     </div>
-    <el-button v-else-if="result" text size="small" @click="hidden = false">{{
-      t('translateShow')
-    }}</el-button>
+    <el-button v-else-if="result" text size="small" @click="hidden = false">{{ t('translateShow') }}</el-button>
   </div>
 </template>
 <script setup>
 import { ref, watch, onMounted, onBeforeUnmount } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { hasPerm } from '@/perm/perm';
 import { languages } from '@/i18n';
 import http from '@/axios';
 import { translateLocally } from '@/utils/local-translation.mjs';
 import {
   autoTranslation,
   scheduleAutoTranslation,
-  translationAvailability,
   syncTranslationLanguage,
   translationStatus
 } from '@/composables/use-auto-translation';
@@ -72,10 +32,7 @@ const visible = ref(false);
 let observer,
   generation = 0,
   queued = '';
-const opened = ref(false),
-  config = ref(null),
-  consent = ref(false),
-  loading = ref(false),
+const loading = ref(false),
   error = ref(''),
   result = ref(null),
   hidden = ref(false);
@@ -84,25 +41,11 @@ watch(locale, syncTranslationLanguage, { immediate: true });
 const cache = new Map();
 let controller,
   stopped = false;
-async function toggle() {
-  opened.value = !opened.value;
-  if (opened.value) {
-    error.value = '';
-    try {
-      config.value = await translationAvailability();
-    } catch {
-      error.value = 'serviceUnavailable';
-    }
-  }
-}
-defineExpose({
-  open: async () => {
-    if (!opened.value) await toggle();
-    element.value?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-  }
-});
+function openSettings() { translationStatus.settingsOpen = true; }
+defineExpose({ open: () => translate() });
 async function translate(automatic = false) {
-  if ((!consent.value && automatic !== true) || loading.value) return;
+  if (loading.value) return;
+  target.value = autoTranslation.target;
   error.value = '';
   hidden.value = false;
   if (cache.has(target.value)) {
@@ -116,13 +59,19 @@ async function translate(automatic = false) {
   try {
     const local = await translateLocally(props.text, selected, controller.signal);
     if (stopped || revision !== generation) return;
-    if (!local && automatic === true && (!autoTranslation.cloudConsent || translationStatus.error)) return;
+    if (!local && !autoTranslation.cloudConsent) {
+      if (automatic !== true) openSettings();
+      return;
+    }
+    if (!local && automatic === true && translationStatus.error) return;
     const data = local || await http.post(
       '/mail-chat/translate',
       { emailId: props.emailId, target: selected },
       { noMsg: true, signal: controller.signal, timeout: 20000 }
     );
     if (stopped || revision !== generation) return;
+    if (!local) translationStatus.error = '';
+    if (data.text?.trim() === props.text?.trim()) return;
     const value = {
       ...data,
       language: languages.find((language) => language.google === selected)?.name || selected
@@ -130,19 +79,10 @@ async function translate(automatic = false) {
     cache.set(selected, value);
     result.value = value;
   } catch (failure) {
-    if (!stopped && revision === generation)
-      error.value =
-        failure?.errorKey ||
-        (String(failure?.message).startsWith('translateError')
-          ? failure.message
-          : 'translateErrorProvider');
-    if (
-      automatic === true &&
-      !stopped &&
-      revision === generation &&
-      ['translateErrorQuota', 'translateErrorDisabled', 'translateErrorKey', 'translateErrorBilling', 'translateErrorApiDisabled', 'translateErrorRestriction'].includes(error.value)
-    ) {
-      translationStatus.error = error.value;
+    if (!stopped && revision === generation) {
+      const key = failure?.errorKey || (String(failure?.message).startsWith('translateError') ? failure.message : 'translateErrorProvider');
+      translationStatus.error = key;
+      if (automatic !== true) error.value = key;
     }
   } finally {
     if (!stopped && revision === generation) loading.value = false;
@@ -203,46 +143,13 @@ onBeforeUnmount(() => {
 });
 </script>
 <style scoped>
-.message-translation {
-  margin-top: 8px;
-  min-width: 0;
-}
-.translation-empty {
-  margin-top: 0;
-  height: 1px;
-}
-.translation-controls {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 10px;
-}
-.el-select {
-  width: 200px;
-  max-width: 100%;
-}
-.privacy,
-.translation-controls p {
-  font-size: 12px;
-  line-height: 1.5;
-  overflow-wrap: anywhere;
-}
-:deep(.el-checkbox) {
-  height: auto;
-  align-items: flex-start;
-}
-:deep(.el-checkbox__label) {
-  white-space: normal;
-  line-height: 1.5;
-}
-.translated-text {
-  margin-top: 10px;
-  border-top: 1px solid var(--el-border-color);
-  padding-top: 10px;
-}
-.translated-text p {
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-  margin-top: 8px;
-}
+.message-translation { margin-top: 4px; min-width: 0; }
+.translation-empty { margin-top: 0; height: 1px; }
+.message-translation > .el-button { height: 22px; padding: 0 2px; font-size: 11px; }
+.translation-error { color: var(--el-text-color-secondary); }
+.translated-text { border-top: 1px solid var(--el-border-color-lighter); padding-top: 4px; }
+.translation-caption { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--el-text-color-secondary); }
+.translation-caption small { font-size: 11px; }
+.translation-caption .el-button { height: 20px; padding: 0; font-size: 11px; }
+.translated-text p { white-space: pre-wrap; overflow-wrap: anywhere; margin: 2px 0 0; }
 </style>

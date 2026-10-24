@@ -595,5 +595,6 @@
   "translateErrorRestriction": "Pembatasan kunci API memblokir permintaan server. Periksa pembatasan di Google Cloud.",
   "translateErrorNetwork": "Server tidak dapat terhubung ke Google Terjemahan. Periksa jaringan.",
   "translateLocal": "Terjemahan di perangkat",
-  "translateFollowInterface": "Bahasa antarmuka"
+  "translateFollowInterface": "Bahasa antarmuka",
+  "translateFailed": "Terjemahan gagal"
 }

@@ -595,5 +595,6 @@
   "translateErrorRestriction": "API-Schlüsselbeschränkungen haben die Serveranfrage blockiert. Prüfen Sie diese in Google Cloud.",
   "translateErrorNetwork": "Der Server kann Google Übersetzer nicht erreichen. Prüfen Sie das Netzwerk.",
   "translateLocal": "Lokale Übersetzung",
-  "translateFollowInterface": "Sprache der Oberfläche"
+  "translateFollowInterface": "Sprache der Oberfläche",
+  "translateFailed": "Übersetzung fehlgeschlagen"
 }

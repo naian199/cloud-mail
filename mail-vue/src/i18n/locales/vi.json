@@ -595,5 +595,6 @@
   "translateErrorRestriction": "Giới hạn khóa API đã chặn yêu cầu máy chủ. Kiểm tra giới hạn trong Google Cloud.",
   "translateErrorNetwork": "Máy chủ không thể kết nối Google Dịch. Hãy kiểm tra mạng.",
   "translateLocal": "Dịch trên thiết bị",
-  "translateFollowInterface": "Ngôn ngữ giao diện"
+  "translateFollowInterface": "Ngôn ngữ giao diện",
+  "translateFailed": "Dịch thất bại"
 }

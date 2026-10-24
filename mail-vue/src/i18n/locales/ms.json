@@ -595,5 +595,6 @@
   "translateErrorRestriction": "Sekatan kunci API menyekat permintaan pelayan. Semak sekatan di Google Cloud.",
   "translateErrorNetwork": "Pelayan tidak dapat menyambung ke Google Terjemah. Semak rangkaian.",
   "translateLocal": "Terjemahan pada peranti",
-  "translateFollowInterface": "Bahasa antara muka"
+  "translateFollowInterface": "Bahasa antara muka",
+  "translateFailed": "Terjemahan gagal"
 }
