@@ -1,13 +1,8 @@
 <template>
-  <div class="header" :class="!hasPerm('email:send') ? 'not-send' : ''">
+  <div class="header">
     <div class="header-btn">
       <hanburger @click="changeAside"></hanburger>
       <span class="breadcrumb-item">{{ $t(route.meta.title) }}</span>
-    </div>
-    <div v-perm="'email:send'" class="writer-box" @click="openSend">
-      <div class="writer">
-        <Icon icon="material-symbols:edit-outline-sharp" width="22" height="22"/>
-      </div>
     </div>
     <div class="toolbar">
       <div v-if="uiStore.dark" class="sun-icon icon-item" @click="openDark($event)">
@@ -229,10 +224,6 @@ function switchDark(nextIsDark, root) {
   uiStore.dark = nextIsDark
 }
 
-function openSend() {
-  uiStore.writerRef.open()
-}
-
 function changeAside() {
   uiStore.asideShow = !uiStore.asideShow
 }
@@ -358,37 +349,7 @@ function formatName(email) {
   display: grid;
   height: 100%;
   gap: 10px;
-  grid-template-columns: auto auto 1fr;
-}
-
-.header.not-send {
   grid-template-columns: auto 1fr;
-}
-
-.writer-box {
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-left: 5px;
-
-  .writer {
-    width: 34px;
-    height: 34px;
-    border-radius: 50%;
-    color: #ffffff;
-    background: linear-gradient(135deg, #1890ff, #3a80dd);
-    transition: all 0.3s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    .writer-text {
-      margin-left: 15px;
-      font-size: 14px;
-      font-weight: bold;;
-    }
-  }
 }
 
 .header-btn {
@@ -477,15 +438,7 @@ function formatName(email) {
 @media (max-width: 767px) {
   .header {
     gap: 4px;
-    grid-template-columns: minmax(0, auto) auto 1fr;
-  }
-
-  .header.not-send {
     grid-template-columns: minmax(0, auto) 1fr;
-  }
-
-  .writer-box {
-    margin-left: 0;
   }
 
   .toolbar {
