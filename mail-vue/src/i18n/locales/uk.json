@@ -586,5 +586,12 @@
   "stickersLink": "Посилання на набір Telegram",
   "stickersImport": "Імпортувати",
   "stickersUpload": "Завантажити WebP, TGS або WebM",
-  "stickersError": "Перевірте посилання або налаштування Telegram-бота платформи."
+  "stickersError": "Перевірте посилання або налаштування Telegram-бота платформи.",
+  "translateTest": "Перевірити з’єднання",
+  "translateTestHint": "Спочатку збережіть зміни. Тест перекладає лише Hello зі збереженим ключем, без листування. Використовується квота, можлива оплата Google.",
+  "translateTestSuccess": "Перевірка з’єднання з Google Перекладачем успішна.",
+  "translateErrorBilling": "Оплату цього проєкту Google Cloud вимкнено або вона недоступна.",
+  "translateErrorApiDisabled": "Увімкніть Cloud Translation API (Basic v2) у проєкті Google Cloud цього ключа.",
+  "translateErrorRestriction": "Обмеження ключа API заблокували запит сервера. Перевірте їх у Google Cloud.",
+  "translateErrorNetwork": "Сервер не може підключитися до Google Перекладача. Перевірте мережу."
 }

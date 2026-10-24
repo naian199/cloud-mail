@@ -586,5 +586,12 @@
   "stickersLink": "ลิงก์ชุดสติกเกอร์ Telegram",
   "stickersImport": "นำเข้า",
   "stickersUpload": "อัปโหลด WebP, TGS หรือ WebM",
-  "stickersError": "ตรวจสอบลิงก์หรือการตั้งค่าบอต Telegram ของแพลตฟอร์ม"
+  "stickersError": "ตรวจสอบลิงก์หรือการตั้งค่าบอต Telegram ของแพลตฟอร์ม",
+  "translateTest": "ทดสอบการเชื่อมต่อ",
+  "translateTestHint": "บันทึกก่อนทดสอบ ระบบจะแปลเฉพาะ Hello ด้วยคีย์ที่บันทึกไว้ ไม่ส่งข้อความแชต ใช้โควตาการแปลและอาจมีค่าบริการจาก Google",
+  "translateTestSuccess": "ทดสอบการเชื่อมต่อ Google แปลภาษาสำเร็จ",
+  "translateErrorBilling": "การเรียกเก็บเงินของโปรเจ็กต์ Google Cloud นี้ปิดอยู่หรือไม่พร้อมใช้งาน",
+  "translateErrorApiDisabled": "เปิด Cloud Translation API (Basic v2) ในโปรเจ็กต์ Google Cloud ของคีย์นี้",
+  "translateErrorRestriction": "ข้อจำกัดของคีย์ API ปิดกั้นคำขอจากเซิร์ฟเวอร์ ตรวจสอบข้อจำกัดใน Google Cloud",
+  "translateErrorNetwork": "เซิร์ฟเวอร์เชื่อมต่อ Google แปลภาษาไม่ได้ โปรดตรวจสอบเครือข่าย"
 }

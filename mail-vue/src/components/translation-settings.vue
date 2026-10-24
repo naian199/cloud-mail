@@ -37,9 +37,12 @@
         :step="1000"
         :aria-label="t('translateSiteLimit')"
     /></label>
-    <el-button type="primary" :loading="saving" :disabled="loading" @click="save">{{
+    <el-button type="primary" :loading="saving" :disabled="loading || testing" @click="save">{{
       t('save')
     }}</el-button>
+    <small>{{ t('translateTestHint') }}</small>
+    <el-button :loading="testing" :disabled="loading || saving || !configured || !!form.apiKey || form.clearKey" @click="testConnection">{{ t('translateTest') }}</el-button>
+    <el-alert v-if="testResult" :title="t(testResult)" :type="testResult === 'translateTestSuccess' ? 'success' : 'error'" :closable="false" role="status" />
   </section>
 </template>
 <script setup>
@@ -57,6 +60,8 @@ const form = reactive({
 });
 const configured = ref(false),
   saving = ref(false),
+  testing = ref(false),
+  testResult = ref(''),
   loading = ref(true);
 function clearKey(value) {
   if (value) {
@@ -76,6 +81,7 @@ onMounted(async () => {
 });
 async function save() {
   saving.value = true;
+  testResult.value = '';
   try {
     const data = await http.put('/setting/translation', {
       enabled: form.enabled,
@@ -91,6 +97,18 @@ async function save() {
   } catch {
   } finally {
     saving.value = false;
+  }
+}
+async function testConnection() {
+  testing.value = true;
+  testResult.value = '';
+  try {
+    await http.post('/setting/translation/test', {}, { noMsg: true, timeout: 20000 });
+    testResult.value = 'translateTestSuccess';
+  } catch (failure) {
+    testResult.value = failure?.errorKey || 'translateErrorProvider';
+  } finally {
+    testing.value = false;
   }
 }
 </script>

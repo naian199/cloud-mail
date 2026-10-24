@@ -46,6 +46,27 @@ export default {
 		await c.env.kv.put(CONFIG_KEY, JSON.stringify(config));
 		return this.publicConfig(config);
 	},
+	async permit(c, characters, config) {
+		if (!c.env.CHAT_NOTIFICATIONS) fail('translateErrorBinding', 503);
+		const stub = c.env.CHAT_NOTIFICATIONS.get(c.env.CHAT_NOTIFICATIONS.idFromName('translation-site-quota'));
+		const response = await stub.fetch('https://chat.internal/translation/permit', {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ userId: userContext.getUserId(c), characters, userLimit: config.userLimit, siteLimit: config.siteLimit })
+		});
+		if (!response.ok) fail(response.status === 429 ? 'translateErrorQuota' : 'translateErrorBinding', response.status === 429 ? 429 : 503);
+	},
+	async test(c) {
+		const config = await this.config(c);
+		if (!config.apiKey) fail('translateErrorConfig');
+		await this.permit(c, 5, config);
+		try {
+			await googleTranslate('Hello', 'zh-CN', config.apiKey);
+			return { success: true };
+		} catch (error) {
+			fail(error.key || 'translateErrorProvider', error.code || 502);
+		}
+	},
 	async translate(c, params) {
 		const { emailId, target } = params || {};
 		if (
@@ -79,27 +100,9 @@ export default {
 		if (!text) fail('translateErrorEmpty');
 		const config = await this.config(c);
 		if (!config.enabled || !config.apiKey) fail('translateErrorDisabled', 503);
-		if (!c.env.CHAT_NOTIFICATIONS) fail('translateErrorBinding', 503);
     // 10,000 UTF-16 units contain at least the first 5,000 Unicode characters.
     const selected = Array.from(text.slice(0, 10000)).slice(0, 5000).join('');
-		const stub = c.env.CHAT_NOTIFICATIONS.get(
-			c.env.CHAT_NOTIFICATIONS.idFromName('translation-site-quota')
-		);
-		const permit = await stub.fetch('https://chat.internal/translation/permit', {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({
-				userId: userContext.getUserId(c),
-				characters: Array.from(selected).length,
-				userLimit: config.userLimit,
-				siteLimit: config.siteLimit
-			})
-		});
-		if (!permit.ok)
-			fail(
-				permit.status === 429 ? 'translateErrorQuota' : 'translateErrorBinding',
-				permit.status === 429 ? 429 : 503
-			);
+		await this.permit(c, Array.from(selected).length, config);
 		try {
 			const result = await googleTranslate(selected, target, config.apiKey);
 			return { ...result, target, truncated: selected.length < text.length };

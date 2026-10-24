@@ -586,5 +586,12 @@
   "stickersLink": "Telegram स्टिकर पैक लिंक",
   "stickersImport": "आयात करें",
   "stickersUpload": "WebP, TGS या WebM अपलोड करें",
-  "stickersError": "लिंक या प्लेटफ़ॉर्म के Telegram बॉट की सेटिंग जाँचें।"
+  "stickersError": "लिंक या प्लेटफ़ॉर्म के Telegram बॉट की सेटिंग जाँचें।",
+  "translateTest": "कनेक्शन जाँचें",
+  "translateTestHint": "पहले बदलाव सहेजें। जाँच में सहेजी गई कुंजी से केवल Hello का अनुवाद होगा, चैट नहीं भेजी जाएगी। कोटा खर्च होगा और Google शुल्क लग सकता है।",
+  "translateTestSuccess": "Google अनुवाद कनेक्शन जाँच सफल रही।",
+  "translateErrorBilling": "इस Google Cloud प्रोजेक्ट की बिलिंग बंद है या उपलब्ध नहीं है।",
+  "translateErrorApiDisabled": "इस कुंजी के Google Cloud प्रोजेक्ट में Cloud Translation API (Basic v2) चालू करें।",
+  "translateErrorRestriction": "API कुंजी के प्रतिबंधों ने सर्वर अनुरोध रोक दिया। Google Cloud में प्रतिबंध जाँचें।",
+  "translateErrorNetwork": "सर्वर Google अनुवाद से नहीं जुड़ सका। नेटवर्क जाँचें।"
 }

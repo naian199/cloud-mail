@@ -55,6 +55,8 @@ await test('language preferences and translation configuration enforce account p
 	assert.equal((await api('my/locale', a, 'PUT', { locale: 'not-supported' })).code, 400);
 	assert.equal((await api('setting/translation', a)).code, 403);
 	assert.equal((await api('setting/translation', a, 'PUT', { enabled: true })).code, 403);
+	assert.equal((await api('setting/translation/test', null, 'POST', {})).code, 401);
+	assert.equal((await api('setting/translation/test', a, 'POST', {})).code, 403);
 	const role = db
 		.prepare(
 			"INSERT INTO role(name,key,send_type,send_count,account_count,is_default,ban_email,avail_domain) VALUES(?,?,'ban',0,5,0,'','')"
@@ -70,6 +72,7 @@ await test('language preferences and translation configuration enforce account p
 		t.skip('Existing local translation credentials must be preserved');
 		return;
 	}
+	assert.equal((await api('setting/translation/test', admin, 'POST', {})).errorKey, 'translateErrorConfig');
 	try {
 		const key = 'AIzaLocalOnlyTranslationFixture00000000';
 		const config = { enabled: false, apiKey: key, userLimit: 20, siteLimit: 50000 };
@@ -136,7 +139,7 @@ await test('language preferences and translation configuration enforce account p
 			target: 'fr'
 		});
 		assert(
-			['translateErrorKey', 'translateErrorProvider', 'translateErrorTimeout'].includes(
+			['translateErrorKey', 'translateErrorProvider', 'translateErrorTimeout', 'translateErrorNetwork'].includes(
 				admitted.errorKey
 			),
 			'Real quota storage must admit the request before an invalid fixture key fails'

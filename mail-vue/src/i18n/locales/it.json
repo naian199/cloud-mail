@@ -586,5 +586,12 @@
   "stickersLink": "Link del pacchetto Telegram",
   "stickersImport": "Importa",
   "stickersUpload": "Carica WebP, TGS o WebM",
-  "stickersError": "Controlla il link o la configurazione del bot Telegram della piattaforma."
+  "stickersError": "Controlla il link o la configurazione del bot Telegram della piattaforma.",
+  "translateTest": "Verifica connessione",
+  "translateTestHint": "Salva prima. Il test traduce solo Hello con la chiave salvata, senza inviare le chat. Consuma quota e può comportare costi Google.",
+  "translateTestSuccess": "Connessione a Google Traduttore verificata.",
+  "translateErrorBilling": "La fatturazione di questo progetto Google Cloud è disattivata o non disponibile.",
+  "translateErrorApiDisabled": "Attiva Cloud Translation API (Basic v2) nel progetto Google Cloud di questa chiave.",
+  "translateErrorRestriction": "Le restrizioni della chiave API hanno bloccato la richiesta del server. Controllale in Google Cloud.",
+  "translateErrorNetwork": "Il server non può connettersi a Google Traduttore. Controlla la rete."
 }

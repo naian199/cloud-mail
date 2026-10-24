@@ -586,5 +586,12 @@
   "stickersLink": "Pautan pek pelekat Telegram",
   "stickersImport": "Import",
   "stickersUpload": "Muat naik WebP, TGS atau WebM",
-  "stickersError": "Semak pautan atau tetapan bot Telegram platform."
+  "stickersError": "Semak pautan atau tetapan bot Telegram platform.",
+  "translateTest": "Uji sambungan",
+  "translateTestHint": "Simpan dahulu. Ujian hanya menterjemah Hello dengan kunci tersimpan, tanpa menghantar sembang. Kuota digunakan dan caj Google mungkin dikenakan.",
+  "translateTestSuccess": "Ujian sambungan Google Terjemah berjaya.",
+  "translateErrorBilling": "Pengebilan projek Google Cloud ini dimatikan atau tidak tersedia.",
+  "translateErrorApiDisabled": "Aktifkan Cloud Translation API (Basic v2) dalam projek Google Cloud bagi kunci ini.",
+  "translateErrorRestriction": "Sekatan kunci API menyekat permintaan pelayan. Semak sekatan di Google Cloud.",
+  "translateErrorNetwork": "Pelayan tidak dapat menyambung ke Google Terjemah. Semak rangkaian."
 }

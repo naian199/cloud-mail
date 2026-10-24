@@ -586,5 +586,12 @@
   "stickersLink": "Link naar Telegram-stickerpakket",
   "stickersImport": "Importeren",
   "stickersUpload": "WebP, TGS of WebM uploaden",
-  "stickersError": "Controleer de link of de Telegram-botinstellingen van het platform."
+  "stickersError": "Controleer de link of de Telegram-botinstellingen van het platform.",
+  "translateTest": "Verbinding testen",
+  "translateTestHint": "Sla eerst op. De test vertaalt alleen Hello met de opgeslagen sleutel, geen chats. Dit gebruikt quotum en kan Google-kosten veroorzaken.",
+  "translateTestSuccess": "Verbinding met Google Translate geslaagd.",
+  "translateErrorBilling": "Facturering voor dit Google Cloud-project is uitgeschakeld of niet beschikbaar.",
+  "translateErrorApiDisabled": "Schakel Cloud Translation API (Basic v2) in voor het Google Cloud-project van deze sleutel.",
+  "translateErrorRestriction": "API-sleutelbeperkingen hebben het serververzoek geblokkeerd. Controleer deze in Google Cloud.",
+  "translateErrorNetwork": "De server kan Google Translate niet bereiken. Controleer het netwerk."
 }

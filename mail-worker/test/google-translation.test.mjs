@@ -66,8 +66,27 @@ test('official translation sends only selected plain text and keeps credentials 
 		googleTranslate('Hello', 'fr', 'secret', async () => {
 			throw Error('secret transport failure');
 		}),
-		(e) => e.key === 'translateErrorProvider'
+		(e) => e.key === 'translateErrorNetwork'
 	);
+});
+test('Google diagnostics classify invalid keys, disabled services, billing, restrictions and quotas without exposing provider details', async () => {
+	for (const [status, reason, expected] of [
+		[400, 'API_KEY_INVALID', 'translateErrorKey'],
+		[403, 'SERVICE_DISABLED', 'translateErrorApiDisabled'],
+		[403, 'BILLING_DISABLED', 'translateErrorBilling'],
+		[403, 'API_KEY_HTTP_REFERRER_BLOCKED', 'translateErrorRestriction'],
+		[403, 'API_KEY_SERVICE_BLOCKED', 'translateErrorRestriction'],
+		[403, 'userRateLimitExceeded', 'translateErrorQuota'],
+		[500, 'INTERNAL', 'translateErrorProvider']
+	]) {
+		await assert.rejects(googleTranslate('Hello', 'fr', 'private-key', async () => Response.json({
+			error: { message: 'private provider detail', details: [{ reason }], errors: [{ reason }] }
+		}, { status })), error => error.key === expected && !error.message.includes('private'));
+	}
+	await assert.rejects(googleTranslate('Hello', 'fr', 'private-key', async () => Response.json({
+		error: { message: 'API key not valid. Please pass a valid API key.' }
+	}, { status: 400 })), error => error.key === 'translateErrorKey');
+	await assert.rejects(googleTranslate('Hello', 'fr', 'private-key', async () => Response.json({ error: { details: 'bad schema', errors: null } }, { status: 500 })), error => error.key === 'translateErrorProvider');
 });
 function storage() {
 	const values = new Map();

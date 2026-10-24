@@ -586,5 +586,12 @@
   "stickersLink": "Telegram çıkartma paketi bağlantısı",
   "stickersImport": "İçe aktar",
   "stickersUpload": "WebP, TGS veya WebM yükle",
-  "stickersError": "Bağlantıyı veya platformun Telegram bot ayarlarını kontrol edin."
+  "stickersError": "Bağlantıyı veya platformun Telegram bot ayarlarını kontrol edin.",
+  "translateTest": "Bağlantıyı test et",
+  "translateTestHint": "Önce kaydedin. Test, kayıtlı anahtarla yalnızca Hello metnini çevirir; sohbet göndermez. Kotadan düşülür ve Google ücret alabilir.",
+  "translateTestSuccess": "Google Çeviri bağlantı testi başarılı.",
+  "translateErrorBilling": "Bu Google Cloud projesinde faturalandırma kapalı veya kullanılamıyor.",
+  "translateErrorApiDisabled": "Bu anahtarın Google Cloud projesinde Cloud Translation API (Basic v2) hizmetini etkinleştirin.",
+  "translateErrorRestriction": "API anahtarı kısıtlamaları sunucu isteğini engelledi. Google Cloud kısıtlamalarını kontrol edin.",
+  "translateErrorNetwork": "Sunucu Google Çeviri hizmetine bağlanamıyor. Ağı kontrol edin."
 }

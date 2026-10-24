@@ -132,7 +132,7 @@ async function translate(automatic = false) {
       automatic === true &&
       !stopped &&
       revision === generation &&
-      ['translateErrorQuota', 'translateErrorDisabled', 'translateErrorKey'].includes(error.value)
+      ['translateErrorQuota', 'translateErrorDisabled', 'translateErrorKey', 'translateErrorBilling', 'translateErrorApiDisabled', 'translateErrorRestriction'].includes(error.value)
     ) {
       autoTranslation.enabled = false;
       saveAutoTranslation();

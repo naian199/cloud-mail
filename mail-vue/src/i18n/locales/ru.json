@@ -586,5 +586,12 @@
   "stickersLink": "Ссылка на набор Telegram",
   "stickersImport": "Добавить",
   "stickersUpload": "Загрузить WebP, TGS или WebM",
-  "stickersError": "Проверьте ссылку или настройки Telegram-бота платформы."
+  "stickersError": "Проверьте ссылку или настройки Telegram-бота платформы.",
+  "translateTest": "Проверить подключение",
+  "translateTestHint": "Сначала сохраните изменения. Тест переводит только Hello с сохранённым ключом, без переписки. Он расходует квоту и может оплачиваться Google.",
+  "translateTestSuccess": "Подключение к Google Переводчику проверено.",
+  "translateErrorBilling": "Оплата проекта Google Cloud отключена или недоступна.",
+  "translateErrorApiDisabled": "Включите Cloud Translation API (Basic v2) в проекте Google Cloud этого ключа.",
+  "translateErrorRestriction": "Ограничения API-ключа заблокировали запрос сервера. Проверьте их в Google Cloud.",
+  "translateErrorNetwork": "Сервер не может подключиться к Google Переводчику. Проверьте сеть."
 }

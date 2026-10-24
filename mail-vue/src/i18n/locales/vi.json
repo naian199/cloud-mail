@@ -586,5 +586,12 @@
   "stickersLink": "Liên kết bộ nhãn dán Telegram",
   "stickersImport": "Nhập",
   "stickersUpload": "Tải lên WebP, TGS hoặc WebM",
-  "stickersError": "Kiểm tra liên kết hoặc cấu hình bot Telegram của nền tảng."
+  "stickersError": "Kiểm tra liên kết hoặc cấu hình bot Telegram của nền tảng.",
+  "translateTest": "Kiểm tra kết nối",
+  "translateTestHint": "Hãy lưu trước. Chỉ dịch từ Hello bằng khóa đã lưu, không gửi nội dung trò chuyện. Kiểm tra dùng hạn mức và có thể phát sinh phí Google.",
+  "translateTestSuccess": "Kiểm tra kết nối Google Dịch thành công.",
+  "translateErrorBilling": "Thanh toán của dự án Google Cloud này bị tắt hoặc không khả dụng.",
+  "translateErrorApiDisabled": "Bật Cloud Translation API (Basic v2) trong dự án Google Cloud sở hữu khóa này.",
+  "translateErrorRestriction": "Giới hạn khóa API đã chặn yêu cầu máy chủ. Kiểm tra giới hạn trong Google Cloud.",
+  "translateErrorNetwork": "Máy chủ không thể kết nối Google Dịch. Hãy kiểm tra mạng."
 }

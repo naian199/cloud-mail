@@ -54,5 +54,12 @@
   "stickersLink": "Telegram sticker pack link",
   "stickersImport": "Import",
   "stickersUpload": "Upload WebP, TGS or WebM",
-  "stickersError": "Cannot load this pack. Check the link or the platform Telegram bot configuration."
+  "stickersError": "Cannot load this pack. Check the link or the platform Telegram bot configuration.",
+  "translateTest": "Test connection",
+  "translateTestHint": "Save changes first. This test uses the saved key to translate only “Hello”, never chat messages. It counts toward translation quotas and may incur Google charges.",
+  "translateTestSuccess": "Google translation connection test passed.",
+  "translateErrorBilling": "Google Cloud billing is disabled or unavailable for this project.",
+  "translateErrorApiDisabled": "Enable Cloud Translation API (Basic v2) in the Google Cloud project that owns this key.",
+  "translateErrorRestriction": "API key restrictions blocked this server request. Check API and application restrictions in Google Cloud.",
+  "translateErrorNetwork": "The server could not connect to Google Translation. Check network access and try again."
 }

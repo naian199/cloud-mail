@@ -54,5 +54,12 @@
   "stickersLink": "Telegram 表情包链接",
   "stickersImport": "导入",
   "stickersUpload": "上传 WebP、TGS 或 WebM",
-  "stickersError": "无法加载表情包，请检查链接或平台 Telegram 机器人配置。"
+  "stickersError": "无法加载表情包，请检查链接或平台 Telegram 机器人配置。",
+  "translateTest": "测试连接",
+  "translateTestHint": "请先保存修改。测试仅使用已保存的密钥翻译固定文字“Hello”，不会发送聊天内容；会计入翻译额度，可能产生 Google 费用。",
+  "translateTestSuccess": "Google 翻译连接测试成功。",
+  "translateErrorBilling": "此 Google Cloud 项目未开通计费，或计费当前不可用。",
+  "translateErrorApiDisabled": "请在此密钥所属的 Google Cloud 项目中启用 Cloud Translation API（Basic v2）。",
+  "translateErrorRestriction": "密钥的应用或 API 限制阻止了服务器请求，请检查 Google Cloud 中的密钥限制。",
+  "translateErrorNetwork": "服务器无法连接 Google 翻译，请检查网络连通性后重试。"
 }
