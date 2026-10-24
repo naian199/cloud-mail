@@ -594,5 +594,6 @@
   "translateErrorApiDisabled": "Schakel Cloud Translation API (Basic v2) in voor het Google Cloud-project van deze sleutel.",
   "translateErrorRestriction": "API-sleutelbeperkingen hebben het serververzoek geblokkeerd. Controleer deze in Google Cloud.",
   "translateErrorNetwork": "De server kan Google Translate niet bereiken. Controleer het netwerk.",
-  "translateLocal": "Vertaling op apparaat"
+  "translateLocal": "Vertaling op apparaat",
+  "translateFollowInterface": "Taal van de interface"
 }

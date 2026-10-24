@@ -594,5 +594,6 @@
   "translateErrorApiDisabled": "เปิด Cloud Translation API (Basic v2) ในโปรเจ็กต์ Google Cloud ของคีย์นี้",
   "translateErrorRestriction": "ข้อจำกัดของคีย์ API ปิดกั้นคำขอจากเซิร์ฟเวอร์ ตรวจสอบข้อจำกัดใน Google Cloud",
   "translateErrorNetwork": "เซิร์ฟเวอร์เชื่อมต่อ Google แปลภาษาไม่ได้ โปรดตรวจสอบเครือข่าย",
-  "translateLocal": "การแปลบนอุปกรณ์"
+  "translateLocal": "การแปลบนอุปกรณ์",
+  "translateFollowInterface": "ภาษาของหน้าจอ"
 }

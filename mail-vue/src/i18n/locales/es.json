@@ -594,5 +594,6 @@
   "translateErrorApiDisabled": "Active Cloud Translation API (Basic v2) en el proyecto de Google Cloud de esta clave.",
   "translateErrorRestriction": "Las restricciones de la clave API bloquearon la solicitud del servidor. Revíselas en Google Cloud.",
   "translateErrorNetwork": "El servidor no puede conectarse a Google Traductor. Revise la red.",
-  "translateLocal": "Traducción local"
+  "translateLocal": "Traducción local",
+  "translateFollowInterface": "Idioma de la interfaz"
 }

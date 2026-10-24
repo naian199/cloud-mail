@@ -594,5 +594,6 @@
   "translateErrorApiDisabled": "इस कुंजी के Google Cloud प्रोजेक्ट में Cloud Translation API (Basic v2) चालू करें।",
   "translateErrorRestriction": "API कुंजी के प्रतिबंधों ने सर्वर अनुरोध रोक दिया। Google Cloud में प्रतिबंध जाँचें।",
   "translateErrorNetwork": "सर्वर Google अनुवाद से नहीं जुड़ सका। नेटवर्क जाँचें।",
-  "translateLocal": "डिवाइस पर अनुवाद"
+  "translateLocal": "डिवाइस पर अनुवाद",
+  "translateFollowInterface": "इंटरफ़ेस की भाषा"
 }

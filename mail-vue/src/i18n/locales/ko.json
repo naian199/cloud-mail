@@ -594,5 +594,6 @@
   "translateErrorApiDisabled": "키가 속한 Google Cloud 프로젝트에서 Cloud Translation API(Basic v2)를 사용 설정하세요.",
   "translateErrorRestriction": "API 키 제한으로 서버 요청이 차단되었습니다. Google Cloud에서 제한을 확인하세요.",
   "translateErrorNetwork": "서버가 Google 번역에 연결할 수 없습니다. 네트워크를 확인하세요.",
-  "translateLocal": "기기 내 번역"
+  "translateLocal": "기기 내 번역",
+  "translateFollowInterface": "화면 언어 따르기"
 }

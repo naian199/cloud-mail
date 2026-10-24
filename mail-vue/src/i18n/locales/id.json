@@ -594,5 +594,6 @@
   "translateErrorApiDisabled": "Aktifkan Cloud Translation API (Basic v2) di proyek Google Cloud pemilik kunci ini.",
   "translateErrorRestriction": "Pembatasan kunci API memblokir permintaan server. Periksa pembatasan di Google Cloud.",
   "translateErrorNetwork": "Server tidak dapat terhubung ke Google Terjemahan. Periksa jaringan.",
-  "translateLocal": "Terjemahan di perangkat"
+  "translateLocal": "Terjemahan di perangkat",
+  "translateFollowInterface": "Bahasa antarmuka"
 }

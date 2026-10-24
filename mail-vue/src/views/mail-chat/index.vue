@@ -100,7 +100,10 @@
           }}</span>
           <span v-else>{{ connected ? t('mailChatLive') : t('chatReconnecting') }}</span>
         </div>
-        <span v-if="autoTranslation.enabled" class="translation-notice" role="status" :title="t('translateAuto')"><Icon icon="cloud-mail:translate" width="16" /></span>
+        <el-popover trigger="click" :width="300" placement="bottom-end">
+          <template #reference><el-button text :aria-label="t('translateAuto')" :title="t('translateAuto')"><Icon icon="cloud-mail:translate" width="20" /></el-button></template>
+          <AutoTranslationSettings />
+        </el-popover>
         <el-button text :aria-label="t('exploreTitle')" :title="t('exploreTitle')" @click="explorer?.open()"><Icon icon="cloud-mail:search" width="22" /></el-button>
         <el-button text :aria-label="t('mailChatPin')" @click="togglePin">{{
           selected.pinned ? '★' : '☆'
@@ -449,7 +452,7 @@ import ConversationExplorer from '@/components/conversation-explorer.vue';
 import MessageTranslation from '@/components/message-translation.vue';
 import StickerPicker from '@/components/sticker-picker.vue';
 import StickerMedia from '@/components/sticker-media.vue';
-import { autoTranslation } from '@/composables/use-auto-translation';
+import AutoTranslationSettings from '@/components/auto-translation-settings.vue';
 import { useRoute, useRouter } from 'vue-router';
 import { Icon } from '@iconify/vue';
 import { ElMessage, ElMessageBox } from 'element-plus';

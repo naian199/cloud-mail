@@ -60,9 +60,10 @@ import http from '@/axios';
 import { translateLocally } from '@/utils/local-translation.mjs';
 import {
   autoTranslation,
-  saveAutoTranslation,
   scheduleAutoTranslation,
-  translationAvailability
+  translationAvailability,
+  syncTranslationLanguage,
+  translationStatus
 } from '@/composables/use-auto-translation';
 const props = defineProps({ emailId: Number, text: String, chatStyle: Boolean, incoming: Boolean });
 const { t, locale } = useI18n();
@@ -79,6 +80,7 @@ const opened = ref(false),
   result = ref(null),
   hidden = ref(false);
 const target = ref(autoTranslation.target || languages.find((language) => language.code === locale.value)?.google || 'en');
+watch(locale, syncTranslationLanguage, { immediate: true });
 const cache = new Map();
 let controller,
   stopped = false;
@@ -114,6 +116,7 @@ async function translate(automatic = false) {
   try {
     const local = await translateLocally(props.text, selected, controller.signal);
     if (stopped || revision !== generation) return;
+    if (!local && automatic === true && (!autoTranslation.cloudConsent || translationStatus.error)) return;
     const data = local || await http.post(
       '/mail-chat/translate',
       { emailId: props.emailId, target: selected },
@@ -139,8 +142,7 @@ async function translate(automatic = false) {
       revision === generation &&
       ['translateErrorQuota', 'translateErrorDisabled', 'translateErrorKey', 'translateErrorBilling', 'translateErrorApiDisabled', 'translateErrorRestriction'].includes(error.value)
     ) {
-      autoTranslation.enabled = false;
-      saveAutoTranslation();
+      translationStatus.error = error.value;
     }
   } finally {
     if (!stopped && revision === generation) loading.value = false;
@@ -182,7 +184,7 @@ function queueAutomatic() {
   });
 }
 watch(
-  [() => autoTranslation.enabled, () => autoTranslation.target, visible, () => props.text],
+  [() => autoTranslation.enabled, () => autoTranslation.target, () => autoTranslation.cloudConsent, () => translationStatus.error, visible, () => props.text],
   queueAutomatic
 );
 onMounted(() => {

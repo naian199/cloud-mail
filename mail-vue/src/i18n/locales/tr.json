@@ -594,5 +594,6 @@
   "translateErrorApiDisabled": "Bu anahtarın Google Cloud projesinde Cloud Translation API (Basic v2) hizmetini etkinleştirin.",
   "translateErrorRestriction": "API anahtarı kısıtlamaları sunucu isteğini engelledi. Google Cloud kısıtlamalarını kontrol edin.",
   "translateErrorNetwork": "Sunucu Google Çeviri hizmetine bağlanamıyor. Ağı kontrol edin.",
-  "translateLocal": "Cihazda çeviri"
+  "translateLocal": "Cihazda çeviri",
+  "translateFollowInterface": "Arayüz dili"
 }

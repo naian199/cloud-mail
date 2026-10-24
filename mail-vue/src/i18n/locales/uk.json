@@ -594,5 +594,6 @@
   "translateErrorApiDisabled": "Увімкніть Cloud Translation API (Basic v2) у проєкті Google Cloud цього ключа.",
   "translateErrorRestriction": "Обмеження ключа API заблокували запит сервера. Перевірте їх у Google Cloud.",
   "translateErrorNetwork": "Сервер не може підключитися до Google Перекладача. Перевірте мережу.",
-  "translateLocal": "Переклад на пристрої"
+  "translateLocal": "Переклад на пристрої",
+  "translateFollowInterface": "Мова інтерфейсу"
 }

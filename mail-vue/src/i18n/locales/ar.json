@@ -594,5 +594,6 @@
   "translateErrorApiDisabled": "فعّل Cloud Translation API (Basic v2) في مشروع Google Cloud الخاص بهذا المفتاح.",
   "translateErrorRestriction": "حظرت قيود مفتاح API طلب الخادم. راجع القيود في Google Cloud.",
   "translateErrorNetwork": "تعذر اتصال الخادم بترجمة Google. تحقق من الشبكة.",
-  "translateLocal": "ترجمة على الجهاز"
+  "translateLocal": "ترجمة على الجهاز",
+  "translateFollowInterface": "لغة الواجهة"
 }

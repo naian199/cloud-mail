@@ -11,9 +11,17 @@ try {
   /* Invalid saved preference. */
 }
 export const autoTranslation = reactive({
-  enabled: saved.enabled === true,
+  enabled: saved.enabled !== false,
+  cloudConsent: saved.cloudConsent === true || (saved.cloudConsent === undefined && saved.enabled === true),
+  followInterface: saved.followInterface !== false,
   target: saved.target || languages.find(language => language.code === chooseLanguage(null, navigator.languages || [navigator.language]))?.google || 'en'
 });
+export const translationStatus = reactive({ error: '' });
+export function syncTranslationLanguage(locale) {
+  if (autoTranslation.followInterface) {
+    autoTranslation.target = languages.find(language => language.code === locale)?.google || 'en';
+  }
+}
 export function saveAutoTranslation() {
   try {
     localStorage.setItem(key, JSON.stringify(autoTranslation));

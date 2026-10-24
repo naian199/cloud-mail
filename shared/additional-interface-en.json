@@ -62,5 +62,6 @@
   "translateErrorApiDisabled": "Enable Cloud Translation API (Basic v2) in the Google Cloud project that owns this key.",
   "translateErrorRestriction": "API key restrictions blocked this server request. Check API and application restrictions in Google Cloud.",
   "translateErrorNetwork": "The server could not connect to Google Translation. Check network access and try again.",
-  "translateLocal": "On-device translation"
+  "translateLocal": "On-device translation",
+  "translateFollowInterface": "Follow interface language"
 }

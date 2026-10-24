@@ -7,11 +7,12 @@
       @change="change"
     />
     <el-select
-      v-model="autoTranslation.target"
+      :model-value="autoTranslation.followInterface ? 'auto' : autoTranslation.target"
       filterable
       :aria-label="t('translateTarget')"
-      @change="saveAutoTranslation"
+      @change="changeTarget"
     >
+      <el-option :label="t('translateFollowInterface')" value="auto" />
       <el-option
         v-for="language in languages"
         :key="language.code"
@@ -19,6 +20,8 @@
         :value="language.google"
       />
     </el-select>
+    <el-button v-if="autoTranslation.enabled && !autoTranslation.cloudConsent" text @click="change(true)">{{ t('translateAutoEnable') }}</el-button>
+    <p v-if="translationStatus.error" role="status">{{ t(translationStatus.error) }}</p>
     <p v-if="error" role="status">{{ t(error) }}</p>
     <el-dialog
       v-model="confirming"
@@ -35,16 +38,26 @@
   </div>
 </template>
 <script setup>
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { languages } from '@/i18n';
 import { prepareLocalTranslation } from '@/utils/local-translation.mjs';
 import {
   autoTranslation,
   saveAutoTranslation,
-  translationAvailability
+  translationAvailability,
+  syncTranslationLanguage,
+  translationStatus
 } from '@/composables/use-auto-translation';
 const { t, locale } = useI18n();
+watch(locale, syncTranslationLanguage, { immediate: true });
+function changeTarget(value) {
+  autoTranslation.followInterface = value === 'auto';
+  if (value !== 'auto') autoTranslation.target = value;
+  syncTranslationLanguage(locale.value);
+  translationStatus.error = '';
+  saveAutoTranslation();
+}
 if (!languages.some((language) => language.google === autoTranslation.target)) {
   autoTranslation.target =
     languages.find((language) => language.code === locale.value)?.google || 'en';
@@ -54,6 +67,7 @@ const checking = ref(false),
   error = ref('');
 async function change(value) {
   error.value = '';
+  translationStatus.error = '';
   if (!value) {
     autoTranslation.enabled = false;
     saveAutoTranslation();
@@ -77,6 +91,7 @@ async function change(value) {
 async function enable() {
   await prepareLocalTranslation(autoTranslation.target);
   autoTranslation.enabled = true;
+  autoTranslation.cloudConsent = true;
   saveAutoTranslation();
   confirming.value = false;
 }
