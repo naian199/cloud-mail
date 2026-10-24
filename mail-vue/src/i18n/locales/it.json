@@ -604,5 +604,6 @@
   "contactRemarkHint": "Visibile solo a te, fino a 50 caratteri. Salva vuoto per cancellare.",
   "contactSearchHint": "Nome utente, {'@'}nome o e-mail registrata",
   "contactSearch": "Cerca amici",
-  "contactNotFound": "Utente non trovato. Controlla il suo nome utente."
+  "contactNotFound": "Utente non trovato. Controlla il suo nome utente.",
+  "brandAvatarHint": "Icona del sito, non autentica il mittente"
 }

@@ -5,6 +5,8 @@ import r2Service from '../service/r2-service';
 import live from '../service/mail-live-service';
 import translation from '../service/translation-service';
 import stickers from '../service/sticker-service';
+import brandAvatar from '../service/brand-avatar-service';
+app.get('/mail-chat/brand-avatar', c => brandAvatar.get(c));
 app.get('/mail-chat/stickers/pack', async c => c.json(result.ok(await stickers.pack(c, c.req.query('name')))));
 app.get('/mail-chat/stickers/file', async c => stickers.file(c,c.req.query('name'),c.req.query('id')));
 

@@ -72,5 +72,6 @@
   "contactRemarkHint": "仅自己可见，最多50字；留空保存可清除。",
   "contactSearchHint": "输入用户名、{'@'}用户名或注册邮箱",
   "contactSearch": "查找好友",
-  "contactNotFound": "未找到用户，请确认对方已设置用户名。"
+  "contactNotFound": "未找到用户，请确认对方已设置用户名。",
+  "brandAvatarHint": "网站图标，不代表发件人身份认证"
 }

@@ -604,5 +604,6 @@
   "contactRemarkHint": "Hanya Anda yang melihat, hingga 50 karakter. Simpan kosong untuk menghapus.",
   "contactSearchHint": "Nama pengguna, {'@'}nama atau email terdaftar",
   "contactSearch": "Cari teman",
-  "contactNotFound": "Pengguna tidak ditemukan. Periksa nama penggunanya."
+  "contactNotFound": "Pengguna tidak ditemukan. Periksa nama penggunanya.",
+  "brandAvatarHint": "Ikon situs, bukan autentikasi pengirim"
 }

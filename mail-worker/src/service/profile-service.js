@@ -1,6 +1,7 @@
 import BizError from '../error/biz-error';
 import userContext from '../security/user-context';
 import { notifyMail } from '../chat/mail-notify';
+import { brandDomain } from '../lib/brand-avatar';
 
 export async function profilesFor(c, emails) {
 	const values = [...new Set(emails.filter(Boolean).map((email) => email.toLowerCase()))];
@@ -17,9 +18,14 @@ export async function profilesFor(c, emails) {
 		.bind(JSON.stringify(values))
 		.all();
 	const profiles = new Map(results.map((row) => [row.email.toLowerCase(), row]));
+	const registered = new Set(profiles.keys());
 	const { results: notes } = await c.env.db.prepare('SELECT email, remark FROM mail_contact_note WHERE user_id=? AND lower(email) IN (SELECT value FROM json_each(?))')
 		.bind(userContext.getUserId(c), JSON.stringify(values)).all();
 	for (const note of notes) profiles.set(note.email.toLowerCase(), { ...profiles.get(note.email.toLowerCase()), remark: note.remark });
+	for (const email of values) {
+		const domain = !registered.has(email) && brandDomain(email);
+		if (domain) profiles.set(email, { ...profiles.get(email), brandDomain: domain });
+	}
 	return profiles;
 }
 

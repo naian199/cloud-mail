@@ -604,5 +604,6 @@
   "contactRemarkHint": "Chỉ bạn thấy, tối đa 50 ký tự. Lưu trống để xóa.",
   "contactSearchHint": "Tên người dùng, {'@'}tên hoặc email đăng ký",
   "contactSearch": "Tìm bạn",
-  "contactNotFound": "Không tìm thấy người dùng. Hãy kiểm tra tên người dùng."
+  "contactNotFound": "Không tìm thấy người dùng. Hãy kiểm tra tên người dùng.",
+  "brandAvatarHint": "Biểu tượng trang web, không xác thực người gửi"
 }

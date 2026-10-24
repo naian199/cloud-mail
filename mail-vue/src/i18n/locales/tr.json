@@ -604,5 +604,6 @@
   "contactRemarkHint": "Yalnızca siz görürsünüz, en fazla 50 karakter. Silmek için boş kaydedin.",
   "contactSearchHint": "Kullanıcı adı, {'@'}ad veya kayıtlı e-posta",
   "contactSearch": "Arkadaş ara",
-  "contactNotFound": "Kullanıcı bulunamadı. Kullanıcı adını kontrol edin."
+  "contactNotFound": "Kullanıcı bulunamadı. Kullanıcı adını kontrol edin.",
+  "brandAvatarHint": "Site simgesi, gönderen doğrulaması değildir"
 }

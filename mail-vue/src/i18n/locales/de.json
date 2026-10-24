@@ -604,5 +604,6 @@
   "contactRemarkHint": "Nur für Sie sichtbar, bis zu 50 Zeichen. Leer speichern zum Löschen.",
   "contactSearchHint": "Benutzername, {'@'}Name oder registrierte E-Mail",
   "contactSearch": "Freunde suchen",
-  "contactNotFound": "Kein Benutzer gefunden. Prüfen Sie den Benutzernamen."
+  "contactNotFound": "Kein Benutzer gefunden. Prüfen Sie den Benutzernamen.",
+  "brandAvatarHint": "Website-Symbol, keine Absenderbestätigung"
 }

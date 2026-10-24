@@ -604,5 +604,6 @@
   "contactRemarkHint": "自分にのみ表示。最大50文字。空欄で保存して削除。",
   "contactSearchHint": "ユーザー名、{'@'}ユーザー名、登録メール",
   "contactSearch": "友だちを検索",
-  "contactNotFound": "ユーザーが見つかりません。相手のユーザー名を確認してください。"
+  "contactNotFound": "ユーザーが見つかりません。相手のユーザー名を確認してください。",
+  "brandAvatarHint": "サイトアイコン（送信者認証ではありません）"
 }

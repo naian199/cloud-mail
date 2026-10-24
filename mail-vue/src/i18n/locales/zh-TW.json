@@ -604,5 +604,6 @@
   "contactRemarkHint": "僅自己可見，最多50字；儲存空白可清除。",
   "contactSearchHint": "輸入使用者名稱、{'@'}名稱或註冊信箱",
   "contactSearch": "尋找好友",
-  "contactNotFound": "找不到使用者，請確認對方已設定使用者名稱。"
+  "contactNotFound": "找不到使用者，請確認對方已設定使用者名稱。",
+  "brandAvatarHint": "網站圖示，不代表寄件者身分驗證"
 }

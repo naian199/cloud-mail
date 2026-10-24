@@ -604,5 +604,6 @@
   "contactRemarkHint": "Visible uniquement par vous, 50 caractères maximum. Enregistrez vide pour effacer.",
   "contactSearchHint": "Nom, {'@'}nom ou e-mail enregistré",
   "contactSearch": "Chercher des amis",
-  "contactNotFound": "Aucun utilisateur trouvé. Vérifiez son nom d’utilisateur."
+  "contactNotFound": "Aucun utilisateur trouvé. Vérifiez son nom d’utilisateur.",
+  "brandAvatarHint": "Icône du site, sans authentification de l’expéditeur"
 }

@@ -604,5 +604,6 @@
   "contactRemarkHint": "Alleen voor jou zichtbaar, tot 50 tekens. Sla leeg op om te wissen.",
   "contactSearchHint": "Gebruikersnaam, {'@'}naam of geregistreerde e-mail",
   "contactSearch": "Vrienden zoeken",
-  "contactNotFound": "Geen gebruiker gevonden. Controleer de gebruikersnaam."
+  "contactNotFound": "Geen gebruiker gevonden. Controleer de gebruikersnaam.",
+  "brandAvatarHint": "Websitepictogram, geen afzenderverificatie"
 }

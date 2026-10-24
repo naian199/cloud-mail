@@ -72,5 +72,6 @@
   "contactRemarkHint": "Only you can see this note. Up to 50 characters; save empty to clear.",
   "contactSearchHint": "Username, {'@'}username or registered email",
   "contactSearch": "Find friends",
-  "contactNotFound": "No user found. Check that they have set a username."
+  "contactNotFound": "No user found. Check that they have set a username.",
+  "brandAvatarHint": "Website icon; not sender authentication"
 }
