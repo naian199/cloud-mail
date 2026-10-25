@@ -64,6 +64,7 @@ jobs:
           node scripts/check-locales.mjs
           node --test mail-worker/test/telegram-stickers.test.mjs mail-worker/test/transport-security.test.mjs mail-worker/test/mail-shared-links.test.mjs mail-worker/test/google-translation.test.mjs mail-worker/test/mail-conversations.test.mjs mail-worker/test/mail-chat-display.test.mjs mail-worker/test/browser-uuid.test.mjs
           node --test mail-worker/test/brand-avatar.test.mjs
+          node --test mail-worker/test/room-notifications.test.mjs
 
       - name: Check optional brand icon source
         run: node scripts/check-brand-avatar.mjs

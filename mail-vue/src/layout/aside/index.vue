@@ -11,6 +11,9 @@
           <Icon icon="solar:letter-opened-linear" width="20" height="20" />
           <span class="menu-name" style="margin-left: 16px">{{$t('mailChatTitle')}}</span>
         </el-menu-item>
+        <el-menu-item @click="router.push({name: 'rooms'})" index="rooms" :class="route.meta.name === 'rooms' ? 'choose-item' : ''">
+          <Icon icon="cloud-mail:group" width="20" height="20" /><span class="menu-name" style="margin-left: 16px">{{$t('roomTitle')}}</span>
+        </el-menu-item>
         <el-menu-item @click="router.push({name: 'email'})" index="email"
                       :class="route.meta.name === 'email' ? 'choose-item' : ''">
           <Icon icon="hugeicons:mailbox-01" width="20" height="20" />

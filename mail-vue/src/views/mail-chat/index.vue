@@ -290,6 +290,7 @@
         />
         <div class="composer-footer">
           <StickerPicker ref="stickerPicker" :compact="compactChat" :dock="stickerDock" :context="draftKey" :disabled="sending" @visibility="stickerVisibility" @emoji="insertEmoji" @attachment="addSticker" @upload="chooseFiles" />
+          <VoiceInput :context="draftKey" :disabled="sending || messageLoading" @text="text => insertEmoji(text, false)" />
           <label class="attach-label" :aria-label="t('mailChatAttach')" :title="t('mailChatAttach')" tabindex="0" @keydown.enter.prevent="$event.currentTarget.querySelector('input').click()" @keydown.space.prevent="$event.currentTarget.querySelector('input').click()">
             <Icon class="attach-icon" icon="cloud-mail:attach" width="22" aria-hidden="true" /><span>{{ t('mailChatAttach') }}</span><input type="file" multiple :disabled="sending" @change="chooseFiles" /></label
           ><span>{{ t('chatEnterHint') }}</span
@@ -463,6 +464,7 @@ import { useUiStore } from '@/store/ui';
 import ConversationExplorer from '@/components/conversation-explorer.vue';
 import MessageTranslation from '@/components/message-translation.vue';
 import StickerPicker from '@/components/sticker-picker.vue';
+import VoiceInput from '@/components/voice-input.vue';
 import StickerMedia from '@/components/sticker-media.vue';
 import AutoTranslationSettings from '@/components/auto-translation-settings.vue';
 import { translationStatus } from '@/composables/use-auto-translation';
@@ -1187,14 +1189,14 @@ function stickerVisibility(value) {
   pickerOpen.value = value;
   if (value && compactChat.value) document.activeElement?.blur();
 }
-function insertEmoji(value) {
+function insertEmoji(value, focus = true) {
   const current = draftKey.value, text = drafts[current] || '';
   const input = document.querySelector('.composer textarea');
   const start = input?.selectionStart ?? text.length, end = input?.selectionEnd ?? text.length;
   if (text.length - (end - start) + value.length > 20000) return;
   drafts[current] = text.slice(0, start) + value + text.slice(end);
   liveInput();
-  nextTick(() => { if (!pickerOpen.value) input?.focus({preventScroll:true}); input?.setSelectionRange(start + value.length, start + value.length); });
+  nextTick(() => { if (focus && !pickerOpen.value) input?.focus({preventScroll:true}); input?.setSelectionRange(start + value.length, start + value.length); });
 }
 function addSticker(file) {
   const current = draftKey.value, existing = files[current] || [];
@@ -2011,15 +2013,16 @@ pre {
   .contact-entries { overflow: visible; min-height: 100%; }
 }
 .composer { padding: 6px 12px max(6px, env(safe-area-inset-bottom)); }
-.compose-input-row { display: grid; grid-template-columns: 36px 34px minmax(0, 1fr) 42px; align-items: end; gap: 6px; }
-.compose-input-row > .el-textarea { grid-column: 3; grid-row: 1; }
+.compose-input-row { display: grid; grid-template-columns: 36px 34px 34px minmax(0, 1fr) 42px; align-items: end; gap: 6px; }
+.compose-input-row > .el-textarea { grid-column: 4; grid-row: 1; }
 .composer :deep(.el-textarea__inner) { min-height: 40px; padding: 9px 12px; line-height: 22px; }
 .composer-footer { display: contents; }
 .attach-label { grid-column: 1; grid-row: 1; height: 40px; justify-content: center; padding: 0; }
 .composer-footer :deep(.sticker-trigger) { grid-column: 2; grid-row: 1; margin: 0; height: 40px; }
+.composer-footer :deep(.voice-trigger) { grid-column: 3; grid-row: 1; }
 .attach-icon { display: block; }
 .attach-label > span, .composer-footer > span { display: none; }
-.composer-footer > .el-button:not(.sticker-trigger) { grid-column: 4; grid-row: 1; width: 42px; height: 40px; padding: 0; margin: 0; }
+.composer-footer > .el-button:not(.sticker-trigger):not(.voice-trigger) { grid-column: 5; grid-row: 1; width: 42px; height: 40px; padding: 0; margin: 0; }
 .composer-footer > .el-button :deep(> span > span) { display: none; }
 .composer-footer > .el-button :deep(> span) { gap: 0; }
 .chosen-files { margin-bottom: 6px; }

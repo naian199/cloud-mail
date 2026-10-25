@@ -25,7 +25,7 @@ import {
   syncTranslationLanguage,
   translationStatus
 } from '@/composables/use-auto-translation';
-const props = defineProps({ emailId: Number, text: String, chatStyle: Boolean, incoming: Boolean });
+const props = defineProps({ emailId: Number, text: String, chatStyle: Boolean, incoming: Boolean, translateRemote: Function });
 const { t, locale } = useI18n();
 const element = ref(null);
 const visible = ref(false);
@@ -64,11 +64,11 @@ async function translate(automatic = false) {
       return;
     }
     if (!local && automatic === true && translationStatus.error) return;
-    const data = local || await http.post(
+    const data = local || (props.translateRemote ? await props.translateRemote(selected, controller.signal) : await http.post(
       '/mail-chat/translate',
       { emailId: props.emailId, target: selected },
       { noMsg: true, signal: controller.signal, timeout: 20000 }
-    );
+    ));
     if (stopped || revision !== generation) return;
     if (!local) translationStatus.error = '';
     if (data.text?.trim() === props.text?.trim()) return;

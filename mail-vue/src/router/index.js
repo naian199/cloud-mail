@@ -17,6 +17,11 @@ const routes = [
                 meta: { title: 'mailChatTitle', name: 'mail-chat', menu: true }
             },
             {
+                path: '/rooms', name: 'rooms',
+                component: () => import('@/views/rooms/index.vue'),
+                meta: { title: 'roomTitle', name: 'rooms', menu: true }
+            },
+            {
                 path: '/chat',
                 name: 'chat',
                 redirect: '/mail-chat',

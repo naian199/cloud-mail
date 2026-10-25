@@ -1,0 +1,16 @@
+import http from '@/axios';
+const root='/chat/rooms';
+export const listRooms=()=>http.get(root);
+export const createRoom=data=>http.post(root,data);
+export const renameRoom=(id,name)=>http.put(`${root}/${id}`,{name});
+export const deleteRoom=id=>http.delete(`${root}/${id}`);
+export const roomMembers=id=>http.get(`${root}/${id}/members`);
+export const inviteMember=(id,username)=>http.post(`${root}/${id}/members`,{username});
+export const setMemberRole=(id,userId,role)=>http.put(`${root}/${id}/members/${userId}`,{role});
+export const removeMember=(id,userId)=>http.delete(`${root}/${id}/members/${userId}`);
+export const respondRoom=(id,accept)=>http.put(`${root}/${id}/membership`,{accept});
+export const leaveRoom=id=>http.delete(`${root}/${id}/membership`);
+export const roomMessages=(id,params={})=>http.get(`${root}/${id}/messages`,{params});
+export const sendRoomMessage=(id,body,clientId)=>http.post(`${root}/${id}/messages`,{body,clientId},{timeout:20000});
+export const readRoom=(id,through)=>http.put(`${root}/${id}/read`,{through});
+export const translateRoomMessage=(id,messageId,target,signal)=>http.post(`${root}/${id}/messages/${messageId}/translate`,{target},{signal,noMsg:true,timeout:20000});

@@ -13,6 +13,7 @@ import '../api/resend-api';
 import '../api/user-api';
 import '../api/my-api';
 import '../api/chat-api';
+import '../api/room-api';
 import '../api/mail-chat-api';
 import '../api/role-api'
 import '../api/all-email-api'

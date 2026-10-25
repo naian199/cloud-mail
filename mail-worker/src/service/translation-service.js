@@ -97,6 +97,10 @@ export default {
 						.first()
 				: null;
 		const text = String(peer || own ? message.replyText : message.text).trim();
+		return this.translateText(c,text,target);
+	},
+	async translateText(c,text,target) {
+		if (!languages.some(lang=>lang.google===target)) fail('translateErrorInvalid');
 		if (!text) fail('translateErrorEmpty');
 		const config = await this.config(c);
 		if (!config.enabled || !config.apiKey) fail('translateErrorDisabled', 503);

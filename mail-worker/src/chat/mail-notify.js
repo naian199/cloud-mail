@@ -11,3 +11,14 @@ export async function notifyMail(env, ...users) {
 		})
 	);
 }
+
+export async function notifyRoomUsers(env, roomId, users) {
+	if (!env.CHAT_NOTIFICATIONS) return;
+	try {
+		const target=env.CHAT_NOTIFICATIONS.get(env.CHAT_NOTIFICATIONS.idFromName('room-notify:'+roomId));
+		await target.fetch('https://chat.internal/rooms/notify', {
+			method:'POST', headers:{'Content-Type':'application/json'},
+			body:JSON.stringify({users:[...new Set(users.filter(id=>Number.isSafeInteger(id)&&id>0))]})
+		});
+	} catch { console.error('Room notification unavailable; clients will reconcile'); }
+}

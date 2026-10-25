@@ -1,0 +1,17 @@
+import app from '../hono/hono';
+import result from '../model/result';
+import rooms from '../service/room-service';
+app.get('/chat/rooms', async c => c.json(result.ok(await rooms.list(c))));
+app.post('/chat/rooms', async c => c.json(result.ok(await rooms.create(c,await c.req.json()))));
+app.put('/chat/rooms/:id', async c => { await rooms.rename(c,c.req.param('id'),await c.req.json()); return c.json(result.ok()); });
+app.delete('/chat/rooms/:id', async c => { await rooms.remove(c,c.req.param('id')); return c.json(result.ok()); });
+app.get('/chat/rooms/:id/members', async c => c.json(result.ok(await rooms.members(c,c.req.param('id')))));
+app.post('/chat/rooms/:id/members', async c => { await rooms.invite(c,c.req.param('id'),await c.req.json()); return c.json(result.ok()); });
+app.put('/chat/rooms/:id/members/:userId', async c => { await rooms.updateMember(c,c.req.param('id'),c.req.param('userId'),await c.req.json()); return c.json(result.ok()); });
+app.delete('/chat/rooms/:id/members/:userId', async c => { await rooms.removeMember(c,c.req.param('id'),c.req.param('userId')); return c.json(result.ok()); });
+app.put('/chat/rooms/:id/membership', async c => { await rooms.respond(c,c.req.param('id'),await c.req.json()); return c.json(result.ok()); });
+app.delete('/chat/rooms/:id/membership', async c => { await rooms.leave(c,c.req.param('id')); return c.json(result.ok()); });
+app.get('/chat/rooms/:id/messages', async c => c.json(result.ok(await rooms.messages(c,c.req.param('id'),c.req.query()))));
+app.post('/chat/rooms/:id/messages', async c => c.json(result.ok(await rooms.send(c,c.req.param('id'),await c.req.json()))));
+app.post('/chat/rooms/:id/messages/:messageId/translate', async c => c.json(result.ok(await rooms.translate(c,c.req.param('id'),c.req.param('messageId'),await c.req.json()))));
+app.put('/chat/rooms/:id/read', async c => { await rooms.read(c,c.req.param('id'),await c.req.json()); return c.json(result.ok()); });

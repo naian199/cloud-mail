@@ -1,4 +1,5 @@
-export const MAIL_CHAT_SCHEMA_MARKER = 'mail_chat_schema_v5';
+import { roomSchema } from './room-schema.js';
+export const MAIL_CHAT_SCHEMA_MARKER = 'mail_chat_schema_v6';
 
 export async function migrateMailChat(db) {
 	const { results } = await db.prepare('PRAGMA table_info(email)').all();
@@ -25,6 +26,7 @@ export async function migrateMailChat(db) {
 		}
 	}
 	await db.batch([
+		...roomSchema.map(sql => db.prepare(sql)),
 		db.prepare(`CREATE TABLE IF NOT EXISTS mail_user_handle (
       user_id INTEGER PRIMARY KEY REFERENCES user(user_id) ON DELETE CASCADE,
       username TEXT NOT NULL COLLATE NOCASE UNIQUE

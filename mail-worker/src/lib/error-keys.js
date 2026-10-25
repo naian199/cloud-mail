@@ -16,7 +16,7 @@ const patterns = Object.entries({ en, zh }).flatMap(([, messages]) =>
 		})
 );
 export function errorMetadata(message) {
-	if (/^(?:translateError\w+|contactUsernameTaken|contactNotFound|invalidInput|serviceUnavailable)$/.test(message))
+	if (/^(?:translateError\w+|contactUsernameTaken|contactNotFound|roomLimit|roomOwnerLeave|invalidInput|serviceUnavailable)$/.test(message))
 		return { errorKey: message };
 	for (const entry of patterns) {
 		const match = String(message).match(entry.pattern);
