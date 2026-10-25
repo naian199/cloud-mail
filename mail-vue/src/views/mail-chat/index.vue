@@ -98,7 +98,7 @@
                 ? t('mailChatOnline')
                 : t('mailChatOffline')
           }}</span>
-          <span v-else>{{ connected ? t('mailChatLive') : t('chatReconnecting') }}</span>
+          <span v-else :title="selected.subject">{{ selected.subject || (connected ? t('mailChatLive') : t('chatReconnecting')) }}</span>
         </div>
         <el-popover v-model:visible="translationStatus.settingsOpen" trigger="click" :width="300" placement="bottom-end">
           <template #reference><el-button text :aria-label="t('translateAuto')" :title="t(translationStatus.error || 'translateAuto')" :type="translationStatus.error ? 'warning' : 'default'"><Icon icon="cloud-mail:translate" width="20" /></el-button></template>
@@ -159,14 +159,14 @@
               @keydown.esc="closeMenu"
               @click.capture="suppressAfterPress"
             >
-              <h3 v-if="!isChat(m)" class="external-subject">{{ m.subject }}</h3>
+              <p v-if="richPreview(m)" class="mail-summary" dir="auto">{{ (m.replyText || m.text || '').slice(0, 280) }}…</p>
               <MailBody
-                v-if="m.richHtml"
+                v-if="m.richHtml && ((!isChat(m) && !richPreview(m)) || originalExpanded[m.emailId])"
                 :html="m.richHtml"
                 :images="m.richImages"
                 :title="m.subject"
               />
-              <template v-else>
+              <template v-else-if="!richPreview(m)">
                 <button
                   v-if="m.quote"
                   class="quote-card"
@@ -196,6 +196,15 @@
                   }}</el-button
                 >
               </template>
+              <details v-if="m.compactMail && m.quotedText && !originalExpanded[m.emailId]" class="mail-history">
+                <summary :title="m.quotedText">{{ t('mailChatQuote') }} · {{ m.quotedText.slice(0, 60) }}</summary>
+                <p class="body-text" dir="auto">{{ m.quotedText }}</p>
+              </details>
+              <button v-if="m.richHtml && (isChat(m) || richPreview(m) || originalExpanded[m.emailId])" type="button" class="original-toggle"
+                :aria-expanded="!!originalExpanded[m.emailId]"
+                @click="originalExpanded[m.emailId] = !originalExpanded[m.emailId]">
+                {{ originalExpanded[m.emailId] ? t('mailChatCollapse') : t('mailChatOriginal') }}
+              </button>
               <div
                 v-for="image in m.images || []"
                 :key="image.attId || image.src"
@@ -234,7 +243,7 @@
                 </el-button
                 >
               </div>
-              <MessageTranslation :ref="el => setTranslationRef(m.emailId, el)" v-if="(m.replyText ?? m.text)?.trim()" :email-id="m.emailId" :text="m.replyText ?? m.text" :chat-style="isChat(m)" :incoming="m.type !== 1" />
+              <MessageTranslation :ref="el => setTranslationRef(m.emailId, el)" v-if="(m.replyText ?? m.text)?.trim()" :email-id="m.emailId" :text="m.replyText ?? m.text" :chat-style="true" :incoming="m.type !== 1" />
             </div>
             <span
               v-if="m.internal && m.type === 1 && m.read !== undefined"
@@ -563,7 +572,10 @@ watch([compactChat, contactHeaderHost], ([compact, host]) => {
 }, { flush: 'post' });
 const active = computed(() => !!selected.value);
 watch(active, value => { ui.mobileChatFocused = value; ui.mobileContactsCollapsed = false; if (!value) nextTick(contactListScroll); }, { immediate: true });
-const isChat = (message) => message.chatStyle ?? message.internal;
+const isChat = (message) => message.compactMail || (message.chatStyle ?? message.internal);
+const originalExpanded = reactive({});
+const richPreview = (message) => !isChat(message) && !originalExpanded[message.emailId] &&
+  ((message.text || '').length > 500 || (message.richHtml || '').length > 12000);
 const sortedConversations = computed(() =>
   [...conversations.value].sort(
     (a, b) =>
@@ -2031,4 +2043,17 @@ pre {
   .thread-title > span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .composer { padding: 6px 8px max(6px, env(safe-area-inset-bottom)); }
 }
+</style>
+
+<style scoped>
+.mail-history { margin-top: 6px; color: var(--el-text-color-secondary); font-size: 12px; max-width: 100%; }
+.mail-history summary { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
+.mail-history[open] summary { margin-bottom: 6px; }
+.mail-history .body-text { max-height: 240px; overflow: auto; border-inline-start: 2px solid var(--el-border-color); padding-inline-start: 8px; }
+.original-toggle { display: block; border: 0; background: transparent; color: var(--el-color-primary); font: inherit; font-size: 11px; padding: 3px 0; margin-top: 3px; cursor: pointer; }
+.external .original-toggle { margin: 8px 16px; }
+.external :deep(.message-translation.translation-empty) { padding: 0; }
+.mail-summary { display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; padding: 0; margin: 14px 16px; white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.6; }
+.internal-bubble:has(.mail-body) { width: min(850px, 100%); }
+.thread-title > span { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 </style>

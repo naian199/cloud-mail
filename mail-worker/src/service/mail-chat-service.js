@@ -13,6 +13,7 @@ import {
 	plainMail,
 	safeMailHtml,
 	displayMail,
+	externalMailPresentation,
 	chatBody
 } from '../lib/mail-conversations';
 import verify from '../utils/verify-utils';
@@ -253,7 +254,7 @@ const mailChat = {
 			if (!row.chatStyle && row.htmlPreview)
 				Object.assign(row, displayMail(row.htmlPreview, row.attachments));
 			Object.assign(row, chatBody(row.text, row.htmlPreview || '', row.attachments));
-			if (!row.chatStyle) row.replyText = row.text;
+			if (!row.chatStyle) Object.assign(row, externalMailPresentation(row.text, row.htmlPreview || ''));
 			if (row.richHtml)
 				row.images = row.images.filter(
 					(image) => image.attId && !row.richImages.some((inline) => inline.attId === image.attId)

@@ -7,7 +7,8 @@ import {
 	threadReferences,
 	chatBody,
 	replyText,
-	displayMail
+	displayMail,
+	externalMailPresentation
 } from '../src/lib/mail-conversations.js';
 import { migrateMailChat, ensureMailChat } from '../src/init/mail-chat-schema.js';
 import { DatabaseSync } from 'node:sqlite';
@@ -276,4 +277,34 @@ test('external mail keeps layout, styles, real links and image sizes without act
 	assert(!/script|onclick|iframe|pixel/.test(result.richHtml));
 	assert.deepEqual(result.richImages, [{ attId: 42, alt: '' }]);
 	assert(!safeMailHtml('<img src="https://example.com/logo.png">').includes('https:'));
+});
+
+
+test('ordinary external HTML replies become compact bubbles with separately recoverable history', () => {
+ const html = '<div dir="ltr">好的,我记住了<br><br></div><div class="gmail_quote"><div>On Monday, wrote:</div><blockquote><table><tr><td>我的学校邮箱</td></tr></table></blockquote></div>';
+ const view = externalMailPresentation('好的,我记住了\n我的学校邮箱', html);
+ assert.equal(view.compactMail, true);
+ assert.equal(view.replyText, '好的,我记住了');
+ assert.match(view.quotedText, /我的学校邮箱/);
+ assert.match(displayMail(html).richHtml, /我的学校邮箱/);
+ assert.equal(externalMailPresentation('短消息').replyText, '短消息');
+});
+
+test('brand tables, pictures and visual layouts preserve rich presentation', () => {
+ for (const html of [
+  '<table><tr><td>Atlassian news</td></tr></table>',
+  '<p>News</p><img src="https://example.com/news.png">',
+  '<div style="background:#123;padding:30px">Welcome</div>',
+  '<ul><li>Structured content</li></ul>'
+ ]) assert.equal(externalMailPresentation('Original text', html).compactMail, false, html);
+});
+
+test('plain text and Outlook histories collapse without losing quote-only messages', () => {
+ const plain = externalMailPresentation('New reply\n> Earlier mail');
+ assert.equal(plain.replyText, 'New reply');
+ assert.match(plain.quotedText, /Earlier mail/);
+ const outlook = externalMailPresentation('', '<div>New reply</div><div id="divRplyFwdMsg">From: Alice</div><p>Earlier mail</p>');
+ assert.equal(outlook.replyText, 'New reply');
+ assert.equal(outlook.quotedText, 'Earlier mail');
+ assert.match(externalMailPresentation('> Earlier mail').replyText, /Earlier mail/);
 });

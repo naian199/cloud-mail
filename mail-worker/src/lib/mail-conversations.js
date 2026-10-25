@@ -296,3 +296,34 @@ export function displayMail(html = '', attachments = []) {
 	}
 	return { richHtml: safeMailHtml(document.body.innerHTML, { display: true }), richImages: images };
 }
+
+// Presentation metadata only. The sanitized original remains available unchanged.
+export function externalMailPresentation(text = '', html = '') {
+ const { document } = parseHTML(`<html><body>${html}</body></html>`);
+ const quotes = [...document.querySelectorAll('blockquote,.gmail_quote,.yahoo_quoted')];
+ const quotedText = quotes.filter(node => !quotes.some(parent => parent !== node && parent.contains(node)))
+   .map(node => plainMail(node.innerHTML).trim()).filter(Boolean).join('\n\n');
+ document.querySelectorAll('blockquote,.gmail_quote,.gmail_signature,.yahoo_quoted,.moz-signature,script,style,iframe,object,template').forEach(node => node.remove());
+ const header = document.querySelector('#divRplyFwdMsg');
+ let outlookQuote = '';
+ if (header) {
+   while (header.nextSibling) {
+     outlookQuote += header.nextSibling.outerHTML || header.nextSibling.textContent;
+     header.nextSibling.remove();
+   }
+   header.remove();
+ }
+ const current = html ? plainMail(document.body.innerHTML) : String(text);
+ const clean = replyText(current);
+ const simpleTags = new Set(['DIV','P','BR','SPAN','FONT','A','B','STRONG','I','EM','U','S','STRIKE','SMALL','SUB','SUP','WBR']);
+ const compactMail = ![...document.body.querySelectorAll('*')].some(node =>
+   !simpleTags.has(node.tagName) ||
+   /(?:background|border|padding|display|position|width|height|float|grid|flex)\s*:/i.test(node.getAttribute('style') || '')
+ );
+ return {
+   compactMail,
+   // An entirely quoted message must remain readable.
+   replyText: compactMail ? (clean || current.trim() || String(text).trim()) : String(text),
+   quotedText: quotedText || plainMail(outlookQuote).trim() || (clean && current.trim() !== clean ? current.trim().slice(current.indexOf(clean) + clean.length).trim() : '')
+ };
+}
