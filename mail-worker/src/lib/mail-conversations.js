@@ -303,7 +303,7 @@ export function externalMailPresentation(text = '', html = '') {
  const quotes = [...document.querySelectorAll('blockquote,.gmail_quote,.yahoo_quoted')];
  const quotedText = quotes.filter(node => !quotes.some(parent => parent !== node && parent.contains(node)))
    .map(node => plainMail(node.innerHTML).trim()).filter(Boolean).join('\n\n');
- document.querySelectorAll('blockquote,.gmail_quote,.gmail_signature,.yahoo_quoted,.moz-signature,script,style,iframe,object,template').forEach(node => node.remove());
+ document.querySelectorAll('blockquote,.gmail_quote,.gmail_signature,.yahoo_quoted,.moz-signature,head,meta,link,title,script,style,iframe,object,template').forEach(node => node.remove());
  const header = document.querySelector('#divRplyFwdMsg');
  let outlookQuote = '';
  if (header) {
@@ -315,10 +315,12 @@ export function externalMailPresentation(text = '', html = '') {
  }
  const current = html ? plainMail(document.body.innerHTML) : String(text);
  const clean = replyText(current);
- const simpleTags = new Set(['DIV','P','BR','SPAN','FONT','A','B','STRONG','I','EM','U','S','STRIKE','SMALL','SUB','SUP','WBR']);
+ const simpleTags = new Set(['HTML','BODY','DIV','P','BR','SPAN','FONT','A','B','STRONG','I','EM','U','S','STRIKE','SMALL','SUB','SUP','WBR']);
  const compactMail = ![...document.body.querySelectorAll('*')].some(node =>
    !simpleTags.has(node.tagName) ||
-   /(?:background|border|padding|display|position|width|height|float|grid|flex)\s*:/i.test(node.getAttribute('style') || '')
+   /(?:background(?:-color)?\s*:|display\s*:\s*(?:grid|flex)|position\s*:\s*(?:absolute|fixed)|(?:grid|flex|float)\s*:)/i.test(
+     (node.getAttribute('style') || '').replace(/background(?:-color)?\s*:\s*(?:white|transparent|#fff(?:fff)?|rgba?\(\s*255\s*,\s*255\s*,\s*255(?:\s*,\s*1)?\))\s*(?=;|$)/gi, '')
+   )
  );
  return {
    compactMail,

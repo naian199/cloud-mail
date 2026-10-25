@@ -98,7 +98,7 @@
                 ? t('mailChatOnline')
                 : t('mailChatOffline')
           }}</span>
-          <span v-else :title="selected.subject">{{ selected.subject || (connected ? t('mailChatLive') : t('chatReconnecting')) }}</span>
+          <span v-else :title="conversationSubject(selected)">{{ conversationSubject(selected) || (connected ? t('mailChatLive') : t('chatReconnecting')) }}</span>
         </div>
         <el-popover v-model:visible="translationStatus.settingsOpen" trigger="click" :width="300" placement="bottom-end">
           <template #reference><el-button text :aria-label="t('translateAuto')" :title="t(translationStatus.error || 'translateAuto')" :type="translationStatus.error ? 'warning' : 'default'"><Icon icon="cloud-mail:translate" width="20" /></el-button></template>
@@ -176,6 +176,10 @@
                   <strong translate="no">{{ m.quote.author }}</strong
                   ><span>{{ m.quote.text }}</span>
                 </button>
+              <details v-if="m.compactMail && m.quotedText && !originalExpanded[m.emailId]" class="mail-history">
+                <summary :title="m.quotedText">{{ t('mailChatQuoteReply') }} · {{ m.quotedText.slice(0, 60) }}</summary>
+                <p class="body-text" dir="auto">{{ m.quotedText }}</p>
+              </details>
                 <p v-if="m.type === 1 && m.message" class="delivery-error">
                   {{ deliveryError(m.message) }}
                 </p>
@@ -196,10 +200,6 @@
                   }}</el-button
                 >
               </template>
-              <details v-if="m.compactMail && m.quotedText && !originalExpanded[m.emailId]" class="mail-history">
-                <summary :title="m.quotedText">{{ t('mailChatQuote') }} · {{ m.quotedText.slice(0, 60) }}</summary>
-                <p class="body-text" dir="auto">{{ m.quotedText }}</p>
-              </details>
               <button v-if="m.richHtml && (isChat(m) || richPreview(m) || originalExpanded[m.emailId])" type="button" class="original-toggle"
                 :aria-expanded="!!originalExpanded[m.emailId]"
                 @click="originalExpanded[m.emailId] = !originalExpanded[m.emailId]">
@@ -502,7 +502,7 @@ import { useMailLive } from '@/composables/use-mail-live';
 import { listFriends, requestFriend, respondFriend, searchUsers, requestFriendByUsername, saveContactNote } from '@/request/chat';
 import { useMailSync } from '@/composables/use-mail-sync';
 import { fileToBase64, formatBytes } from '@/utils/file-utils';
-import { mailDate, showChatTime, chatTimeLabel } from '@/utils/mail-chat-display';
+import { mailDate, showChatTime, chatTimeLabel, conversationSubject } from '@/utils/mail-chat-display';
 
 const { t, locale } = useI18n();
 const route = useRoute(),
@@ -2046,7 +2046,7 @@ pre {
 </style>
 
 <style scoped>
-.mail-history { margin-top: 6px; color: var(--el-text-color-secondary); font-size: 12px; max-width: 100%; }
+.mail-history { margin: 0 0 7px; padding: 7px 10px; border-inline-start: 3px solid var(--el-color-primary); border-radius: 5px; background: var(--el-fill-color-light); color: var(--el-text-color-secondary); font-size: 12px; max-width: 100%; }
 .mail-history summary { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
 .mail-history[open] summary { margin-bottom: 6px; }
 .mail-history .body-text { max-height: 240px; overflow: auto; border-inline-start: 2px solid var(--el-border-color); padding-inline-start: 8px; }

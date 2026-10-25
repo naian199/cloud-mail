@@ -110,7 +110,9 @@ const mailChat = {
       FROM email WHERE user_id = ? AND account_id = ? AND is_del = 0 AND type IN (0,1) AND status != 6
       AND conversation_key != '' GROUP BY conversation_key
     ) SELECT e.conversation_key AS key, e.conversation_peers AS peers, e.email_id AS latestId,
-      e.subject, substr(e.text, 1, 150) AS preview, e.create_time AS createTime, c.unread,
+      e.subject,
+      (SELECT sent.subject FROM email sent WHERE sent.user_id=e.user_id AND sent.account_id=e.account_id AND sent.conversation_key=e.conversation_key AND sent.is_del=0 AND sent.type=1 AND sent.status NOT IN (3,4,6,8) ORDER BY sent.create_time DESC,sent.email_id DESC LIMIT 1) AS ourSubject,
+      substr(e.text, 1, 150) AS preview, e.create_time AS createTime, c.unread,
       p.conversation_key IS NOT NULL AS pinned
       FROM conversations c JOIN email e ON e.email_id = c.latestId
       LEFT JOIN mail_conversation_pin p ON p.user_id = e.user_id AND p.account_id = e.account_id AND p.conversation_key = c.conversation_key

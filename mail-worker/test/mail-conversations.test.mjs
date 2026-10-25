@@ -308,3 +308,11 @@ test('plain text and Outlook histories collapse without losing quote-only messag
  assert.equal(outlook.quotedText, 'Earlier mail');
  assert.match(externalMailPresentation('> Earlier mail').replyText, /Earlier mail/);
 });
+
+test('full email documents and white space wrappers do not turn simple replies into large cards', () => {
+ const html = '<html><head><meta charset="UTF-8"><style>body{color:black}</style></head><body><div style="width:100%;min-height:240px;padding:20px;background-color:white">好的,我记住了</div><blockquote style="border-left:1px solid gray">我的学校邮箱</blockquote></body></html>';
+ const view = externalMailPresentation('好的,我记住了\n我的学校邮箱', html);
+ assert.equal(view.compactMail, true);
+ assert.equal(view.replyText, '好的,我记住了');
+ assert.equal(view.quotedText, '我的学校邮箱');
+});

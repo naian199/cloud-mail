@@ -24,3 +24,9 @@ export function chatTimeLabel(value, locale = 'zh-CN', now = new Date()) {
     return `${new Intl.RelativeTimeFormat(locale, { numeric: 'auto' }).format(-1, 'day')} ${clock}`;
   return `${at.toLocaleDateString(locale, { ...(at.getFullYear() !== now.getFullYear() ? { year: 'numeric' } : {}), month: 'short', day: 'numeric' })} ${clock}`;
 }
+
+// Reply prefixes belong to mail transport, not the conversation heading.
+export function conversationSubject(conversation = {}) {
+  return String(conversation.ourSubject || conversation.subject || '')
+    .replace(/^(?:\s*(?:re|回复|回覆|答复)\s*[:：]\s*)+/i, '').trim();
+}

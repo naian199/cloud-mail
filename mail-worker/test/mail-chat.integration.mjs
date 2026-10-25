@@ -180,6 +180,8 @@ await test(
 				assert.equal(history.messages.length, 2);
 				assert.equal(history.messages[1].inReplyTo, incoming.messageId);
 				assert.equal(history.messages[1].replyText, 'This is an email reply');
+                assert.equal(rows[0].ourSubject, fixture.prepare('SELECT subject FROM email WHERE email_id=?').get(first.emailId).subject);
+                assert.equal((await list(b))[0].ourSubject, fixture.prepare('SELECT subject FROM email WHERE account_id=? AND type=1 ORDER BY email_id DESC LIMIT 1').get(b.account).subject);
 				assert.equal(history.messages[1].quote.text, 'Hello by email');
 				assert.equal(history.messages[1].quote.messageId, incoming.messageId);
 				const quotedRetry = await send(b, {

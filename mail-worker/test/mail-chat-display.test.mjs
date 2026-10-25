@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import {
 	showChatTime,
 	chatTimeLabel,
-	mailDate
+	mailDate,
+	conversationSubject
 } from '../../mail-vue/src/utils/mail-chat-display.js';
 
 test('chat time is shown for the first message, five minute gaps, and day changes', () => {
@@ -27,4 +28,10 @@ test('chat time labels combine date and time without a label under each bubble',
 		chatTimeLabel(new Date(2026, 9, 17, 14, 3).toISOString(), 'zh-CN', now),
 		/10月17日 14:03/
 	);
+});
+
+test('conversation heading uses our outgoing subject without repeated reply prefixes', () => {
+ assert.equal(conversationSubject({ourSubject:'Re: Re: 学校邮箱', subject:'客户的主题'}), '学校邮箱');
+ assert.equal(conversationSubject({subject:'Re: 客户来信'}), '客户来信');
+ assert.equal(conversationSubject({ourSubject:'发布通知'}), '发布通知');
 });
