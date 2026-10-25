@@ -1,162 +1,34 @@
-<p align="center">
-    <img src="doc/demo/logo.png" width="80px" />
-    <h1 align="center">Cloud Mail</h1>
-    <p align="center">基于 Cloudflare 的简约响应式邮箱服务，支持邮件发送、附件收发 🎉</p> 
-    <p align="center">
-        简体中文 | <a href="/README-en.md" style="margin-left: 5px">English </a>
-    </p>
-    <p align="center">
-        <a href="https://github.com/maillab/cloud-mail/tree/main?tab=MIT-1-ov-file" target="_blank" >
-            <img src="https://img.shields.io/badge/license-MIT-green" />
-        </a>    
-        <a href="https://github.com/maillab/cloud-mail/releases" target="_blank" >
-            <img src="https://img.shields.io/github/v/release/maillab/cloud-mail" alt="releases" />
-        </a>  
-        <a href="https://github.com/maillab/cloud-mail/issues" >
-            <img src="https://img.shields.io/github/issues/maillab/cloud-mail" alt="issues" />
-        </a>  
-        <a href="https://github.com/maillab/cloud-mail/stargazers" target="_blank">
-            <img src="https://img.shields.io/github/stars/maillab/cloud-mail" alt="stargazers" />
-        </a>  
-        <a href="https://github.com/maillab/cloud-mail/forks" target="_blank" >
-            <img src="https://img.shields.io/github/forks/maillab/cloud-mail" alt="forks" />
-        </a>
-    </p>
-    <p align="center">
-        <a href="https://trendshift.io/repositories/20459" target="_blank" >
-            <img src="https://trendshift.io/api/badge/repositories/20459" alt="trendshift" >
-        </a>
-    </p>
-</p>
+# Cloud Mail · naian199
 
+独立维护的 Cloudflare 邮箱与聊天项目。当前独立版本为 **1.0.0**。
 
-## 项目简介
+[English](README-en.md) · [项目仓库](https://github.com/naian199/cloud-mail) · [更新记录](CHANGELOG.md) · [部署与维护](doc/deployment.md)
 
-只需要一个域名，就可以创建多个不同的邮箱，类似各大邮箱平台，本项目支持署到 Cloudflare Workers ，降低服务器成本，搭建自己的邮箱服务
+## 功能
 
-## 项目展示
+- [邮件会话](doc/mail-conversations.md)：普通邮件用聊天气泡展示，历史引用折叠，品牌邮件可查看原版；对外回复仍按正常邮件发送。
+- [站内即时聊天](doc/internal-direct-messaging.md)：联系人、唯一用户名、备注、在线状态、已读回执及图片附件。
+- [私有群组、频道与语音输入](doc/groups-and-channels.md)：邀请加入、成员权限、消息实时更新及语音转文字。
+- [多语言与自动翻译](doc/languages-and-translation.md)：跟随界面语言，支持浏览器本地能力与配置后的 Google Cloud Translation。
+- [表情包](doc/telegram-stickers.md)、[会话搜索与媒体](doc/conversation-search-and-media.md)、[手机布局](doc/mobile-viewport.md)。
+- 邮箱收发、草稿、附件、权限管理、验证码识别、统计、可选第三方登录及通知。
 
-- [在线演示](https://skymail.ink)<br>
-- [部署文档](https://doc.skymail.ink)<br>
+## 独立维护
 
-| ![](/doc/demo/demo1.png) | ![](/doc/demo/demo2.png) |
-|-----------------------|-----------------------|
-| ![](/doc/demo/demo3.png) | ![](/doc/demo/demo4.png) |
+构建和部署只读取本仓库代码；没有原项目的版本检查、更新提醒、自动同步或自动合并流程。版本元数据统一维护在 [shared/project-info.mjs](shared/project-info.mjs)，前后端包版本与更新记录同步维护。
 
+向本仓库 `main` 推送应用改动后，GitHub Actions 构建并部署到配置的 Cloudflare 资源。需要的资源、变量、运行方式和验证步骤见[部署文档](doc/deployment.md)。问题请提交到[本仓库 Issues](https://github.com/naian199/cloud-mail/issues)。没有单独的社群或捐助入口。
 
+## 项目结构
 
+- `mail-vue/`：Vue 3、Element Plus 前端。
+- `mail-worker/`：Hono 后端、邮件处理和 Cloudflare Worker。
+- `shared/`：语言目录与本项目版本元数据。
+- `doc/`：功能、部署和维护文档。
+- `.github/workflows/`：本仓库的构建、验证与部署流程。
 
-## 功能介绍
+## 外部服务与许可证
 
-- **📨 邮件聊天模式**：以联系人会话和左右气泡展示真实往来邮件，支持附件、回复全部、实时更新和手机布局。[使用与升级说明](/doc/mail-conversations.md)
+平台和功能所需的 Cloudflare、邮件投递、可选翻译、Telegram、OAuth 等服务见[依赖清单](doc/independent-maintenance.md)。这些服务与原项目的更新入口无关。
 
-- **💬 好友聊天**：同站注册邮箱可添加好友，并在统一邮件会话中即时聊天，支持在线/输入状态、已读回执、双向删除、图片和手机布局。[使用与部署说明](/doc/chat.md)
-
-- **💰 低成本使用**： 可部署到 Cloudflare Workers 降低服务器成本
-
-- **💻 响应式设计**：响应式布局自动适配PC和大部分手机端浏览器
-
-- **📧 邮件发送**：集成Resend发送邮件，支持群发，内嵌图片和附件发送，发送状态查看
-
-- **🛡️ 管理员功能**：可以对用户，邮件进行管理，RABC权限控制对功能及使用资源限制
-
-- **📦 附件收发**：支持收发附件，使用R2对象存储保存和下载文件
-
-- **🔔 邮件推送**：接收邮件后可以转发到TG机器人或其他服务商邮箱
-
-- **📡 开放API**：支持使用API批量生成用户，多条件查询邮件 
-
-- **🔢 验证码识别**：使用Workers AI，自动识别邮件验证码 
-
-- **📈 数据可视化**：使用ECharts对系统数据详情，用户邮件增长可视化显示
-
-- **🎨 个性化设置**：可以自定义网站标题，登录背景，透明度
-
-- **🤖 人机验证**：集成Turnstile人机验证，防止人机批量注册
-
-- **📜 更多功能**：正在开发中...
-
-
-
-## 技术栈
-
-- **平台**：[Cloudflare Workers](https://developers.cloudflare.com/workers/)
-
-- **Web框架**：[Hono](https://hono.dev/)
-
-- **ORM：**[Drizzle](https://orm.drizzle.team/)
-
-- **前端框架**：[Vue3](https://vuejs.org/) 
-
-- **UI框架**：[Element Plus](https://element-plus.org/) 
-
-- **邮件推送：** [Resend](https://resend.com/)
-
-- **缓存**：[Cloudflare KV](https://developers.cloudflare.com/kv/)
-
-- **数据库**：[Cloudflare D1](https://developers.cloudflare.com/d1/)
-
-- **文件存储**：[Cloudflare R2](https://developers.cloudflare.com/r2/)
-
-## 目录结构
-
-```
-cloud-mail
-├── mail-worker				    # worker后端项目
-│   ├── src                  
-│   │   ├── api	 			    # api接口层			
-│   │   ├── const  			    # 项目常量
-│   │   ├── dao                 # 数据访问层
-│   │   ├── email			    # 邮件处理接收
-│   │   ├── entity			    # 数据库实体
-│   │   ├── error			    # 自定义异常
-│   │   ├── hono			    # web框架配置、拦截器、全局异常等
-│   │   ├── i18n			    # 语言国际化
-│   │   ├── init			    # 数据库缓存初始化
-│   │   ├── model			    # 响应体数据封装
-│   │   ├── security			# 身份权限认证
-│   │   ├── service			    # 业务服务层
-│   │   ├── template			# 消息模板
-│   │   ├── utils			    # 工具类
-│   │   └── index.js			# 入口文件
-│   ├── pageckge.json			# 项目依赖
-│   └── wrangler.toml			# 项目配置
-│
-├── mail-vue				    # vue前端项目
-│   ├── src
-│   │   ├── axios 			    # axios配置
-│   │   ├── components			# 自定义组件
-│   │   ├── echarts			    # echarts组件导入
-│   │   ├── i18n			    # 语言国际化
-│   │   ├── init			    # 入站初始化
-│   │   ├── layout			    # 主体布局组件
-│   │   ├── perm			    # 权限认证
-│   │   ├── request			    # api接口
-│   │   ├── router			    # 路由配置
-│   │   ├── store			    # 全局状态管理
-│   │   ├── utils			    # 工具类
-│   │   ├── views			    # 页面组件
-│   │   ├── app.vue			    # 入口组件
-│   │   ├── main.js			    # 入口js
-│   │   └── style.css			# 全局css
-│   ├── package.json			# 项目依赖
-└── └── env.release				# 项目配置
-```
-
-## 赞助
-
-<a href="https://doc.skymail.ink/support.html" >
-<img width="170px" src="./doc/images/support.png" alt="">
-</a>
-
-## 许可证
-
-本项目采用 [MIT](LICENSE) 许可证	
-
-
-## 交流
-
-[Telegram](https://t.me/cloud_mail_tg)
-
-
-
+项目保留 [MIT 许可证](LICENSE) 及其要求的版权声明。代码来源和第三方组件声明见 [NOTICE.md](NOTICE.md)。独立维护不删除合法署名或 Git 历史。

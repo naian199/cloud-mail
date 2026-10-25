@@ -145,7 +145,7 @@
         </el-button>
       </div>
     </el-dialog>
-    <a v-show="settingStore.settings.projectLink" class="github" href="https://github.com/maillab/cloud-mail">
+    <a v-show="settingStore.settings.projectLink" class="github" :href="projectInfo.repository" target="_blank" rel="noopener noreferrer">
       <Icon icon="mingcute:github-line" color="#1890ff" width="20" height="20" />
     </a>
   </div>
@@ -153,6 +153,7 @@
 
 <script setup>
 import LanguageSelect from '@/components/language-select.vue';
+import { projectInfo } from '../../../../shared/project-info.mjs';
 import router from "@/router";
 import {useRoute} from "vue-router";
 import {computed, nextTick, reactive, ref} from "vue";

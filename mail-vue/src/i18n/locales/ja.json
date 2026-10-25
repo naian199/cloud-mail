@@ -378,7 +378,6 @@
   "sendInternal": "内部のみ",
   "wrote": "が書きました\n【0378】 サポート",
   "support": "サポート",
-  "supportDesc": "お茶を買ってきて\n【0380】 機能の説明",
   "featDesc": "機能の説明",
   "emailInterception": "電子メールの傍受",
   "emailInterceptionDesc": "ユーザーが特定の Web サイトからの電子メールを受信できないようにするには、ドメインまたは電子メール アドレスを入力します (すべてをブロックするには * を入力します)",

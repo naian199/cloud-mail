@@ -378,7 +378,6 @@
   "sendInternal": "내부 전용",
   "wrote": "썼다",
   "support": "지원하다",
-  "supportDesc": "차 사줘",
   "featDesc": "기능 설명",
   "emailInterception": "이메일 차단",
   "emailInterceptionDesc": "사용자가 특정 웹사이트로부터 이메일을 받지 못하도록 하려면 도메인 또는 이메일 주소를 입력하세요(모두 차단하려면 * 입력).",
