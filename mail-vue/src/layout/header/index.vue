@@ -1,6 +1,6 @@
 <template>
-  <div class="header">
-    <div class="header-btn">
+  <div class="header" :class="{ 'compact-toolbar': compact }">
+    <div v-if="!compact" class="header-btn">
       <hanburger @click="changeAside"></hanburger>
       <span class="breadcrumb-item">{{ $t(route.meta.title) }}</span>
     </div>
@@ -83,6 +83,7 @@ import {useSettingStore} from "@/store/setting.js";
 import {hasPerm} from "@/perm/perm.js"
 import {useI18n} from "vue-i18n";
 
+defineProps({ compact: Boolean });
 const {t} = useI18n();
 const route = useRoute();
 const settingStore = useSettingStore();
@@ -459,4 +460,9 @@ function formatName(email) {
     }
   }
 }
+</style>
+
+<style scoped>
+.header.compact-toolbar { display: flex; justify-content: center; height: 40px; }
+.compact-toolbar .toolbar { gap: 12px; }
 </style>

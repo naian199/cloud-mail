@@ -9,6 +9,8 @@ addCollection({
   width: 24,
   height: 24,
   icons: {
+    menu: outline('<path d="M4 6h16M4 12h16M4 18h16"/>'),
+    more: outline('<circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/>'),
     microphone: outline('<rect x="9" y="2" width="6" height="13" rx="3"/><path d="M5 10v2a7 7 0 0 0 14 0v-2M12 19v3m-4 0h8"/>'),
     stop: outline('<rect x="6" y="6" width="12" height="12" rx="2"/>'),
     group: outline('<circle cx="9" cy="8" r="3"/><path d="M3 21v-3a6 6 0 0 1 12 0v3m1-16a3 3 0 0 1 0 6m3 10v-3a6 6 0 0 0-2-4"/>'),

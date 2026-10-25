@@ -11,7 +11,7 @@
     ></div>
     <el-container class="main-container">
       <el-main>
-        <el-header v-show="!uiStore.mobileContactsHeaderTarget">
+        <el-header v-show="!uiStore.mobileContactsHeaderTarget && !(route.name === 'mail-chat' && uiStore.mobileChatFocused)">
           <Teleport :to="uiStore.mobileContactsHeaderTarget || 'body'" :disabled="!uiStore.mobileContactsHeaderTarget">
             <Header />
           </Teleport>
@@ -28,6 +28,7 @@ import Aside from '@/layout/aside/index.vue'
 import Header from '@/layout/header/index.vue'
 import Main from '@/layout/main/index.vue'
 import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { useRoute } from 'vue-router'
 import {useUiStore} from "@/store/ui.js";
 import writer from '@/layout/write/index.vue'
 import { useMessageAlerts } from '@/composables/use-message-alerts';
@@ -35,6 +36,7 @@ import { useMessageAlerts } from '@/composables/use-message-alerts';
 useMessageAlerts();
 
 const uiStore = useUiStore();
+const route = useRoute();
 const viewportHeight = ref(window.visualViewport?.height || window.innerHeight);
 const viewportTop = ref(window.visualViewport?.offsetTop || 0);
 function updateViewport() {

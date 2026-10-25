@@ -77,6 +77,7 @@
         @touchend="endTouch"
         @touchcancel="cancelPress"
       >
+        <el-button class="thread-navigation" text :aria-label="t('mailChatTitle')" :aria-expanded="ui.asideShow" @click="ui.asideShow = !ui.asideShow"><Icon icon="cloud-mail:menu" width="20" /></el-button>
         <el-button class="back" text :aria-label="t('chatBack')" @click="closeThread"
           ><Icon icon="cloud-mail:back" width="24"
         /></el-button>
@@ -108,6 +109,10 @@
         <el-button text :aria-label="t('mailChatPin')" @click="togglePin">{{
           selected.pinned ? '★' : '☆'
         }}</el-button>
+        <el-popover trigger="click" :width="190" placement="bottom-end" popper-class="chat-account-popover">
+          <template #reference><el-button class="thread-options" text :aria-label="t('tabSetting')"><Icon icon="cloud-mail:more" width="20" /></el-button></template>
+          <Header compact />
+        </el-popover>
       </header>
       <div ref="scroll" class="messages" v-loading="messageLoading" @scroll="onScroll">
         <el-button v-if="hasOlder" class="load-more" text :loading="olderLoading" @click="older">{{
@@ -466,6 +471,7 @@ import { randomUUID } from '@/utils/uuid';
 
 import { computed, nextTick, onMounted, onBeforeUnmount, reactive, ref, watch } from 'vue';
 import MailBody from '@/components/mail-body.vue';
+import Header from '@/layout/header/index.vue';
 import UserAvatar from '@/components/user-avatar.vue';
 import '@/icons/chat';
 import { useMediaQuery } from '@vueuse/core';
@@ -2056,4 +2062,18 @@ pre {
 .mail-summary { display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; padding: 0; margin: 14px 16px; white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.6; }
 .internal-bubble:has(.mail-body) { width: min(850px, 100%); }
 .thread-title > span { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+</style>
+
+<style scoped>
+/* One toolbar owns navigation and conversation controls while a thread is open. */
+.thread-header { height: 48px; min-height: 48px; padding: 3px 10px; gap: 6px; box-sizing: border-box; }
+.thread-header > .el-button { margin-left: 0; padding: 5px; min-width: 30px; height: 36px; flex-shrink: 0; }
+.thread-header .profile-button :deep(.user-avatar) { width: 32px !important; height: 32px !important; font-size: 13px; }
+.thread-title strong { font-size: 14px; line-height: 19px; }
+.thread-title span { font-size: 11px; line-height: 15px; }
+@media (max-width: 767px), (max-width: 1024px) and (max-height: 500px) and (pointer: coarse) {
+  .thread-header { gap: 3px; padding-inline: 6px; }
+  .thread-header > .thread-navigation { display: none; }
+  .thread-header > .el-button { min-width: 30px; }
+}
 </style>
