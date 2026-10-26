@@ -633,5 +633,17 @@
   "voiceError": "Nhận dạng giọng nói thất bại. Thử lại hoặc dùng bàn phím giọng nói.",
   "mailChatInternalGroup": "Trò chuyện nội bộ",
   "mailChatExternalGroup": "Thư bên ngoài",
-  "navigationMenu": "Menu điều hướng"
+  "navigationMenu": "Menu điều hướng",
+  "videoPlay": "Phát video",
+  "videoLoading": "Đang tải video…",
+  "videoCompatible": "Phát tương thích",
+  "videoConverting": "Đang chuẩn bị… {percent}%",
+  "videoDownload": "Tải tệp gốc",
+  "videoUnsupported": "Không thể phát trực tiếp định dạng hoặc codec này. Hãy thử phát tương thích.",
+  "videoConvertFailed": "Thiết bị này không thể xử lý video. Hãy tải tệp gốc để phát.",
+  "videoTooLarge": "Phát tương thích hỗ trợ video tối đa 10 MB.",
+  "videoBusy": "Một video khác đang được xử lý. Hãy thử lại sau giây lát.",
+  "videoLoadFailed": "Không tải được video. Hãy thử lại hoặc tải tệp gốc.",
+  "fileDropTitle": "Thả tệp vào đây",
+  "fileDropHint": "Tối đa 10 tệp, tổng cộng 10 MB. Thả tệp chỉ thêm tệp đính kèm, không tự động gửi."
 }

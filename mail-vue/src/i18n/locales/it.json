@@ -633,5 +633,17 @@
   "voiceError": "Riconoscimento non riuscito. Riprova o usa la dettatura della tastiera.",
   "mailChatInternalGroup": "Chat interne",
   "mailChatExternalGroup": "Email esterne",
-  "navigationMenu": "Menu di navigazione"
+  "navigationMenu": "Menu di navigazione",
+  "videoPlay": "Riproduci video",
+  "videoLoading": "Caricamento video…",
+  "videoCompatible": "Riproduzione compatibile",
+  "videoConverting": "Preparazione… {percent}%",
+  "videoDownload": "Scarica originale",
+  "videoUnsupported": "Questo formato o codec non può essere riprodotto direttamente. Prova la riproduzione compatibile.",
+  "videoConvertFailed": "Questo dispositivo non ha potuto preparare il video. Scarica il file originale per riprodurlo.",
+  "videoTooLarge": "La riproduzione compatibile supporta video fino a 10 MB.",
+  "videoBusy": "Un altro video è in elaborazione. Riprova tra poco.",
+  "videoLoadFailed": "Impossibile caricare il video. Riprova o scarica il file originale.",
+  "fileDropTitle": "Trascina qui i file",
+  "fileDropHint": "Fino a 10 file, per un totale di 10 MB. Il trascinamento aggiunge allegati senza inviarli."
 }

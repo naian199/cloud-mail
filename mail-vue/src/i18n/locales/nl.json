@@ -633,5 +633,17 @@
   "voiceError": "Spraakherkenning mislukt. Probeer opnieuw of gebruik toetsenborddictatie.",
   "mailChatInternalGroup": "Interne chats",
   "mailChatExternalGroup": "Externe e-mail",
-  "navigationMenu": "Navigatiemenu"
+  "navigationMenu": "Navigatiemenu",
+  "videoPlay": "Video afspelen",
+  "videoLoading": "Video laden…",
+  "videoCompatible": "Compatibel afspelen",
+  "videoConverting": "Afspelen voorbereiden… {percent}%",
+  "videoDownload": "Origineel downloaden",
+  "videoUnsupported": "Dit formaat of deze codec kan niet direct worden afgespeeld. Probeer compatibel afspelen.",
+  "videoConvertFailed": "Dit apparaat kon de video niet voorbereiden. Download het origineel om af te spelen.",
+  "videoTooLarge": "Compatibel afspelen ondersteunt video’s tot 10 MB.",
+  "videoBusy": "Er wordt een andere video verwerkt. Probeer het zo opnieuw.",
+  "videoLoadFailed": "De video kon niet worden geladen. Probeer opnieuw of download het origineel.",
+  "fileDropTitle": "Bestanden hier neerzetten",
+  "fileDropHint": "Maximaal 10 bestanden, samen 10 MB. Neerzetten voegt bijlagen toe zonder ze te verzenden."
 }

@@ -633,5 +633,17 @@
   "voiceError": "Konuşma tanınamadı. Tekrar deneyin veya klavye diktesini kullanın.",
   "mailChatInternalGroup": "Dahili sohbetler",
   "mailChatExternalGroup": "Harici e-postalar",
-  "navigationMenu": "Gezinme menüsü"
+  "navigationMenu": "Gezinme menüsü",
+  "videoPlay": "Videoyu oynat",
+  "videoLoading": "Video yükleniyor…",
+  "videoCompatible": "Uyumlu oynatma",
+  "videoConverting": "Oynatma hazırlanıyor… {percent}%",
+  "videoDownload": "Orijinali indir",
+  "videoUnsupported": "Bu biçim veya codec doğrudan oynatılamaz. Uyumlu oynatmayı deneyin.",
+  "videoConvertFailed": "Bu cihaz videoyu hazırlayamadı. Oynatmak için orijinal dosyayı indirin.",
+  "videoTooLarge": "Uyumlu oynatma en fazla 10 MB videoları destekler.",
+  "videoBusy": "Başka bir video işleniyor. Biraz sonra tekrar deneyin.",
+  "videoLoadFailed": "Video yüklenemedi. Tekrar deneyin veya orijinal dosyayı indirin.",
+  "fileDropTitle": "Dosyaları buraya bırakın",
+  "fileDropHint": "En fazla 10 dosya, toplam 10 MB. Bırakma işlemi ekleri ekler, otomatik göndermez."
 }

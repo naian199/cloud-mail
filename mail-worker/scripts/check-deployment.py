@@ -50,6 +50,12 @@ for attempt in range(12):
         for src in expected:
             if not get(src):
                 raise RuntimeError('Empty frontend entry')
+        video_base = 'video-engine/core-0.12.10-wrapper-0.12.15/'
+        if b'FFMessageType' not in get(video_base + 'worker.js'):
+            raise RuntimeError('Video worker asset unavailable')
+        engine = get(video_base + 'ffmpeg-core.wasm.gz')
+        if len(engine) > 48 * 1024 * 1024 or not engine.startswith((b'\x1f\x8b', b'\x00asm')):
+            raise RuntimeError('Video engine asset unavailable')
         config = json.loads(get('api/setting/websiteConfig'))
         if config.get('code') != 200 or not isinstance(config.get('data'), dict):
             raise RuntimeError('Website configuration check failed')

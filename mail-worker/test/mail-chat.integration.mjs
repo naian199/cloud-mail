@@ -285,7 +285,7 @@ await test(
 				const mid = `<${randomUUID()}@outside.example>`;
 				const png =
 					'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a/1cAAAAASUVORK5CYII=';
-				const raw = `From: External <sender@outside.example>\r\nTo: ${b.email}\r\nReply-To: reply@outside.example\r\nMessage-ID: ${mid}\r\nSubject: HTML inbound\r\nMIME-Version: 1.0\r\nContent-Type: multipart/related; boundary=mailpicture\r\n\r\n--mailpicture\r\nContent-Type: text/html; charset=UTF-8\r\n\r\n<p onclick="alert(1)">HTML incoming</p><img src="cid:sample"><blockquote>Old reply<img src="https://tracker.invalid/old.png"></blockquote><script>alert(1)</script><img width="1" src="https://tracker.invalid/pixel">\r\n--mailpicture\r\nContent-Type: image/png\r\nContent-ID: <sample>\r\nContent-Disposition: inline; filename="embedded.png"\r\nContent-Transfer-Encoding: base64\r\n\r\n${png}\r\n--mailpicture--`;
+				const raw = `From: External <sender@outside.example>\r\nTo: ${b.email}\r\nReply-To: reply@outside.example\r\nMessage-ID: ${mid}\r\nSubject: HTML inbound\r\nMIME-Version: 1.0\r\nContent-Type: multipart/related; boundary=mailpicture\r\n\r\n--mailpicture\r\nContent-Type: text/html; charset=UTF-8\r\n\r\n<p onclick="alert(1)">HTML incoming</p><img src="cid:sample"><blockquote>Old reply<img src="https://tracker.invalid/old.png"></blockquote><script>alert(1)</script><img width="1" src="https://tracker.invalid/pixel">\r\n--mailpicture\r\nContent-Type: image/png\r\nContent-ID: <sample>\r\nContent-Disposition: inline; filename="embedded.png"\r\nContent-Transfer-Encoding: base64\r\n\r\n${png}\r\n--mailpicture\r\nContent-Type: video/mp4\r\nContent-ID: <inlinevideo>\r\nContent-Disposition: inline; filename="embedded.mp4"\r\nContent-Transfer-Encoding: base64\r\n\r\ndmlkZW8gZml4dHVyZQ==\r\n--mailpicture--`;
 
 				const url = new URL('cdn-cgi/handler/email', root);
 				url.searchParams.set('from', 'sender@outside.example');
@@ -300,6 +300,7 @@ await test(
 				assert.equal(data.messages.length, 1);
 				assert(data.messages[0].richHtml.includes('HTML incoming'));
 				assert(data.messages[0].richHtml.includes('Old reply'));
+                assert(data.messages[0].attachments.some(att => att.filename==='embedded.mp4'), 'Inline video must remain playable as an attachment');
                 assert.equal((await list(b)).find(row => row.peers.includes('sender@outside.example')).category, 'external');
 				assert.equal(data.messages[0].richImages.length, 1);
 				const pictureId = data.messages[0].richImages[0].attId;

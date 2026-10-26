@@ -633,5 +633,17 @@
   "voiceError": "음성 인식에 실패했습니다. 다시 시도하거나 키보드 받아쓰기를 사용하세요.",
   "mailChatInternalGroup": "내부 채팅",
   "mailChatExternalGroup": "외부 메일",
-  "navigationMenu": "탐색 메뉴"
+  "navigationMenu": "탐색 메뉴",
+  "videoPlay": "동영상 재생",
+  "videoLoading": "동영상 불러오는 중…",
+  "videoCompatible": "호환 재생",
+  "videoConverting": "재생 준비 중… {percent}%",
+  "videoDownload": "원본 다운로드",
+  "videoUnsupported": "이 형식 또는 코덱은 바로 재생할 수 없습니다. 호환 재생을 사용해 보세요.",
+  "videoConvertFailed": "이 기기에서 동영상을 처리하지 못했습니다. 원본을 다운로드해 재생하세요.",
+  "videoTooLarge": "호환 재생은 최대 10MB 동영상을 지원합니다.",
+  "videoBusy": "다른 동영상을 처리 중입니다. 잠시 후 다시 시도하세요.",
+  "videoLoadFailed": "동영상을 불러오지 못했습니다. 다시 시도하거나 원본을 다운로드하세요.",
+  "fileDropTitle": "여기에 파일 놓기",
+  "fileDropHint": "최대 10개 파일, 총 10MB. 파일을 놓으면 첨부되며 자동 전송되지 않습니다."
 }

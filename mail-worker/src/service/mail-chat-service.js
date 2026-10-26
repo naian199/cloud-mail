@@ -1,4 +1,5 @@
 import BizError from '../error/biz-error';
+import { isVideoFile } from '../../../shared/media-files.mjs';
 import { sharedLinks, sharedImages } from '../lib/mail-shared-links';
 import userContext from '../security/user-context';
 import permService from './perm-service';
@@ -280,8 +281,7 @@ const mailChat = {
 			row.attachments = row.attachments
 				.filter(
 					(att) =>
-						!att.contentId &&
-						att.type === 0 &&
+						((!att.contentId && att.type === 0) || isVideoFile(att)) &&
 						!row.images.some((image) => image.attId === att.attId)
 				)
 				.map(({ key, ...att }) => att);

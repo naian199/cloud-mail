@@ -633,5 +633,17 @@
   "voiceError": "語音辨識失敗，請重試或使用系統鍵盤語音輸入。",
   "mailChatInternalGroup": "站內聊天",
   "mailChatExternalGroup": "站外郵件",
-  "navigationMenu": "導覽選單"
+  "navigationMenu": "導覽選單",
+  "videoPlay": "播放影片",
+  "videoLoading": "正在載入影片…",
+  "videoCompatible": "相容播放",
+  "videoConverting": "相容處理中 {percent}%",
+  "videoDownload": "下載原始檔案",
+  "videoUnsupported": "目前格式或編碼無法直接播放，請選擇「相容播放」。",
+  "videoConvertFailed": "此裝置無法完成相容處理，請下載原始檔案播放。",
+  "videoTooLarge": "相容播放支援 10MB 以內的影片。",
+  "videoBusy": "另一部影片正在處理中，請稍後再試。",
+  "videoLoadFailed": "影片載入失敗，請重試或下載原始檔案。",
+  "fileDropTitle": "將檔案拖放至此",
+  "fileDropHint": "最多 10 個檔案，合計 10MB。放開後加入附件，不會自動傳送。"
 }

@@ -633,5 +633,17 @@
   "voiceError": "音声認識に失敗しました。再試行するかキーボードの音声入力をご利用ください。",
   "mailChatInternalGroup": "サイト内チャット",
   "mailChatExternalGroup": "外部メール",
-  "navigationMenu": "ナビゲーションメニュー"
+  "navigationMenu": "ナビゲーションメニュー",
+  "videoPlay": "動画を再生",
+  "videoLoading": "動画を読み込み中…",
+  "videoCompatible": "互換再生",
+  "videoConverting": "再生を準備中… {percent}%",
+  "videoDownload": "元のファイルを保存",
+  "videoUnsupported": "この形式またはコーデックは直接再生できません。互換再生をお試しください。",
+  "videoConvertFailed": "この端末では動画を変換できませんでした。元のファイルを保存して再生してください。",
+  "videoTooLarge": "互換再生は10MB以下の動画に対応しています。",
+  "videoBusy": "別の動画を処理中です。しばらくしてから再試行してください。",
+  "videoLoadFailed": "動画を読み込めません。再試行するか元のファイルを保存してください。",
+  "fileDropTitle": "ここにファイルをドロップ",
+  "fileDropHint": "最大10ファイル、合計10MB。ドロップすると添付されますが、自動送信はしません。"
 }

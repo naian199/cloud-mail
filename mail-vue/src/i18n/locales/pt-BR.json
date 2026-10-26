@@ -633,5 +633,17 @@
   "voiceError": "O reconhecimento falhou. Tente novamente ou use o ditado do teclado.",
   "mailChatInternalGroup": "Conversas internas",
   "mailChatExternalGroup": "E-mails externos",
-  "navigationMenu": "Menu de navegação"
+  "navigationMenu": "Menu de navegação",
+  "videoPlay": "Reproduzir vídeo",
+  "videoLoading": "Carregando vídeo…",
+  "videoCompatible": "Reprodução compatível",
+  "videoConverting": "Preparando reprodução… {percent}%",
+  "videoDownload": "Baixar original",
+  "videoUnsupported": "Este formato ou codec não pode ser reproduzido diretamente. Tente a reprodução compatível.",
+  "videoConvertFailed": "Este dispositivo não conseguiu preparar o vídeo. Baixe o original para reproduzir.",
+  "videoTooLarge": "A reprodução compatível aceita vídeos de até 10 MB.",
+  "videoBusy": "Outro vídeo está sendo processado. Tente novamente em instantes.",
+  "videoLoadFailed": "Não foi possível carregar o vídeo. Tente novamente ou baixe o original.",
+  "fileDropTitle": "Solte os arquivos aqui",
+  "fileDropHint": "Até 10 arquivos, 10 MB no total. Soltar adiciona anexos sem enviá-los."
 }

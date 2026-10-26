@@ -102,5 +102,17 @@
   "voiceError": "语音识别未成功，请重试或使用系统键盘语音输入。",
   "mailChatInternalGroup": "站内聊天",
   "mailChatExternalGroup": "站外邮件",
-  "navigationMenu": "导航菜单"
+  "navigationMenu": "导航菜单",
+  "videoPlay": "播放视频",
+  "videoLoading": "正在加载视频…",
+  "videoCompatible": "兼容播放",
+  "videoConverting": "兼容处理中 {percent}%",
+  "videoDownload": "下载原文件",
+  "videoUnsupported": "当前格式或编码无法直接播放，请点击“兼容播放”。",
+  "videoConvertFailed": "此设备未能完成兼容处理，请下载原文件播放。",
+  "videoTooLarge": "兼容播放支持 10MB 以内的视频。",
+  "videoBusy": "另一个视频正在处理中，请稍后重试。",
+  "videoLoadFailed": "视频加载失败，请重试或下载原文件。",
+  "fileDropTitle": "拖放文件到此处",
+  "fileDropHint": "最多 10 个文件，合计 10MB。松开后加入附件，不会自动发送。"
 }

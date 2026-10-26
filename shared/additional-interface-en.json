@@ -102,5 +102,17 @@
   "voiceError": "Speech recognition failed. Retry or use system keyboard dictation.",
   "mailChatInternalGroup": "Internal chats",
   "mailChatExternalGroup": "External mail",
-  "navigationMenu": "Navigation menu"
+  "navigationMenu": "Navigation menu",
+  "videoPlay": "Play video",
+  "videoLoading": "Loading video…",
+  "videoCompatible": "Compatible playback",
+  "videoConverting": "Preparing playback… {percent}%",
+  "videoDownload": "Download original",
+  "videoUnsupported": "This format or codec cannot play directly. Try compatible playback.",
+  "videoConvertFailed": "This device could not prepare the video. Download the original to play it.",
+  "videoTooLarge": "Compatible playback supports videos up to 10 MB.",
+  "videoBusy": "Another video is being processed. Try again shortly.",
+  "videoLoadFailed": "Could not load this video. Retry or download the original.",
+  "fileDropTitle": "Drop files here",
+  "fileDropHint": "Up to 10 files, 10 MB total. Dropping adds attachments without sending them."
 }

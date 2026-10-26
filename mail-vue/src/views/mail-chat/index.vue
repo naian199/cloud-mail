@@ -1,5 +1,5 @@
 <template>
-  <section class="mail-chat" :class="{ 'conversation-open': active }">
+  <section class="mail-chat" :class="{ 'conversation-open': active }" @dragenter="dragEnter" @dragover="dragOver" @dragleave="dragLeave" @drop="dropFiles">
     <aside class="conversations">
       <div ref="contactScroll" class="conversation-list" @scroll.passive="contactListScroll" @keydown.home="restoreContactControls">
       <div v-if="compactChat" ref="contactHeaderHost" class="contact-header-host"></div>
@@ -61,6 +61,7 @@
       </div>
     </aside>
     <main v-if="active" class="thread">
+      <div v-if="dragDepth && canSend && !sending" class="file-drop-overlay" role="status"><Icon icon="cloud-mail:attach" width="46" /><strong>{{ t('fileDropTitle') }}</strong><small>{{ t('fileDropHint') }}</small></div>
       <header
         class="thread-header"
         @contextmenu="openMessageMenu($event, null)"
@@ -236,8 +237,9 @@
                 <span v-else>{{ t('mailChatImageLoading') }}</span>
               </div>
               <div v-for="att in m.attachments" :key="att.attId" class="attachment">
-                <StickerMedia v-if="/\.(tgs|webm)$/i.test(att.filename)" :format="att.filename.toLowerCase().endsWith('.tgs') ? 'tgs' : 'webm'" :label="'🙂'" :load="()=>mailAttachment(att.attId)" @error="stickerErrors[att.attId] = true" />
-                <el-button v-if="! /\.(tgs|webm)$/i.test(att.filename) || stickerErrors[att.attId]" text @click="download(att)">
+                <VideoAttachment v-if="isVideoFile(att)" :file="att" :load="()=>mailAttachment(att.attId)" @download="download(att)" />
+                <StickerMedia v-else-if="isStickerFile(att)" :format="att.filename.toLowerCase().endsWith('.tgs') ? 'tgs' : 'webm'" :label="'🙂'" :load="()=>mailAttachment(att.attId)" @error="stickerErrors[att.attId] = true" />
+                <el-button v-if="(!isVideoFile(att) && !isStickerFile(att)) || stickerErrors[att.attId]" text @click="download(att)">
                   <Icon icon="cloud-mail:file" width="26" aria-hidden="true" />
                   <span class="attachment-detail"><strong>{{ att.filename }}</strong><small>{{ formatBytes(att.size) }}</small></span>
                 </el-button
@@ -309,7 +311,7 @@
             :aria-label="t('mailChatSend')"
             :title="t('mailChatSend')"
             :loading="sending"
-            :disabled="(!drafts[draftKey]?.trim() && !files[draftKey]?.length) || messageLoading"
+            :disabled="(!drafts[draftKey]?.trim() && !files[draftKey]?.length) || messageLoading || !!fileReads[draftKey]?.count"
             ><Icon icon="cloud-mail:send" width="19" aria-hidden="true" /><span>{{ t('mailChatSend') }}</span></el-button
           >
         </div>
@@ -467,6 +469,8 @@ import { randomUUID } from '@/utils/uuid';
 
 import { computed, nextTick, onMounted, onBeforeUnmount, reactive, ref, watch } from 'vue';
 import MailBody from '@/components/mail-body.vue';
+import VideoAttachment from '@/components/video-attachment.vue';
+import { isVideoFile, isStickerFile } from '@/utils/video-files.mjs';
 import Header from '@/layout/header/index.vue';
 import UserAvatar from '@/components/user-avatar.vue';
 import '@/icons/chat';
@@ -591,6 +595,7 @@ const sortedConversations = computed(() =>
 );
 const draftKey = computed(() => `${accountId.value}:${selected.value?.key || ''}`);
 const drafts = reactive({}),
+  fileReads = reactive({}),
   files = reactive({}),
   expanded = reactive({});
 const listLoading = ref(true),
@@ -1224,33 +1229,54 @@ function insertEmoji(value, focus = true) {
 }
 function addSticker(file) {
   const current = draftKey.value, existing = files[current] || [];
-  if (existing.length >= 10 || existing.reduce((n,f)=>n+f.size,0)+file.size > 10*1024*1024) { ElMessage.error(t('mailChatFileLimit')); return; }
+  const pending = fileReads[current] || { count: 0, size: 0 };
+  if (existing.length + pending.count >= 10 || existing.reduce((n,f)=>n+f.size,0)+pending.size+file.size > 10*1024*1024) { ElMessage.error(t('mailChatFileLimit')); return; }
   files[current] = [...existing, file];
 }
+const dragDepth = ref(0);
+const draggedFiles = event => [...(event.dataTransfer?.types || [])].includes('Files');
+function dragEnter(event) {
+  if (!draggedFiles(event)) return;
+  event.preventDefault();
+  if (active.value && canSend.value && !sending.value) dragDepth.value++;
+}
+function dragOver(event) {
+  if (!draggedFiles(event)) return;
+  event.preventDefault();
+  if (event.dataTransfer) event.dataTransfer.dropEffect = active.value && canSend.value && !sending.value ? 'copy' : 'none';
+}
+function dragLeave(event) { if (draggedFiles(event) || dragDepth.value) dragDepth.value = Math.max(0, dragDepth.value - 1); }
+function dropFiles(event) {
+  if (!draggedFiles(event)) return;
+  event.preventDefault(); dragDepth.value = 0;
+  if (!active.value || !canSend.value || sending.value) { ElMessage.info(t('mailChatChoose')); return; }
+  if ([...(event.dataTransfer.items || [])].some(item => item.webkitGetAsEntry?.()?.isDirectory)) { ElMessage.error(t('mailChatFileError')); return; }
+  chooseFiles({ target: { files: event.dataTransfer.files, value: '' } }, draftKey.value);
+}
+watch(draftKey, () => { dragDepth.value = 0; });
 async function chooseFiles(event, current = draftKey.value) {
-  const chosen = [...event.target.files];
-  event.target.value = '';
-  const existing = files[current] || [];
-  if (
-    existing.length + chosen.length > 10 ||
-    existing.reduce((n, f) => n + f.size, 0) + chosen.reduce((n, f) => n + f.size, 0) >
-      10 * 1024 * 1024
-  ) {
-    ElMessage.error(t('mailChatFileLimit'));
-    return;
+  const chosen = [...(event.target?.files || [])];
+  if (event.target) event.target.value = '';
+  if (!chosen.length) return;
+  const existing = files[current] || [], pending = fileReads[current] || { count: 0, size: 0 };
+  const size = chosen.reduce((n, f) => n + f.size, 0);
+  if (existing.length + pending.count + chosen.length > 10 ||
+      existing.reduce((n, f) => n + f.size, 0) + pending.size + size > 10 * 1024 * 1024) {
+    ElMessage.error(t('mailChatFileLimit')); return;
   }
+  fileReads[current] = { count: pending.count + chosen.length, size: pending.size + size };
   try {
-    const added = await Promise.all(
-      chosen.map(async (f) => ({
-        filename: f.name,
-        size: f.size,
-        contentType: /\.tgs$/i.test(f.name) ? 'application/x-tgsticker' : f.type || 'application/octet-stream',
-        content: await fileToBase64(f)
-      }))
-    );
-    files[current] = [...existing, ...added];
-  } catch {
-    ElMessage.error(t('mailChatFileError'));
+    const added = await Promise.all(chosen.map(async f => ({ filename: f.name, size: f.size,
+      contentType: /\.tgs$/i.test(f.name) ? 'application/x-tgsticker' : f.type || 'application/octet-stream',
+      content: await fileToBase64(f) })));
+    if (!stopped) files[current] = [...(files[current] || []), ...added];
+  } catch { ElMessage.error(t('mailChatFileError')); }
+  finally {
+    const remaining = fileReads[current];
+    if (remaining) {
+      remaining.count -= chosen.length; remaining.size -= size;
+      if (!remaining.count) delete fileReads[current];
+    }
   }
 }
 function keyDown(e) {
@@ -1307,6 +1333,7 @@ async function showSent(account, result, selectionVersion) {
   await markRead();
 }
 async function send() {
+  if (fileReads[draftKey.value]?.count) return;
   if (
     sending.value ||
     (!drafts[draftKey.value]?.trim() && !files[draftKey.value]?.length) ||
@@ -1366,6 +1393,7 @@ async function send() {
   }
 }
 async function sendNew() {
+  if (fileReads['new:' + accountId.value]?.count) return;
   if (sending.value) return;
   sending.value = true;
   const a = accountId.value, selectionVersion = version;
@@ -2110,4 +2138,11 @@ pre {
   .thread-header { gap: 3px; padding-inline: 6px; }
   .thread-header > .el-button { min-width: 30px; }
 }
+</style>
+
+<style scoped>
+.file-drop-overlay { position: absolute; inset: 10px; z-index: 12; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 12px; padding: 18px; border: 2px dashed #20bd79; border-radius: 18px; background: color-mix(in srgb, var(--el-bg-color) 87%, #10b981 13%); color: var(--el-text-color-primary); pointer-events: none; text-align: center; }
+.file-drop-overlay strong { font-size: 22px; font-weight: 500; }
+.file-drop-overlay small { max-width: 280px; line-height: 1.6; }
+.attachment:has(.video-attachment) { min-width: min(280px, 70vw); max-width: 100%; }
 </style>

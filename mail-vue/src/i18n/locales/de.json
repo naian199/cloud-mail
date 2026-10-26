@@ -633,5 +633,17 @@
   "voiceError": "Spracherkennung fehlgeschlagen. Erneut versuchen oder die Tastaturdiktierfunktion nutzen.",
   "mailChatInternalGroup": "Interne Chats",
   "mailChatExternalGroup": "Externe E-Mails",
-  "navigationMenu": "Navigationsmenü"
+  "navigationMenu": "Navigationsmenü",
+  "videoPlay": "Video abspielen",
+  "videoLoading": "Video wird geladen…",
+  "videoCompatible": "Kompatibel abspielen",
+  "videoConverting": "Wiedergabe vorbereiten… {percent}%",
+  "videoDownload": "Original herunterladen",
+  "videoUnsupported": "Dieses Format oder dieser Codec kann nicht direkt abgespielt werden. Versuchen Sie die kompatible Wiedergabe.",
+  "videoConvertFailed": "Dieses Gerät konnte das Video nicht vorbereiten. Laden Sie das Original zum Abspielen herunter.",
+  "videoTooLarge": "Die kompatible Wiedergabe unterstützt Videos bis 10 MB.",
+  "videoBusy": "Ein anderes Video wird verarbeitet. Versuchen Sie es gleich erneut.",
+  "videoLoadFailed": "Das Video konnte nicht geladen werden. Erneut versuchen oder das Original herunterladen.",
+  "fileDropTitle": "Dateien hier ablegen",
+  "fileDropHint": "Bis zu 10 Dateien, insgesamt 10 MB. Ablegen fügt Anhänge hinzu, ohne sie zu senden."
 }

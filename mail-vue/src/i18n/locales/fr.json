@@ -633,5 +633,17 @@
   "voiceError": "Échec de reconnaissance. Réessayez ou utilisez la dictée du clavier.",
   "mailChatInternalGroup": "Discussions internes",
   "mailChatExternalGroup": "Courriels externes",
-  "navigationMenu": "Menu de navigation"
+  "navigationMenu": "Menu de navigation",
+  "videoPlay": "Lire la vidéo",
+  "videoLoading": "Chargement de la vidéo…",
+  "videoCompatible": "Lecture compatible",
+  "videoConverting": "Préparation… {percent}%",
+  "videoDownload": "Télécharger l’original",
+  "videoUnsupported": "Ce format ou codec ne peut pas être lu directement. Essayez la lecture compatible.",
+  "videoConvertFailed": "Cet appareil n’a pas pu préparer la vidéo. Téléchargez l’original pour la lire.",
+  "videoTooLarge": "La lecture compatible accepte les vidéos de 10 Mo maximum.",
+  "videoBusy": "Une autre vidéo est en cours de traitement. Réessayez dans un instant.",
+  "videoLoadFailed": "Impossible de charger la vidéo. Réessayez ou téléchargez l’original.",
+  "fileDropTitle": "Déposez les fichiers ici",
+  "fileDropHint": "10 fichiers maximum, 10 Mo au total. Le dépôt ajoute des pièces jointes sans les envoyer."
 }

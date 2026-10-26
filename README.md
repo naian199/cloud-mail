@@ -1,6 +1,6 @@
 # Cloud Mail · naian199
 
-独立维护的 Cloudflare 邮箱与聊天项目。当前独立版本为 **1.1.2**。
+独立维护的 Cloudflare 邮箱与聊天项目。当前独立版本为 **1.2.0**。
 
 [English](README-en.md) · [项目仓库](https://github.com/naian199/cloud-mail) · [更新记录](CHANGELOG.md) · [部署与维护](doc/deployment.md)
 
@@ -32,3 +32,5 @@
 平台和功能所需的 Cloudflare、邮件投递、可选翻译、Telegram、OAuth 等服务见[依赖清单](doc/independent-maintenance.md)。这些服务与原项目的更新入口无关。
 
 项目保留 [MIT 许可证](LICENSE) 及其要求的版权声明。代码来源和第三方组件声明见 [NOTICE.md](NOTICE.md)。独立维护不删除合法署名或 Git 历史。
+
+[视频播放与拖放附件 / Video playback and file drop](doc/video-and-file-drop.md)

@@ -633,5 +633,17 @@
   "voiceError": "Pengenalan suara gagal. Coba lagi atau gunakan dikte papan ketik.",
   "mailChatInternalGroup": "Obrolan internal",
   "mailChatExternalGroup": "Email eksternal",
-  "navigationMenu": "Menu navigasi"
+  "navigationMenu": "Menu navigasi",
+  "videoPlay": "Putar video",
+  "videoLoading": "Memuat video…",
+  "videoCompatible": "Pemutaran kompatibel",
+  "videoConverting": "Menyiapkan pemutaran… {percent}%",
+  "videoDownload": "Unduh berkas asli",
+  "videoUnsupported": "Format atau codec ini tidak dapat diputar langsung. Coba pemutaran kompatibel.",
+  "videoConvertFailed": "Perangkat ini tidak dapat menyiapkan video. Unduh berkas asli untuk memutarnya.",
+  "videoTooLarge": "Pemutaran kompatibel mendukung video hingga 10 MB.",
+  "videoBusy": "Video lain sedang diproses. Coba lagi sebentar.",
+  "videoLoadFailed": "Video gagal dimuat. Coba lagi atau unduh berkas asli.",
+  "fileDropTitle": "Letakkan berkas di sini",
+  "fileDropHint": "Maksimal 10 berkas, total 10 MB. Meletakkan berkas menambah lampiran tanpa mengirimnya."
 }

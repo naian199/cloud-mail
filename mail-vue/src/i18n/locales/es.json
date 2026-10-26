@@ -633,5 +633,17 @@
   "voiceError": "Falló el reconocimiento. Reintenta o usa el dictado del teclado.",
   "mailChatInternalGroup": "Chats internos",
   "mailChatExternalGroup": "Correo externo",
-  "navigationMenu": "Menú de navegación"
+  "navigationMenu": "Menú de navegación",
+  "videoPlay": "Reproducir vídeo",
+  "videoLoading": "Cargando vídeo…",
+  "videoCompatible": "Reproducción compatible",
+  "videoConverting": "Preparando reproducción… {percent}%",
+  "videoDownload": "Descargar original",
+  "videoUnsupported": "Este formato o códec no se puede reproducir directamente. Prueba la reproducción compatible.",
+  "videoConvertFailed": "Este dispositivo no pudo preparar el vídeo. Descarga el original para reproducirlo.",
+  "videoTooLarge": "La reproducción compatible admite vídeos de hasta 10 MB.",
+  "videoBusy": "Se está procesando otro vídeo. Inténtalo de nuevo en un momento.",
+  "videoLoadFailed": "No se pudo cargar el vídeo. Reintenta o descarga el original.",
+  "fileDropTitle": "Suelta los archivos aquí",
+  "fileDropHint": "Hasta 10 archivos, 10 MB en total. Soltar añade adjuntos sin enviarlos."
 }

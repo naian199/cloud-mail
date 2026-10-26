@@ -1,6 +1,6 @@
 # Cloud Mail · naian199
 
-An independently maintained email and chat application on Cloudflare. Independent release: **1.1.2**.
+An independently maintained email and chat application on Cloudflare. Independent release: **1.2.0**.
 
 [简体中文](README.md) · [Repository](https://github.com/naian199/cloud-mail) · [Changelog](CHANGELOG.md) · [Deployment](doc/deployment.md)
 
@@ -32,3 +32,5 @@ Application changes pushed to `main` trigger the repository's Cloudflare deploym
 [Independent maintenance notes](doc/independent-maintenance.md) list remaining platform and feature services. They are separate from original-project update services.
 
 The [MIT license](LICENSE), required copyright notices and Git history are retained. See [NOTICE.md](NOTICE.md) for provenance and third-party notices.
+
+[视频播放与拖放附件 / Video playback and file drop](doc/video-and-file-drop.md)
