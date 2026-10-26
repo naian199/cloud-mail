@@ -654,5 +654,15 @@
   "mediaNext": "Nội dung tiếp theo",
   "roomSearchLoaded": "Tìm trong các tin nhắn đã tải. Tải tin nhắn cũ hơn để mở rộng tìm kiếm.",
   "navigationMail": "Thư",
-  "conversationWidth": "Chiều rộng danh sách hội thoại"
+  "conversationWidth": "Chiều rộng danh sách hội thoại",
+  "omniPlaceholder": "Tìm người, cuộc trò chuyện, tin nhắn, tệp…",
+  "omniScope": "Hộp thư: {email} · Người dùng và nhóm của bạn",
+  "omniHint": "Tìm theo tên người dùng, email, ghi chú, nội dung hoặc tên tệp. Tên người dùng cần ít nhất 3 ký tự.",
+  "omniUsers": "Người dùng",
+  "omniNoResults": "Không có kết quả phù hợp.",
+  "omniError": "Tìm kiếm thất bại. Hãy thử lại.",
+  "omniRetry": "Thử lại",
+  "omniActions": "Thao tác",
+  "omniMore": "Tải thêm",
+  "omniLoading": "Đang tìm…"
 }

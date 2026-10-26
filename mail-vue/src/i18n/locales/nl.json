@@ -654,5 +654,15 @@
   "mediaNext": "Volgende media",
   "roomSearchLoaded": "Doorzoekt geladen berichten. Laad oudere berichten om meer geschiedenis te doorzoeken.",
   "navigationMail": "E-mail",
-  "conversationWidth": "Breedte van de gesprekslijst"
+  "conversationWidth": "Breedte van de gesprekslijst",
+  "omniPlaceholder": "Personen, chats, berichten, bestanden zoeken…",
+  "omniScope": "Postvak: {email} · Gebruikers en je groepen",
+  "omniHint": "Zoek op gebruikersnaam, e-mail, notitie, tekst of bestandsnaam. Gebruikersnamen vereisen minimaal 3 tekens.",
+  "omniUsers": "Gebruikers",
+  "omniNoResults": "Geen overeenkomende resultaten.",
+  "omniError": "Zoeken mislukt. Probeer opnieuw.",
+  "omniRetry": "Opnieuw proberen",
+  "omniActions": "Acties",
+  "omniMore": "Meer laden",
+  "omniLoading": "Zoeken…"
 }

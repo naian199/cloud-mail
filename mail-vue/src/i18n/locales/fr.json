@@ -654,5 +654,15 @@
   "mediaNext": "Média suivant",
   "roomSearchLoaded": "Recherche dans les messages chargés. Chargez les messages précédents pour élargir la recherche.",
   "navigationMail": "Courrier",
-  "conversationWidth": "Largeur de la liste des conversations"
+  "conversationWidth": "Largeur de la liste des conversations",
+  "omniPlaceholder": "Rechercher des personnes, discussions, messages, fichiers…",
+  "omniScope": "Boîte : {email} · Utilisateurs et vos groupes",
+  "omniHint": "Recherchez un identifiant, une adresse, une note, un message ou un fichier. Les identifiants nécessitent au moins 3 caractères.",
+  "omniUsers": "Utilisateurs",
+  "omniNoResults": "Aucun résultat correspondant.",
+  "omniError": "La recherche a échoué. Réessayez.",
+  "omniRetry": "Réessayer",
+  "omniActions": "Actions",
+  "omniMore": "Charger plus",
+  "omniLoading": "Recherche…"
 }

@@ -654,5 +654,15 @@
   "mediaNext": "Media berikutnya",
   "roomSearchLoaded": "Mencari pesan yang telah dimuat. Muat pesan sebelumnya untuk memperluas pencarian.",
   "navigationMail": "Email",
-  "conversationWidth": "Lebar daftar percakapan"
+  "conversationWidth": "Lebar daftar percakapan",
+  "omniPlaceholder": "Cari orang, obrolan, pesan, berkas…",
+  "omniScope": "Kotak surat: {email} · Pengguna dan grup Anda",
+  "omniHint": "Cari nama pengguna, email, catatan, pesan, atau nama berkas. Nama pengguna memerlukan sedikitnya 3 karakter.",
+  "omniUsers": "Pengguna",
+  "omniNoResults": "Tidak ada hasil yang cocok.",
+  "omniError": "Pencarian gagal. Coba lagi.",
+  "omniRetry": "Coba lagi",
+  "omniActions": "Tindakan",
+  "omniMore": "Muat lagi",
+  "omniLoading": "Mencari…"
 }

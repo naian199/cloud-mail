@@ -1,3 +1,4 @@
+import universalSearch from '../service/universal-search-service';
 import app from '../hono/hono';
 import result from '../model/result';
 import mail from '../service/mail-chat-service';
@@ -16,6 +17,7 @@ app.post('/mail-chat/translate', async (c) => c.json(result.ok(await translation
 app.get('/mail-chat/conversations', async (c) =>
 	c.json(result.ok(await mail.list(c, c.req.query())))
 );
+app.get('/mail-chat/search', async c => c.json(result.ok(await universalSearch.search(c,c.req.query()))));
 app.get('/mail-chat/explore', async (c) => c.json(result.ok(await mail.explore(c, c.req.query()))));
 app.get('/mail-chat/messages', async (c) =>
 	c.json(result.ok(await mail.messages(c, c.req.query())))

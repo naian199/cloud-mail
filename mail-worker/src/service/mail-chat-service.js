@@ -126,7 +126,7 @@ const mailChat = {
       FROM conversations c JOIN email e ON e.email_id = c.latestId
       LEFT JOIN mail_conversation_pin p ON p.user_id = e.user_id AND p.account_id = e.account_id AND p.conversation_key = c.conversation_key
       WHERE ${requestedKey ? 'e.conversation_key = ? AND ' : ''}${categoryFilter}${cursor ? '(e.create_time < ? OR (e.create_time = ? AND e.email_id < ?)) AND ' : ''}(? = '' OR instr(lower(e.conversation_peers), ?) > 0 OR instr(lower(coalesce(e.subject, '')), ?) > 0
-      OR EXISTS(SELECT 1 FROM email matched WHERE matched.user_id=e.user_id AND matched.account_id=e.account_id AND matched.conversation_key=e.conversation_key AND matched.is_del=0 AND matched.type IN (0,1) AND matched.status!=6 AND (instr(lower(coalesce(matched.text,'')), ?) > 0 OR instr(lower(coalesce(matched.subject,'')), ?) > 0))
+      OR EXISTS(SELECT 1 FROM email matched WHERE matched.user_id=e.user_id AND matched.account_id=e.account_id AND matched.conversation_key=e.conversation_key AND matched.is_del=0 AND matched.type IN (0,1) AND matched.status!=6 AND (${query.identityOnly === true ? '' : "instr(lower(coalesce(matched.text,'')), ?) > 0 OR "}instr(lower(coalesce(matched.subject,'')), ?) > 0))
       OR EXISTS(SELECT 1 FROM account pa JOIN user pu ON pu.user_id=pa.user_id JOIN mail_user_profile pp ON pp.user_id=pa.user_id WHERE lower(pa.email) IN (SELECT lower(value) FROM json_each(e.conversation_peers)) AND pa.status=0 AND pa.is_del=0 AND pu.status=0 AND pu.is_del=0 AND instr(lower(pp.display_name), ?) > 0)
       OR EXISTS(SELECT 1 FROM mail_contact_note n WHERE n.user_id=e.user_id AND lower(n.email) IN (SELECT lower(value) FROM json_each(e.conversation_peers)) AND instr(lower(n.remark), ?) > 0))
       ORDER BY e.create_time DESC,e.email_id DESC LIMIT 31`
@@ -139,7 +139,7 @@ const mailChat = {
 				search,
 				search,
 				search,
-				search,
+                ...(query.identityOnly === true ? [] : [search]),
 				search,
 				search,
 				search

@@ -654,5 +654,15 @@
   "mediaNext": "Media seterusnya",
   "roomSearchLoaded": "Mencari mesej yang telah dimuatkan. Muatkan mesej terdahulu untuk meluaskan carian.",
   "navigationMail": "Mel",
-  "conversationWidth": "Lebar senarai perbualan"
+  "conversationWidth": "Lebar senarai perbualan",
+  "omniPlaceholder": "Cari pengguna, sembang, mesej, fail…",
+  "omniScope": "Peti mel: {email} · Pengguna dan kumpulan anda",
+  "omniHint": "Cari nama pengguna, e-mel, catatan, teks mesej atau nama fail. Nama pengguna memerlukan sekurang-kurangnya 3 aksara.",
+  "omniUsers": "Pengguna",
+  "omniNoResults": "Tiada hasil yang sepadan.",
+  "omniError": "Carian gagal. Cuba lagi.",
+  "omniRetry": "Cuba lagi",
+  "omniActions": "Tindakan",
+  "omniMore": "Muat lagi",
+  "omniLoading": "Mencari…"
 }

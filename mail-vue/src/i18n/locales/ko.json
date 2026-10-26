@@ -654,5 +654,15 @@
   "mediaNext": "다음 미디어",
   "roomSearchLoaded": "불러온 메시지를 검색합니다. 이전 메시지를 불러오면 검색 범위가 넓어집니다.",
   "navigationMail": "메일",
-  "conversationWidth": "대화 목록 너비"
+  "conversationWidth": "대화 목록 너비",
+  "omniPlaceholder": "사용자, 대화, 메시지, 파일 검색…",
+  "omniScope": "메일함: {email} · 사용자 및 내 그룹",
+  "omniHint": "사용자 이름, 이메일, 메모, 메시지, 파일명을 검색하세요. 사용자 이름은 3자 이상 입력하세요.",
+  "omniUsers": "사용자",
+  "omniNoResults": "일치하는 결과가 없습니다.",
+  "omniError": "검색에 실패했습니다. 다시 시도하세요.",
+  "omniRetry": "다시 시도",
+  "omniActions": "빠른 작업",
+  "omniMore": "더 불러오기",
+  "omniLoading": "검색 중…"
 }

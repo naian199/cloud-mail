@@ -654,5 +654,15 @@
   "mediaNext": "Sonraki medya",
   "roomSearchLoaded": "Yüklenen mesajlarda arar. Aramayı genişletmek için eski mesajları yükleyin.",
   "navigationMail": "Posta",
-  "conversationWidth": "Sohbet listesi genişliği"
+  "conversationWidth": "Sohbet listesi genişliği",
+  "omniPlaceholder": "Kişi, sohbet, mesaj, dosya ara…",
+  "omniScope": "Posta kutusu: {email} · Kullanıcılar ve gruplarınız",
+  "omniHint": "Kullanıcı adı, e-posta, not, mesaj veya dosya adı arayın. Kullanıcı adı en az 3 karakter gerektirir.",
+  "omniUsers": "Kullanıcılar",
+  "omniNoResults": "Eşleşen sonuç bulunamadı.",
+  "omniError": "Arama başarısız. Yeniden deneyin.",
+  "omniRetry": "Yeniden dene",
+  "omniActions": "İşlemler",
+  "omniMore": "Daha fazla yükle",
+  "omniLoading": "Aranıyor…"
 }

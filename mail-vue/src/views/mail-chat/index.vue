@@ -3,31 +3,10 @@
     <aside class="conversations">
       <div ref="contactScroll" class="conversation-list" @keydown.home="restoreContactControls">
       <div class="contact-controls">
-      <el-input
-        class="search"
-        v-model="search"
-        clearable
-        :placeholder="t('mailChatSearch')"
-        :aria-label="t('mailChatSearch')"
-      >
-        <template #prefix><Icon icon="cloud-mail:search" width="18" /></template>
-        <template #suffix>
-          <el-dropdown trigger="click" placement="bottom-end">
-            <el-button class="search-actions" text :aria-label="t('mailChatNew')"><span aria-hidden="true">＋</span></el-button>
-            <template #dropdown>
-              <el-dropdown-menu>
-                <el-dropdown-item @click="newOpen = true">{{ t('mailChatNew') }}</el-dropdown-item>
-                <el-dropdown-item @click="friendsOpen = true; loadFriends()">{{ t('mailChatContacts') }}</el-dropdown-item>
-                <el-dropdown-item @click="router.push('/settings')">{{ t('profile') }}</el-dropdown-item>
-                <el-dropdown-item v-for="a in accounts.length > 1 ? accounts : []" :key="a.accountId" @click="switchMailbox(a.accountId)">{{ a.email }}</el-dropdown-item>
-              </el-dropdown-menu>
-            </template>
-          </el-dropdown>
-        </template>
-      </el-input>
-      <ConversationCategories />
+      <UniversalSearch :account-id="accountId" :accounts="accounts" @active="universalActive = $event" @action="searchAction" @account="switchMailbox" />
+      <ConversationCategories v-show="!universalActive" />
       </div>
-      <div class="contact-entries" v-loading="listLoading">
+      <div class="contact-entries" v-show="!universalActive" v-loading="listLoading">
         <button
           v-for="c in sortedConversations"
           :key="c.key"
@@ -471,6 +450,7 @@
 </template>
 
 <script setup>
+import UniversalSearch from '@/components/universal-search.vue';
 import ConversationCategories from '@/components/conversation-categories.vue';
 import ConversationResize from '@/components/conversation-resize.vue';
 import { randomUUID } from '@/utils/uuid';
@@ -574,7 +554,7 @@ const conversations = ref([]),
   search = ref('');
 const compactChat = useMediaQuery('(max-width: 767px), (max-width: 1024px) and (max-height: 500px) and (pointer: coarse)');
 const ui = useUiStore();
-const contactScroll = ref(null);
+const contactScroll = ref(null), universalActive = ref(false);
 function restoreContactControls() {
   contactScroll.value?.scrollTo({ top: 0, behavior: 'smooth' });
 }
@@ -627,7 +607,6 @@ let version = 0,
   stopped = false,
   busy = false,
   dirty = false,
-  searchTimer,
   indexTimer;
 const messageMenu = ref(null), messageMenuPanel = ref(null);
 const explorer = ref(null), explorerRevision = ref(0), historyAnchor = ref(null);
@@ -1519,19 +1498,23 @@ async function sendNew() {
     sending.value = false;
   }
 }
-watch(search, () => {
-  clearTimeout(searchTimer);
-  searchTimer = setTimeout(() => {
-    conversations.value = [];
-    sync();
-  }, 300);
-});
+function searchAction({id,email}) {
+  if(id==='mail') { newMail.to=email || '';newOpen.value=true; }
+  else if(id==='contacts') { friendsOpen.value=true;loadFriends(); }
+}
+watch([()=>route.query.compose,()=>route.query.contacts],()=>{
+  if(route.query.compose!=='1' && route.query.contacts!=='1')return;
+  if(route.query.compose==='1')searchAction({id:'mail',email:typeof route.query.to==='string'?route.query.to.slice(0,254):''});
+  else searchAction({id:'contacts'});
+  const query={...route.query};delete query.compose;delete query.contacts;delete query.to;
+  router.replace({path:route.path,query});
+},{immediate:true});
 let openingLink = false;
 watch(
-  [() => route.query.accountId, () => route.query.conversation, accounts, conversations],
+  [() => route.query.accountId, () => route.query.conversation, () => route.query.message, accounts, conversations],
   async () => {
     const requested = Number(route.query.accountId),
-      key = route.query.conversation;
+      key = route.query.conversation, target = Number(route.query.message || 0);
     if (
       openingLink ||
       !requested ||
@@ -1554,7 +1537,9 @@ watch(
       if (!found) return;
       if (found.category !== category) { await select(found); return; }
       if (selected.value?.key !== found.key) await select(found);
-      await router.replace({ path: categoryPath, query: {} });
+      if (stopped) return;
+      if (Number.isSafeInteger(target) && target>0) await jumpToResult(target);
+      if(route.query.conversation===key && Number(route.query.message||0)===target) await router.replace({ path: categoryPath, query: {} });
     } finally {
       openingLink = false;
     }
@@ -1599,7 +1584,6 @@ onBeforeUnmount(() => {
   Object.values(imageUrls).forEach((url) => URL.revokeObjectURL(url));
   stopped = true;
   version++;
-  clearTimeout(searchTimer);
   clearTimeout(indexTimer);
 });
 </script>

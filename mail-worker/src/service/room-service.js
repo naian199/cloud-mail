@@ -138,12 +138,13 @@ export default {
   },
   async messages(c,id,query) {
     await this.access(c,id);
-    if (query.before && query.after) fail();
-    const cursor=query.before?positive(query.before):query.after?positive(query.after):null;
+    if ([query.before,query.after,query.around].filter(Boolean).length>1) fail();
+    const cursor=query.before?positive(query.before):query.after?positive(query.after):query.around?positive(query.around):null;
+    if (query.around && !(await c.env.db.prepare('SELECT 1 FROM mail_room_message WHERE room_id=? AND id=?').bind(id,cursor).first())) fail('invalidInput',404);
     const after=!!query.after;
     const {results}=await c.env.db.prepare(`SELECT m.id,m.sender_id AS senderId,m.body,m.created_at AS createdAt,
       ${personFields} FROM mail_room_message m JOIN user u ON u.user_id=m.sender_id ${personJoins}
-      WHERE m.room_id=? ${cursor?`AND m.id ${after?'>':'<'} ?`:''} ORDER BY m.id ${after?'ASC':'DESC'} LIMIT 51`)
+      WHERE m.room_id=? ${cursor?`AND m.id ${after?'>':query.around?'<=':'<'} ?`:''} ORDER BY m.id ${after?'ASC':'DESC'} LIMIT 51`)
       .bind(userContext.getUserId(c),id,...(cursor?[cursor]:[])).all();
     const rows=results.slice(0,50), senders={};
     for (const row of rows) senders[row.senderId]={userId:row.userId,displayName:row.displayName,username:row.username,avatar:row.avatar};

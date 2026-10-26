@@ -123,5 +123,15 @@
   "mediaNext": "下一项",
   "roomSearchLoaded": "搜索已加载的消息；加载更早的消息可扩大搜索范围。",
   "navigationMail": "邮件",
-  "conversationWidth": "会话列表宽度"
+  "conversationWidth": "会话列表宽度",
+  "omniPlaceholder": "搜索用户、会话、消息、文件…",
+  "omniScope": "当前邮箱：{email} · 站内用户和我的群组",
+  "omniHint": "可查找用户名、邮箱、备注、消息正文或文件名；用户名至少输入 3 个字符。",
+  "omniUsers": "用户",
+  "omniNoResults": "没有找到匹配结果。",
+  "omniError": "搜索失败，请重试。",
+  "omniRetry": "重试",
+  "omniActions": "快捷操作",
+  "omniMore": "加载更多",
+  "omniLoading": "搜索中…"
 }

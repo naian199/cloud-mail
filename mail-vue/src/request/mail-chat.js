@@ -29,3 +29,5 @@ export const mailInstant = (data) => http.post('/mail-chat/instant', data, { tim
 export const mailExplore = (params) => http.get('/mail-chat/explore', { params });
 
 export const mailRemoveSelf = data => http.post('/mail-chat/delete-self',data);
+
+export const universalSearch = (params, signal) => http.get('/mail-chat/search', { params, signal, noMsg:true });

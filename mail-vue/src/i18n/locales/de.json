@@ -654,5 +654,15 @@
   "mediaNext": "Nächstes Medium",
   "roomSearchLoaded": "Durchsucht geladene Nachrichten. Laden Sie ältere Nachrichten, um den Suchbereich zu erweitern.",
   "navigationMail": "E-Mail",
-  "conversationWidth": "Breite der Unterhaltungsliste"
+  "conversationWidth": "Breite der Unterhaltungsliste",
+  "omniPlaceholder": "Personen, Chats, Nachrichten, Dateien suchen…",
+  "omniScope": "Postfach: {email} · Nutzer und eigene Gruppen",
+  "omniHint": "Nach Nutzernamen, E-Mail, Notizen, Nachrichtentext oder Dateinamen suchen. Nutzernamen benötigen mindestens 3 Zeichen.",
+  "omniUsers": "Nutzer",
+  "omniNoResults": "Keine passenden Ergebnisse.",
+  "omniError": "Suche fehlgeschlagen. Bitte erneut versuchen.",
+  "omniRetry": "Erneut versuchen",
+  "omniActions": "Aktionen",
+  "omniMore": "Mehr laden",
+  "omniLoading": "Suche läuft…"
 }

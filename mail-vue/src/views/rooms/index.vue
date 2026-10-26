@@ -2,10 +2,10 @@
   <section class="rooms" :class="{ 'has-active': active }">
     <aside class="room-list">
       <div class="room-controls">
-        <el-input v-model="search" clearable :placeholder="t('roomName')" :aria-label="t('roomName')"><template #prefix><Icon icon="cloud-mail:search" width="18" /></template><template #suffix><el-button text class="room-create" :aria-label="t('roomCreate')" @click="newRoom.kind = filter; newOpen = true">＋</el-button></template></el-input>
-        <ConversationCategories :kind="filter" />
+        <UniversalSearch @active="universalActive = $event" />
+        <ConversationCategories v-show="!universalActive" :kind="filter" />
       </div>
-      <div class="room-entries">
+      <div class="room-entries" v-show="!universalActive">
         <button v-for="room in filtered" :key="room.id" class="room-entry" :class="{ selected: activeId === room.id }" @click="choose(room.id)">
           <span class="room-symbol">{{ room.kind === 'channel' ? '#' : '☷' }}</span>
           <span class="room-summary"><strong>{{ room.name }}</strong><small>{{ room.status === 'invited' ? t('roomInvited') : room.preview || t(room.kind === 'channel' ? 'roomChannel' : 'roomGroup') }}</small></span>
@@ -42,7 +42,7 @@
           </article>
           </template>
         </div>
-        <el-button v-if="!atBottom" class="room-newest" round @click="bottom">{{ t('chatNewest') }}</el-button>
+        <el-button v-if="!atBottom || historyTarget" class="room-newest" round @click="bottom">{{ t('chatNewest') }}</el-button>
         <form v-if="canPost" class="room-composer" @submit.prevent="send">
           <VoiceInput :context="active.id" :disabled="sending || messageLoading" @text="insertVoice" />
           <el-input v-model="drafts[active.id]" type="textarea" :autosize="{minRows:1,maxRows:4}" resize="none" maxlength="20000" :placeholder="t('mailChatCompactInput')" :aria-label="t('mailChatInput')" @keydown="composerKey" />
@@ -73,6 +73,7 @@
   </section>
 </template>
 <script setup>
+import UniversalSearch from '@/components/universal-search.vue';
 import ConversationCategories from '@/components/conversation-categories.vue';
 import ConversationResize from '@/components/conversation-resize.vue';
 import { computed, reactive, ref, watch, nextTick, onMounted, onBeforeUnmount } from 'vue';
@@ -98,7 +99,7 @@ const active=computed(()=>rooms.value.find(room=>room.id===activeId.value));
 const canManage=computed(()=>active.value?.status==='joined' && ['owner','admin'].includes(active.value.role));
 const canPost=computed(()=>active.value?.status==='joined' && (active.value.kind==='group' || canManage.value));
 const filter=computed(()=>['group','channel'].includes(route.query.kind)?route.query.kind:active.value?.kind||'group');
-const search=ref(''), loading=ref(true), messageLoading=ref(false), hasOlder=ref(false), olderLoading=ref(false), sending=ref(false), atBottom=ref(true), scroll=ref(null);
+const historyTarget=ref(null), universalActive=ref(false), search=ref(''), loading=ref(true), messageLoading=ref(false), hasOlder=ref(false), olderLoading=ref(false), sending=ref(false), atBottom=ref(true), scroll=ref(null);
 const filtered=computed(()=>rooms.value.filter(room=>room.kind===filter.value&&room.name.toLowerCase().includes(search.value.toLowerCase())));
 const newOpen=ref(false), creating=ref(false), newRoom=reactive({kind:'group',name:''});
 const roomSearchOpen=ref(false), messageSearch=ref(''), resultIndex=ref(0), memberSearch=ref('');
@@ -108,6 +109,11 @@ async function focusResult(){await nextTick();const id=matches.value[resultIndex
 function nextResult(delta){const length=matches.value.length;if(!length)return;resultIndex.value=(resultIndex.value+delta+length)%length;focusResult();}
 watch(messageSearch,()=>{resultIndex.value=0;focusResult();});
 watch(()=>matches.value.length,length=>{if(resultIndex.value>=length)resultIndex.value=Math.max(0,length-1);});
+watch(()=>route.query.create,value=>{
+  if(value!=='1')return;
+  newRoom.kind=filter.value;newOpen.value=true;
+  const query={...route.query};delete query.create;router.replace({query});
+},{immediate:true});
 const membersOpen=ref(false), members=ref([]), editName=ref(''), inviteName=ref(''), acting=ref(false);
 let stopped=false, version=0, busy=false, dirty=false;
 const pending=new Map();
@@ -116,12 +122,23 @@ watch(active,value=>{ui.mobileChatFocused=!!value;},{immediate:true});
 function senderName(id) { return senders[id]?.displayName || senders[id]?.username || `${t('roomMember')} ${id}`; }
 function roomDate(value) { return new Date(value.replace(' ','T')+'Z').toLocaleDateString(locale.value); }
 function time(value) { return new Date(value.replace(' ','T')+'Z').toLocaleTimeString(locale.value,{hour:'2-digit',minute:'2-digit'}); }
-async function choose(id) { if(stopped)return;const query={...route.query}; if(id){query.room=id;const room=rooms.value.find(room=>room.id===id);if(room)query.kind=room.kind;}else delete query.room; await router.replace({query}); }
-function reset() { roomSearchOpen.value=false;messageSearch.value='';memberSearch.value='';version++; messages.value=[];members.value=[];Object.keys(senders).forEach(key=>delete senders[key]);hasOlder.value=false;atBottom.value=true;membersOpen.value=false;messageLoading.value=!!activeId.value; }
-watch(()=>route.query.room,id=>{activeId.value=typeof id==='string'?id:null;reset();refresh();});
+async function choose(id) { if(stopped)return;const query={...route.query};delete query.message; if(id){query.room=id;const room=rooms.value.find(room=>room.id===id);if(room)query.kind=room.kind;}else delete query.room; await router.replace({query}); }
+function reset() { historyTarget.value=null;roomSearchOpen.value=false;messageSearch.value='';memberSearch.value='';version++; messages.value=[];members.value=[];Object.keys(senders).forEach(key=>delete senders[key]);hasOlder.value=false;atBottom.value=true;membersOpen.value=false;messageLoading.value=!!activeId.value; }
+watch([()=>route.query.room,()=>route.query.message],([id,message])=>{const nextId=typeof id==='string'?id:null;if(nextId===activeId.value&&!message)return;activeId.value=nextId;reset();refresh();});
 function merge(data) { Object.assign(senders,data.senders);const map=new Map(messages.value.map(message=>[message.id,message]));data.messages.forEach(message=>map.set(message.id,message));messages.value=[...map.values()].sort((a,b)=>a.id-b.id); }
-async function bottom() { await nextTick();if(scroll.value){scroll.value.scrollTop=scroll.value.scrollHeight;atBottom.value=true;} }
-async function markRead() { const id=active.value?.id,last=messages.value.at(-1)?.id;if(id && last && active.value.status==='joined' && atBottom.value && !document.hidden && (readProgress.get(id)||0)<last){readProgress.set(id,last);try{await readRoom(id,last);}catch(error){if(readProgress.get(id)===last)readProgress.delete(id);throw error;}} }
+async function bottom() {
+  let jumped=false;
+  if(historyTarget.value){
+    const id=activeId.value,mine=++version;messageLoading.value=true;
+    try{
+      const data=await roomMessages(id);if(stopped||mine!==version||id!==activeId.value)return;
+      messages.value=data.messages;Object.assign(senders,data.senders);hasOlder.value=data.hasMore;historyTarget.value=null;jumped=true;
+    }catch{return;}finally{if(mine===version)messageLoading.value=false;}
+  }
+  await nextTick();if(scroll.value){scroll.value.scrollTop=scroll.value.scrollHeight;atBottom.value=true;}
+  if(jumped)await markRead();
+}
+async function markRead() { const id=active.value?.id,last=messages.value.at(-1)?.id;if(id && last && active.value.status==='joined' && !historyTarget.value && atBottom.value && !document.hidden && (readProgress.get(id)||0)<last){readProgress.set(id,last);try{await readRoom(id,last);}catch(error){if(readProgress.get(id)===last)readProgress.delete(id);throw error;}} }
 function onScroll() { const element=scroll.value;if(element)atBottom.value=element.scrollHeight-element.scrollTop-element.clientHeight<50;if(atBottom.value)markRead().catch(()=>{}); }
 async function refresh() {
   if(stopped)return;
@@ -130,20 +147,26 @@ async function refresh() {
   try {
     do {
       dirty=false;
-      const id=activeId.value,mine=version,stick=atBottom.value;
+      const id=activeId.value,mine=version,stick=atBottom.value, target=Number(route.query.message || 0);
       const list=await listRooms();if(stopped)return;rooms.value=list;
       if(id!==activeId.value||mine!==version){dirty=true;continue;}
       if(id&&!active.value){reset();await choose(null);continue;}
       if(active.value?.status==='joined') {
+        if(historyTarget.value && messages.value.length){if(membersOpen.value)members.value=await roomMembers(id);continue;}
+        if(Number.isSafeInteger(target)&&target>0)historyTarget.value=target;
         let more;
         do {
           const after=messages.value.at(-1)?.id;
-          const data=await roomMessages(id,after?{after}:{});
+          const data=await roomMessages(id,after?{after}:Number.isSafeInteger(target)&&target>0?{around:target}:{});
           if(stopped||mine!==version||id!==activeId.value)break;
           merge(data);if(!after)hasOlder.value=data.hasMore;more=!!after&&data.hasMore;
         } while(more);
         if(!stopped&&mine===version&&id===activeId.value) {
-          if(stick)await bottom();await markRead();
+          if(Number.isSafeInteger(target)&&target>0 && Number(route.query.message)===target) {
+            atBottom.value=false;await nextTick();
+            const node=scroll.value?.querySelector(`[data-message-id="${target}"]`);node?.scrollIntoView({block:'center'});node?.classList.add('room-search-jump');setTimeout(()=>node?.classList.remove('room-search-jump'),2200);
+            const query={...route.query};delete query.message;await router.replace({query});
+          } else if(stick)await bottom();await markRead();
           if(membersOpen.value)members.value=await roomMembers(id);
         }
       } else messages.value=[];
@@ -216,7 +239,7 @@ onBeforeUnmount(()=>{stopped=true;version++;ui.mobileChatFocused=false;translati
 @media(max-width:767px), (max-width:1024px) and (max-height:500px) and (pointer:coarse){.rooms{grid-template-columns:minmax(0,1fr);}.has-active .room-list,.empty-room{display:none;}.back{display:inline-flex;}.room-composer :deep(textarea){font-size:16px;}.room-heading{padding-inline:6px;}.room-bubble{max-width:85%;}.member-row{flex-wrap:wrap;}}
 .room-message-search { display:flex; flex-wrap:wrap; align-items:center; gap:4px; padding:6px 12px; background:var(--el-bg-color); border-bottom:1px solid var(--el-border-color); }
 .room-message-search>.el-input { flex:1; min-width:120px; }.room-message-search>span { font-size:12px; }.room-message-search>small { flex-basis:100%; font-size:11px; color:var(--el-text-color-secondary); }
-.room-search-match .room-bubble { outline:1px solid var(--el-color-warning); }.room-search-current .room-bubble { outline:2px solid var(--el-color-primary); }
+.room-search-jump .room-bubble { outline:2px solid var(--el-color-primary); }.room-search-match .room-bubble { outline:1px solid var(--el-color-warning); }.room-search-current .room-bubble { outline:2px solid var(--el-color-primary); }
 .room-heading { min-height:48px; box-sizing:border-box; }.room-entry:hover { background:var(--el-fill-color-light); }.room-entry.selected { background:var(--el-color-primary); color:white; }.room-entry.selected small { color:#fff; opacity:.85; }
 .rooms { --room-canvas:#eaf1f5; --room-incoming:var(--el-bg-color-overlay); --room-outgoing:#e0f2ff; }
 :global(html.dark .rooms) { --room-canvas:#101c28; --room-incoming:#20303f; --room-outgoing:#234864; }

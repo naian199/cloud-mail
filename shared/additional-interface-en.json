@@ -123,5 +123,15 @@
   "mediaNext": "Next media",
   "roomSearchLoaded": "Searches loaded messages. Load earlier messages to include more history.",
   "navigationMail": "Mail",
-  "conversationWidth": "Conversation list width"
+  "conversationWidth": "Conversation list width",
+  "omniPlaceholder": "Search people, chats, messages, files…",
+  "omniScope": "Mailbox: {email} · Users and your groups",
+  "omniHint": "Search usernames, email addresses, remarks, message text or filenames. Usernames require at least 3 characters.",
+  "omniUsers": "Users",
+  "omniNoResults": "No matching results.",
+  "omniError": "Search failed. Please retry.",
+  "omniRetry": "Retry",
+  "omniActions": "Actions",
+  "omniMore": "Load more",
+  "omniLoading": "Searching…"
 }

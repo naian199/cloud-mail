@@ -654,5 +654,15 @@
   "mediaNext": "次のメディア",
   "roomSearchLoaded": "読み込み済みのメッセージを検索します。以前のメッセージを読み込むと検索範囲が広がります。",
   "navigationMail": "メール",
-  "conversationWidth": "会話リストの幅"
+  "conversationWidth": "会話リストの幅",
+  "omniPlaceholder": "ユーザー、会話、メッセージ、ファイルを検索…",
+  "omniScope": "メールボックス：{email} · ユーザーと自分のグループ",
+  "omniHint": "ユーザー名、メール、メモ、本文、ファイル名を検索できます。ユーザー名は3文字以上入力してください。",
+  "omniUsers": "ユーザー",
+  "omniNoResults": "一致する結果はありません。",
+  "omniError": "検索に失敗しました。再試行してください。",
+  "omniRetry": "再試行",
+  "omniActions": "操作",
+  "omniMore": "さらに読み込む",
+  "omniLoading": "検索中…"
 }

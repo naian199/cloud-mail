@@ -2,7 +2,7 @@
 export const projectInfo = Object.freeze({
   name: 'Cloud Mail',
   maintainer: 'naian199',
-  version: '1.4.0',
+  version: '1.5.0',
   repository: 'https://github.com/naian199/cloud-mail',
   documentation: 'https://github.com/naian199/cloud-mail/tree/main/doc',
   changelog: 'https://github.com/naian199/cloud-mail/blob/main/CHANGELOG.md',
