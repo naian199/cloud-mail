@@ -645,5 +645,12 @@
   "videoBusy": "Başka bir video işleniyor. Biraz sonra tekrar deneyin.",
   "videoLoadFailed": "Video yüklenemedi. Tekrar deneyin veya orijinal dosyayı indirin.",
   "fileDropTitle": "Dosyaları buraya bırakın",
-  "fileDropHint": "En fazla 10 dosya, toplam 10 MB. Bırakma işlemi ekleri ekler, otomatik göndermez."
+  "fileDropHint": "En fazla 10 dosya, toplam 10 MB. Bırakma işlemi ekleri ekler, otomatik göndermez.",
+  "chatSelectMessages": "Mesajları seç",
+  "chatSelectedCount": "{count} seçildi",
+  "chatSelectionLimit": "Bir kerede en fazla 100 mesaj seçebilirsiniz.",
+  "mediaOpen": "Medya görüntüleyiciyi aç",
+  "mediaPrevious": "Önceki medya",
+  "mediaNext": "Sonraki medya",
+  "roomSearchLoaded": "Yüklenen mesajlarda arar. Aramayı genişletmek için eski mesajları yükleyin."
 }

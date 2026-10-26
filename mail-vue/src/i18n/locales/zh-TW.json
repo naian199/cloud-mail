@@ -645,5 +645,12 @@
   "videoBusy": "另一部影片正在處理中，請稍後再試。",
   "videoLoadFailed": "影片載入失敗，請重試或下載原始檔案。",
   "fileDropTitle": "將檔案拖放至此",
-  "fileDropHint": "最多 10 個檔案，合計 10MB。放開後加入附件，不會自動傳送。"
+  "fileDropHint": "最多 10 個檔案，合計 10MB。放開後加入附件，不會自動傳送。",
+  "chatSelectMessages": "多選訊息",
+  "chatSelectedCount": "已選取 {count} 則",
+  "chatSelectionLimit": "一次最多選取 100 則訊息。",
+  "mediaOpen": "開啟媒體檢視器",
+  "mediaPrevious": "上一項",
+  "mediaNext": "下一項",
+  "roomSearchLoaded": "搜尋已載入的訊息；載入更早的訊息可擴大搜尋範圍。"
 }

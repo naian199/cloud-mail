@@ -1,5 +1,5 @@
 <template>
-  <section class="mail-chat" :class="{ 'conversation-open': active }" @dragenter="dragEnter" @dragover="dragOver" @dragleave="dragLeave" @drop="dropFiles">
+  <section class="mail-chat" :class="{ 'conversation-open': active }" @dragenter="dragEnter" @dragover="dragOver" @dragleave="dragLeave" @drop="dropFiles" @paste="pasteFiles">
     <aside class="conversations">
       <div ref="contactScroll" class="conversation-list" @scroll.passive="contactListScroll" @keydown.home="restoreContactControls">
       <div v-if="compactChat" ref="contactHeaderHost" class="contact-header-host"></div>
@@ -130,9 +130,11 @@
               m.richHtml
             "
             class="mail-message"
-            :class="{ mine: m.type === 1, external: !isChat(m) }"
+            :class="{ mine: m.type === 1, external: !isChat(m), 'message-selected': selectedIds.has(m.emailId), 'selecting-message': selecting }"
             :data-email-id="m.emailId"
+            @click.capture="selectionClick($event, m)"
           >
+            <input v-if="selecting" class="message-selector" type="checkbox" :checked="selectedIds.has(m.emailId)" :aria-label="t('chatSelectMessages')" :disabled="selectionBusy" @click.stop="toggleSelection(m)" />
             <button
               class="profile-button message-avatar"
               :aria-label="t('profileView')"
@@ -215,8 +217,8 @@
                 <el-image
                   v-if="image.src || imageUrls[image.attId]"
                   :src="image.src || imageUrls[image.attId]"
-                  @click="imagePreview = image.src || imageUrls[image.attId]"
-                  @keydown.enter="imagePreview = image.src || imageUrls[image.attId]"
+                  @click="openMedia(`image:${m.emailId}:${image.attId || image.src}`)"
+                  @keydown.enter="openMedia(`image:${m.emailId}:${image.attId || image.src}`)"
                   role="button"
                   tabindex="0"
                   fit="contain"
@@ -237,7 +239,7 @@
                 <span v-else>{{ t('mailChatImageLoading') }}</span>
               </div>
               <div v-for="att in m.attachments" :key="att.attId" class="attachment">
-                <VideoAttachment v-if="isVideoFile(att)" :file="att" :load="()=>mailAttachment(att.attId)" @download="download(att)" />
+                <VideoAttachment v-if="isVideoFile(att)" :file="att" :load="()=>mailAttachment(att.attId)" @download="download(att)" @preview="openMedia(`video:${m.emailId}:${att.attId}`)" />
                 <StickerMedia v-else-if="isStickerFile(att)" :format="att.filename.toLowerCase().endsWith('.tgs') ? 'tgs' : 'webm'" :label="'🙂'" :load="()=>mailAttachment(att.attId)" @error="stickerErrors[att.attId] = true" />
                 <el-button v-if="(!isVideoFile(att) && !isStickerFile(att)) || stickerErrors[att.attId]" text @click="download(att)">
                   <Icon icon="cloud-mail:file" width="26" aria-hidden="true" />
@@ -263,7 +265,16 @@
       <el-button v-if="!atBottom || historyAnchor" class="latest" round @click="bottom">{{
         t('chatNewest')
       }}</el-button>
-      <form v-if="canSend" class="composer" @submit.prevent="send">
+      <div v-if="selecting" class="selection-toolbar" role="toolbar" :aria-label="t('chatSelectMessages')">
+        <el-button text :disabled="selectionBusy" @click="endSelection">{{ t('cancel') }}</el-button>
+        <strong role="status">{{ t('chatSelectedCount', { count: selectedMessages.length }) }}</strong>
+        <el-button text :disabled="!selectedMessages.length || selectionBusy" @click="copySelected">{{ t('mailChatCopy') }}</el-button>
+        <el-dropdown trigger="click" :disabled="!selectedMessages.length || selectionBusy" @command="deleteSelected">
+          <el-button text type="danger" :loading="selectionBusy" :disabled="!selectedMessages.length">{{ t('delete') }}</el-button>
+          <template #dropdown><el-dropdown-menu><el-dropdown-item command="self">{{ t('deleteSelf') }}</el-dropdown-item><el-dropdown-item v-if="selectedMessages.length && selectedMessages.every(row => row.internal)" command="both">{{ t('mailChatDeleteBoth') }}</el-dropdown-item></el-dropdown-menu></template>
+        </el-dropdown>
+      </div>
+      <form v-if="canSend && !selecting" class="composer" @submit.prevent="send">
         <div v-if="quoteTarget" class="compose-quote">
           <div>
             <strong
@@ -416,6 +427,7 @@
           <button v-if="messageMenu.message && (messageMenu.message.replyText ?? messageMenu.message.text)?.trim()" role="menuitem" @click="menuAction('translate')">
             <Icon icon="cloud-mail:translate" width="16" aria-hidden="true" /><span>{{ t('translateTitle') }}</span>
           </button>
+          <button v-if="messageMenu.message" role="menuitem" @click="menuAction('select')"><Icon icon="cloud-mail:select" width="16" aria-hidden="true" /><span>{{ t('chatSelectMessages') }}</span></button>
           <button v-if="messageMenu.message" role="menuitem" class="danger" @click="menuAction('delete-self')">
             <Icon icon="cloud-mail:delete" width="16" aria-hidden="true" /><span>{{ t('deleteSelf') }}</span>
           </button>
@@ -438,15 +450,7 @@
         </div>
       </div>
     </Teleport>
-    <el-dialog
-      :model-value="!!imagePreview"
-      @close="imagePreview = ''"
-      class="image-preview"
-      width="min(900px, calc(100% - 24px))"
-      :title="t('mailChatImage')"
-    >
-      <img :src="imagePreview" :alt="t('mailChatImage')" referrerpolicy="no-referrer" />
-    </el-dialog>
+    <MediaViewer :items="mediaItems" :active-id="mediaId" @close="mediaId = ''" @navigate="mediaId = $event" @download="downloadMedia" />
     <el-dialog v-model="profileOpen" :title="t('profile')" width="min(380px, calc(100% - 24px))">
       <div class="profile-card">
         <UserAvatar :profile="shownProfile" :email="shownProfile.email" :size="72" />
@@ -470,11 +474,11 @@ import { randomUUID } from '@/utils/uuid';
 import { computed, nextTick, onMounted, onBeforeUnmount, reactive, ref, watch } from 'vue';
 import MailBody from '@/components/mail-body.vue';
 import VideoAttachment from '@/components/video-attachment.vue';
+import MediaViewer from '@/components/media-viewer.vue';
 import { collectSnapshot, compareMessages, messageRows } from '@/utils/chat-refresh.mjs';
 import { isVideoFile, isStickerFile } from '@/utils/video-files.mjs';
 import Header from '@/layout/header/index.vue';
 import UserAvatar from '@/components/user-avatar.vue';
-import '@/icons/chat';
 import { useMediaQuery } from '@vueuse/core';
 import { useUiStore } from '@/store/ui';
 import ConversationExplorer from '@/components/conversation-explorer.vue';
@@ -711,15 +715,66 @@ async function menuAction(action) {
   }
   if (action === 'translate') translationRefs.get(message.emailId)?.open();
   else if (action === 'quote') quoteMessage(message);
+  else if (action === 'select') { selecting.value = true; selectedIds.value = new Set([message.emailId]); }
   else if (action === 'delete-self') removeSelf(message);
   else if (action === 'delete') removeBoth(message);
   else if (action === 'clear') removeBoth();
 }
 function menuEscape(event) {
-  if (event.key === 'Escape') closeMenu();
+  if (event.key === 'Escape') { closeMenu(); if (!mediaId.value && !selectionBusy.value) endSelection(); }
 }
 const stickerErrors = reactive({});
-const imagePreview = ref('');
+const selecting = ref(false), selectedIds = ref(new Set()), selectionBusy = ref(false);
+const selectedMessages = computed(() => messages.value.filter(row => selectedIds.value.has(row.emailId)));
+function endSelection() { selecting.value = false; selectedIds.value = new Set(); }
+function toggleSelection(message) {
+  if (selectionBusy.value) return;
+  const ids = new Set(selectedIds.value);
+  if (ids.has(message.emailId)) ids.delete(message.emailId);
+  else if (ids.size < 100) ids.add(message.emailId);
+  else { ElMessage.info(t('chatSelectionLimit')); return; }
+  selectedIds.value = ids;
+}
+function selectionClick(event, message) {
+  if (!selecting.value || event.target.closest('.message-selector')) return;
+  event.preventDefault(); event.stopPropagation(); toggleSelection(message);
+}
+async function copySelected() {
+  const text = selectedMessages.value.map(row => row.replyText || row.text || '').filter(Boolean).join('\n\n');
+  if (!text) return;
+  try { await navigator.clipboard.writeText(text); ElMessage.success(t('copySuccessMsg')); }
+  catch { ElMessage.error(t('copyFailMsg')); }
+}
+async function deleteSelected(scope) {
+  if (selectionBusy.value || !selectedMessages.value.length) return;
+  const rows = [...selectedMessages.value], a = accountId.value, k = selected.value?.key, mine = version;
+  const through = messages.value.at(-1)?.emailId;
+  if (scope === 'both' && !rows.every(row => row.internal)) return;
+  selectionBusy.value = true;
+  try {
+    await ElMessageBox.confirm(`${t('chatSelectedCount', { count: rows.length })}\n${t(scope === 'both' ? 'mailChatDeleteBothConfirm' : 'deleteSelfConfirm')}`, t('delete'), { type: 'warning', confirmButtonText: t('mailChatConfirmDelete'), cancelButtonText: t('cancel') });
+    for (const row of rows) {
+      if (mine !== version || a !== accountId.value || k !== selected.value?.key || stopped) break;
+      await (scope === 'both' ? mailRemoveBoth : mailRemoveSelf)({ accountId: a, key: k, emailId: row.emailId, ...(scope === 'both' ? { through } : {}) });
+      if (mine === version) { const ids = new Set(selectedIds.value); ids.delete(row.emailId); selectedIds.value = ids; }
+    }
+    if (mine === version && !selectedIds.value.size) endSelection();
+  } catch { /* API failures keep the remaining selection available for retry. */ }
+  finally { selectionBusy.value = false; if (!stopped) await sync(); }
+}
+const mediaId = ref('');
+const mediaItems = computed(() => messages.value.flatMap(row => [
+  ...(row.images || []).map(image => ({ id: `image:${row.emailId}:${image.attId || image.src}`, kind: 'image', src: image.src || imageUrls[image.attId], file: { attId: image.attId, filename: image.alt || 'image' } })),
+  ...(row.attachments || []).filter(isVideoFile).map(file => ({ id: `video:${row.emailId}:${file.attId}`, kind: 'video', file, load: () => mailAttachment(file.attId) }))
+]));
+function openMedia(id) { if (!selecting.value) { document.querySelectorAll('.messages video').forEach(player => player.pause()); mediaId.value = id; } }
+async function downloadMedia(item) {
+  if (item.file.attId) return download(item.file);
+  // Embedded email images can be shown without fetching third-party content.
+  if (item.src && /^(blob:|data:image\/)/.test(item.src)) { const link = document.createElement('a'); link.href = item.src; link.download = item.file.filename; link.click(); }
+}
+watch(mediaItems, items => { if (mediaId.value && !items.some(item => item.id === mediaId.value)) mediaId.value = ''; });
+watch(messages, rows => { const ids = new Set(rows.map(row => row.emailId)); selectedIds.value = new Set([...selectedIds.value].filter(id => ids.has(id))); });
 const imageUrls = reactive({}),
   imageErrors = reactive({});
 const imageRequests = new Set();
@@ -818,8 +873,7 @@ async function applyMessages(data, complete = false, extendHistory = false) {
   readThrough.delete(marker);
   hasOlder.value = !!snapshot.hasMore;
   const imageIds = new Set(rows.flatMap(row => (row.images || []).map(image => String(image.attId))));
-  const previewURLs = new Set(rows.flatMap(row => (row.images || []).map(image => image.src || imageUrls[image.attId])));
-  if (imagePreview.value && !previewURLs.has(imagePreview.value)) imagePreview.value = '';
+  if (mediaId.value && !mediaItems.value.some(item => item.id === mediaId.value)) mediaId.value = '';
   for (const [id, url] of Object.entries(imageUrls)) {
     if (!imageIds.has(id)) { URL.revokeObjectURL(url); delete imageUrls[id]; }
   }
@@ -960,6 +1014,7 @@ function jumpToQuote(quote) {
   }
 }
 function closeThread() {
+  endSelection(); mediaId.value = '';
   historyAnchor.value = null;
   closeMenu();
   cancelPress();
@@ -987,7 +1042,7 @@ async function markRead() {
     document.hidden ||
     friendsOpen.value ||
     newOpen.value ||
-    imagePreview.value ||
+    mediaId.value ||
     !messages.value.length
   )
     return;
@@ -1016,6 +1071,7 @@ function onScroll() {
   if (atBottom.value) markRead().catch(() => {});
 }
 async function select(c) {
+  endSelection(); mediaId.value = '';
   if (c.category && c.category !== category) {
     await router.push({ path: c.category === 'external' ? '/external-mail' : '/mail-chat', query: { accountId: accountId.value, conversation: c.key } });
     return;
@@ -1281,6 +1337,12 @@ function dragOver(event) {
   if (event.dataTransfer) event.dataTransfer.dropEffect = active.value && canSend.value && !sending.value ? 'copy' : 'none';
 }
 function dragLeave(event) { if (draggedFiles(event) || dragDepth.value) dragDepth.value = Math.max(0, dragDepth.value - 1); }
+function pasteFiles(event) {
+  const pasted = [...(event.clipboardData?.files || [])];
+  if (!pasted.length || !active.value || !canSend.value || sending.value || selecting.value) return;
+  event.preventDefault();
+  chooseFiles({ target: { files: pasted, value: '' } }, draftKey.value);
+}
 function dropFiles(event) {
   if (!draggedFiles(event)) return;
   event.preventDefault(); dragDepth.value = 0;
@@ -2180,4 +2242,13 @@ pre {
 .file-drop-overlay strong { font-size: 22px; font-weight: 500; }
 .file-drop-overlay small { max-width: 280px; line-height: 1.6; }
 .attachment:has(.video-attachment) { min-width: min(280px, 70vw); max-width: 100%; }
+</style>
+
+<style scoped>
+.selection-toolbar { display:flex; align-items:center; gap:4px; padding:4px 10px; background:var(--el-bg-color); border-bottom:1px solid var(--el-border-color); min-height:40px; flex-shrink:0; }
+.selection-toolbar strong { flex:1; font-size:13px; }
+.mail-message.selecting-message { position:relative; padding-inline:28px 4px; cursor:pointer; border-radius:10px; }
+.mail-message.message-selected { background:var(--el-color-primary-light-9); outline:1px solid var(--el-color-primary-light-5); }
+.message-selector { position:absolute; inset-inline-start:5px; top:50%; transform:translateY(-50%); width:18px; height:18px; accent-color:var(--el-color-primary); cursor:pointer; }
+@media(max-width:480px) { .selection-toolbar { padding:4px; gap:0; } .selection-toolbar :deep(.el-button) { padding-inline:7px; } }
 </style>

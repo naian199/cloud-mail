@@ -645,5 +645,12 @@
   "videoBusy": "Một video khác đang được xử lý. Hãy thử lại sau giây lát.",
   "videoLoadFailed": "Không tải được video. Hãy thử lại hoặc tải tệp gốc.",
   "fileDropTitle": "Thả tệp vào đây",
-  "fileDropHint": "Tối đa 10 tệp, tổng cộng 10 MB. Thả tệp chỉ thêm tệp đính kèm, không tự động gửi."
+  "fileDropHint": "Tối đa 10 tệp, tổng cộng 10 MB. Thả tệp chỉ thêm tệp đính kèm, không tự động gửi.",
+  "chatSelectMessages": "Chọn tin nhắn",
+  "chatSelectedCount": "Đã chọn {count}",
+  "chatSelectionLimit": "Chọn tối đa 100 tin nhắn mỗi lần.",
+  "mediaOpen": "Mở trình xem nội dung",
+  "mediaPrevious": "Nội dung trước",
+  "mediaNext": "Nội dung tiếp theo",
+  "roomSearchLoaded": "Tìm trong các tin nhắn đã tải. Tải tin nhắn cũ hơn để mở rộng tìm kiếm."
 }

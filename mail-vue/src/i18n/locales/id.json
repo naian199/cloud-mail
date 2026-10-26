@@ -645,5 +645,12 @@
   "videoBusy": "Video lain sedang diproses. Coba lagi sebentar.",
   "videoLoadFailed": "Video gagal dimuat. Coba lagi atau unduh berkas asli.",
   "fileDropTitle": "Letakkan berkas di sini",
-  "fileDropHint": "Maksimal 10 berkas, total 10 MB. Meletakkan berkas menambah lampiran tanpa mengirimnya."
+  "fileDropHint": "Maksimal 10 berkas, total 10 MB. Meletakkan berkas menambah lampiran tanpa mengirimnya.",
+  "chatSelectMessages": "Pilih pesan",
+  "chatSelectedCount": "{count} dipilih",
+  "chatSelectionLimit": "Pilih hingga 100 pesan sekaligus.",
+  "mediaOpen": "Buka penampil media",
+  "mediaPrevious": "Media sebelumnya",
+  "mediaNext": "Media berikutnya",
+  "roomSearchLoaded": "Mencari pesan yang telah dimuat. Muat pesan sebelumnya untuk memperluas pencarian."
 }

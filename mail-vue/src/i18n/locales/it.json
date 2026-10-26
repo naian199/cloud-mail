@@ -645,5 +645,12 @@
   "videoBusy": "Un altro video è in elaborazione. Riprova tra poco.",
   "videoLoadFailed": "Impossibile caricare il video. Riprova o scarica il file originale.",
   "fileDropTitle": "Trascina qui i file",
-  "fileDropHint": "Fino a 10 file, per un totale di 10 MB. Il trascinamento aggiunge allegati senza inviarli."
+  "fileDropHint": "Fino a 10 file, per un totale di 10 MB. Il trascinamento aggiunge allegati senza inviarli.",
+  "chatSelectMessages": "Seleziona messaggi",
+  "chatSelectedCount": "{count} selezionati",
+  "chatSelectionLimit": "Seleziona fino a 100 messaggi alla volta.",
+  "mediaOpen": "Apri visualizzatore multimediale",
+  "mediaPrevious": "Contenuto precedente",
+  "mediaNext": "Contenuto successivo",
+  "roomSearchLoaded": "Cerca nei messaggi caricati. Carica messaggi precedenti per ampliare la ricerca."
 }

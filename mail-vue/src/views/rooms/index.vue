@@ -17,17 +17,27 @@
         <el-button class="back" text :aria-label="t('chatBack')" @click="choose(null)"><Icon icon="cloud-mail:back" width="22" /></el-button>
         <div class="room-heading-name"><strong>{{ active.name }}</strong><small>{{ t(active.kind === 'channel' ? 'roomChannel' : 'roomGroup') }} · {{ t('roomTextOnly') }}</small></div>
         <el-popover v-model:visible="translationStatus.settingsOpen" trigger="click" :width="300"><template #reference><el-button text :aria-label="t('translateAuto')" :title="t(translationStatus.error || 'translateAuto')"><Icon icon="cloud-mail:translate" width="20" /></el-button></template><AutoTranslationSettings /></el-popover>
+        <el-button v-if="active.status === 'joined'" text :aria-label="t('exploreTitle')" @click="roomSearchOpen = !roomSearchOpen"><Icon icon="cloud-mail:search" width="22" /></el-button>
         <el-button v-if="active.status === 'joined'" text :aria-label="t('roomMembers')" @click="openMembers"><Icon icon="cloud-mail:group" width="22" /></el-button>
       </header>
       <div v-if="active.status === 'invited'" class="room-invitation"><p>{{ t('roomInvited') }}</p><p>{{ t('roomOwner') }} · {{ active.ownerName || active.ownerUsername || active.ownerId }}</p><el-button type="primary" :loading="acting" @click="respond(true)">{{ t('mailChatAccept') }}</el-button><el-button :disabled="acting" @click="respond(false)">{{ t('mailChatDecline') }}</el-button></div>
       <template v-else>
+        <div v-if="roomSearchOpen" class="room-message-search">
+          <el-input v-model="messageSearch" clearable :placeholder="t('exploreTitle')" :aria-label="t('exploreTitle')" @keydown.enter.prevent="nextResult(1)" @keydown.esc="roomSearchOpen = false" />
+          <span role="status">{{ matches.length ? resultIndex + 1 : 0 }} / {{ matches.length }}</span>
+          <el-button text :disabled="!matches.length" :aria-label="t('mediaPrevious')" @click="nextResult(-1)">↑</el-button><el-button text :disabled="!matches.length" :aria-label="t('mediaNext')" @click="nextResult(1)">↓</el-button>
+          <small>{{ t('roomSearchLoaded') }}</small>
+        </div>
         <div ref="scroll" class="room-messages" @scroll="onScroll">
           <el-button v-if="hasOlder" text :loading="olderLoading" @click="older">{{ t('chatOlder') }}</el-button>
           <el-empty v-if="!messageLoading && !messages.length" :description="t('chatStartConversation')" :image-size="60" />
-          <article v-for="message in messages" :key="message.id" class="room-message" :class="{ mine: message.senderId === userId }" :data-message-id="message.id">
+          <template v-for="(message,index) in messages" :key="message.id">
+          <p v-if="!index || roomDate(message.createdAt) !== roomDate(messages[index - 1].createdAt)" class="room-date">{{ roomDate(message.createdAt) }}</p>
+          <article class="room-message" :class="{ mine: message.senderId === userId, 'room-search-match': messageSearch.trim() && matches.includes(message), 'room-search-current': messageSearch.trim() && matches[resultIndex]?.id === message.id }" :data-message-id="message.id">
             <UserAvatar :profile="senders[message.senderId]" :email="senders[message.senderId]?.username || ''" :size="30" />
             <div class="room-bubble"><small>{{ senderName(message.senderId) }}</small><p>{{ message.body }}</p><MessageTranslation :text="message.body" :incoming="message.senderId !== userId" chat-style :translate-remote="(target, signal) => translateRoomMessage(message.roomId, message.id, target, signal)" /><time>{{ time(message.createdAt) }}</time></div>
           </article>
+          </template>
         </div>
         <el-button v-if="!atBottom" class="room-newest" round @click="bottom">{{ t('chatNewest') }}</el-button>
         <form v-if="canPost" class="room-composer" @submit.prevent="send">
@@ -52,7 +62,8 @@
         <form v-if="canManage" class="room-form" @submit.prevent="rename"><el-input v-model="editName" maxlength="80" :aria-label="t('roomName')" /><el-button native-type="submit" :loading="acting">{{ t('save') }}</el-button></form>
         <form v-if="canManage" class="room-form room-invite-form" @submit.prevent="invite"><el-input v-model="inviteName" :aria-label="t('contactUsername')" placeholder="@username" maxlength="25" /><el-button native-type="submit" :loading="acting" :disabled="!inviteName.trim()">{{ t('roomInvite') }}</el-button></form>
         <p v-if="canManage">{{ t('roomInviteHint') }}</p>
-        <div class="member-list"><div v-for="member in members" :key="member.userId" class="member-row"><UserAvatar :profile="member" :email="member.username || ''" :size="30" /><div class="member-name"><strong>{{ member.displayName || member.username || t('roomMember') + ' ' + member.userId }}</strong><small>{{ member.username ? '@' + member.username + ' · ' : '' }}{{ t(member.status === 'invited' ? 'roomInvited' : member.role === 'owner' ? 'roomOwner' : member.role === 'admin' ? 'roomAdmin' : 'roomMember') }}</small></div><el-button v-if="active.role === 'owner' && member.role !== 'owner' && member.status === 'joined'" text :disabled="acting" @click="role(member)">{{ t(member.role === 'admin' ? 'roomMember' : 'roomAdmin') }}</el-button><el-button v-if="member.role !== 'owner' && (active.role === 'owner' || active.role === 'admin' && member.role === 'member')" text type="danger" :disabled="acting" @click="kick(member)">{{ t('delete') }}</el-button></div></div>
+        <el-input v-model="memberSearch" clearable :placeholder="t('mailChatContacts')" :aria-label="t('mailChatContacts')" />
+        <div class="member-list"><div v-for="member in filteredMembers" :key="member.userId" class="member-row"><UserAvatar :profile="member" :email="member.username || ''" :size="30" /><div class="member-name"><strong>{{ member.displayName || member.username || t('roomMember') + ' ' + member.userId }}</strong><small>{{ member.username ? '@' + member.username + ' · ' : '' }}{{ t(member.status === 'invited' ? 'roomInvited' : member.role === 'owner' ? 'roomOwner' : member.role === 'admin' ? 'roomAdmin' : 'roomMember') }}</small></div><el-button v-if="active.role === 'owner' && member.role !== 'owner' && member.status === 'joined'" text :disabled="acting" @click="role(member)">{{ t(member.role === 'admin' ? 'roomMember' : 'roomAdmin') }}</el-button><el-button v-if="member.role !== 'owner' && (active.role === 'owner' || active.role === 'admin' && member.role === 'member')" text type="danger" :disabled="acting" @click="kick(member)">{{ t('delete') }}</el-button></div></div>
         <el-button v-if="active.role !== 'owner'" type="danger" :loading="acting" @click="leave">{{ t('roomLeave') }}</el-button><el-button v-else type="danger" :loading="acting" @click="remove">{{ t('delete') }}</el-button>
       </template>
     </el-dialog>
@@ -75,7 +86,7 @@ import MessageTranslation from '@/components/message-translation.vue';
 import AutoTranslationSettings from '@/components/auto-translation-settings.vue';
 import { listRooms, createRoom, renameRoom, deleteRoom, roomMembers, inviteMember, setMemberRole, removeMember, respondRoom, leaveRoom, roomMessages, sendRoomMessage, readRoom, translateRoomMessage } from '@/request/rooms';
 
-const { t }=useI18n(), route=useRoute(), router=useRouter(), ui=useUiStore();
+const { t, locale }=useI18n(), route=useRoute(), router=useRouter(), ui=useUiStore();
 const userId=useUserStore().user.userId;
 const rooms=ref([]), activeId=ref(typeof route.query.room==='string'?route.query.room:null), messages=ref([]), senders=reactive({}), drafts=reactive({});
 const active=computed(()=>rooms.value.find(room=>room.id===activeId.value));
@@ -84,15 +95,23 @@ const canPost=computed(()=>active.value?.status==='joined' && (active.value.kind
 const search=ref(''),filter=ref('all'), loading=ref(true), messageLoading=ref(false), hasOlder=ref(false), olderLoading=ref(false), sending=ref(false), atBottom=ref(true), scroll=ref(null);
 const filtered=computed(()=>rooms.value.filter(room=>(filter.value==='all'||room.kind===filter.value)&&room.name.toLowerCase().includes(search.value.toLowerCase())));
 const newOpen=ref(false), creating=ref(false), newRoom=reactive({kind:'group',name:''});
+const roomSearchOpen=ref(false), messageSearch=ref(''), resultIndex=ref(0), memberSearch=ref('');
+const matches=computed(()=>{const query=messageSearch.value.trim().toLocaleLowerCase();return query?messages.value.filter(message=>message.body.toLocaleLowerCase().includes(query)):[];});
+const filteredMembers=computed(()=>{const query=memberSearch.value.trim().toLocaleLowerCase();return members.value.filter(member=>[member.displayName,member.username].some(value=>String(value||'').toLocaleLowerCase().includes(query)));});
+async function focusResult(){await nextTick();const id=matches.value[resultIndex.value]?.id;if(id)scroll.value?.querySelector(`[data-message-id="${id}"]`)?.scrollIntoView({block:'center'});}
+function nextResult(delta){const length=matches.value.length;if(!length)return;resultIndex.value=(resultIndex.value+delta+length)%length;focusResult();}
+watch(messageSearch,()=>{resultIndex.value=0;focusResult();});
+watch(()=>matches.value.length,length=>{if(resultIndex.value>=length)resultIndex.value=Math.max(0,length-1);});
 const membersOpen=ref(false), members=ref([]), editName=ref(''), inviteName=ref(''), acting=ref(false);
 let stopped=false, version=0, busy=false, dirty=false;
 const pending=new Map();
 const readProgress=new Map();
 watch(active,value=>{ui.mobileChatFocused=!!value;},{immediate:true});
 function senderName(id) { return senders[id]?.displayName || senders[id]?.username || `${t('roomMember')} ${id}`; }
-function time(value) { return new Date(value.replace(' ','T')+'Z').toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'}); }
+function roomDate(value) { return new Date(value.replace(' ','T')+'Z').toLocaleDateString(locale.value); }
+function time(value) { return new Date(value.replace(' ','T')+'Z').toLocaleTimeString(locale.value,{hour:'2-digit',minute:'2-digit'}); }
 async function choose(id) { if(stopped)return;const query={...route.query}; if(id)query.room=id;else delete query.room; await router.replace({query}); }
-function reset() { version++; messages.value=[];members.value=[];Object.keys(senders).forEach(key=>delete senders[key]);hasOlder.value=false;atBottom.value=true;membersOpen.value=false;messageLoading.value=!!activeId.value; }
+function reset() { roomSearchOpen.value=false;messageSearch.value='';memberSearch.value='';version++; messages.value=[];members.value=[];Object.keys(senders).forEach(key=>delete senders[key]);hasOlder.value=false;atBottom.value=true;membersOpen.value=false;messageLoading.value=!!activeId.value; }
 watch(()=>route.query.room,id=>{activeId.value=typeof id==='string'?id:null;reset();refresh();});
 function merge(data) { Object.assign(senders,data.senders);const map=new Map(messages.value.map(message=>[message.id,message]));data.messages.forEach(message=>map.set(message.id,message));messages.value=[...map.values()].sort((a,b)=>a.id-b.id); }
 async function bottom() { await nextTick();if(scroll.value){scroll.value.scrollTop=scroll.value.scrollHeight;atBottom.value=true;} }
@@ -142,7 +161,7 @@ async function send() {
   try {await sendRoomMessage(id,body,request.clientId);pending.delete(id);if(drafts[id]===original)drafts[id]='';if(activeId.value===id)atBottom.value=true;await refresh();}catch{}finally{sending.value=false;}
 }
 async function create(){if(creating.value)return;creating.value=true;try{const room=await createRoom({...newRoom});newOpen.value=false;newRoom.name='';await refresh();await choose(room.id);}catch{}finally{creating.value=false;}}
-async function openMembers(){if(!active.value)return;editName.value=active.value.name;members.value=[];membersOpen.value=true;const id=activeId.value;try{const data=await roomMembers(id);if(id===activeId.value&&!stopped)members.value=data;}catch{}}
+async function openMembers(){memberSearch.value='';if(!active.value)return;editName.value=active.value.name;members.value=[];membersOpen.value=true;const id=activeId.value;try{const data=await roomMembers(id);if(id===activeId.value&&!stopped)members.value=data;}catch{}}
 async function action(task){if(acting.value||!active.value)return;const id=activeId.value;acting.value=true;try{await task(id);await refresh();if(id===activeId.value&&active.value?.status==='joined'&&membersOpen.value)members.value=await roomMembers(id);}catch{}finally{acting.value=false;}}
 function rename(){return action(id=>renameRoom(id,editName.value));}
 function invite(){return action(async id=>{await inviteMember(id,inviteName.value);inviteName.value='';});}
@@ -154,7 +173,7 @@ async function remove(){const selected=activeId.value;try{await ElMessageBox.con
 onBeforeUnmount(()=>{stopped=true;version++;ui.mobileChatFocused=false;translationStatus.settingsOpen=false;});
 </script>
 <style scoped>
-.rooms{height:100%;min-height:0;min-width:0;display:grid;grid-template-columns:300px minmax(0,1fr);overflow:hidden;}
+.rooms{height:100%;min-height:0;min-width:0;display:grid;grid-template-columns:330px minmax(0,1fr);overflow:hidden;}
 .room-list,.room-thread{min-height:0;min-width:0;display:flex;flex-direction:column;}
 .room-list{border-inline-end:1px solid var(--el-border-color);background:var(--el-bg-color);}
 .room-tools{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;gap:8px;}
@@ -189,4 +208,12 @@ onBeforeUnmount(()=>{stopped=true;version++;ui.mobileChatFocused=false;translati
 .member-row{display:flex;align-items:center;gap:8px;padding:8px 0;}
 .back{display:none;}
 @media(max-width:767px){.rooms{grid-template-columns:minmax(0,1fr);}.has-active .room-list,.empty-room{display:none;}.back{display:inline-flex;}.room-composer :deep(textarea){font-size:16px;}.room-heading{padding-inline:6px;}.room-bubble{max-width:85%;}.member-row{flex-wrap:wrap;}}
+.room-message-search { display:flex; flex-wrap:wrap; align-items:center; gap:4px; padding:6px 12px; background:var(--el-bg-color); border-bottom:1px solid var(--el-border-color); }
+.room-message-search>.el-input { flex:1; min-width:120px; }.room-message-search>span { font-size:12px; }.room-message-search>small { flex-basis:100%; font-size:11px; color:var(--el-text-color-secondary); }
+.room-search-match .room-bubble { outline:1px solid var(--el-color-warning); }.room-search-current .room-bubble { outline:2px solid var(--el-color-primary); }
+.room-heading { min-height:48px; box-sizing:border-box; }.room-entry:hover { background:var(--el-fill-color-light); }.room-entry.selected { background:var(--el-color-primary); color:white; }.room-entry.selected small { color:#fff; opacity:.85; }
+.rooms { --room-canvas:#eaf1f5; --room-incoming:var(--el-bg-color-overlay); --room-outgoing:#e0f2ff; }
+:global(html.dark .rooms) { --room-canvas:#101c28; --room-incoming:#20303f; --room-outgoing:#234864; }
+.room-thread { background:var(--room-canvas); }.room-bubble { background:var(--room-incoming); border-radius:14px 14px 14px 5px; box-shadow:0 1px 2px #0001; }.mine .room-bubble { background:var(--room-outgoing); border-radius:14px 14px 5px 14px; }
+.room-heading-name small { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }.room-date { width:max-content; margin:12px auto; padding:4px 10px; border-radius:14px; font-size:11px; background:var(--el-fill-color); color:var(--el-text-color-secondary); }
 </style>

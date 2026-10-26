@@ -645,5 +645,12 @@
   "videoBusy": "Video lain sedang diproses. Cuba lagi sebentar nanti.",
   "videoLoadFailed": "Video gagal dimuatkan. Cuba lagi atau muat turun fail asal.",
   "fileDropTitle": "Lepaskan fail di sini",
-  "fileDropHint": "Sehingga 10 fail, jumlah 10 MB. Melepaskan fail menambah lampiran tanpa menghantarnya."
+  "fileDropHint": "Sehingga 10 fail, jumlah 10 MB. Melepaskan fail menambah lampiran tanpa menghantarnya.",
+  "chatSelectMessages": "Pilih mesej",
+  "chatSelectedCount": "{count} dipilih",
+  "chatSelectionLimit": "Pilih sehingga 100 mesej pada satu masa.",
+  "mediaOpen": "Buka pemapar media",
+  "mediaPrevious": "Media sebelumnya",
+  "mediaNext": "Media seterusnya",
+  "roomSearchLoaded": "Mencari mesej yang telah dimuatkan. Muatkan mesej terdahulu untuk meluaskan carian."
 }

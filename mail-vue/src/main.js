@@ -2,6 +2,7 @@ import {createApp} from 'vue';
 import App from './App.vue';
 import router from './router';
 import './style.css';
+import '@/icons/chat';
 import { installMobileViewport } from '@/utils/mobile-viewport';
 installMobileViewport();
 import { init } from '@/init/init.js';

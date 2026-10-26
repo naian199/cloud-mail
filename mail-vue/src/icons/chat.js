@@ -12,6 +12,8 @@ addCollection({
     'external-mail': outline('<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 6 9 7 9-7"/>'),
     menu: outline('<path d="M4 6h16M4 12h16M4 18h16"/>'),
     more: outline('<circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/>'),
+    select: outline('<circle cx="12" cy="12" r="9"/><path d="m7 12 3 3 7-7"/>'),
+    expand: outline('<path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5"/>'),
     play: outline('<path d="m9 5 11 7-11 7V5Z"/>'),
     microphone: outline('<rect x="9" y="2" width="6" height="13" rx="3"/><path d="M5 10v2a7 7 0 0 0 14 0v-2M12 19v3m-4 0h8"/>'),
     stop: outline('<rect x="6" y="6" width="12" height="12" rx="2"/>'),

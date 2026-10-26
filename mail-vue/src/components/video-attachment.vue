@@ -1,5 +1,5 @@
 <template>
-  <div ref="host" class="video-attachment" :aria-busy="loading || converting">
+  <div ref="host" class="video-attachment" :class="{ expanded }" :aria-busy="loading || converting">
     <video v-if="url" ref="player" :src="url" controls playsinline preload="metadata" :aria-label="file.filename" @error="playbackFailed" @pointerdown.stop @touchstart.stop />
     <button v-else class="video-start" type="button" :disabled="loading || converting" @click="play">
       <Icon icon="cloud-mail:play" width="38" aria-hidden="true" />
@@ -9,6 +9,7 @@
     <p v-if="converting" class="video-status" role="status">{{ t('videoConverting', { percent: percent }) }}</p>
     <p v-else-if="error" class="video-status" role="status">{{ t(error) }}</p>
     <div class="video-actions">
+      <button v-if="!expanded" type="button" :aria-label="t('mediaOpen')" :title="t('mediaOpen')" @click="player?.pause(); $emit('preview')"><Icon icon="cloud-mail:expand" width="16" /></button>
       <button v-if="converting" type="button" @click="cancel">{{ t('cancel') }}</button>
       <button v-else-if="!converted" type="button" :disabled="loading" @click="convert">{{ t('videoCompatible') }}</button>
       <button type="button" @click="$emit('download')">{{ t('videoDownload') }}</button>
@@ -20,8 +21,8 @@ import { ref, nextTick, onBeforeUnmount, onMounted } from 'vue';
 import { Icon } from '@iconify/vue';
 import { useI18n } from 'vue-i18n';
 import { videoMime } from '@/utils/video-files.mjs';
-const props = defineProps({ file: { type: Object, required: true }, load: { type: Function, required: true } });
-defineEmits(['download']);
+const props = defineProps({ file: { type: Object, required: true }, load: { type: Function, required: true }, expanded: Boolean });
+defineEmits(['download', 'preview']);
 const { t } = useI18n();
 const visible = ref(true);
 const host = ref(null), player = ref(null), url = ref(''), loading = ref(false), converting = ref(false),
@@ -78,6 +79,7 @@ async function convert() {
 }
 function cancel() { controller?.abort(); }
 onMounted(() => {
+  if (props.expanded) play();
   if (!('IntersectionObserver' in window)) return;
   observer = new IntersectionObserver(entries => {
     visible.value = !!entries[0]?.isIntersecting;
@@ -103,4 +105,7 @@ video, .video-start { display: flex; width: 100%; height: auto; aspect-ratio: 16
 .video-actions { display: flex; flex-wrap: wrap; gap: 12px; }
 .video-actions button { border: 0; padding: 4px 0; background: none; font: inherit; color: var(--el-color-primary); font-size: 12px; cursor: pointer; }
 .video-actions button:disabled { color: var(--el-text-color-secondary); cursor: default; }
+.video-attachment.expanded { width:min(1100px,100%); }
+.expanded video,.expanded .video-start { max-height:calc(100dvh - 180px); object-fit:contain; }
+.video-actions button { display:inline-flex; align-items:center; }
 </style>

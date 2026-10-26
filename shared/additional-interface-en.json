@@ -114,5 +114,12 @@
   "videoBusy": "Another video is being processed. Try again shortly.",
   "videoLoadFailed": "Could not load this video. Retry or download the original.",
   "fileDropTitle": "Drop files here",
-  "fileDropHint": "Up to 10 files, 10 MB total. Dropping adds attachments without sending them."
+  "fileDropHint": "Up to 10 files, 10 MB total. Dropping adds attachments without sending them.",
+  "chatSelectMessages": "Select messages",
+  "chatSelectedCount": "{count} selected",
+  "chatSelectionLimit": "Select up to 100 messages at a time.",
+  "mediaOpen": "Open media viewer",
+  "mediaPrevious": "Previous media",
+  "mediaNext": "Next media",
+  "roomSearchLoaded": "Searches loaded messages. Load earlier messages to include more history."
 }

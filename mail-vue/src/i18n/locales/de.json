@@ -645,5 +645,12 @@
   "videoBusy": "Ein anderes Video wird verarbeitet. Versuchen Sie es gleich erneut.",
   "videoLoadFailed": "Das Video konnte nicht geladen werden. Erneut versuchen oder das Original herunterladen.",
   "fileDropTitle": "Dateien hier ablegen",
-  "fileDropHint": "Bis zu 10 Dateien, insgesamt 10 MB. Ablegen fügt Anhänge hinzu, ohne sie zu senden."
+  "fileDropHint": "Bis zu 10 Dateien, insgesamt 10 MB. Ablegen fügt Anhänge hinzu, ohne sie zu senden.",
+  "chatSelectMessages": "Nachrichten auswählen",
+  "chatSelectedCount": "{count} ausgewählt",
+  "chatSelectionLimit": "Wählen Sie höchstens 100 Nachrichten gleichzeitig aus.",
+  "mediaOpen": "Medienansicht öffnen",
+  "mediaPrevious": "Vorheriges Medium",
+  "mediaNext": "Nächstes Medium",
+  "roomSearchLoaded": "Durchsucht geladene Nachrichten. Laden Sie ältere Nachrichten, um den Suchbereich zu erweitern."
 }

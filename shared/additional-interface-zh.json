@@ -114,5 +114,12 @@
   "videoBusy": "另一个视频正在处理中，请稍后重试。",
   "videoLoadFailed": "视频加载失败，请重试或下载原文件。",
   "fileDropTitle": "拖放文件到此处",
-  "fileDropHint": "最多 10 个文件，合计 10MB。松开后加入附件，不会自动发送。"
+  "fileDropHint": "最多 10 个文件，合计 10MB。松开后加入附件，不会自动发送。",
+  "chatSelectMessages": "多选消息",
+  "chatSelectedCount": "已选择 {count} 条",
+  "chatSelectionLimit": "一次最多选择 100 条消息。",
+  "mediaOpen": "打开媒体查看器",
+  "mediaPrevious": "上一项",
+  "mediaNext": "下一项",
+  "roomSearchLoaded": "搜索已加载的消息；加载更早的消息可扩大搜索范围。"
 }

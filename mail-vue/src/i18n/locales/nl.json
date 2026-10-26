@@ -645,5 +645,12 @@
   "videoBusy": "Er wordt een andere video verwerkt. Probeer het zo opnieuw.",
   "videoLoadFailed": "De video kon niet worden geladen. Probeer opnieuw of download het origineel.",
   "fileDropTitle": "Bestanden hier neerzetten",
-  "fileDropHint": "Maximaal 10 bestanden, samen 10 MB. Neerzetten voegt bijlagen toe zonder ze te verzenden."
+  "fileDropHint": "Maximaal 10 bestanden, samen 10 MB. Neerzetten voegt bijlagen toe zonder ze te verzenden.",
+  "chatSelectMessages": "Berichten selecteren",
+  "chatSelectedCount": "{count} geselecteerd",
+  "chatSelectionLimit": "Selecteer maximaal 100 berichten tegelijk.",
+  "mediaOpen": "Mediaweergave openen",
+  "mediaPrevious": "Vorige media",
+  "mediaNext": "Volgende media",
+  "roomSearchLoaded": "Doorzoekt geladen berichten. Laad oudere berichten om meer geschiedenis te doorzoeken."
 }

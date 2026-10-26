@@ -645,5 +645,12 @@
   "videoBusy": "Outro vídeo está sendo processado. Tente novamente em instantes.",
   "videoLoadFailed": "Não foi possível carregar o vídeo. Tente novamente ou baixe o original.",
   "fileDropTitle": "Solte os arquivos aqui",
-  "fileDropHint": "Até 10 arquivos, 10 MB no total. Soltar adiciona anexos sem enviá-los."
+  "fileDropHint": "Até 10 arquivos, 10 MB no total. Soltar adiciona anexos sem enviá-los.",
+  "chatSelectMessages": "Selecionar mensagens",
+  "chatSelectedCount": "{count} selecionadas",
+  "chatSelectionLimit": "Selecione até 100 mensagens de cada vez.",
+  "mediaOpen": "Abrir visualizador de mídia",
+  "mediaPrevious": "Mídia anterior",
+  "mediaNext": "Próxima mídia",
+  "roomSearchLoaded": "Pesquisa nas mensagens carregadas. Carregue mensagens anteriores para ampliar a pesquisa."
 }

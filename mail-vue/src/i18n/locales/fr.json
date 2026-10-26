@@ -645,5 +645,12 @@
   "videoBusy": "Une autre vidéo est en cours de traitement. Réessayez dans un instant.",
   "videoLoadFailed": "Impossible de charger la vidéo. Réessayez ou téléchargez l’original.",
   "fileDropTitle": "Déposez les fichiers ici",
-  "fileDropHint": "10 fichiers maximum, 10 Mo au total. Le dépôt ajoute des pièces jointes sans les envoyer."
+  "fileDropHint": "10 fichiers maximum, 10 Mo au total. Le dépôt ajoute des pièces jointes sans les envoyer.",
+  "chatSelectMessages": "Sélectionner des messages",
+  "chatSelectedCount": "{count} sélectionnés",
+  "chatSelectionLimit": "Sélectionnez au maximum 100 messages à la fois.",
+  "mediaOpen": "Ouvrir le média",
+  "mediaPrevious": "Média précédent",
+  "mediaNext": "Média suivant",
+  "roomSearchLoaded": "Recherche dans les messages chargés. Chargez les messages précédents pour élargir la recherche."
 }
