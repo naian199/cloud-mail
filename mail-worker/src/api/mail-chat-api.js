@@ -1,4 +1,5 @@
 import universalSearch from '../service/universal-search-service';
+import linkPreview from '../service/link-preview-service';
 import app from '../hono/hono';
 import result from '../model/result';
 import mail from '../service/mail-chat-service';
@@ -13,6 +14,13 @@ app.get('/mail-chat/stickers/file', async c => stickers.file(c,c.req.query('name
 
 app.get('/mail-chat/translation/config', async (c) => c.json(result.ok(translation.publicConfig(await translation.config(c)))));
 app.post('/mail-chat/translate', async (c) => c.json(result.ok(await translation.translate(c, await c.req.json()))));
+
+app.post('/mail-chat/link-preview',async c=>c.json(result.ok(await linkPreview.get(c,await c.req.json()))));
+app.post('/mail-chat/link-preview-image',async c=>{
+  const image=await linkPreview.image(c,await c.req.json());
+  if(!image)return c.notFound();
+  return new Response(image.data,{headers:{'Content-Type':image.type,'Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff'}});
+});
 
 app.get('/mail-chat/conversations', async (c) =>
 	c.json(result.ok(await mail.list(c, c.req.query())))

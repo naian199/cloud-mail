@@ -68,6 +68,7 @@ jobs:
           node --test mail-worker/test/room-notifications.test.mjs
           node --test mail-worker/test/video-attachments.test.mjs
           node --test mail-worker/test/video-poster.test.mjs
+          node --test mail-worker/test/link-preview.test.mjs
           node --test mail-worker/test/chat-refresh.test.mjs
 
       - name: Check optional brand icon source

@@ -3,7 +3,7 @@
     <aside class="conversations">
       <div ref="contactScroll" class="conversation-list" @keydown.home="restoreContactControls">
       <div class="contact-controls">
-      <UniversalSearch :account-id="accountId" :accounts="accounts" @active="universalActive = $event" @action="searchAction" @account="switchMailbox" />
+      <UniversalSearch ref="universalSearch" :account-id="accountId" :accounts="accounts" @active="universalActive = $event" @action="searchAction" @account="switchMailbox" />
       <ConversationCategories v-show="!universalActive" />
       </div>
       <div class="contact-entries" v-show="!universalActive" v-loading="listLoading">
@@ -85,10 +85,6 @@
         <el-button text :aria-label="t('mailChatPin')" @click="togglePin">{{
           selected.pinned ? '★' : '☆'
         }}</el-button>
-        <el-popover trigger="click" :width="190" placement="bottom-end" popper-class="chat-account-popover">
-          <template #reference><el-button class="thread-options" text :aria-label="t('tabSetting')"><Icon icon="cloud-mail:more" width="20" /></el-button></template>
-          <Header compact />
-        </el-popover>
       </header>
       <div ref="scroll" class="messages" v-loading="messageLoading" @scroll="onScroll">
         <el-button v-if="hasOlder" class="load-more" text :loading="olderLoading" @click="older">{{
@@ -139,7 +135,6 @@
               @touchend="endTouch"
               @touchcancel="cancelPress"
               @keydown.shift.f10.prevent="openMessageMenu($event, m)"
-              @keydown.esc="closeMenu"
               @click.capture="suppressAfterPress"
             >
               <p v-if="richPreview(m)" class="mail-summary" dir="auto">{{ (m.replyText || m.text || '').slice(0, 280) }}…</p>
@@ -171,8 +166,9 @@
                   class="body-text" dir="auto"
                   :class="{ collapsed: isChat(m) && !expanded[m.emailId] }"
                 >
-                  {{ m.replyText ?? m.text }}
+                  <LinkifiedText :text="m.replyText ?? m.text" />
                 </p>
+                <LinkPreview v-for="url in chatLinks(m.replyText ?? m.text).slice(0,1)" :key="url" :url="url" :source="{ emailId:m.emailId }" @resize="imageLoaded" />
                 <el-button
                   v-if="(isChat(m) && (m.replyText ?? m.text).length > 500) || m.truncated"
                   text
@@ -461,7 +457,10 @@ import VideoAttachment from '@/components/video-attachment.vue';
 import MediaViewer from '@/components/media-viewer.vue';
 import { collectSnapshot, compareMessages, messageRows } from '@/utils/chat-refresh.mjs';
 import { isVideoFile, isStickerFile } from '@/utils/video-files.mjs';
-import Header from '@/layout/header/index.vue';
+import LinkifiedText from '@/components/linkified-text.vue';
+import LinkPreview from '@/components/link-preview.vue';
+import { chatLinks } from '@/utils/chat-links.mjs';
+import { hasChatOverlay } from '@/utils/chat-escape.mjs';
 import UserAvatar from '@/components/user-avatar.vue';
 import { useMediaQuery } from '@vueuse/core';
 import { useUiStore } from '@/store/ui';
@@ -554,7 +553,7 @@ const conversations = ref([]),
   search = ref('');
 const compactChat = useMediaQuery('(max-width: 767px), (max-width: 1024px) and (max-height: 500px) and (pointer: coarse)');
 const ui = useUiStore();
-const contactScroll = ref(null), universalActive = ref(false);
+const contactScroll = ref(null), universalActive = ref(false), universalSearch = ref(null);
 function restoreContactControls() {
   contactScroll.value?.scrollTo({ top: 0, behavior: 'smooth' });
 }
@@ -695,8 +694,16 @@ async function menuAction(action) {
   else if (action === 'clear') removeBoth();
 }
 function menuEscape(event) {
-  if (ui.asideShow) return;
-  if (event.key === 'Escape') { closeMenu(); if (!mediaId.value && !selectionBusy.value) endSelection(); }
+  if(event.key!=='Escape'||event.isComposing||event.keyCode===229||document.fullscreenElement||ui.asideShow)return;
+  const consume=()=>{event.preventDefault();event.stopPropagation();};
+  if(messageMenu.value){closeMenu();consume();return;}
+  if(translationStatus.settingsOpen){translationStatus.settingsOpen=false;consume();return;}
+  if(pickerOpen.value){stickerPicker.value?.close();consume();return;}
+  if(mediaId.value||hasChatOverlay())return;
+  if(universalActive.value){universalSearch.value?.close();consume();return;}
+  if(selecting.value){if(!selectionBusy.value)endSelection();consume();return;}
+  if(quoteTarget.value){quoteTarget.value=null;consume();return;}
+  if(selected.value){closeThread();consume();}
 }
 const stickerErrors = reactive({});
 const selecting = ref(false), selectedIds = ref(new Set()), selectionBusy = ref(false);

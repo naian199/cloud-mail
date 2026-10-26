@@ -10,7 +10,7 @@
     </el-drawer>
     <el-container class="main-container">
       <el-main>
-        <el-header v-if="!chatRoute"><Header /></el-header>
+        <el-header v-if="!chatRoute"><Header :toolbar="false" /></el-header>
         <Main />
       </el-main>
     </el-container>

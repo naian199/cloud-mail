@@ -2,7 +2,7 @@
   <section class="rooms" :class="{ 'has-active': active }">
     <aside class="room-list">
       <div class="room-controls">
-        <UniversalSearch @active="universalActive = $event" />
+        <UniversalSearch ref="universalSearch" @active="universalActive = $event" />
         <ConversationCategories v-show="!universalActive" :kind="filter" />
       </div>
       <div class="room-entries" v-show="!universalActive">
@@ -26,7 +26,7 @@
       <div v-if="active.status === 'invited'" class="room-invitation"><p>{{ t('roomInvited') }}</p><p>{{ t('roomOwner') }} · {{ active.ownerName || active.ownerUsername || active.ownerId }}</p><el-button type="primary" :loading="acting" @click="respond(true)">{{ t('mailChatAccept') }}</el-button><el-button :disabled="acting" @click="respond(false)">{{ t('mailChatDecline') }}</el-button></div>
       <template v-else>
         <div v-if="roomSearchOpen" class="room-message-search">
-          <el-input v-model="messageSearch" clearable :placeholder="t('exploreTitle')" :aria-label="t('exploreTitle')" @keydown.enter.prevent="nextResult(1)" @keydown.esc="roomSearchOpen = false" />
+          <el-input v-model="messageSearch" clearable :placeholder="t('exploreTitle')" :aria-label="t('exploreTitle')" @keydown.enter.prevent="nextResult(1)" @keydown.esc.stop.prevent="roomSearchOpen = false" />
           <span role="status">{{ matches.length ? resultIndex + 1 : 0 }} / {{ matches.length }}</span>
           <el-button text :disabled="!matches.length" :aria-label="t('mediaPrevious')" @click="nextResult(-1)">↑</el-button><el-button text :disabled="!matches.length" :aria-label="t('mediaNext')" @click="nextResult(1)">↓</el-button>
           <small>{{ t('roomSearchLoaded') }}</small>
@@ -38,7 +38,7 @@
           <p v-if="!index || roomDate(message.createdAt) !== roomDate(messages[index - 1].createdAt)" class="room-date">{{ roomDate(message.createdAt) }}</p>
           <article class="room-message" :class="{ mine: message.senderId === userId, 'room-search-match': messageSearch.trim() && matches.includes(message), 'room-search-current': messageSearch.trim() && matches[resultIndex]?.id === message.id }" :data-message-id="message.id">
             <UserAvatar :profile="senders[message.senderId]" :email="senders[message.senderId]?.username || ''" :size="30" />
-            <div class="room-bubble"><small>{{ senderName(message.senderId) }}</small><p>{{ message.body }}</p><MessageTranslation :text="message.body" :incoming="message.senderId !== userId" chat-style :translate-remote="(target, signal) => translateRoomMessage(message.roomId, message.id, target, signal)" /><time>{{ time(message.createdAt) }}</time></div>
+            <div class="room-bubble"><small>{{ senderName(message.senderId) }}</small><p><LinkifiedText :text="message.body" /></p><LinkPreview v-for="url in chatLinks(message.body).slice(0,1)" :key="url" :url="url" :source="{roomId:message.roomId,messageId:message.id}" @resize="atBottom && !historyTarget && bottom()" /><MessageTranslation :text="message.body" :incoming="message.senderId !== userId" chat-style :translate-remote="(target, signal) => translateRoomMessage(message.roomId, message.id, target, signal)" /><time>{{ time(message.createdAt) }}</time></div>
           </article>
           </template>
         </div>
@@ -73,6 +73,10 @@
   </section>
 </template>
 <script setup>
+import LinkifiedText from '@/components/linkified-text.vue';
+import LinkPreview from '@/components/link-preview.vue';
+import { chatLinks } from '@/utils/chat-links.mjs';
+import { hasChatOverlay } from '@/utils/chat-escape.mjs';
 import UniversalSearch from '@/components/universal-search.vue';
 import ConversationCategories from '@/components/conversation-categories.vue';
 import ConversationResize from '@/components/conversation-resize.vue';
@@ -99,7 +103,7 @@ const active=computed(()=>rooms.value.find(room=>room.id===activeId.value));
 const canManage=computed(()=>active.value?.status==='joined' && ['owner','admin'].includes(active.value.role));
 const canPost=computed(()=>active.value?.status==='joined' && (active.value.kind==='group' || canManage.value));
 const filter=computed(()=>['group','channel'].includes(route.query.kind)?route.query.kind:active.value?.kind||'group');
-const historyTarget=ref(null), universalActive=ref(false), search=ref(''), loading=ref(true), messageLoading=ref(false), hasOlder=ref(false), olderLoading=ref(false), sending=ref(false), atBottom=ref(true), scroll=ref(null);
+const historyTarget=ref(null), universalActive=ref(false), universalSearch=ref(null), search=ref(''), loading=ref(true), messageLoading=ref(false), hasOlder=ref(false), olderLoading=ref(false), sending=ref(false), atBottom=ref(true), scroll=ref(null);
 const filtered=computed(()=>rooms.value.filter(room=>room.kind===filter.value&&room.name.toLowerCase().includes(search.value.toLowerCase())));
 const newOpen=ref(false), creating=ref(false), newRoom=reactive({kind:'group',name:''});
 const roomSearchOpen=ref(false), messageSearch=ref(''), resultIndex=ref(0), memberSearch=ref('');
@@ -174,7 +178,16 @@ async function refresh() {
   } catch { /* Existing API notifications explain failures; reconciliation retries. */ }
   finally {busy=false;loading.value=false;messageLoading.value=false;}
 }
-useMailSync(refresh);onMounted(refresh);
+function roomEscape(event){
+  if(event.key!=='Escape'||event.isComposing||event.keyCode===229||document.fullscreenElement||ui.asideShow)return;
+  const consume=()=>{event.preventDefault();event.stopPropagation();};
+  if(translationStatus.settingsOpen){translationStatus.settingsOpen=false;consume();return;}
+  if(hasChatOverlay())return;
+  if(universalActive.value){universalSearch.value?.close();consume();return;}
+  if(roomSearchOpen.value){roomSearchOpen.value=false;consume();return;}
+  if(activeId.value){choose(null);consume();}
+}
+useMailSync(refresh);onMounted(()=>{document.addEventListener('keydown',roomEscape);refresh();});
 async function older() {
   if(olderLoading.value||!active.value||!messages.value.length)return;
   olderLoading.value=true;const id=activeId.value,mine=version,element=scroll.value,height=element.scrollHeight,top=element.scrollTop;
@@ -199,7 +212,7 @@ async function kick(member){const selected=activeId.value;try{await ElMessageBox
 function respond(accept){return action(id=>respondRoom(id,accept));}
 async function leave(){const selected=activeId.value;try{await ElMessageBox.confirm(t('roomLeave'),active.value.name);if(selected===activeId.value&&!stopped)await action(id=>leaveRoom(id));}catch{}}
 async function remove(){const selected=activeId.value;try{await ElMessageBox.confirm(t('roomDeleteConfirm'),active.value.name);if(selected===activeId.value&&!stopped)await action(id=>deleteRoom(id));}catch{}}
-onBeforeUnmount(()=>{stopped=true;version++;ui.mobileChatFocused=false;translationStatus.settingsOpen=false;});
+onBeforeUnmount(()=>{document.removeEventListener('keydown',roomEscape);stopped=true;version++;ui.mobileChatFocused=false;translationStatus.settingsOpen=false;});
 </script>
 <style scoped>
 .rooms{height:100%;min-height:0;min-width:0;display:grid;grid-template-columns:var(--conversation-width,300px) minmax(0,1fr);overflow:hidden;}

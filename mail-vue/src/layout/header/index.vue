@@ -3,7 +3,7 @@
     <div v-if="!compact" class="header-btn">
       <span class="breadcrumb-item">{{ $t(route.meta.title) }}</span>
     </div>
-    <div class="toolbar">
+    <div v-if="toolbar" class="toolbar">
       <div v-if="uiStore.dark" class="sun-icon icon-item" @click="openDark($event)">
         <Icon icon="mingcute:sun-fill"/>
       </div>
@@ -81,7 +81,7 @@ import {useSettingStore} from "@/store/setting.js";
 import {hasPerm} from "@/perm/perm.js"
 import {useI18n} from "vue-i18n";
 
-const props = defineProps({ compact: Boolean, drawer: Boolean });
+const props = defineProps({ compact: Boolean, drawer: Boolean, toolbar: { type:Boolean, default:true } });
 const {t} = useI18n();
 const route = useRoute();
 const settingStore = useSettingStore();
