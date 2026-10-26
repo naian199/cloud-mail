@@ -470,6 +470,7 @@ import { randomUUID } from '@/utils/uuid';
 import { computed, nextTick, onMounted, onBeforeUnmount, reactive, ref, watch } from 'vue';
 import MailBody from '@/components/mail-body.vue';
 import VideoAttachment from '@/components/video-attachment.vue';
+import { collectSnapshot, compareMessages, messageRows } from '@/utils/chat-refresh.mjs';
 import { isVideoFile, isStickerFile } from '@/utils/video-files.mjs';
 import Header from '@/layout/header/index.vue';
 import UserAvatar from '@/components/user-avatar.vue';
@@ -647,7 +648,7 @@ function cancelPress() {
   pressStart = null;
 }
 function startPress(event, message) {
-  if ((!message && !live.value.internal) || event.pointerType !== 'touch') return;
+  if ((!message && !(live.value.internal || messages.value.some(row => row.internal))) || event.pointerType !== 'touch') return;
   if (event.target?.closest('button, a, input, textarea, select, .message-translation')) return;
   cancelPress();
   pressStart = { x: event.clientX, y: event.clientY };
@@ -681,7 +682,7 @@ function suppressAfterPress(event) {
   }
 }
 async function openMessageMenu(event, message) {
-  if (!message && !live.value.internal) return;
+  if (!message && !(live.value.internal || messages.value.some(row => row.internal))) return;
   event.preventDefault();
   cancelPress();
   const box = event.currentTarget?.getBoundingClientRect();
@@ -742,7 +743,7 @@ async function loadImage(id) {
               ? 'image/webp'
               : '';
     if (!mime) throw new Error('Invalid image');
-    if (!stopped) imageUrls[id] = URL.createObjectURL(new Blob([blob], { type: mime }));
+    if (!stopped && messages.value.some(row => row.images?.some(image => image.attId === id))) imageUrls[id] = URL.createObjectURL(new Blob([blob], { type: mime }));
   } catch {
     if (!stopped) imageErrors[id] = true;
   } finally {
@@ -770,22 +771,66 @@ const friendsOpen = ref(false),
   friendEmail = ref('');
 const friendResults = ref([]), friendSearched = ref(false), searchingFriends = ref(false), addingFriend = ref('');
 const revisions = new Map();
-function applyMessages(data) {
-  const marker = `${accountId.value}:${selected.value?.key}`;
-  if (revisions.has(marker) && revisions.get(marker) !== data.revision) {
-    messages.value = [];
-    explorerRevision.value++;
-    quoteTarget.value = null;
-    readThrough.delete(marker);
-    hasOlder.value = !!data.hasMore;
-    imagePreview.value = '';
-    for (const [id, url] of Object.entries(imageUrls)) {
-      URL.revokeObjectURL(url);
-      delete imageUrls[id];
+async function applyMessages(data, complete = false, extendHistory = false) {
+  const a = accountId.value, k = selected.value?.key, mine = version;
+  const marker = `${a}:${k}`, previous = revisions.get(marker);
+  const current = () => !stopped && mine === version && a === accountId.value && k === selected.value?.key;
+  // A delayed response must never resurrect a message from an older revision.
+  if (previous !== undefined && data.revision < previous) return { applied: false };
+  if (previous === undefined || previous === data.revision) {
+    revisions.set(marker, data.revision);
+    merge(data.messages);
+    return { applied: true, reconciled: false, hasMore: data.hasMore };
+  }
+  let oldest = messages.value[0];
+  if (extendHistory && data.messages[0] && (!oldest || compareMessages(data.messages[0], oldest) < 0)) oldest = data.messages[0];
+  const first = complete ? data : await mailMessages({ accountId: a, key: k, ...(historyAnchor.value ? { around: historyAnchor.value } : {}) });
+  if (!current()) return { applied: false };
+  const snapshot = await collectSnapshot(first, oldest, async before => {
+    if (!current()) return null;
+    const page = await mailMessages({ accountId: a, key: k, before });
+    return current() ? page : null;
+  });
+  if (!current()) return { applied: false };
+  if (!snapshot) {
+    dirty = true;
+    if (!busy) queueMicrotask(sync);
+    return { applied: false };
+  }
+  const seen = revisions.get(marker);
+  if (snapshot.revision < seen) return { applied: false };
+  if (seen === snapshot.revision) {
+    // Another refresh already reconciled this revision; keep any newer arrivals.
+    merge(snapshot.messages);
+    return { applied: true, reconciled: false, hasMore: hasOlder.value };
+  }
+  const rows = messageRows(snapshot.messages), ids = new Set(rows.map(row => row.emailId));
+  const el = scroll.value, top = el?.getBoundingClientRect().top || 0;
+  const anchor = atBottom.value ? null : [...(el?.querySelectorAll('.mail-message') || [])]
+    .find(node => ids.has(Number(node.dataset.emailId)) && node.getBoundingClientRect().bottom > top);
+  const anchorId = anchor?.dataset.emailId, offset = anchor?.getBoundingClientRect().top;
+  // One array assignment lets Vue preserve surviving keyed images and players.
+  messages.value = rows;
+  revisions.set(marker, snapshot.revision);
+  explorerRevision.value++;
+  if (quoteTarget.value && !ids.has(quoteTarget.value.emailId)) quoteTarget.value = null;
+  if (messageMenu.value?.message && !ids.has(messageMenu.value.message.emailId)) closeMenu();
+  readThrough.delete(marker);
+  hasOlder.value = !!snapshot.hasMore;
+  const imageIds = new Set(rows.flatMap(row => (row.images || []).map(image => String(image.attId))));
+  const previewURLs = new Set(rows.flatMap(row => (row.images || []).map(image => image.src || imageUrls[image.attId])));
+  if (imagePreview.value && !previewURLs.has(imagePreview.value)) imagePreview.value = '';
+  for (const [id, url] of Object.entries(imageUrls)) {
+    if (!imageIds.has(id)) { URL.revokeObjectURL(url); delete imageUrls[id]; }
+  }
+  if (anchorId) {
+    await nextTick();
+    if (current()) {
+      const retained = el.querySelector(`[data-email-id="${anchorId}"]`);
+      if (retained) el.scrollTop += retained.getBoundingClientRect().top - offset;
     }
   }
-  revisions.set(marker, data.revision);
-  merge(data.messages);
+  return { applied: true, reconciled: true, hasMore: snapshot.hasMore };
 }
 async function loadFriends() {
   try {
@@ -933,19 +978,7 @@ async function bottom() {
     atBottom.value = true;
   }
 }
-function merge(rows) {
-  const data = new Map(messages.value.map((m) => [m.emailId, m]));
-  rows.forEach((m) => data.set(m.emailId, m));
-  const identities = new Set();
-  messages.value = [...data.values()]
-    .sort((a, b) => utc(a.createTime) - utc(b.createTime) || a.emailId - b.emailId)
-    .filter((m) => {
-      const k = m.messageId ? `${m.type}:${m.messageId}` : `id:${m.emailId}`;
-      if (identities.has(k)) return false;
-      identities.add(k);
-      return true;
-    });
-}
+function merge(rows) { messages.value = messageRows([...messages.value, ...rows]); }
 async function markRead() {
   if (
     !selected.value ||
@@ -1002,7 +1035,7 @@ async function select(c) {
   try {
     const data = await mailMessages({ accountId: accountId.value, key: c.key });
     if (mine !== version || stopped) return;
-    applyMessages(data);
+    await applyMessages(data, true);
     hasOlder.value = data.hasMore;
     await bottom();
     await markRead();
@@ -1027,7 +1060,7 @@ async function jumpToResult(emailId) {
     version++;
     historyAnchor.value = emailId;
     messages.value = [];
-    applyMessages(data);
+    await applyMessages(data, true);
     hasOlder.value = data.hasMore;
     atBottom.value = false;
     await nextTick();
@@ -1089,7 +1122,7 @@ async function sync() {
           stick = atBottom.value;
         if (historyAnchor.value) {
           const data = await mailMessages({ accountId: a, key: k, around: historyAnchor.value });
-          if (mine === version && !stopped) applyMessages(data);
+          if (mine === version && !stopped) await applyMessages(data, true);
           continue;
         }
         let more;
@@ -1097,13 +1130,14 @@ async function sync() {
           const after = messages.value[messages.value.length - 1]?.emailId;
           const data = await mailMessages({ accountId: a, key: k, ...(after ? { after } : {}) });
           if (mine !== version || stopped) break;
-          applyMessages(data);
+          const applied = await applyMessages(data, !after);
+          if (!applied.applied) break;
           if (!after) hasOlder.value = data.hasMore;
           more = !!after && data.hasMore;
         } while (more);
         if (mine === version && !stopped) {
           const recent = await mailMessages({ accountId: a, key: k });
-          if (mine === version && !stopped) applyMessages(recent);
+          if (mine === version && !stopped) await applyMessages(recent, true);
         }
         if (mine === version && !stopped) {
           if (stick) await bottom();
@@ -1157,10 +1191,11 @@ async function older() {
       before: messages.value[0].emailId
     });
     if (mine !== version || stopped) return;
-    applyMessages(data);
-    hasOlder.value = data.hasMore;
+    const applied = await applyMessages(data, false, true);
+    if (!applied.applied) return;
+    hasOlder.value = applied.hasMore;
     await nextTick();
-    el.scrollTop = top + el.scrollHeight - height;
+    if (!applied.reconciled) el.scrollTop = top + el.scrollHeight - height;
     onScroll();
   } catch {
   } finally {
@@ -1328,7 +1363,7 @@ async function showSent(account, result, selectionVersion) {
     messages.value = recent.messages;
     hasOlder.value = recent.hasMore;
   }
-  applyMessages(recent);
+  await applyMessages(recent, true);
   await bottom();
   await markRead();
 }

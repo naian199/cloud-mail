@@ -190,6 +190,8 @@ const mailChat = {
 	async messages(c, query, filter = {}) {
 		const account = await this.account(c, query.accountId);
 		const conversationKey = key(query.key);
+		// Do not label rows read before a deletion with its newer revision.
+		const revision = await live.revision(c, account, conversationKey);
 		if ([query.before, query.after, query.around].filter(Boolean).length > 1) fail('Invalid pagination / 无效分页');
 		const cursor = query.before ? id(query.before) : query.after ? id(query.after) : query.around ? id(query.around) : null;
 		const cursorRow = cursor
@@ -302,7 +304,7 @@ const mailChat = {
 				if (m.type === 1) m.read = read.has(m.messageId);
 			});
 		}
-		return { messages, hasMore, revision: await live.revision(c, account, conversationKey) };
+		return { messages, hasMore, revision };
 	},
 
   async explore(c, query) {

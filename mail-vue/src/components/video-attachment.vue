@@ -1,6 +1,6 @@
 <template>
-  <div ref="host" class="video-attachment" :aria-busy="loading || converting" @pointerdown.stop @touchstart.stop @contextmenu.stop>
-    <video v-if="url" ref="player" :src="url" controls playsinline preload="metadata" :aria-label="file.filename" @error="playbackFailed" />
+  <div ref="host" class="video-attachment" :aria-busy="loading || converting">
+    <video v-if="url" ref="player" :src="url" controls playsinline preload="metadata" :aria-label="file.filename" @error="playbackFailed" @pointerdown.stop @touchstart.stop />
     <button v-else class="video-start" type="button" :disabled="loading || converting" @click="play">
       <Icon icon="cloud-mail:play" width="38" aria-hidden="true" />
       <span>{{ t(loading ? 'videoLoading' : 'videoPlay') }}</span>
