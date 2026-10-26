@@ -1,11 +1,14 @@
 <template>
   <div ref="host" class="video-attachment" :class="{ expanded }" :style="{ '--video-aspect': aspect }" :aria-busy="loading || converting">
     <div class="video-frame">
-      <video v-if="url" ref="player" :src="url" controls playsinline preload="metadata" :aria-label="file.filename" @loadedmetadata="readDimensions" @error="playbackFailed" @pointerdown.stop @touchstart.stop />
-      <button v-else class="video-start" type="button" :disabled="loading || converting" @click="play">
-        <Icon icon="cloud-mail:play" width="38" aria-hidden="true" />
-        <span>{{ t(loading ? 'videoLoading' : 'videoPlay') }}</span>
+      <video v-if="url" ref="player" :src="url" controls playsinline preload="metadata" :poster="poster" :aria-label="file.filename" @loadedmetadata="readDimensions" @error="playbackFailed" @pointerdown.stop @touchstart.stop />
+      <button v-else class="video-start" :class="{ 'has-poster': poster, 'preview-loading': preparing }" type="button" :aria-label="t('videoPlay')" :disabled="loading || converting" @click="play">
+        <img v-if="poster" class="video-poster" :src="poster" alt="" />
+        <span class="video-play-icon"><Icon icon="cloud-mail:play" width="34" aria-hidden="true" /></span>
+        <span v-if="!poster" class="video-placeholder">{{ t(loading || preparing ? 'videoLoading' : 'videoPlay') }}</span>
+        <span v-if="duration" class="video-duration">{{ clock(duration) }}</span>
       </button>
+      <span v-if="poster && !url" class="video-size">{{ formatBytes(file.size) }}</span>
       <div class="video-actions">
         <button v-if="!expanded" class="video-expand" type="button" :aria-label="t('mediaOpen')" :title="t('mediaOpen')" @click="player?.pause(); $emit('preview')"><Icon icon="cloud-mail:expand" width="17" /></button>
         <el-dropdown trigger="click" placement="bottom-end" @command="action">
@@ -28,13 +31,44 @@ import { ref, nextTick, onBeforeUnmount, onMounted } from 'vue';
 import { Icon } from '@iconify/vue';
 import { useI18n } from 'vue-i18n';
 import { videoMime } from '@/utils/video-files.mjs';
+import { videoPoster } from '@/utils/video-poster.mjs';
 const props = defineProps({ file: { type: Object, required: true }, load: { type: Function, required: true }, expanded: Boolean });
-const emit = defineEmits(['download', 'preview']);
+const emit = defineEmits(['download', 'preview', 'resize']);
 const { t } = useI18n();
-const visible = ref(true), aspect = ref(16 / 9);
+const visible = ref(true), aspect = ref(16 / 9), poster = ref(''), duration = ref(0), preparing = ref(false);
+let previewController, previewAttempted = false;
+const clock = value => { const seconds = Math.floor(value); return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`; };
+async function preparePreview() {
+  if (props.expanded || previewAttempted || poster.value || url.value || loading.value || converting.value || disposed) return;
+  previewAttempted = true; preparing.value = true;
+  const mine = new AbortController(); previewController = mine;
+  try {
+    const result = await videoPoster(async signal => {
+      const cancelRead = () => { if (!loading.value && !converting.value) readController?.abort(); };
+      signal.addEventListener('abort', cancelRead, { once: true });
+      try {
+        if (signal.aborted) throw new DOMException('Cancelled', 'AbortError');
+        const blob = await originalBlob();
+        if (!visible.value && !url.value) original = null;
+        return new Blob([blob], { type: videoMime(props.file) || 'video/mp4' });
+      } finally { signal.removeEventListener('abort', cancelRead); }
+    }, { signal: mine.signal });
+    if (disposed || mine.signal.aborted || url.value) return;
+    aspect.value = result.width / result.height; duration.value = result.duration;
+    poster.value = URL.createObjectURL(result.poster);
+    await nextTick(); emit('resize');
+  } catch (reason) {
+    if (reason.name === 'AbortError') previewAttempted = false;
+    if (!mine.signal.aborted) error.value = reason.message === 'Unsupported video preview' ? 'videoUnsupported' : 'videoLoadFailed';
+  } finally {
+    if (previewController === mine) { preparing.value = false; previewController = null; }
+    if (!visible.value && !url.value) original = null;
+    if (mine.signal.aborted && visible.value && !disposed && !url.value && !poster.value) queueMicrotask(preparePreview);
+  }
+}
 function readDimensions() {
   const width = player.value?.videoWidth, height = player.value?.videoHeight;
-  if (width > 0 && height > 0) aspect.value = width / height;
+  if (width > 0 && height > 0) { aspect.value = width / height; nextTick(() => emit('resize')); }
 }
 function action(command) {
   if (command === 'download') emit('download');
@@ -43,17 +77,27 @@ function action(command) {
 }
 const host = ref(null), player = ref(null), url = ref(''), loading = ref(false), converting = ref(false),
   converted = ref(false), error = ref(''), percent = ref(0);
-let original, controller, disposed = false, observer;
+let original, originalRequest, readController, controller, disposed = false, observer;
 const formatBytes = value => Number(value) < 1024 * 1024 ? `${(Number(value || 0) / 1024).toFixed(1)} KB` : `${(Number(value) / 1024 / 1024).toFixed(1)} MB`;
 async function originalBlob() {
-  if (!original) {
-    if (Number(props.file.size) > 50 * 1024 * 1024) throw Error('videoLoadFailed');
-    const blob = await props.load();
-    if (blob.size > 50 * 1024 * 1024) throw Error('videoLoadFailed');
-    if (disposed) throw new DOMException('Cancelled', 'AbortError');
-    original = blob;
+  if (disposed) throw new DOMException('Cancelled', 'AbortError');
+  if (original) return original;
+  if (originalRequest && readController?.signal.aborted) {
+    await originalRequest.catch(() => {});
+    return originalBlob();
   }
-  return original;
+  if (!originalRequest) {
+    readController = new AbortController();
+    originalRequest = (async () => {
+      if (Number(props.file.size) > 50 * 1024 * 1024) throw Error('videoLoadFailed');
+      const blob = await props.load({ signal: readController.signal });
+      if (blob.size > 50 * 1024 * 1024) throw Error('videoLoadFailed');
+      if (disposed) throw new DOMException('Cancelled', 'AbortError');
+      original = blob;
+      return blob;
+    })().finally(() => { originalRequest = null; });
+  }
+  return originalRequest;
 }
 function replaceURL(blob) {
   if (url.value) URL.revokeObjectURL(url.value);
@@ -66,6 +110,7 @@ async function startPlayback() {
 async function play() {
   if (loading.value || converting.value) return;
   loading.value = true; error.value = '';
+  previewController?.abort();
   try {
     const blob = await originalBlob();
     if (disposed) return;
@@ -77,6 +122,8 @@ async function play() {
 function playbackFailed() { error.value = converted.value ? 'videoConvertFailed' : 'videoUnsupported'; }
 async function convert() {
   if (loading.value || converting.value || converted.value) return;
+  converting.value = true;
+  previewController?.abort();
   controller = new AbortController();
   const mine = controller;
   converting.value = true; percent.value = 0; error.value = '';
@@ -95,17 +142,23 @@ async function convert() {
 }
 function cancel() { controller?.abort(); }
 onMounted(() => {
-  if (props.expanded) play();
-  if (!('IntersectionObserver' in window)) return;
+  if (props.expanded) { play(); return; }
+  if (!('IntersectionObserver' in window)) { preparePreview(); return; }
+  visible.value = false;
   observer = new IntersectionObserver(entries => {
     visible.value = !!entries[0]?.isIntersecting;
-    if (!visible.value) player.value?.pause();
-  });
+    if (visible.value) preparePreview();
+    else {
+      player.value?.pause(); previewController?.abort();
+      if (!url.value) original = null;
+    }
+  }, { rootMargin: '80px 0px' });
   if (host.value) observer.observe(host.value);
 });
 onBeforeUnmount(() => {
-  disposed = true; cancel(); observer?.disconnect(); player.value?.pause();
+  disposed = true; cancel(); previewController?.abort(); readController?.abort(); observer?.disconnect(); player.value?.pause();
   if (url.value) URL.revokeObjectURL(url.value);
+  if (poster.value) URL.revokeObjectURL(poster.value);
   original = null;
 });
 </script>
@@ -113,7 +166,7 @@ onBeforeUnmount(() => {
 .video-attachment { width:min(340px, calc(min(400px, 55dvh) * var(--video-aspect))); max-width:100%; overflow:hidden; }
 .video-frame { position:relative; border-radius:10px; overflow:hidden; background:#101820; }
 video { display:block; width:100%; height:auto; object-fit:contain; background:#101820; }
-.video-start { display:flex; width:100%; aspect-ratio:16 / 9; border:0; align-items:center; justify-content:center; flex-direction:column; gap:6px; cursor:pointer; min-height:130px; background:#101820; color:white; }
+.video-start { position:relative; display:flex; width:100%; aspect-ratio:var(--video-aspect); border:0; align-items:center; justify-content:center; flex-direction:column; gap:6px; cursor:pointer; background:#101820; color:white; }
 .video-start:disabled { opacity:.6; cursor:wait; }
 .video-caption { display:flex; align-items:baseline; gap:8px; margin:5px 2px 0; min-width:0; }
 .video-caption strong { flex:1; font-size:11px; font-weight:400; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; min-width:0; color:var(--el-text-color-regular); }
@@ -127,4 +180,10 @@ video { display:block; width:100%; height:auto; object-fit:contain; background:#
 .expanded .video-frame { background:transparent; }
 .expanded video { width:auto; max-width:100%; max-height:calc(100dvh - 130px); margin:auto; }
 .expanded .video-start { max-height:calc(100dvh - 130px); }
+.video-poster { display:block; position:absolute; inset:0; width:100%; height:100%; object-fit:contain; }
+.video-play-icon { z-index:1; display:grid; place-items:center; width:52px; height:52px; border-radius:50%; background:#0007; }
+.video-placeholder { z-index:1; font-size:12px; }
+.video-duration,.video-size { position:absolute; z-index:1; padding:2px 6px; border-radius:8px; color:white; background:#0008; font-size:11px; line-height:1.5; pointer-events:none; }
+.video-duration { bottom:7px; inset-inline-end:7px; }.video-size { top:7px; inset-inline-start:7px; }
+.preview-loading { background:linear-gradient(120deg,#142433,#28404e,#142433); }
 </style>

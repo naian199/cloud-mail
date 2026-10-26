@@ -5,13 +5,13 @@ export const mailDetail = (id) => http.get(`/mail-chat/message/${id}`);
 export const mailRead = (data) => http.put('/mail-chat/read', data);
 export const mailPin = (data) => http.put('/mail-chat/pin', data);
 export const mailSend = (data) => http.post('/mail-chat/send', data, { timeout: 60000 });
-export async function mailAttachment(id) {
+export async function mailAttachment(id, { signal } = {}) {
   const url = new URL(
     `${import.meta.env.VITE_BASE_URL}/mail-chat/attachment/${id}`,
     location.origin
   );
   const response = await fetch(url, {
-    headers: { Authorization: localStorage.getItem('token') || '' }
+    headers: { Authorization: localStorage.getItem('token') || '' }, signal
   });
   if (!response.ok) throw new Error('Attachment download failed');
   if (response.headers.get('content-type')?.includes('application/json')) {

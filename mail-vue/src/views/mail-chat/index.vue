@@ -147,7 +147,7 @@
             </button>
             <div
               class="bubble"
-              :class="{ 'internal-bubble': isChat(m), 'video-only-bubble': !(m.replyText ?? m.text)?.trim() && !m.richHtml && !m.images?.length && m.attachments?.length && m.attachments.every(isVideoFile) }"
+              :class="{ 'internal-bubble': isChat(m), 'media-only-bubble': mediaOnly(m) }"
               :tabindex="0"
               @contextmenu="openMessageMenu($event, m)"
               @pointerdown="startPress($event, m)"
@@ -213,6 +213,7 @@
                 :key="image.attId || image.src"
                 class="inline-image"
                 :class="{ 'sticker-image': /^sticker.*\.webp$/i.test(image.alt || '') }"
+                :style="{ '--image-aspect': imageAspects[image.attId || image.src] || 1 }"
               >
                 <el-image
                   v-if="image.src || imageUrls[image.attId]"
@@ -224,7 +225,7 @@
                   fit="contain"
                   :alt="image.alt"
                   referrerpolicy="no-referrer"
-                  @load="imageLoaded"
+                  @load="imageReady($event, image)"
                 >
                   <template #error
                     ><span>{{ t('mailChatImageError') }}</span></template
@@ -239,8 +240,8 @@
                 <span v-else>{{ t('mailChatImageLoading') }}</span>
               </div>
               <div v-for="att in m.attachments" :key="att.attId" class="attachment">
-                <VideoAttachment v-if="isVideoFile(att)" :file="att" :load="()=>mailAttachment(att.attId)" @download="download(att)" @preview="openMedia(`video:${m.emailId}:${att.attId}`)" />
-                <StickerMedia v-else-if="isStickerFile(att)" :format="att.filename.toLowerCase().endsWith('.tgs') ? 'tgs' : 'webm'" :label="'🙂'" :load="()=>mailAttachment(att.attId)" @error="stickerErrors[att.attId] = true" />
+                <VideoAttachment v-if="isVideoFile(att)" :file="att" :load="options=>mailAttachment(att.attId, options)" @download="download(att)" @preview="openMedia(`video:${m.emailId}:${att.attId}`)" @resize="imageLoaded" />
+                <StickerMedia v-else-if="isStickerFile(att)" :format="att.filename.toLowerCase().endsWith('.tgs') ? 'tgs' : 'webm'" :label="'🙂'" :load="options=>mailAttachment(att.attId, options)" @error="stickerErrors[att.attId] = true" />
                 <el-button v-if="(!isVideoFile(att) && !isStickerFile(att)) || stickerErrors[att.attId]" text @click="download(att)">
                   <Icon icon="cloud-mail:file" width="26" aria-hidden="true" />
                   <span class="attachment-detail"><strong>{{ att.filename }}</strong><small>{{ formatBytes(att.size) }}</small></span>
@@ -765,7 +766,7 @@ async function deleteSelected(scope) {
 const mediaId = ref('');
 const mediaItems = computed(() => messages.value.flatMap(row => [
   ...(row.images || []).map(image => ({ id: `image:${row.emailId}:${image.attId || image.src}`, kind: 'image', src: image.src || imageUrls[image.attId], file: { attId: image.attId, filename: image.alt || 'image' } })),
-  ...(row.attachments || []).filter(isVideoFile).map(file => ({ id: `video:${row.emailId}:${file.attId}`, kind: 'video', file, load: () => mailAttachment(file.attId) }))
+  ...(row.attachments || []).filter(isVideoFile).map(file => ({ id: `video:${row.emailId}:${file.attId}`, kind: 'video', file, load: options => mailAttachment(file.attId, options) }))
 ]));
 function openMedia(id) { if (!selecting.value) { document.querySelectorAll('.messages video').forEach(player => player.pause()); mediaId.value = id; } }
 async function downloadMedia(item) {
@@ -804,6 +805,16 @@ async function loadImage(id) {
   } finally {
     imageRequests.delete(id);
   }
+}
+const imageAspects = reactive({});
+function imageReady(event, image) {
+  const img = event.target;
+  if (img?.naturalWidth && img?.naturalHeight) imageAspects[image.attId || image.src] = img.naturalWidth / img.naturalHeight;
+  imageLoaded();
+}
+function mediaOnly(message) {
+  return isChat(message) && !(message.replyText ?? message.text)?.trim() && !message.richHtml && !message.quote && !message.message &&
+    (message.images?.length || message.attachments?.length) && (!message.attachments?.length || message.attachments.every(isVideoFile));
 }
 function imageLoaded() {
   if (atBottom.value && !historyAnchor.value) bottom();
@@ -2242,9 +2253,15 @@ pre {
 .file-drop-overlay strong { font-size: 22px; font-weight: 500; }
 .file-drop-overlay small { max-width: 280px; line-height: 1.6; }
 .attachment:has(.video-attachment) { min-width:0; max-width:100%; width:fit-content; }
-.bubble.video-only-bubble { width:fit-content; padding:5px; }
-.video-only-bubble .attachment { margin:0; }
-.video-only-bubble .attachment + .attachment { margin-top:5px; }
+.bubble.media-only-bubble { width:fit-content; padding:0; background:transparent !important; box-shadow:none; border:0; overflow:hidden; border-radius:14px; }
+.media-only-bubble .attachment,.media-only-bubble .inline-image { margin:0; }
+.media-only-bubble .attachment + .attachment,.media-only-bubble .inline-image + .inline-image { margin-top:3px; }
+.media-only-bubble :deep(.video-caption) { display:none; }
+.inline-image { width:min(340px, calc(min(400px, 55dvh) * var(--image-aspect, 1))); max-width:100%; border-radius:12px; overflow:hidden; line-height:0; }
+.inline-image .el-image { width:100%; height:auto; }
+.inline-image :deep(.el-image__inner) { display:block; width:100%; height:auto; max-height:none; }
+.inline-image.sticker-image { width:160px; height:160px; }
+.inline-image.sticker-image :deep(.el-image__inner) { height:160px; object-fit:contain; }
 </style>
 
 <style scoped>
