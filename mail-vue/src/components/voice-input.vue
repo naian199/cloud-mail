@@ -1,5 +1,5 @@
 <template>
-  <el-button class="voice-trigger" text :type="listening ? 'danger' : 'default'" :disabled="disabled" :aria-label="t(listening ? 'voiceStop' : 'voiceInput')" :aria-pressed="listening" :title="t(!supported ? 'voiceUnavailable' : listening ? 'voiceStop' : 'voiceInput')" @click="toggle">
+  <el-button v-if="!hiddenTrigger" class="voice-trigger" text :type="listening ? 'danger' : 'default'" :disabled="disabled" :aria-label="t(listening ? 'voiceStop' : 'voiceInput')" :aria-pressed="listening" :title="t(!supported ? 'voiceUnavailable' : listening ? 'voiceStop' : 'voiceInput')" @click="toggle">
     <Icon :icon="listening ? 'cloud-mail:stop' : 'cloud-mail:microphone'" width="20" />
   </el-button>
   <el-dialog v-model="confirming" :title="t('voiceInput')" width="min(420px, 92vw)" append-to-body>
@@ -13,8 +13,8 @@ import { useI18n } from 'vue-i18n';
 import { Icon } from '@iconify/vue';
 import { ElMessage } from 'element-plus';
 import { languages } from '@/i18n';
-const props = defineProps({ context: [String,Number], disabled: Boolean });
-const emit = defineEmits(['text']);
+const props = defineProps({ context: [String,Number], disabled: Boolean, hiddenTrigger: Boolean });
+const emit = defineEmits(['text','listening']);
 const { t, locale } = useI18n();
 const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 const supported = !!Recognition && window.isSecureContext;
@@ -22,6 +22,7 @@ const listening = ref(false), confirming = ref(false);
 let consent = false, recognition, generation = 0;
 try { consent = localStorage.getItem('cloud-mail:voice-consent') === 'yes'; } catch {}
 function cancel() {
+  confirming.value = false;
   generation++;
   const old = recognition;
   recognition = null;
@@ -70,6 +71,8 @@ function accept() {
   try { localStorage.setItem('cloud-mail:voice-consent','yes'); } catch {}
   start();
 }
+watch(listening,value=>emit('listening',value));
+defineExpose({ toggle, cancel });
 watch([() => props.context, () => props.disabled, locale], cancel);
 function visibility() { if (document.hidden) cancel(); }
 document.addEventListener('visibilitychange',visibility);

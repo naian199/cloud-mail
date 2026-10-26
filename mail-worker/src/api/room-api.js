@@ -1,3 +1,4 @@
+import storage from '../service/r2-service';
 import app from '../hono/hono';
 import result from '../model/result';
 import rooms from '../service/room-service';
@@ -15,3 +16,9 @@ app.get('/chat/rooms/:id/messages', async c => c.json(result.ok(await rooms.mess
 app.post('/chat/rooms/:id/messages', async c => c.json(result.ok(await rooms.send(c,c.req.param('id'),await c.req.json()))));
 app.post('/chat/rooms/:id/messages/:messageId/translate', async c => c.json(result.ok(await rooms.translate(c,c.req.param('id'),c.req.param('messageId'),await c.req.json()))));
 app.put('/chat/rooms/:id/read', async c => { await rooms.read(c,c.req.param('id'),await c.req.json()); return c.json(result.ok()); });
+
+app.get('/chat/rooms/:id/messages/:messageId/voice',async c=>{
+  const voice=await rooms.voice(c,c.req.param('id'),c.req.param('messageId'));
+  const object=await storage.getObj(c,voice.key);if(!object)return c.notFound();
+  return new Response(object.body,{headers:{'Content-Type':'application/octet-stream','Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff','Content-Disposition':'attachment'}});
+});

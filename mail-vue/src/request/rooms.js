@@ -11,6 +11,6 @@ export const removeMember=(id,userId)=>http.delete(`${root}/${id}/members/${user
 export const respondRoom=(id,accept)=>http.put(`${root}/${id}/membership`,{accept});
 export const leaveRoom=id=>http.delete(`${root}/${id}/membership`);
 export const roomMessages=(id,params={})=>http.get(`${root}/${id}/messages`,{params});
-export const sendRoomMessage=(id,body,clientId)=>http.post(`${root}/${id}/messages`,{body,clientId},{timeout:20000});
+export const sendRoomMessage=(id,body,clientId,voice)=>http.post(`${root}/${id}/messages`,{body,clientId,voice},{timeout:60000});
 export const readRoom=(id,through)=>http.put(`${root}/${id}/read`,{through});
 export const translateRoomMessage=(id,messageId,target,signal)=>http.post(`${root}/${id}/messages/${messageId}/translate`,{target},{signal,noMsg:true,timeout:20000});

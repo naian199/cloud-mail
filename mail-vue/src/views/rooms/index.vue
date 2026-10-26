@@ -38,15 +38,16 @@
           <p v-if="!index || roomDate(message.createdAt) !== roomDate(messages[index - 1].createdAt)" class="room-date">{{ roomDate(message.createdAt) }}</p>
           <article class="room-message" :class="{ mine: message.senderId === userId, 'room-search-match': messageSearch.trim() && matches.includes(message), 'room-search-current': messageSearch.trim() && matches[resultIndex]?.id === message.id }" :data-message-id="message.id">
             <UserAvatar :profile="senders[message.senderId]" :email="senders[message.senderId]?.username || ''" :size="30" />
-            <div class="room-bubble"><small>{{ senderName(message.senderId) }}</small><p><LinkifiedText :text="message.body" /></p><LinkPreview v-for="url in chatLinks(message.body).slice(0,1)" :key="url" :url="url" :source="{roomId:message.roomId,messageId:message.id}" @resize="atBottom && !historyTarget && bottom()" /><MessageTranslation :text="message.body" :incoming="message.senderId !== userId" chat-style :translate-remote="(target, signal) => translateRoomMessage(message.roomId, message.id, target, signal)" /><time>{{ time(message.createdAt) }}</time></div>
+            <div class="room-bubble"><small>{{ senderName(message.senderId) }}</small><AudioAttachment v-if="message.voice" :file="message.voice" :load="options=>roomVoice(message.roomId,message.id,options)" :source="{roomId:message.roomId,messageId:message.id}" /><p v-if="message.body"><LinkifiedText :text="message.body" /></p><LinkPreview v-for="url in chatLinks(message.body).slice(0,1)" :key="url" :url="url" :source="{roomId:message.roomId,messageId:message.id}" @resize="atBottom && !historyTarget && bottom()" /><MessageTranslation :text="message.body" :incoming="message.senderId !== userId" chat-style :translate-remote="(target, signal) => translateRoomMessage(message.roomId, message.id, target, signal)" /><time>{{ time(message.createdAt) }}</time></div>
           </article>
           </template>
         </div>
         <el-button v-if="!atBottom || historyTarget" class="room-newest" round @click="bottom">{{ t('chatNewest') }}</el-button>
+        <div v-if="canPost && voiceDrafts[active.id]" class="room-voice-draft">{{ t('voiceMessage') }} · {{ voiceDrafts[active.id].filename }} <el-button text @click="delete voiceDrafts[active.id]">{{ t('cancel') }}</el-button></div>
         <form v-if="canPost" class="room-composer" @submit.prevent="send">
-          <VoiceInput :context="active.id" :disabled="sending || messageLoading" @text="insertVoice" />
+          <VoiceTools :context="active.id" :disabled="sending || messageLoading" @text="insertVoice" @attachment="attachVoice" />
           <el-input v-model="drafts[active.id]" type="textarea" :autosize="{minRows:1,maxRows:4}" resize="none" maxlength="20000" :placeholder="t('mailChatCompactInput')" :aria-label="t('mailChatInput')" @keydown="composerKey" />
-          <el-button type="primary" native-type="submit" :loading="sending" :disabled="!drafts[active.id]?.trim() || messageLoading" :aria-label="t('chatSend')"><Icon icon="cloud-mail:send" width="20" /></el-button>
+          <el-button type="primary" native-type="submit" :loading="sending" :disabled="(!drafts[active.id]?.trim() && !voiceDrafts[active.id]) || messageLoading" :aria-label="t('chatSend')"><Icon icon="cloud-mail:send" width="20" /></el-button>
         </form>
         <p v-else class="room-readonly">{{ t('roomChannelReadOnly') }}</p>
       </template>
@@ -91,13 +92,17 @@ import { useMailSync } from '@/composables/use-mail-sync';
 import { translationStatus } from '@/composables/use-auto-translation';
 import { randomUUID } from '@/utils/uuid';
 import UserAvatar from '@/components/user-avatar.vue';
-import VoiceInput from '@/components/voice-input.vue';
+import VoiceTools from '@/components/voice-tools.vue';
+import AudioAttachment from '@/components/audio-attachment.vue';
+import {roomVoice} from '@/request/voice';
 import MessageTranslation from '@/components/message-translation.vue';
 import AutoTranslationSettings from '@/components/auto-translation-settings.vue';
 import { listRooms, createRoom, renameRoom, deleteRoom, roomMembers, inviteMember, setMemberRole, removeMember, respondRoom, leaveRoom, roomMessages, sendRoomMessage, readRoom, translateRoomMessage } from '@/request/rooms';
 
 const { t, locale }=useI18n(), route=useRoute(), router=useRouter(), ui=useUiStore();
 const userId=useUserStore().user.userId;
+const voiceDrafts=reactive({});
+async function attachVoice(file){const id=activeId.value;if(!canPost.value)return;const content=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result.split(',')[1]);reader.onerror=reject;reader.readAsDataURL(file);});voiceDrafts[id]={filename:file.name,contentType:file.type,content};}
 const rooms=ref([]), activeId=ref(typeof route.query.room==='string'?route.query.room:null), messages=ref([]), senders=reactive({}), drafts=reactive({});
 const active=computed(()=>rooms.value.find(room=>room.id===activeId.value));
 const canManage=computed(()=>active.value?.status==='joined' && ['owner','admin'].includes(active.value.role));
@@ -197,10 +202,10 @@ function composerKey(event){if(event.key==='Enter'&&!event.shiftKey&&!event.isCo
 function insertVoice(text){const id=activeId.value;if(!canPost.value||!id)return;const value=(drafts[id]||'')+text;if(value.length<=20000)drafts[id]=value;}
 async function send() {
   if(sending.value||!canPost.value)return;
-  const id=activeId.value,original=drafts[id]||'',body=original.trim();if(!body)return;
-  let request=pending.get(id);if(!request||request.body!==body){request={body,clientId:randomUUID()};pending.set(id,request);}
+  const id=activeId.value,original=drafts[id]||'',body=original.trim(),voice=voiceDrafts[id];if(!body&&!voice)return;
+  let request=pending.get(id);if(!request||request.body!==body||request.voice!==voice){request={body,voice,clientId:randomUUID()};pending.set(id,request);}
   sending.value=true;
-  try {await sendRoomMessage(id,body,request.clientId);pending.delete(id);if(drafts[id]===original)drafts[id]='';if(activeId.value===id)atBottom.value=true;await refresh();}catch{}finally{sending.value=false;}
+  try {await sendRoomMessage(id,body,request.clientId,voice);pending.delete(id);if(voiceDrafts[id]===voice)delete voiceDrafts[id];if(drafts[id]===original)drafts[id]='';if(activeId.value===id)atBottom.value=true;await refresh();}catch{}finally{sending.value=false;}
 }
 async function create(){if(creating.value)return;creating.value=true;try{const room=await createRoom({...newRoom});newOpen.value=false;newRoom.name='';await refresh();await choose(room.id);}catch{}finally{creating.value=false;}}
 async function openMembers(){memberSearch.value='';if(!active.value)return;editName.value=active.value.name;members.value=[];membersOpen.value=true;const id=activeId.value;try{const data=await roomMembers(id);if(id===activeId.value&&!stopped)members.value=data;}catch{}}

@@ -11,7 +11,17 @@ const formats = {
 export function isStickerFile(file) {
   return /\.tgs$/i.test(file.filename || '') || /^sticker(?:[._-].*)?\.webm$/i.test(file.filename || '');
 }
+const audioFormats = { mp3:'audio/mpeg',wav:'audio/wav',ogg:'audio/ogg',opus:'audio/ogg',m4a:'audio/mp4',aac:'audio/aac',flac:'audio/flac',amr:'audio/amr' };
+export function audioMime(file) {
+  const declared = String(file.mimeType || file.contentType || '').split(';')[0].trim();
+  if (/^audio\/[a-z0-9.+-]+$/i.test(declared)) return declared;
+  if (/^video\//i.test(declared)) return '';
+  const name = String(file.filename || '');
+  return audioFormats[name.split('.').at(-1).toLowerCase()] || (/^voice-.+\.webm$/i.test(name) ? 'audio/webm' : '');
+}
+export function isAudioFile(file) { return !!audioMime(file); }
 export function videoMime(file) {
+  if (isAudioFile(file)) return '';
   const extension = String(file.filename || '').split('.').at(-1).toLowerCase();
   return formats[extension] || (/^video\/[a-z0-9.+-]+$/i.test(file.mimeType || '') ? file.mimeType : '');
 }

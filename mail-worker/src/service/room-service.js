@@ -1,3 +1,5 @@
+import storage from './r2-service';
+import {decodeVoice,voiceHash} from '../lib/voice-audio.mjs';
 import BizError from '../error/biz-error';
 import userContext from '../security/user-context';
 import { normalizeUsername } from './contact-service';
@@ -133,7 +135,9 @@ export default {
     const room=await this.access(c,id);
     if (room.role!=='owner') forbidden();
     const members=await c.env.db.prepare('SELECT user_id FROM mail_room_member WHERE room_id=?').bind(id).all();
+    const voices=await c.env.db.prepare('SELECT key FROM mail_room_voice WHERE room_id=?').bind(id).all();
     await c.env.db.prepare('DELETE FROM mail_room WHERE id=? AND owner_id=?').bind(id,userContext.getUserId(c)).run();
+    c.executionCtx.waitUntil(Promise.all(voices.results.map(voice=>storage.delete(c,voice.key))));
     c.executionCtx.waitUntil(notifyRoomUsers(c.env,id,members.results.map(r=>r.user_id)));
   },
   async messages(c,id,query) {
@@ -148,23 +152,44 @@ export default {
       .bind(userContext.getUserId(c),id,...(cursor?[cursor]:[])).all();
     const rows=results.slice(0,50), senders={};
     for (const row of rows) senders[row.senderId]={userId:row.userId,displayName:row.displayName,username:row.username,avatar:row.avatar};
-    const messages=rows.map(({id:messageId,senderId,body,createdAt})=>({id:messageId,roomId:id,senderId,body,createdAt}));
+    const voices=rows.length?(await c.env.db.prepare(`SELECT message_id AS messageId,filename,mime_type AS mimeType,size FROM mail_room_voice WHERE room_id=? AND message_id IN (${rows.map(()=>'?').join(',')})`).bind(id,...rows.map(r=>r.id)).all()).results:[];
+    const messages=rows.map(({id:messageId,senderId,body,createdAt})=>{const voice=voices.find(v=>v.messageId===messageId);return {id:messageId,roomId:id,senderId,body:voice&&body==='🎤'?'':body,createdAt,...(voice?{voice}:{})};});
     return {messages:after?messages:messages.reverse(),senders,hasMore:results.length>50};
   },
+  async voice(c,id,rawMessageId){
+    await this.access(c,id);
+    const voice=await c.env.db.prepare('SELECT key,filename,mime_type AS mimeType,size FROM mail_room_voice WHERE room_id=? AND message_id=?').bind(id,positive(rawMessageId)).first();
+    if(!voice)fail('invalidInput',404);
+    return voice;
+  },
   async send(c,id,params) {
-    const room=await this.access(c,id), userId=userContext.getUserId(c);
-    if (room.kind==='channel' && !privileged(room)) forbidden();
-    const body=typeof params?.body==='string'?params.body.trim():'';
-    if (!body || body.length>20000 || typeof params?.clientId!=='string' || !/^[A-Za-z0-9_-]{16,80}$/.test(params.clientId)) fail();
-    await c.env.db.prepare(`INSERT INTO mail_room_message(room_id,sender_id,client_id,body)
-      SELECT r.id,m.user_id,?,? FROM mail_room r JOIN mail_room_member m ON m.room_id=r.id JOIN user u ON u.user_id=m.user_id
-      WHERE r.id=? AND m.user_id=? AND m.status='joined' AND u.status=0 AND u.is_del=0 AND (r.kind='group' OR m.role IN ('owner','admin'))
-      ON CONFLICT(sender_id,client_id) DO NOTHING`).bind(params.clientId,body,id,userId).run();
-    const message=await c.env.db.prepare(`SELECT id,room_id AS roomId,body FROM mail_room_message WHERE sender_id=? AND client_id=?`).bind(userId,params.clientId).first();
-    if (!message) forbidden();
-    if (message.roomId!==id || message.body!==body) fail('invalidInput',409);
-    await this.notify(c,id);
-    return {id:message.id};
+    const room=await this.access(c,id),userId=userContext.getUserId(c);
+    if(room.kind==='channel'&&!privileged(room))forbidden();
+    let voice;
+    if(params?.voice){try{voice=decodeVoice(params.voice);voice.hash=await voiceHash(voice.bytes);}catch{fail('voiceAudioLimit');}}
+    const body=(typeof params?.body==='string'?params.body.trim():'')||(voice?'🎤':'');
+    if(!body||body.length>20000||typeof params?.clientId!=='string'||!/^[A-Za-z0-9_-]{16,80}$/.test(params.clientId))fail();
+    const previous=await c.env.db.prepare(`SELECT m.id,m.room_id AS roomId,m.body,v.hash,v.mime_type AS mimeType FROM mail_room_message m LEFT JOIN mail_room_voice v ON v.message_id=m.id WHERE m.sender_id=? AND m.client_id=?`).bind(userId,params.clientId).first();
+    const matches=message=>message.roomId===id&&message.body===body&&(message.hash||'')===(voice?.hash||'')&&(!voice||message.mimeType===voice.mime);
+    if(previous){if(!matches(previous))fail('invalidInput',409);return {id:previous.id};}
+    const key=voice?`room-voice/${id}/${uuid()}`:null;
+    if(voice)await storage.putObj(c,key,voice.bytes,{contentType:voice.mime});
+    try{
+      const statements=[c.env.db.prepare(`INSERT INTO mail_room_message(room_id,sender_id,client_id,body)
+        SELECT r.id,m.user_id,?,? FROM mail_room r JOIN mail_room_member m ON m.room_id=r.id JOIN user u ON u.user_id=m.user_id
+        JOIN user owner ON owner.user_id=r.owner_id AND owner.status=0 AND owner.is_del=0
+        WHERE r.id=? AND m.user_id=? AND m.status='joined' AND u.status=0 AND u.is_del=0 AND (r.kind='group' OR m.role IN ('owner','admin'))
+        ON CONFLICT(sender_id,client_id) DO NOTHING`).bind(params.clientId,body,id,userId)];
+      if(voice)statements.push(c.env.db.prepare(`INSERT INTO mail_room_voice(message_id,room_id,key,filename,mime_type,size,hash)
+        SELECT id,room_id,?,?,?,?,? FROM mail_room_message WHERE sender_id=? AND client_id=? AND room_id=? AND body=? AND changes()=1`)
+        .bind(key,voice.filename,voice.mime,voice.bytes.length,voice.hash,userId,params.clientId,id,body));
+      await c.env.db.batch(statements);
+      const message=await c.env.db.prepare(`SELECT m.id,m.room_id AS roomId,m.body,v.hash,v.mime_type AS mimeType FROM mail_room_message m LEFT JOIN mail_room_voice v ON v.message_id=m.id WHERE m.sender_id=? AND m.client_id=?`).bind(userId,params.clientId).first();
+      if(!message)forbidden();if(!matches(message))fail('invalidInput',409);
+      await this.notify(c,id);return {id:message.id};
+    }finally{
+      if(key&&!await c.env.db.prepare('SELECT 1 FROM mail_room_voice WHERE key=?').bind(key).first())await storage.delete(c,key);
+    }
   },
   async read(c,id,params) {
     await this.access(c,id);

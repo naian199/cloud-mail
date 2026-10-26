@@ -1,3 +1,4 @@
+import voice from '../service/voice-service';
 import universalSearch from '../service/universal-search-service';
 import linkPreview from '../service/link-preview-service';
 import app from '../hono/hono';
@@ -8,6 +9,7 @@ import live from '../service/mail-live-service';
 import translation from '../service/translation-service';
 import stickers from '../service/sticker-service';
 import brandAvatar from '../service/brand-avatar-service';
+app.post('/mail-chat/transcribe',async c=>c.json(result.ok(await voice.transcribe(c,await c.req.json()))));
 app.get('/mail-chat/brand-avatar', c => brandAvatar.get(c));
 app.get('/mail-chat/stickers/pack', async c => c.json(result.ok(await stickers.pack(c, c.req.query('name')))));
 app.get('/mail-chat/stickers/file', async c => stickers.file(c,c.req.query('name'),c.req.query('id')));

@@ -70,6 +70,7 @@ jobs:
           node --test mail-worker/test/video-poster.test.mjs
           node --test mail-worker/test/link-preview.test.mjs
           node --test mail-worker/test/chat-refresh.test.mjs
+          node --test mail-worker/test/voice-audio.test.mjs
 
       - name: Check optional brand icon source
         run: node scripts/check-brand-avatar.mjs

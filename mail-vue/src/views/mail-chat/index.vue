@@ -216,9 +216,10 @@
                 <span v-else>{{ t('mailChatImageLoading') }}</span>
               </div>
               <div v-for="att in m.attachments" :key="att.attId" class="attachment">
-                <VideoAttachment v-if="isVideoFile(att)" :file="att" :load="options=>mailAttachment(att.attId, options)" @download="download(att)" @preview="openMedia(`video:${m.emailId}:${att.attId}`)" @resize="imageLoaded" />
+                <AudioAttachment v-if="isAudioFile(att)" :file="att" :load="options=>mailAttachment(att.attId, options)" :source="{attId:att.attId}" @resize="imageLoaded" />
+                <VideoAttachment v-else-if="isVideoFile(att)" :file="att" :load="options=>mailAttachment(att.attId, options)" @download="download(att)" @preview="openMedia(`video:${m.emailId}:${att.attId}`)" @resize="imageLoaded" />
                 <StickerMedia v-else-if="isStickerFile(att)" :format="att.filename.toLowerCase().endsWith('.tgs') ? 'tgs' : 'webm'" :label="'🙂'" :load="options=>mailAttachment(att.attId, options)" @error="stickerErrors[att.attId] = true" />
-                <el-button v-if="(!isVideoFile(att) && !isStickerFile(att)) || stickerErrors[att.attId]" text @click="download(att)">
+                <el-button v-if="(!isVideoFile(att) && !isStickerFile(att) && !isAudioFile(att)) || stickerErrors[att.attId]" text @click="download(att)">
                   <Icon icon="cloud-mail:file" width="26" aria-hidden="true" />
                   <span class="attachment-detail"><strong>{{ att.filename }}</strong><small>{{ formatBytes(att.size) }}</small></span>
                 </el-button
@@ -289,7 +290,7 @@
         />
         <div class="composer-footer">
           <StickerPicker ref="stickerPicker" :compact="compactChat" :dock="stickerDock" :context="draftKey" :disabled="sending" @visibility="stickerVisibility" @emoji="insertEmoji" @attachment="addSticker" @upload="chooseFiles" />
-          <VoiceInput :context="draftKey" :disabled="sending || messageLoading" @text="text => insertEmoji(text, false)" />
+          <VoiceTools :context="draftKey" :disabled="sending || messageLoading" @text="text => insertEmoji(text, false)" @attachment="file=>chooseFiles({target:{files:[file]}})" />
           <label class="attach-label" :aria-label="t('mailChatAttach')" :title="t('mailChatAttach')" tabindex="0" @keydown.enter.prevent="$event.currentTarget.querySelector('input').click()" @keydown.space.prevent="$event.currentTarget.querySelector('input').click()">
             <Icon class="attach-icon" icon="cloud-mail:attach" width="22" aria-hidden="true" /><span>{{ t('mailChatAttach') }}</span><input type="file" multiple :disabled="sending" @change="chooseFiles" /></label
           ><span>{{ t('chatEnterHint') }}</span
@@ -467,7 +468,9 @@ import { useUiStore } from '@/store/ui';
 import ConversationExplorer from '@/components/conversation-explorer.vue';
 import MessageTranslation from '@/components/message-translation.vue';
 import StickerPicker from '@/components/sticker-picker.vue';
-import VoiceInput from '@/components/voice-input.vue';
+import VoiceTools from '@/components/voice-tools.vue';
+import AudioAttachment from '@/components/audio-attachment.vue';
+import { isAudioFile } from '@/utils/video-files.mjs';
 import StickerMedia from '@/components/sticker-media.vue';
 import AutoTranslationSettings from '@/components/auto-translation-settings.vue';
 import { translationStatus } from '@/composables/use-auto-translation';

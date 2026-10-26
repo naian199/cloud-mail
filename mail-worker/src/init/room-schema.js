@@ -21,5 +21,16 @@ export const roomSchema = [
     client_id TEXT NOT NULL, body TEXT NOT NULL CHECK(length(body) BETWEEN 1 AND 20000),
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, UNIQUE(sender_id,client_id)
   )`,
+  `CREATE TABLE IF NOT EXISTS mail_room_voice (
+    message_id INTEGER PRIMARY KEY REFERENCES mail_room_message(id) ON DELETE CASCADE,
+    room_id TEXT NOT NULL REFERENCES mail_room(id) ON DELETE CASCADE,
+    key TEXT NOT NULL UNIQUE, filename TEXT NOT NULL, mime_type TEXT NOT NULL, size INTEGER NOT NULL,
+    hash TEXT NOT NULL
+  )`,
+  `CREATE INDEX IF NOT EXISTS idx_room_voice_room ON mail_room_voice(room_id)`,
+  `CREATE TABLE IF NOT EXISTS mail_voice_usage (
+    day TEXT NOT NULL,user_id INTEGER NOT NULL REFERENCES user(user_id) ON DELETE CASCADE,
+    used INTEGER NOT NULL,PRIMARY KEY(day,user_id)
+  )`,
   `CREATE INDEX IF NOT EXISTS idx_room_message_history ON mail_room_message(room_id,id)`
 ];
