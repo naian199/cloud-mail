@@ -632,5 +632,6 @@
   "voiceDenied": "마이크를 사용할 수 없습니다. 기기와 브라우저 및 시스템의 마이크 권한을 확인하세요.",
   "voiceError": "음성 인식에 실패했습니다. 다시 시도하거나 키보드 받아쓰기를 사용하세요.",
   "mailChatInternalGroup": "내부 채팅",
-  "mailChatExternalGroup": "외부 메일"
+  "mailChatExternalGroup": "외부 메일",
+  "navigationMenu": "탐색 메뉴"
 }

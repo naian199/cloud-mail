@@ -632,5 +632,6 @@
   "voiceDenied": "Microfoon niet beschikbaar. Controleer apparaat en browser- en systeemrechten.",
   "voiceError": "Spraakherkenning mislukt. Probeer opnieuw of gebruik toetsenborddictatie.",
   "mailChatInternalGroup": "Interne chats",
-  "mailChatExternalGroup": "Externe e-mail"
+  "mailChatExternalGroup": "Externe e-mail",
+  "navigationMenu": "Navigatiemenu"
 }

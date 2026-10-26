@@ -632,5 +632,6 @@
   "voiceDenied": "Mikrofon kullanılamıyor. Cihazı, tarayıcı ve sistem izinlerini kontrol edin.",
   "voiceError": "Konuşma tanınamadı. Tekrar deneyin veya klavye diktesini kullanın.",
   "mailChatInternalGroup": "Dahili sohbetler",
-  "mailChatExternalGroup": "Harici e-postalar"
+  "mailChatExternalGroup": "Harici e-postalar",
+  "navigationMenu": "Gezinme menüsü"
 }

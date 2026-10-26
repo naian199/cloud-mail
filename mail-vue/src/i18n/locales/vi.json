@@ -632,5 +632,6 @@
   "voiceDenied": "Không dùng được micrô. Kiểm tra thiết bị và quyền trình duyệt, hệ thống.",
   "voiceError": "Nhận dạng giọng nói thất bại. Thử lại hoặc dùng bàn phím giọng nói.",
   "mailChatInternalGroup": "Trò chuyện nội bộ",
-  "mailChatExternalGroup": "Thư bên ngoài"
+  "mailChatExternalGroup": "Thư bên ngoài",
+  "navigationMenu": "Menu điều hướng"
 }

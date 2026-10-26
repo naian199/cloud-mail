@@ -632,5 +632,6 @@
   "voiceDenied": "Não foi possível usar o microfone. Confira o dispositivo e as permissões do navegador e sistema.",
   "voiceError": "O reconhecimento falhou. Tente novamente ou use o ditado do teclado.",
   "mailChatInternalGroup": "Conversas internas",
-  "mailChatExternalGroup": "E-mails externos"
+  "mailChatExternalGroup": "E-mails externos",
+  "navigationMenu": "Menu de navegação"
 }

@@ -632,5 +632,6 @@
   "voiceDenied": "Mikrofon tidak tersedia. Semak peranti dan kebenaran pelayar serta sistem.",
   "voiceError": "Pengecaman suara gagal. Cuba semula atau gunakan imlak papan kekunci.",
   "mailChatInternalGroup": "Sembang dalaman",
-  "mailChatExternalGroup": "E-mel luaran"
+  "mailChatExternalGroup": "E-mel luaran",
+  "navigationMenu": "Menu navigasi"
 }

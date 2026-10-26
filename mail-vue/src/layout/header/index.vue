@@ -1,7 +1,6 @@
 <template>
   <div class="header" :class="{ 'compact-toolbar': compact }">
     <div v-if="!compact" class="header-btn">
-      <hanburger @click="changeAside"></hanburger>
       <span class="breadcrumb-item">{{ $t(route.meta.title) }}</span>
     </div>
     <div class="toolbar">
@@ -72,7 +71,6 @@
 import UserAvatar from '@/components/user-avatar.vue';
 import LanguageSelect from '@/components/language-select.vue';
 import router from "@/router";
-import hanburger from '@/components/hamburger/index.vue'
 import {logout} from "@/request/login.js";
 import {Icon} from "@iconify/vue";
 import {useUiStore} from "@/store/ui.js";
@@ -225,10 +223,6 @@ function switchDark(nextIsDark, root) {
   uiStore.dark = nextIsDark
 }
 
-function changeAside() {
-  uiStore.asideShow = !uiStore.asideShow
-}
-
 function clickLogout() {
   logoutLoading.value = true
   logout().then(() => {
@@ -354,6 +348,7 @@ function formatName(email) {
 }
 
 .header-btn {
+  padding-inline: 14px;
   display: inline-flex;
   align-items: center;
   height: 100%;

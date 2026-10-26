@@ -632,5 +632,6 @@
   "voiceDenied": "Microfono non disponibile. Controlla dispositivo e permessi del browser e sistema.",
   "voiceError": "Riconoscimento non riuscito. Riprova o usa la dettatura della tastiera.",
   "mailChatInternalGroup": "Chat interne",
-  "mailChatExternalGroup": "Email esterne"
+  "mailChatExternalGroup": "Email esterne",
+  "navigationMenu": "Menu di navigazione"
 }

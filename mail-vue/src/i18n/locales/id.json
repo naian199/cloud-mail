@@ -632,5 +632,6 @@
   "voiceDenied": "Mikrofon tidak tersedia. Periksa perangkat serta izin browser dan sistem.",
   "voiceError": "Pengenalan suara gagal. Coba lagi atau gunakan dikte papan ketik.",
   "mailChatInternalGroup": "Obrolan internal",
-  "mailChatExternalGroup": "Email eksternal"
+  "mailChatExternalGroup": "Email eksternal",
+  "navigationMenu": "Menu navigasi"
 }

@@ -101,5 +101,6 @@
   "voiceDenied": "Cannot use the microphone. Check the device and browser/system microphone permissions.",
   "voiceError": "Speech recognition failed. Retry or use system keyboard dictation.",
   "mailChatInternalGroup": "Internal chats",
-  "mailChatExternalGroup": "External mail"
+  "mailChatExternalGroup": "External mail",
+  "navigationMenu": "Navigation menu"
 }

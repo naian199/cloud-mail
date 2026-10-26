@@ -632,5 +632,6 @@
   "voiceDenied": "تعذر استخدام الميكروفون. تحقق من الجهاز وأذونات المتصفح والنظام.",
   "voiceError": "فشل التعرف الصوتي. أعد المحاولة أو استخدم إملاء لوحة المفاتيح.",
   "mailChatInternalGroup": "المحادثات الداخلية",
-  "mailChatExternalGroup": "البريد الخارجي"
+  "mailChatExternalGroup": "البريد الخارجي",
+  "navigationMenu": "قائمة التنقل"
 }

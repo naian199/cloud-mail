@@ -632,5 +632,6 @@
   "voiceDenied": "Microphone inaccessible. Vérifiez l’appareil et les autorisations du navigateur et du système.",
   "voiceError": "Échec de reconnaissance. Réessayez ou utilisez la dictée du clavier.",
   "mailChatInternalGroup": "Discussions internes",
-  "mailChatExternalGroup": "Courriels externes"
+  "mailChatExternalGroup": "Courriels externes",
+  "navigationMenu": "Menu de navigation"
 }

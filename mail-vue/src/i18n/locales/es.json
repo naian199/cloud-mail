@@ -632,5 +632,6 @@
   "voiceDenied": "No se puede usar el micrófono. Revisa el dispositivo y los permisos del navegador y sistema.",
   "voiceError": "Falló el reconocimiento. Reintenta o usa el dictado del teclado.",
   "mailChatInternalGroup": "Chats internos",
-  "mailChatExternalGroup": "Correo externo"
+  "mailChatExternalGroup": "Correo externo",
+  "navigationMenu": "Menú de navegación"
 }

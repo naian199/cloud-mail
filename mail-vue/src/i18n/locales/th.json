@@ -632,5 +632,6 @@
   "voiceDenied": "ใช้ไมโครโฟนไม่ได้ โปรดตรวจสอบอุปกรณ์และสิทธิ์ของเบราว์เซอร์และระบบ",
   "voiceError": "รู้จำเสียงไม่สำเร็จ โปรดลองใหม่หรือใช้แป้นพิมพ์เสียงของระบบ",
   "mailChatInternalGroup": "แชทภายใน",
-  "mailChatExternalGroup": "อีเมลภายนอก"
+  "mailChatExternalGroup": "อีเมลภายนอก",
+  "navigationMenu": "เมนูนำทาง"
 }

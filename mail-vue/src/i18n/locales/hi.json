@@ -632,5 +632,6 @@
   "voiceDenied": "माइक्रोफ़ोन उपलब्ध नहीं है। उपकरण और ब्राउज़र व सिस्टम की अनुमति जाँचें।",
   "voiceError": "आवाज़ पहचान विफल। फिर कोशिश करें या कीबोर्ड डिक्टेशन उपयोग करें।",
   "mailChatInternalGroup": "आंतरिक चैट",
-  "mailChatExternalGroup": "बाहरी ईमेल"
+  "mailChatExternalGroup": "बाहरी ईमेल",
+  "navigationMenu": "नेविगेशन मेन्यू"
 }

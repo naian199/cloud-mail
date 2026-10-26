@@ -1,6 +1,9 @@
 <template>
-  <el-container class="layout" :class="{ 'mobile-chat-focused': uiStore.mobileChatFocused, 'mobile-contacts-collapsed': uiStore.mobileContactsCollapsed }" :style="{ '--chat-viewport-height': viewportHeight + 'px', '--chat-viewport-top': viewportTop + 'px' }">
-    <el-aside
+  <el-container class="layout" :class="{ 'navigation-open': uiStore.asideShow, 'mobile-chat-focused': uiStore.mobileChatFocused, 'mobile-contacts-collapsed': uiStore.mobileContactsCollapsed }" :style="{ '--chat-viewport-height': viewportHeight + 'px', '--chat-viewport-top': viewportTop + 'px' }">
+    <button type="button" class="global-navigation-toggle" :aria-label="$t('navigationMenu')" :title="$t('navigationMenu')" :aria-expanded="uiStore.asideShow" aria-controls="main-navigation" @click="uiStore.asideShow = !uiStore.asideShow">
+      <Icon icon="cloud-mail:menu" width="20" height="20" />
+    </button>
+    <el-aside id="main-navigation"
         class="aside"
         :class="uiStore.asideShow ? 'aside-show' : 'el-aside-hide'">
       <Aside />
@@ -25,6 +28,7 @@
 
 <script setup>
 import Aside from '@/layout/aside/index.vue'
+import { Icon } from '@iconify/vue'
 import Header from '@/layout/header/index.vue'
 import Main from '@/layout/main/index.vue'
 import { ref, onMounted, onBeforeUnmount } from 'vue'
@@ -168,5 +172,16 @@ onBeforeUnmount(() => {
     padding-bottom: 0;
   }
   .mobile-chat-focused .el-header, .mobile-contacts-collapsed .el-header { display: none; }
+}
+</style>
+
+<style scoped>
+.global-navigation-toggle { position: fixed; top: calc(env(safe-area-inset-top, 0px) + 4px); left: calc(env(safe-area-inset-left, 0px) + 4px); width: 40px; height: 40px; display: grid; place-items: center; border: 0; border-radius: 6px; background: var(--el-bg-color); color: var(--el-text-color-primary); z-index: 102; cursor: pointer; }
+.global-navigation-toggle:hover { background: var(--el-fill-color); }
+.global-navigation-toggle:focus-visible { outline: 2px solid var(--el-color-primary); outline-offset: -2px; }
+.layout:not(.navigation-open) :deep(.header-btn) { padding-inline-start: 52px; }
+.layout:not(.navigation-open).mobile-chat-focused :deep(.mail-chat .contact-controls .search) { margin-inline-start: 52px; width: calc(100% - 64px); }
+@media (max-width: 767px), (max-width: 1024px) and (max-height: 500px) and (pointer: coarse) {
+  .layout.mobile-chat-focused :deep(.mail-chat .thread-header), .layout.mobile-chat-focused :deep(.rooms .room-heading) { padding-inline-start: 48px; }
 }
 </style>

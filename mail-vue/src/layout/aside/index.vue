@@ -106,8 +106,8 @@ watch(() => route.meta.name, () => {
 <style lang="scss" scoped>
 
 .title {
-  margin: 15px 10px;
-  height: 45px;
+  margin: 4px 10px 12px 52px;
+  height: 40px;
   border-radius: 6px;
   display: flex;
   position: relative;

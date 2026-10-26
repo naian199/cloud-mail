@@ -632,5 +632,6 @@
   "voiceDenied": "無法使用麥克風，請檢查裝置和瀏覽器、系統的麥克風權限。",
   "voiceError": "語音辨識失敗，請重試或使用系統鍵盤語音輸入。",
   "mailChatInternalGroup": "站內聊天",
-  "mailChatExternalGroup": "站外郵件"
+  "mailChatExternalGroup": "站外郵件",
+  "navigationMenu": "導覽選單"
 }

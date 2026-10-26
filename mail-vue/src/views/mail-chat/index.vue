@@ -73,7 +73,6 @@
         @touchend="endTouch"
         @touchcancel="cancelPress"
       >
-        <el-button class="thread-navigation" text :aria-label="t('mailChatTitle')" :aria-expanded="ui.asideShow" @click="ui.asideShow = !ui.asideShow"><Icon icon="cloud-mail:menu" width="20" /></el-button>
         <el-button class="back" text :aria-label="t('chatBack')" @click="closeThread"
           ><Icon icon="cloud-mail:back" width="24"
         /></el-button>
@@ -395,27 +394,28 @@
         @contextmenu.prevent="closeMenu"
       >
         <div
+          ref="messageMenuPanel"
           class="mail-message-menu"
           role="menu"
-          :style="{ left: messageMenu.x + 'px', top: messageMenu.y + 'px' }"
+          :style="{ left: messageMenu.x + 'px', top: messageMenu.y + 'px', maxHeight: messageMenu.maxHeight + 'px', maxWidth: messageMenu.maxWidth + 'px', minWidth: Math.min(152, messageMenu.maxWidth) + 'px' }"
           @pointerdown.stop
           @contextmenu.prevent
         >
           <button v-if="messageMenu.message" role="menuitem" @click="menuAction('copy')">
-            <Icon icon="cloud-mail:copy" width="20" aria-hidden="true" />{{ t('mailChatCopy') }}
+            <Icon icon="cloud-mail:copy" width="16" aria-hidden="true" /><span>{{ t('mailChatCopy') }}</span>
           </button>
           <button
             v-if="messageMenu.message && canSend"
             role="menuitem"
             @click="menuAction('quote')"
           >
-            <Icon icon="cloud-mail:reply" width="20" aria-hidden="true" />{{ t('mailChatQuoteReply') }}
+            <Icon icon="cloud-mail:reply" width="16" aria-hidden="true" /><span>{{ t('mailChatQuoteReply') }}</span>
           </button>
           <button v-if="messageMenu.message && (messageMenu.message.replyText ?? messageMenu.message.text)?.trim()" role="menuitem" @click="menuAction('translate')">
-            <Icon icon="cloud-mail:translate" width="20" aria-hidden="true" />{{ t('translateTitle') }}
+            <Icon icon="cloud-mail:translate" width="16" aria-hidden="true" /><span>{{ t('translateTitle') }}</span>
           </button>
           <button v-if="messageMenu.message" role="menuitem" class="danger" @click="menuAction('delete-self')">
-            <Icon icon="cloud-mail:delete" width="20" aria-hidden="true" />{{ t('deleteSelf') }}
+            <Icon icon="cloud-mail:delete" width="16" aria-hidden="true" /><span>{{ t('deleteSelf') }}</span>
           </button>
           <button
             v-if="messageMenu.message?.internal"
@@ -423,7 +423,7 @@
             class="danger"
             @click="menuAction('delete')"
           >
-            <Icon icon="cloud-mail:delete" width="20" aria-hidden="true" />{{ t('mailChatDeleteBoth') }}
+            <Icon icon="cloud-mail:delete" width="16" aria-hidden="true" /><span>{{ t('mailChatDeleteBoth') }}</span>
           </button>
           <button
             v-if="(live.internal || messages.some(message => message.internal)) && messages.length"
@@ -431,7 +431,7 @@
             class="danger"
             @click="menuAction('clear')"
           >
-            {{ t('mailChatClearBoth') }}
+            <span>{{ t('mailChatClearBoth') }}</span>
           </button>
         </div>
       </div>
@@ -624,7 +624,7 @@ let version = 0,
   dirty = false,
   searchTimer,
   indexTimer;
-const messageMenu = ref(null);
+const messageMenu = ref(null), messageMenuPanel = ref(null);
 const explorer = ref(null), explorerRevision = ref(0), historyAnchor = ref(null);
 const translationRefs = new Map();
 function setTranslationRef(id, element) {
@@ -675,7 +675,7 @@ function suppressAfterPress(event) {
     event.stopPropagation();
   }
 }
-function openMessageMenu(event, message) {
+async function openMessageMenu(event, message) {
   if (!message && !live.value.internal) return;
   event.preventDefault();
   cancelPress();
@@ -684,11 +684,14 @@ function openMessageMenu(event, message) {
     y = event.clientY || box?.top || 80;
   const viewport = window.visualViewport;
   const left = viewport?.offsetLeft || 0, top = viewport?.offsetTop || 0;
-  messageMenu.value = {
-    message,
-    x: Math.max(left + 8, Math.min(x, left + (viewport?.width || innerWidth) - 210)),
-    y: Math.max(top + 8, Math.min(y, top + (viewport?.height || innerHeight) - 310))
-  };
+  const width = viewport?.width || innerWidth, height = viewport?.height || innerHeight;
+  messageMenu.value = { message, x, y, maxHeight: Math.max(0, height - 16), maxWidth: Math.max(0, Math.min(200, width - 16)) };
+  const opened = messageMenu.value;
+  await nextTick();
+  if (messageMenu.value !== opened || !messageMenuPanel.value) return;
+  const size = messageMenuPanel.value.getBoundingClientRect();
+  opened.x = Math.max(left + 8, Math.min(x, left + width - size.width - 8));
+  opened.y = Math.max(top + 8, Math.min(y, top + height - size.height - 8));
 }
 async function menuAction(action) {
   const message = messageMenu.value?.message;
@@ -1428,6 +1431,8 @@ watch(
 );
 onMounted(async () => {
   document.addEventListener('keydown', menuEscape);
+  window.addEventListener('resize', closeMenu);
+  window.visualViewport?.addEventListener('resize', closeMenu);
   if (hasPerm('account:query')) {
     try {
       let all = [],
@@ -1460,6 +1465,8 @@ onBeforeUnmount(() => {
   ui.mobileContactsHeaderTarget = null;
   cancelPress();
   document.removeEventListener('keydown', menuEscape);
+  window.removeEventListener('resize', closeMenu);
+  window.visualViewport?.removeEventListener('resize', closeMenu);
   Object.values(imageUrls).forEach((url) => URL.revokeObjectURL(url));
   stopped = true;
   version++;
@@ -1721,18 +1728,27 @@ pre {
 }
 :global(.mail-message-menu) {
   position: fixed;
-  width: 200px;
-  border-radius: 9px;
-  padding: 5px;
+  width: max-content;
+  box-sizing: border-box;
+  border-radius: 8px;
+  padding: 4px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   background: var(--el-bg-color-overlay);
   border: 1px solid var(--el-border-color);
   box-shadow: var(--el-box-shadow);
 }
 :global(.mail-message-menu button) {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 30px;
   width: 100%;
-  padding: 10px 12px;
-  text-align: left;
+  padding: 5px 8px;
+  font-size: 12px;
+  line-height: 18px;
+  border-radius: 5px;
+  text-align: start;
   border: 0;
   background: transparent;
   color: var(--el-text-color-primary);
@@ -2025,8 +2041,11 @@ pre {
 .quote-card:focus-visible, .profile-button:focus-visible, .contact:focus-visible { outline: 2px solid var(--chat-accent); outline-offset: 2px; }
 .external .bubble { box-shadow: var(--chat-shadow); }
 .mail-message.mine.external .bubble { background: var(--el-bg-color); color: var(--el-text-color-primary); }
-:global(.mail-message-menu) { border-radius: 14px; padding: 6px; }
-:global(.mail-message-menu button) { display: flex; align-items: center; gap: 10px; border-radius: 8px; min-height: 44px; text-align: start; }
+:global(.mail-message-menu button > span) { min-width: 0; overflow-wrap: anywhere; }
+:global(.mail-message-menu button > svg) { flex-shrink: 0; }
+@media (pointer: coarse) {
+  :global(.mail-message-menu button) { min-height: 40px; font-size: 13px; }
+}
 @media (max-width: 767px), (max-width: 1024px) and (max-height: 500px) and (pointer: coarse) {
   .mail-chat { grid-template-columns: minmax(0, 1fr); }
   .thread-header { min-height: 60px; padding: 6px 10px; gap: 8px; }
@@ -2089,7 +2108,6 @@ pre {
 .thread-title span { font-size: 11px; line-height: 15px; }
 @media (max-width: 767px), (max-width: 1024px) and (max-height: 500px) and (pointer: coarse) {
   .thread-header { gap: 3px; padding-inline: 6px; }
-  .thread-header > .thread-navigation { display: none; }
   .thread-header > .el-button { min-width: 30px; }
 }
 </style>
