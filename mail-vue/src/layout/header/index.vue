@@ -13,7 +13,7 @@
       <div class="notice icon-item" @click="openNotice">
         <Icon icon="streamline-plump:announcement-megaphone"/>
       </div>
-      <el-dropdown ref="userinfoRef" @visible-change="e => userInfoShow = e" :teleported="false" popper-class="detail-dropdown">
+      <el-dropdown ref="userinfoRef" @visible-change="e => userInfoShow = e" :teleported="drawer" :placement="drawer ? 'top-end' : 'bottom-end'" popper-class="detail-dropdown">
         <div class="avatar" @click="userInfoHide" >
           <div class="avatar-text">
             <UserAvatar :profile="userStore.user.profile" :email="userStore.user.email" :size="32" />
@@ -76,12 +76,12 @@ import {Icon} from "@iconify/vue";
 import {useUiStore} from "@/store/ui.js";
 import {useUserStore} from "@/store/user.js";
 import {useRoute} from "vue-router";
-import {computed, ref} from "vue";
+import {computed, ref, watch} from "vue";
 import {useSettingStore} from "@/store/setting.js";
 import {hasPerm} from "@/perm/perm.js"
 import {useI18n} from "vue-i18n";
 
-defineProps({ compact: Boolean });
+const props = defineProps({ compact: Boolean, drawer: Boolean });
 const {t} = useI18n();
 const route = useRoute();
 const settingStore = useSettingStore();
@@ -90,6 +90,7 @@ const uiStore = useUiStore();
 const logoutLoading = ref(false)
 const userInfoShow = ref(false)
 const userinfoRef = ref({})
+watch(() => uiStore.asideShow, open => { if (props.drawer && !open) userinfoRef.value?.handleClose?.(); });
 
 const accountCount = computed(() => {
   return userStore.user.role.accountCount

@@ -10,6 +10,13 @@ addCollection({
   height: 24,
   icons: {
     'external-mail': outline('<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 6 9 7 9-7"/>'),
+    chat: outline('<path d="M21 11a8 8 0 0 1-8 8H7l-5 3 1-6a8 8 0 0 1-1-4V5a2 2 0 0 1 2-2h15a2 2 0 0 1 2 2Z"/><path d="M6 8h11M6 12h8"/>'),
+    inbox: outline('<path d="M3 13 6 3h12l3 10v8H3Zm0 0h5l2 3h4l2-3h5"/>'),
+    star: outline('<path d="m12 3 3 6 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1Z"/>'),
+    settings: outline('<path d="M3 7h3m6 0h9M3 17h9m6 0h3"/><circle cx="9" cy="7" r="3"/><circle cx="15" cy="17" r="3"/>'),
+    analytics: outline('<path d="M12 3v9h9a9 9 0 1 1-9-9Zm3 0v6h6a9 9 0 0 0-6-6Z"/>'),
+    lock: outline('<rect x="4" y="10" width="16" height="12" rx="2"/><path d="M8 10V6a4 4 0 0 1 8 0v4M12 15v3"/>'),
+    key: outline('<circle cx="7" cy="7" r="4"/><path d="m10 10 11 11h-4v-3h-3v-3h-3"/>'),
     menu: outline('<path d="M4 6h16M4 12h16M4 18h16"/>'),
     more: outline('<circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/>'),
     select: outline('<circle cx="12" cy="12" r="9"/><path d="m7 12 3 3 7-7"/>'),

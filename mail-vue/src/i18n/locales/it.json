@@ -652,5 +652,7 @@
   "mediaOpen": "Apri visualizzatore multimediale",
   "mediaPrevious": "Contenuto precedente",
   "mediaNext": "Contenuto successivo",
-  "roomSearchLoaded": "Cerca nei messaggi caricati. Carica messaggi precedenti per ampliare la ricerca."
+  "roomSearchLoaded": "Cerca nei messaggi caricati. Carica messaggi precedenti per ampliare la ricerca.",
+  "navigationMail": "Posta",
+  "conversationWidth": "Larghezza elenco conversazioni"
 }

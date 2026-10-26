@@ -652,5 +652,7 @@
   "mediaOpen": "Mediaweergave openen",
   "mediaPrevious": "Vorige media",
   "mediaNext": "Volgende media",
-  "roomSearchLoaded": "Doorzoekt geladen berichten. Laad oudere berichten om meer geschiedenis te doorzoeken."
+  "roomSearchLoaded": "Doorzoekt geladen berichten. Laad oudere berichten om meer geschiedenis te doorzoeken.",
+  "navigationMail": "E-mail",
+  "conversationWidth": "Breedte van de gesprekslijst"
 }

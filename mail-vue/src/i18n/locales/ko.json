@@ -652,5 +652,7 @@
   "mediaOpen": "미디어 보기",
   "mediaPrevious": "이전 미디어",
   "mediaNext": "다음 미디어",
-  "roomSearchLoaded": "불러온 메시지를 검색합니다. 이전 메시지를 불러오면 검색 범위가 넓어집니다."
+  "roomSearchLoaded": "불러온 메시지를 검색합니다. 이전 메시지를 불러오면 검색 범위가 넓어집니다.",
+  "navigationMail": "메일",
+  "conversationWidth": "대화 목록 너비"
 }

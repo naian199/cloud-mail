@@ -652,5 +652,7 @@
   "mediaOpen": "Mở trình xem nội dung",
   "mediaPrevious": "Nội dung trước",
   "mediaNext": "Nội dung tiếp theo",
-  "roomSearchLoaded": "Tìm trong các tin nhắn đã tải. Tải tin nhắn cũ hơn để mở rộng tìm kiếm."
+  "roomSearchLoaded": "Tìm trong các tin nhắn đã tải. Tải tin nhắn cũ hơn để mở rộng tìm kiếm.",
+  "navigationMail": "Thư",
+  "conversationWidth": "Chiều rộng danh sách hội thoại"
 }

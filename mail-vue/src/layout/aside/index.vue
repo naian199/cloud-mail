@@ -1,14 +1,14 @@
 <template>
   <el-scrollbar class="scroll">
-    <div>
+    <div class="navigation-content">
       <div class="title" >
-        <Icon icon="mdi:email-outline" width="24" height="24" />
+        <Icon icon="cloud-mail:external-mail" width="24" height="24" />
         <div>{{settingStore.settings.title}}</div>
       </div>
-      <el-menu ref="menu" :collapse="false" :default-active="route.meta.name" :default-openeds="isManagementPage ? ['management'] : []" text-color="#fff" active-text-color="#fff" style="margin-top: 10px">
+      <el-menu class="primary-menu" @select="ui.asideShow = false" :collapse="false" :default-active="route.meta.name" :default-openeds="isManagementPage ? ['management'] : []" text-color="#fff" active-text-color="#fff" style="margin-top: 10px">
         <el-menu-item @click="router.push({name: 'mail-chat'})" index="mail-chat"
                       :class="route.meta.name === 'mail-chat' ? 'choose-item' : ''">
-          <Icon icon="solar:letter-opened-linear" width="20" height="20" />
+          <Icon icon="cloud-mail:chat" width="20" height="20" />
           <span class="menu-name" style="margin-left: 16px">{{$t('mailChatTitle')}}</span>
         </el-menu-item>
         <el-menu-item @click="router.push({name: 'external-mail'})" index="external-mail" :class="route.meta.name === 'external-mail' ? 'choose-item' : ''">
@@ -17,64 +17,68 @@
         <el-menu-item @click="router.push({name: 'rooms'})" index="rooms" :class="route.meta.name === 'rooms' ? 'choose-item' : ''">
           <Icon icon="cloud-mail:group" width="20" height="20" /><span class="menu-name" style="margin-left: 16px">{{$t('roomTitle')}}</span>
         </el-menu-item>
+        <el-menu-item-group :title="$t('navigationMail')">
         <el-menu-item @click="router.push({name: 'email'})" index="email"
                       :class="route.meta.name === 'email' ? 'choose-item' : ''">
-          <Icon icon="hugeicons:mailbox-01" width="20" height="20" />
+          <Icon icon="cloud-mail:inbox" width="20" height="20" />
           <span class="menu-name" style="margin-left: 16px">{{$t('inbox')}}</span>
         </el-menu-item>
         <el-menu-item @click="router.push({name: 'send'})" index="send" v-perm="'email:send'"
                       :class="route.meta.name === 'send' ? 'choose-item' : ''">
-          <Icon icon="cil:send" width="20" height="20" />
+          <Icon icon="cloud-mail:send" width="20" height="20" />
           <span class="menu-name" style="margin-left: 16px">{{$t('sent')}}</span>
         </el-menu-item>
         <el-menu-item @click="router.push({name: 'draft'})" index="draft" v-perm="'email:send'"
                       :class="route.meta.name === 'draft' ? 'choose-item' : ''">
-          <Icon icon="ep:document" width="19" height="19" />
+          <Icon icon="cloud-mail:file" width="19" height="19" />
           <span class="menu-name" style="margin-left: 17px">{{$t('drafts')}}</span>
         </el-menu-item>
         <el-menu-item @click="router.push({name: 'star'})" index="star"
                       :class="route.meta.name === 'star' ? 'choose-item' : ''">
-          <Icon icon="solar:star-line-duotone" width="20" height="20" />
+          <Icon icon="cloud-mail:star" width="20" height="20" />
           <span class="menu-name" style="margin-left: 16px">{{$t('starred')}}</span>
         </el-menu-item>
+        </el-menu-item-group>
+      </el-menu>
+      <el-menu ref="menu" class="footer-menu" @select="ui.asideShow = false" :default-active="route.meta.name" :default-openeds="isManagementPage ? ['management'] : []" text-color="#fff" active-text-color="#fff">
         <el-menu-item @click="router.push({name: 'setting'})" index="setting"
                       :class="route.meta.name === 'setting' ? 'choose-item' : ''">
-          <Icon icon="fluent:settings-48-regular" width="20" height="20" />
+          <Icon icon="cloud-mail:settings" width="20" height="20" />
           <span class="menu-name" style="margin-left: 16px">{{$t('settings')}}</span>
         </el-menu-item>
         <el-sub-menu v-if="canManage" index="management" class="management-menu" :class="{ 'management-active': isManagementPage }">
           <template #title>
-            <Icon icon="fluent:settings-48-regular" width="20" height="20" />
+            <Icon icon="cloud-mail:settings" width="20" height="20" />
             <span class="menu-name" style="margin-left: 16px">{{$t('manage')}}</span>
           </template>
           <el-menu-item @click="router.push({name: 'analysis'})" index="analysis" v-perm="'analysis:query'"
                         :class="route.meta.name === 'analysis' ? 'choose-item' : ''">
-            <Icon icon="fluent:data-pie-20-regular" width="24" height="24" />
+            <Icon icon="cloud-mail:analytics" width="24" height="24" />
             <span class="menu-name" style="margin-left: 13px">{{$t('analytics')}}</span>
           </el-menu-item>
           <el-menu-item @click="router.push({name: 'user'})" index="user" v-perm="'user:query'"
                         :class="route.meta.name === 'user' ? 'choose-item' : ''">
-            <Icon icon="si:user-alt-2-line" width="20" height="20" />
+            <Icon icon="cloud-mail:group" width="20" height="20" />
             <span class="menu-name" style="margin-left: 16px">{{$t('allUsers')}}</span>
           </el-menu-item>
           <el-menu-item @click="router.push({name: 'all-email'})" index="all-email" v-perm="'all-email:query'"
                         :class="route.meta.name === 'all-email' ? 'choose-item' : ''">
-            <Icon icon="fluent:mail-list-28-regular" width="22" height="22" />
+            <Icon icon="cloud-mail:external-mail" width="22" height="22" />
             <span class="menu-name" style="margin-left: 15px">{{$t('allMail')}}</span>
           </el-menu-item>
           <el-menu-item @click="router.push({name: 'role'})" index="role" v-perm="'role:query'"
                         :class="route.meta.name === 'role' ? 'choose-item' : ''">
-            <Icon icon="fluent:lock-closed-16-regular" width="22" height="22" />
+            <Icon icon="cloud-mail:lock" width="22" height="22" />
             <span class="menu-name" style="margin-left: 15px">{{$t('permissions')}}</span>
           </el-menu-item>
           <el-menu-item @click="router.push({name: 'reg-key'})" index="reg-key" v-perm="'reg-key:query'"
                         :class="route.meta.name === 'reg-key' ? 'choose-item' : ''">
-            <Icon icon="fluent:fingerprint-20-filled" width="22" height="22" />
+            <Icon icon="cloud-mail:key" width="22" height="22" />
             <span class="menu-name" style="margin-left: 15px">{{$t('inviteCode')}}</span>
           </el-menu-item>
           <el-menu-item @click="router.push({name: 'sys-setting'})" index="sys-setting" v-perm="'setting:query'"
                         :class="route.meta.name === 'sys-setting' ? 'choose-item' : ''">
-            <Icon icon="eos-icons:system-ok-outlined" width="18" height="18" style="margin-left: 2px" />
+            <Icon icon="cloud-mail:settings" width="18" height="18" style="margin-left: 2px" />
             <span class="menu-name" style="margin-left: 17px">{{$t('SystemSettings')}}</span>
           </el-menu-item>
         </el-sub-menu>
@@ -90,6 +94,8 @@ import {Icon} from "@iconify/vue";
 import {useSettingStore} from "@/store/setting.js";
 import {computed, ref, watch} from 'vue';
 import {hasPerm} from '@/perm/perm.js';
+import {useUiStore} from '@/store/ui';
+const ui = useUiStore();
 
 const settingStore = useSettingStore();
 const route = useRoute();
@@ -211,7 +217,8 @@ watch(() => route.meta.name, () => {
   color: #FFFFFF;
 }
 
-.scroll {
+.navigation-content { flex:1; width:100%; display:flex; flex-direction:column; min-height:100%; }.footer-menu { margin-top:auto; padding-top:16px; }
+.scroll { height:100%; }:deep(.el-scrollbar__view) { display:flex; flex-direction:column; min-height:100%; }.el-menu { width:100%; }
+:deep(.el-menu-item-group__title) { color:var(--el-text-color-secondary); padding:12px 20px 3px; font-size:11px; }
 
-}
 </style>

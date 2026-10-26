@@ -652,5 +652,7 @@
   "mediaOpen": "Buka pemapar media",
   "mediaPrevious": "Media sebelumnya",
   "mediaNext": "Media seterusnya",
-  "roomSearchLoaded": "Mencari mesej yang telah dimuatkan. Muatkan mesej terdahulu untuk meluaskan carian."
+  "roomSearchLoaded": "Mencari mesej yang telah dimuatkan. Muatkan mesej terdahulu untuk meluaskan carian.",
+  "navigationMail": "Mel",
+  "conversationWidth": "Lebar senarai perbualan"
 }

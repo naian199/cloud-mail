@@ -121,5 +121,7 @@
   "mediaOpen": "打开媒体查看器",
   "mediaPrevious": "上一项",
   "mediaNext": "下一项",
-  "roomSearchLoaded": "搜索已加载的消息；加载更早的消息可扩大搜索范围。"
+  "roomSearchLoaded": "搜索已加载的消息；加载更早的消息可扩大搜索范围。",
+  "navigationMail": "邮件",
+  "conversationWidth": "会话列表宽度"
 }

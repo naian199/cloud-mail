@@ -1,9 +1,8 @@
 <template>
   <section class="mail-chat" :class="{ 'conversation-open': active }" @dragenter="dragEnter" @dragover="dragOver" @dragleave="dragLeave" @drop="dropFiles" @paste="pasteFiles">
     <aside class="conversations">
-      <div ref="contactScroll" class="conversation-list" @scroll.passive="contactListScroll" @keydown.home="restoreContactControls">
-      <div v-if="compactChat" ref="contactHeaderHost" class="contact-header-host"></div>
-      <div ref="contactControls" class="contact-controls">
+      <div ref="contactScroll" class="conversation-list" @keydown.home="restoreContactControls">
+      <div class="contact-controls">
       <el-input
         class="search"
         v-model="search"
@@ -26,6 +25,7 @@
           </el-dropdown>
         </template>
       </el-input>
+      <ConversationCategories />
       </div>
       <div class="contact-entries" v-loading="listLoading">
         <button
@@ -59,6 +59,7 @@
         >
       </div>
       </div>
+      <ConversationResize />
     </aside>
     <main v-if="active" class="thread">
       <div v-if="dragDepth && canSend && !sending" class="file-drop-overlay" role="status"><Icon icon="cloud-mail:attach" width="46" /><strong>{{ t('fileDropTitle') }}</strong><small>{{ t('fileDropHint') }}</small></div>
@@ -470,6 +471,8 @@
 </template>
 
 <script setup>
+import ConversationCategories from '@/components/conversation-categories.vue';
+import ConversationResize from '@/components/conversation-resize.vue';
 import { randomUUID } from '@/utils/uuid';
 
 import { computed, nextTick, onMounted, onBeforeUnmount, reactive, ref, watch } from 'vue';
@@ -571,21 +574,12 @@ const conversations = ref([]),
   search = ref('');
 const compactChat = useMediaQuery('(max-width: 767px), (max-width: 1024px) and (max-height: 500px) and (pointer: coarse)');
 const ui = useUiStore();
-const contactScroll = ref(null), contactHeaderHost = ref(null), contactControls = ref(null);
-function contactListScroll() {
-  if (!compactChat.value) return;
-  const threshold = (contactHeaderHost.value?.offsetHeight || 0) + (contactControls.value?.offsetHeight || 0);
-  ui.mobileContactsCollapsed = (contactScroll.value?.scrollTop || 0) >= threshold;
-}
+const contactScroll = ref(null);
 function restoreContactControls() {
   contactScroll.value?.scrollTo({ top: 0, behavior: 'smooth' });
 }
-watch([compactChat, contactHeaderHost], ([compact, host]) => {
-  ui.mobileContactsHeaderTarget = compact ? host : null;
-  ui.mobileContactsCollapsed = false;
-}, { flush: 'post' });
 const active = computed(() => !!selected.value);
-watch(active, value => { ui.mobileChatFocused = value; ui.mobileContactsCollapsed = false; if (!value) nextTick(contactListScroll); }, { immediate: true });
+watch(active, value => { ui.mobileChatFocused = value; }, { immediate: true });
 const isChat = (message) => message.compactMail || (message.chatStyle ?? message.internal);
 const originalExpanded = reactive({});
 const richPreview = (message) => !isChat(message) && !originalExpanded[message.emailId] &&
@@ -722,6 +716,7 @@ async function menuAction(action) {
   else if (action === 'clear') removeBoth();
 }
 function menuEscape(event) {
+  if (ui.asideShow) return;
   if (event.key === 'Escape') { closeMenu(); if (!mediaId.value && !selectionBusy.value) endSelection(); }
 }
 const stickerErrors = reactive({});
@@ -1597,8 +1592,6 @@ onMounted(async () => {
 });
 onBeforeUnmount(() => {
   ui.mobileChatFocused = false;
-  ui.mobileContactsCollapsed = false;
-  ui.mobileContactsHeaderTarget = null;
   cancelPress();
   document.removeEventListener('keydown', menuEscape);
   window.removeEventListener('resize', closeMenu);
@@ -1660,7 +1653,6 @@ onBeforeUnmount(() => {
   overflow: hidden;
 }
 .contact-entries { min-height: 0; flex: 1; overflow: auto; }
-.contact-header-host { height: 60px; flex-shrink: 0; border-bottom: 1px solid var(--el-border-color); }
 .contact {
   width: 100%;
   display: flex;
@@ -2131,7 +2123,7 @@ pre {
   --chat-outgoing: #e0f2ff;
   --chat-incoming: var(--el-bg-color-overlay);
   --chat-shadow: 0 1px 2px rgba(24, 55, 78, .09);
-  grid-template-columns: 330px minmax(0, 1fr);
+  grid-template-columns: var(--conversation-width, 300px) minmax(0, 1fr);
 }
 :global(html.dark .mail-chat) {
   --chat-canvas: #101c28;
@@ -2140,7 +2132,7 @@ pre {
   --chat-incoming: #20303f;
   --chat-shadow: 0 1px 2px rgba(0, 0, 0, .18);
 }
-.conversations { background: var(--el-bg-color); }
+.conversations { position:relative; background: var(--el-bg-color); }
 .contact { padding: 12px; min-height: 72px; border-radius: 10px; width: calc(100% - 12px); margin: 2px 6px; }
 .contact.selected { background: var(--el-color-primary); color: white; }
 .contact.selected .preview, .contact.selected .contact-meta { color: rgba(255,255,255,.85); }

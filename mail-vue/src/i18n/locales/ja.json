@@ -652,5 +652,7 @@
   "mediaOpen": "メディアを開く",
   "mediaPrevious": "前のメディア",
   "mediaNext": "次のメディア",
-  "roomSearchLoaded": "読み込み済みのメッセージを検索します。以前のメッセージを読み込むと検索範囲が広がります。"
+  "roomSearchLoaded": "読み込み済みのメッセージを検索します。以前のメッセージを読み込むと検索範囲が広がります。",
+  "navigationMail": "メール",
+  "conversationWidth": "会話リストの幅"
 }

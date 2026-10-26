@@ -652,5 +652,7 @@
   "mediaOpen": "Medya görüntüleyiciyi aç",
   "mediaPrevious": "Önceki medya",
   "mediaNext": "Sonraki medya",
-  "roomSearchLoaded": "Yüklenen mesajlarda arar. Aramayı genişletmek için eski mesajları yükleyin."
+  "roomSearchLoaded": "Yüklenen mesajlarda arar. Aramayı genişletmek için eski mesajları yükleyin.",
+  "navigationMail": "Posta",
+  "conversationWidth": "Sohbet listesi genişliği"
 }

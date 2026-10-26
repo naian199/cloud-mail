@@ -1,8 +1,10 @@
 <template>
   <section class="rooms" :class="{ 'has-active': active }">
     <aside class="room-list">
-      <div class="room-tools"><strong>{{ t('roomTitle') }}</strong><el-button :aria-label="t('roomCreate')" @click="newOpen = true">＋</el-button></div>
-      <div class="room-filters"><el-input v-model="search" clearable :placeholder="t('roomName')" /><el-select v-model="filter"><el-option :label="t('roomTitle')" value="all" /><el-option :label="t('roomGroup')" value="group" /><el-option :label="t('roomChannel')" value="channel" /></el-select></div>
+      <div class="room-controls">
+        <el-input v-model="search" clearable :placeholder="t('roomName')" :aria-label="t('roomName')"><template #prefix><Icon icon="cloud-mail:search" width="18" /></template><template #suffix><el-button text class="room-create" :aria-label="t('roomCreate')" @click="newRoom.kind = filter; newOpen = true">＋</el-button></template></el-input>
+        <ConversationCategories :kind="filter" />
+      </div>
       <div class="room-entries">
         <button v-for="room in filtered" :key="room.id" class="room-entry" :class="{ selected: activeId === room.id }" @click="choose(room.id)">
           <span class="room-symbol">{{ room.kind === 'channel' ? '#' : '☷' }}</span>
@@ -11,6 +13,7 @@
         </button>
         <el-empty v-if="!loading && !filtered.length" :description="t('roomEmpty')" :image-size="70" />
       </div>
+      <ConversationResize />
     </aside>
     <main v-if="active" class="room-thread">
       <header class="room-heading">
@@ -70,6 +73,8 @@
   </section>
 </template>
 <script setup>
+import ConversationCategories from '@/components/conversation-categories.vue';
+import ConversationResize from '@/components/conversation-resize.vue';
 import { computed, reactive, ref, watch, nextTick, onMounted, onBeforeUnmount } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
@@ -92,8 +97,9 @@ const rooms=ref([]), activeId=ref(typeof route.query.room==='string'?route.query
 const active=computed(()=>rooms.value.find(room=>room.id===activeId.value));
 const canManage=computed(()=>active.value?.status==='joined' && ['owner','admin'].includes(active.value.role));
 const canPost=computed(()=>active.value?.status==='joined' && (active.value.kind==='group' || canManage.value));
-const search=ref(''),filter=ref('all'), loading=ref(true), messageLoading=ref(false), hasOlder=ref(false), olderLoading=ref(false), sending=ref(false), atBottom=ref(true), scroll=ref(null);
-const filtered=computed(()=>rooms.value.filter(room=>(filter.value==='all'||room.kind===filter.value)&&room.name.toLowerCase().includes(search.value.toLowerCase())));
+const filter=computed(()=>['group','channel'].includes(route.query.kind)?route.query.kind:active.value?.kind||'group');
+const search=ref(''), loading=ref(true), messageLoading=ref(false), hasOlder=ref(false), olderLoading=ref(false), sending=ref(false), atBottom=ref(true), scroll=ref(null);
+const filtered=computed(()=>rooms.value.filter(room=>room.kind===filter.value&&room.name.toLowerCase().includes(search.value.toLowerCase())));
 const newOpen=ref(false), creating=ref(false), newRoom=reactive({kind:'group',name:''});
 const roomSearchOpen=ref(false), messageSearch=ref(''), resultIndex=ref(0), memberSearch=ref('');
 const matches=computed(()=>{const query=messageSearch.value.trim().toLocaleLowerCase();return query?messages.value.filter(message=>message.body.toLocaleLowerCase().includes(query)):[];});
@@ -110,7 +116,7 @@ watch(active,value=>{ui.mobileChatFocused=!!value;},{immediate:true});
 function senderName(id) { return senders[id]?.displayName || senders[id]?.username || `${t('roomMember')} ${id}`; }
 function roomDate(value) { return new Date(value.replace(' ','T')+'Z').toLocaleDateString(locale.value); }
 function time(value) { return new Date(value.replace(' ','T')+'Z').toLocaleTimeString(locale.value,{hour:'2-digit',minute:'2-digit'}); }
-async function choose(id) { if(stopped)return;const query={...route.query}; if(id)query.room=id;else delete query.room; await router.replace({query}); }
+async function choose(id) { if(stopped)return;const query={...route.query}; if(id){query.room=id;const room=rooms.value.find(room=>room.id===id);if(room)query.kind=room.kind;}else delete query.room; await router.replace({query}); }
 function reset() { roomSearchOpen.value=false;messageSearch.value='';memberSearch.value='';version++; messages.value=[];members.value=[];Object.keys(senders).forEach(key=>delete senders[key]);hasOlder.value=false;atBottom.value=true;membersOpen.value=false;messageLoading.value=!!activeId.value; }
 watch(()=>route.query.room,id=>{activeId.value=typeof id==='string'?id:null;reset();refresh();});
 function merge(data) { Object.assign(senders,data.senders);const map=new Map(messages.value.map(message=>[message.id,message]));data.messages.forEach(message=>map.set(message.id,message));messages.value=[...map.values()].sort((a,b)=>a.id-b.id); }
@@ -173,9 +179,9 @@ async function remove(){const selected=activeId.value;try{await ElMessageBox.con
 onBeforeUnmount(()=>{stopped=true;version++;ui.mobileChatFocused=false;translationStatus.settingsOpen=false;});
 </script>
 <style scoped>
-.rooms{height:100%;min-height:0;min-width:0;display:grid;grid-template-columns:330px minmax(0,1fr);overflow:hidden;}
+.rooms{height:100%;min-height:0;min-width:0;display:grid;grid-template-columns:var(--conversation-width,300px) minmax(0,1fr);overflow:hidden;}
 .room-list,.room-thread{min-height:0;min-width:0;display:flex;flex-direction:column;}
-.room-list{border-inline-end:1px solid var(--el-border-color);background:var(--el-bg-color);}
+.room-list{position:relative;border-inline-end:1px solid var(--el-border-color);background:var(--el-bg-color);}
 .room-tools{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;gap:8px;}
 .room-filters{display:grid;gap:6px;padding:0 12px 10px;}
 .room-entries{flex:1;overflow:auto;min-height:0;}
@@ -207,7 +213,7 @@ onBeforeUnmount(()=>{stopped=true;version++;ui.mobileChatFocused=false;translati
 .member-list{max-height:45dvh;overflow:auto;margin:12px 0;}
 .member-row{display:flex;align-items:center;gap:8px;padding:8px 0;}
 .back{display:none;}
-@media(max-width:767px){.rooms{grid-template-columns:minmax(0,1fr);}.has-active .room-list,.empty-room{display:none;}.back{display:inline-flex;}.room-composer :deep(textarea){font-size:16px;}.room-heading{padding-inline:6px;}.room-bubble{max-width:85%;}.member-row{flex-wrap:wrap;}}
+@media(max-width:767px), (max-width:1024px) and (max-height:500px) and (pointer:coarse){.rooms{grid-template-columns:minmax(0,1fr);}.has-active .room-list,.empty-room{display:none;}.back{display:inline-flex;}.room-composer :deep(textarea){font-size:16px;}.room-heading{padding-inline:6px;}.room-bubble{max-width:85%;}.member-row{flex-wrap:wrap;}}
 .room-message-search { display:flex; flex-wrap:wrap; align-items:center; gap:4px; padding:6px 12px; background:var(--el-bg-color); border-bottom:1px solid var(--el-border-color); }
 .room-message-search>.el-input { flex:1; min-width:120px; }.room-message-search>span { font-size:12px; }.room-message-search>small { flex-basis:100%; font-size:11px; color:var(--el-text-color-secondary); }
 .room-search-match .room-bubble { outline:1px solid var(--el-color-warning); }.room-search-current .room-bubble { outline:2px solid var(--el-color-primary); }
@@ -216,4 +222,5 @@ onBeforeUnmount(()=>{stopped=true;version++;ui.mobileChatFocused=false;translati
 :global(html.dark .rooms) { --room-canvas:#101c28; --room-incoming:#20303f; --room-outgoing:#234864; }
 .room-thread { background:var(--room-canvas); }.room-bubble { background:var(--room-incoming); border-radius:14px 14px 14px 5px; box-shadow:0 1px 2px #0001; }.mine .room-bubble { background:var(--room-outgoing); border-radius:14px 14px 5px 14px; }
 .room-heading-name small { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }.room-date { width:max-content; margin:12px auto; padding:4px 10px; border-radius:14px; font-size:11px; background:var(--el-fill-color); color:var(--el-text-color-secondary); }
+.room-controls { flex-shrink:0; padding-top:10px; }.room-controls>.el-input { margin:0 12px 10px 52px; width:calc(100% - 64px); }.room-create { padding:0 4px; height:24px; font-size:22px; }
 </style>

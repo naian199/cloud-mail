@@ -652,5 +652,7 @@
   "mediaOpen": "Medienansicht öffnen",
   "mediaPrevious": "Vorheriges Medium",
   "mediaNext": "Nächstes Medium",
-  "roomSearchLoaded": "Durchsucht geladene Nachrichten. Laden Sie ältere Nachrichten, um den Suchbereich zu erweitern."
+  "roomSearchLoaded": "Durchsucht geladene Nachrichten. Laden Sie ältere Nachrichten, um den Suchbereich zu erweitern.",
+  "navigationMail": "E-Mail",
+  "conversationWidth": "Breite der Unterhaltungsliste"
 }

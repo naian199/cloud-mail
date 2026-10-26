@@ -652,5 +652,7 @@
   "mediaOpen": "Buka penampil media",
   "mediaPrevious": "Media sebelumnya",
   "mediaNext": "Media berikutnya",
-  "roomSearchLoaded": "Mencari pesan yang telah dimuat. Muat pesan sebelumnya untuk memperluas pencarian."
+  "roomSearchLoaded": "Mencari pesan yang telah dimuat. Muat pesan sebelumnya untuk memperluas pencarian.",
+  "navigationMail": "Email",
+  "conversationWidth": "Lebar daftar percakapan"
 }

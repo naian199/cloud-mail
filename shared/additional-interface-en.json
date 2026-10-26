@@ -121,5 +121,7 @@
   "mediaOpen": "Open media viewer",
   "mediaPrevious": "Previous media",
   "mediaNext": "Next media",
-  "roomSearchLoaded": "Searches loaded messages. Load earlier messages to include more history."
+  "roomSearchLoaded": "Searches loaded messages. Load earlier messages to include more history.",
+  "navigationMail": "Mail",
+  "conversationWidth": "Conversation list width"
 }

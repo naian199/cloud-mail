@@ -187,9 +187,7 @@ router.afterEach((to) => {
         }
     }
 
-    if (window.innerWidth < 1025) {
-        uiStore.asideShow = false
-    }
+    uiStore.asideShow = false
 
     first = false
 })

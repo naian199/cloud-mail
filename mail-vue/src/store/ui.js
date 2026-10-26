@@ -3,9 +3,8 @@ import { defineStore } from 'pinia'
 export const useUiStore = defineStore('ui', {
     state: () => ({
         mobileChatFocused: false,
-        mobileContactsCollapsed: false,
-        mobileContactsHeaderTarget: null,
         asideShow: false,
+        conversationWidth: 300,
         accountShow: false,
         backgroundLoading: true,
         changeNotice: 0,
@@ -30,6 +29,6 @@ export const useUiStore = defineStore('ui', {
         }
     },
     persist: {
-        pick: ['accountShow','dark','asideShow'],
+        pick: ['accountShow','dark','conversationWidth'],
     },
 })
