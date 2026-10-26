@@ -630,5 +630,7 @@
   "voiceUnavailable": "Questo browser non supporta la dettatura. Usa la tastiera di sistema.",
   "voicePrivacy": "Il riconoscimento è fornito dal browser; l’audio può essere inviato al suo servizio. Il testo va nella bozza da verificare e inviare manualmente.",
   "voiceDenied": "Microfono non disponibile. Controlla dispositivo e permessi del browser e sistema.",
-  "voiceError": "Riconoscimento non riuscito. Riprova o usa la dettatura della tastiera."
+  "voiceError": "Riconoscimento non riuscito. Riprova o usa la dettatura della tastiera.",
+  "mailChatInternalGroup": "Chat interne",
+  "mailChatExternalGroup": "Email esterne"
 }

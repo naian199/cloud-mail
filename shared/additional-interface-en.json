@@ -99,5 +99,7 @@
   "voiceUnavailable": "This browser does not support voice input. Use your system keyboard dictation instead.",
   "voicePrivacy": "Recognition is provided by your browser; audio may be sent to its speech service. Text is inserted into your draft for you to review and send manually.",
   "voiceDenied": "Cannot use the microphone. Check the device and browser/system microphone permissions.",
-  "voiceError": "Speech recognition failed. Retry or use system keyboard dictation."
+  "voiceError": "Speech recognition failed. Retry or use system keyboard dictation.",
+  "mailChatInternalGroup": "Internal chats",
+  "mailChatExternalGroup": "External mail"
 }

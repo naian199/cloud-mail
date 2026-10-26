@@ -630,5 +630,7 @@
   "voiceUnavailable": "Trình duyệt không hỗ trợ nhập giọng nói. Dùng bàn phím hệ thống.",
   "voicePrivacy": "Trình duyệt nhận dạng giọng nói và có thể gửi âm thanh tới dịch vụ của nó. Văn bản chỉ vào bản nháp để bạn kiểm tra và tự gửi.",
   "voiceDenied": "Không dùng được micrô. Kiểm tra thiết bị và quyền trình duyệt, hệ thống.",
-  "voiceError": "Nhận dạng giọng nói thất bại. Thử lại hoặc dùng bàn phím giọng nói."
+  "voiceError": "Nhận dạng giọng nói thất bại. Thử lại hoặc dùng bàn phím giọng nói.",
+  "mailChatInternalGroup": "Trò chuyện nội bộ",
+  "mailChatExternalGroup": "Thư bên ngoài"
 }

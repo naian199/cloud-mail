@@ -630,5 +630,7 @@
   "voiceUnavailable": "Pelayar ini tidak menyokong imlak. Gunakan papan kekunci sistem.",
   "voicePrivacy": "Pengecaman disediakan pelayar; audio mungkin dihantar kepada perkhidmatan suaranya. Teks hanya dimasukkan ke draf untuk disemak dan dihantar secara manual.",
   "voiceDenied": "Mikrofon tidak tersedia. Semak peranti dan kebenaran pelayar serta sistem.",
-  "voiceError": "Pengecaman suara gagal. Cuba semula atau gunakan imlak papan kekunci."
+  "voiceError": "Pengecaman suara gagal. Cuba semula atau gunakan imlak papan kekunci.",
+  "mailChatInternalGroup": "Sembang dalaman",
+  "mailChatExternalGroup": "E-mel luaran"
 }

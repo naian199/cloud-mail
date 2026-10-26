@@ -630,5 +630,7 @@
   "voiceUnavailable": "Este navegador não suporta ditado. Use o teclado do sistema.",
   "voicePrivacy": "O navegador reconhece a fala e pode enviar áudio ao serviço dele. O texto entra no rascunho para revisão e envio manual.",
   "voiceDenied": "Não foi possível usar o microfone. Confira o dispositivo e as permissões do navegador e sistema.",
-  "voiceError": "O reconhecimento falhou. Tente novamente ou use o ditado do teclado."
+  "voiceError": "O reconhecimento falhou. Tente novamente ou use o ditado do teclado.",
+  "mailChatInternalGroup": "Conversas internas",
+  "mailChatExternalGroup": "E-mails externos"
 }

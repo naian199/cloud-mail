@@ -630,5 +630,7 @@
   "voiceUnavailable": "此瀏覽器不支援網頁語音輸入，請使用系統鍵盤的語音輸入。",
   "voicePrivacy": "語音辨識由瀏覽器提供，音訊可能傳送至其語音服務商。文字只填入草稿，由你確認後手動傳送。",
   "voiceDenied": "無法使用麥克風，請檢查裝置和瀏覽器、系統的麥克風權限。",
-  "voiceError": "語音辨識失敗，請重試或使用系統鍵盤語音輸入。"
+  "voiceError": "語音辨識失敗，請重試或使用系統鍵盤語音輸入。",
+  "mailChatInternalGroup": "站內聊天",
+  "mailChatExternalGroup": "站外郵件"
 }

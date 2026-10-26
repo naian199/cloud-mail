@@ -630,5 +630,7 @@
   "voiceUnavailable": "Deze browser ondersteunt geen dicteren. Gebruik het systeemtoetsenbord.",
   "voicePrivacy": "De browser herkent spraak; audio kan naar zijn spraakdienst gaan. Tekst komt in het concept om te controleren en handmatig te verzenden.",
   "voiceDenied": "Microfoon niet beschikbaar. Controleer apparaat en browser- en systeemrechten.",
-  "voiceError": "Spraakherkenning mislukt. Probeer opnieuw of gebruik toetsenborddictatie."
+  "voiceError": "Spraakherkenning mislukt. Probeer opnieuw of gebruik toetsenborddictatie.",
+  "mailChatInternalGroup": "Interne chats",
+  "mailChatExternalGroup": "Externe e-mail"
 }

@@ -630,5 +630,7 @@
   "voiceUnavailable": "Este navegador no admite dictado. Usa el del teclado del sistema.",
   "voicePrivacy": "El navegador reconoce la voz y puede enviar audio a su servicio. El texto se añade al borrador para revisarlo y enviarlo manualmente.",
   "voiceDenied": "No se puede usar el micrófono. Revisa el dispositivo y los permisos del navegador y sistema.",
-  "voiceError": "Falló el reconocimiento. Reintenta o usa el dictado del teclado."
+  "voiceError": "Falló el reconocimiento. Reintenta o usa el dictado del teclado.",
+  "mailChatInternalGroup": "Chats internos",
+  "mailChatExternalGroup": "Correo externo"
 }

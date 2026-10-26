@@ -176,6 +176,7 @@ await test(
 				const rows = await list(a);
 				assert.equal(rows.length, 1);
 				assert.equal(rows[0].key, first.conversationKey);
+                assert.equal(rows[0].category, 'internal');
 				const history = await messages(a, rows[0].key);
 				assert.equal(history.messages.length, 2);
 				assert.equal(history.messages[1].inReplyTo, incoming.messageId);
@@ -299,6 +300,7 @@ await test(
 				assert.equal(data.messages.length, 1);
 				assert(data.messages[0].richHtml.includes('HTML incoming'));
 				assert(data.messages[0].richHtml.includes('Old reply'));
+                assert.equal((await list(b)).find(row => row.peers.includes('sender@outside.example')).category, 'external');
 				assert.equal(data.messages[0].richImages.length, 1);
 				const pictureId = data.messages[0].richImages[0].attId;
 				const picture = await fetch(new URL(`api/mail-chat/attachment/${pictureId}`, root), {

@@ -630,5 +630,7 @@
   "voiceUnavailable": "Browser ini tidak mendukung dikte. Gunakan dikte papan ketik sistem.",
   "voicePrivacy": "Pengenalan disediakan browser; audio mungkin dikirim ke layanan suaranya. Teks masuk ke draf untuk diperiksa dan dikirim manual.",
   "voiceDenied": "Mikrofon tidak tersedia. Periksa perangkat serta izin browser dan sistem.",
-  "voiceError": "Pengenalan suara gagal. Coba lagi atau gunakan dikte papan ketik."
+  "voiceError": "Pengenalan suara gagal. Coba lagi atau gunakan dikte papan ketik.",
+  "mailChatInternalGroup": "Obrolan internal",
+  "mailChatExternalGroup": "Email eksternal"
 }

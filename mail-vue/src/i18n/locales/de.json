@@ -630,5 +630,7 @@
   "voiceUnavailable": "Dieser Browser unterstützt keine Spracheingabe. Nutzen Sie die Systemtastatur.",
   "voicePrivacy": "Der Browser stellt die Erkennung bereit; Audio kann an seinen Sprachdienst gesendet werden. Der Text landet im Entwurf zum Prüfen und manuellen Senden.",
   "voiceDenied": "Mikrofon nicht verfügbar. Gerät sowie Browser- und Systemberechtigungen prüfen.",
-  "voiceError": "Spracherkennung fehlgeschlagen. Erneut versuchen oder die Tastaturdiktierfunktion nutzen."
+  "voiceError": "Spracherkennung fehlgeschlagen. Erneut versuchen oder die Tastaturdiktierfunktion nutzen.",
+  "mailChatInternalGroup": "Interne Chats",
+  "mailChatExternalGroup": "Externe E-Mails"
 }

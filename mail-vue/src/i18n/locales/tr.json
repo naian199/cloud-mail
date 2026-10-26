@@ -630,5 +630,7 @@
   "voiceUnavailable": "Bu tarayıcı dikteyi desteklemiyor. Sistem klavyesini kullanın.",
   "voicePrivacy": "Tanıma tarayıcı tarafından sağlanır; ses, tarayıcının konuşma hizmetine gönderilebilir. Metin, kontrol edip elle göndermeniz için taslağa eklenir.",
   "voiceDenied": "Mikrofon kullanılamıyor. Cihazı, tarayıcı ve sistem izinlerini kontrol edin.",
-  "voiceError": "Konuşma tanınamadı. Tekrar deneyin veya klavye diktesini kullanın."
+  "voiceError": "Konuşma tanınamadı. Tekrar deneyin veya klavye diktesini kullanın.",
+  "mailChatInternalGroup": "Dahili sohbetler",
+  "mailChatExternalGroup": "Harici e-postalar"
 }

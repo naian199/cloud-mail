@@ -99,5 +99,7 @@
   "voiceUnavailable": "此浏览器不支持网页语音输入，请使用系统键盘的语音输入。",
   "voicePrivacy": "语音识别由浏览器提供，音频可能发送至浏览器的语音服务商。识别结果只填入草稿，由你确认后手动发送。",
   "voiceDenied": "无法使用麦克风，请检查设备及浏览器、系统的麦克风权限。",
-  "voiceError": "语音识别未成功，请重试或使用系统键盘语音输入。"
+  "voiceError": "语音识别未成功，请重试或使用系统键盘语音输入。",
+  "mailChatInternalGroup": "站内聊天",
+  "mailChatExternalGroup": "站外邮件"
 }

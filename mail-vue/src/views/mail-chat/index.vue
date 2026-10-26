@@ -28,8 +28,15 @@
       </el-input>
       </div>
       <div class="contact-entries" v-loading="listLoading">
+        <section v-for="group in conversationGroups" :key="group.key" class="conversation-group" :data-category="group.key">
+          <button type="button" class="contact-group-toggle" :aria-expanded="!collapsedGroups[group.key]" @click="collapsedGroups[group.key] = !collapsedGroups[group.key]">
+            <span aria-hidden="true">{{ collapsedGroups[group.key] ? '▸' : '▾' }}</span>
+            <span>{{ t(group.label) }}</span>
+            <span v-if="group.unread" class="badge">{{ group.unread > 99 ? $n(99) + '+' : $n(group.unread) }}</span>
+          </button>
+          <div v-show="!collapsedGroups[group.key]">
         <button
-          v-for="c in sortedConversations"
+          v-for="c in group.rows"
           :key="c.key"
           class="contact"
           :class="{ selected: selected?.key === c.key }"
@@ -48,11 +55,9 @@
             ><span v-if="c.unread" class="badge">{{ c.unread > 99 ? $n(99) + '+' : $n(c.unread) }}</span></span
           >
         </button>
-        <el-empty
-          v-if="!listLoading && !conversations.length"
-          :description="t('mailChatEmpty')"
-          :image-size="70"
-        />
+            <p v-if="!listLoading && !group.rows.length" class="contact-group-empty">{{ t('mailChatEmpty') }}</p>
+          </div>
+        </section>
         <el-button
           v-if="listHasMore"
           class="load-more"
@@ -591,6 +596,12 @@ const sortedConversations = computed(() =>
       b.latestId - a.latestId
   )
 );
+const collapsedGroups = reactive({ internal: false, external: false });
+const conversationGroups = computed(() => ['internal', 'external'].map(key => {
+  const rows = sortedConversations.value.filter(c => key === 'internal' ? c.category === 'internal' : c.category !== 'internal');
+  return { key, label: key === 'internal' ? 'mailChatInternalGroup' : 'mailChatExternalGroup', rows,
+    unread: rows.reduce((sum, row) => sum + (Number(row.unread) || 0), 0) };
+}));
 const draftKey = computed(() => `${accountId.value}:${selected.value?.key || ''}`);
 const drafts = reactive({}),
   files = reactive({}),
@@ -2076,4 +2087,11 @@ pre {
   .thread-header > .thread-navigation { display: none; }
   .thread-header > .el-button { min-width: 30px; }
 }
+</style>
+
+<style scoped>
+.contact-group-toggle { display: flex; align-items: center; gap: 7px; width: 100%; min-height: 32px; padding: 4px 14px; background: var(--el-bg-color); color: var(--el-text-color-secondary); border: 0; text-align: start; font: inherit; font-size: 12px; cursor: pointer; }
+.contact-group-toggle .badge { margin-inline-start: auto; }
+.contact-group-toggle:focus-visible { outline: 2px solid var(--el-color-primary); outline-offset: -2px; }
+.contact-group-empty { padding: 6px 14px 10px; margin: 0; color: var(--el-text-color-placeholder); font-size: 12px; }
 </style>

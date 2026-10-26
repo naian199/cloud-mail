@@ -154,12 +154,14 @@ const mailChat = {
 		return {
 			conversations: results.slice(0, 30).map((row) => ({
 				...row, peers: addresses(row.peers),
+                category: addresses(row.peers).length > 0 && addresses(row.peers).every(peer => !!profiles.get(peer)?.email) ? 'internal' : 'external',
 				profile: addresses(row.peers).length === 1 ? profiles.get(addresses(row.peers)[0]) : null
 			})),
 			contacts: !query.before
 				? contacts.filter((r) => !search || r.peer_email.toLowerCase().includes(search) || profiles.get(r.peer_email.toLowerCase())?.displayName?.toLowerCase().includes(search) || profiles.get(r.peer_email.toLowerCase())?.remark?.toLowerCase().includes(search)).map((r) => ({
 						key: r.key,
 						peers: [r.peer_email],
+                        category: profiles.get(r.peer_email.toLowerCase())?.email ? 'internal' : 'external',
 						profile: profiles.get(r.peer_email.toLowerCase()),
 						latestId: 0,
 						unread: 0,
