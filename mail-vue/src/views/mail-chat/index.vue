@@ -28,15 +28,8 @@
       </el-input>
       </div>
       <div class="contact-entries" v-loading="listLoading">
-        <section v-for="group in conversationGroups" :key="group.key" class="conversation-group" :data-category="group.key">
-          <button type="button" class="contact-group-toggle" :aria-expanded="!collapsedGroups[group.key]" @click="collapsedGroups[group.key] = !collapsedGroups[group.key]">
-            <span aria-hidden="true">{{ collapsedGroups[group.key] ? '▸' : '▾' }}</span>
-            <span>{{ t(group.label) }}</span>
-            <span v-if="group.unread" class="badge">{{ group.unread > 99 ? $n(99) + '+' : $n(group.unread) }}</span>
-          </button>
-          <div v-show="!collapsedGroups[group.key]">
         <button
-          v-for="c in group.rows"
+          v-for="c in sortedConversations"
           :key="c.key"
           class="contact"
           :class="{ selected: selected?.key === c.key }"
@@ -55,9 +48,7 @@
             ><span v-if="c.unread" class="badge">{{ c.unread > 99 ? $n(99) + '+' : $n(c.unread) }}</span></span
           >
         </button>
-            <p v-if="!listLoading && !group.rows.length" class="contact-group-empty">{{ t('mailChatEmpty') }}</p>
-          </div>
-        </section>
+        <el-empty v-if="!listLoading && !conversations.length" :description="t('mailChatEmpty')" :image-size="70" />
         <el-button
           v-if="listHasMore"
           class="load-more"
@@ -541,7 +532,9 @@ async function saveRemark() {
 }
 const user = useUserStore(),
   accountStore = useAccountStore();
-const savedThreadKey = `mail-chat:thread:${user.user.userId}`;
+const category = route.name === 'external-mail' ? 'external' : 'internal';
+const categoryPath = category === 'external' ? '/external-mail' : '/mail-chat';
+const savedThreadKey = `mail-chat:thread:${user.user.userId}:${category}`;
 function rememberThread(conversation) {
   try {
     if (conversation) {
@@ -596,12 +589,6 @@ const sortedConversations = computed(() =>
       b.latestId - a.latestId
   )
 );
-const collapsedGroups = reactive({ internal: false, external: false });
-const conversationGroups = computed(() => ['internal', 'external'].map(key => {
-  const rows = sortedConversations.value.filter(c => key === 'internal' ? c.category === 'internal' : c.category !== 'internal');
-  return { key, label: key === 'internal' ? 'mailChatInternalGroup' : 'mailChatExternalGroup', rows,
-    unread: rows.reduce((sum, row) => sum + (Number(row.unread) || 0), 0) };
-}));
 const draftKey = computed(() => `${accountId.value}:${selected.value?.key || ''}`);
 const drafts = reactive({}),
   files = reactive({}),
@@ -833,7 +820,7 @@ async function openFriend(friend) {
     const c = await mailOpen({ accountId: accountId.value, email: friend.email });
     if (!conversations.value.some((r) => r.key === c.key)) conversations.value.push(c);
     friendsOpen.value = false;
-    await select(c);
+    await select({ ...c, category: 'internal' });
   } catch {}
 }
 async function removeSelf(message) {
@@ -988,6 +975,10 @@ function onScroll() {
   if (atBottom.value) markRead().catch(() => {});
 }
 async function select(c) {
+  if (c.category && c.category !== category) {
+    await router.push({ path: c.category === 'external' ? '/external-mail' : '/mail-chat', query: { accountId: accountId.value, conversation: c.key } });
+    return;
+  }
   historyAnchor.value = null;
   closeMenu();
   cancelPress();
@@ -1050,7 +1041,7 @@ async function sync() {
       dirty = false;
       const a = accountId.value,
         q = search.value;
-      const list = await mailConversations({ accountId: a, search: q });
+      const list = await mailConversations({ accountId: a, search: q, category });
       if (a !== accountId.value || q !== search.value || stopped) {
         dirty = true;
         continue;
@@ -1128,6 +1119,7 @@ async function moreConversations() {
     const data = await mailConversations({
       accountId: a,
       search: q,
+      category,
       before: [...conversations.value]
         .filter((c) => c.latestId > 0)
         .sort((a, b) => utc(a.createTime) - utc(b.createTime) || a.latestId - b.latestId)[0]
@@ -1280,12 +1272,18 @@ async function deliver(payload, context, intent) {
 async function showSent(account, result, selectionVersion) {
   if (stopped || accountId.value !== account || version !== selectionVersion) return;
   search.value = '';
-  const data = await mailConversations({ accountId: account });
+  const data = await mailConversations({ accountId: account, category });
   if (stopped || accountId.value !== account || version !== selectionVersion) return;
   conversations.value = data.conversations;
   listHasMore.value = data.hasMore;
   const sentConversation = data.conversations.find((c) => c.key === result.conversationKey);
-  if (!sentConversation) return;
+  if (!sentConversation) {
+    const target = await mailConversations({ accountId: account, conversation: result.conversationKey });
+    const found = target.conversations[0];
+    if (!stopped && found && accountId.value === account && version === selectionVersion)
+      await select(found);
+    return;
+  }
   if (selected.value?.key !== sentConversation.key) {
     await select(sentConversation);
     return;
@@ -1410,12 +1408,19 @@ watch(
       switchMailbox(requested);
       return;
     }
-    const found = conversations.value.find((conversation) => conversation.key === key);
-    if (!found) return;
+    if (typeof key !== 'string' || !/^[a-f0-9]{64}$/.test(key)) return;
     openingLink = true;
     try {
+      let found = conversations.value.find(conversation => conversation.key === key);
+      if (!found) {
+        const data = await mailConversations({ accountId: requested, conversation: key });
+        if (stopped || accountId.value !== requested || route.query.conversation !== key) return;
+        found = data.conversations[0] || data.contacts?.[0];
+      }
+      if (!found) return;
+      if (found.category !== category) { await select(found); return; }
       if (selected.value?.key !== found.key) await select(found);
-      await router.replace({ path: '/mail-chat', query: {} });
+      await router.replace({ path: categoryPath, query: {} });
     } finally {
       openingLink = false;
     }
@@ -2087,11 +2092,4 @@ pre {
   .thread-header > .thread-navigation { display: none; }
   .thread-header > .el-button { min-width: 30px; }
 }
-</style>
-
-<style scoped>
-.contact-group-toggle { display: flex; align-items: center; gap: 7px; width: 100%; min-height: 32px; padding: 4px 14px; background: var(--el-bg-color); color: var(--el-text-color-secondary); border: 0; text-align: start; font: inherit; font-size: 12px; cursor: pointer; }
-.contact-group-toggle .badge { margin-inline-start: auto; }
-.contact-group-toggle:focus-visible { outline: 2px solid var(--el-color-primary); outline-offset: -2px; }
-.contact-group-empty { padding: 6px 14px 10px; margin: 0; color: var(--el-text-color-placeholder); font-size: 12px; }
 </style>

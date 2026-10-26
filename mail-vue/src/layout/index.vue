@@ -11,7 +11,7 @@
     ></div>
     <el-container class="main-container">
       <el-main>
-        <el-header v-show="!uiStore.mobileContactsHeaderTarget && !(route.name === 'mail-chat' && uiStore.mobileChatFocused)">
+        <el-header v-show="!uiStore.mobileContactsHeaderTarget && !(['mail-chat', 'external-mail'].includes(route.name) && uiStore.mobileChatFocused)">
           <Teleport :to="uiStore.mobileContactsHeaderTarget || 'body'" :disabled="!uiStore.mobileContactsHeaderTarget">
             <Header />
           </Teleport>

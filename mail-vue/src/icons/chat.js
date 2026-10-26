@@ -9,6 +9,7 @@ addCollection({
   width: 24,
   height: 24,
   icons: {
+    'external-mail': outline('<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 6 9 7 9-7"/>'),
     menu: outline('<path d="M4 6h16M4 12h16M4 18h16"/>'),
     more: outline('<circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/>'),
     microphone: outline('<rect x="9" y="2" width="6" height="13" rx="3"/><path d="M5 10v2a7 7 0 0 0 14 0v-2M12 19v3m-4 0h8"/>'),

@@ -101,6 +101,14 @@ const mailChat = {
 		if (before && !cursor) fail('Invalid cursor');
 		const search =
 			typeof query.search === 'string' ? query.search.trim().slice(0, 100).toLowerCase() : '';
+        const category = query.category;
+        if (category !== undefined && !['internal', 'external'].includes(category)) fail('Invalid category', 400);
+        const requestedKey = query.conversation ? key(query.conversation) : null;
+        const internalPeers = `json_array_length(e.conversation_peers)>0 AND NOT EXISTS (
+          SELECT 1 FROM json_each(e.conversation_peers) peer WHERE NOT EXISTS (
+            SELECT 1 FROM account a JOIN user u ON u.user_id=a.user_id
+            WHERE lower(a.email)=lower(peer.value) AND a.is_del=0 AND a.status=0 AND u.is_del=0 AND u.status=0))`;
+        const categoryFilter = category ? `${category === 'external' ? 'NOT' : ''} (${internalPeers}) AND ` : '';
 		const { results } = await c.env.db
 			.prepare(
 				`WITH conversations AS (
@@ -116,7 +124,7 @@ const mailChat = {
       p.conversation_key IS NOT NULL AS pinned
       FROM conversations c JOIN email e ON e.email_id = c.latestId
       LEFT JOIN mail_conversation_pin p ON p.user_id = e.user_id AND p.account_id = e.account_id AND p.conversation_key = c.conversation_key
-      WHERE ${cursor ? '(e.create_time < ? OR (e.create_time = ? AND e.email_id < ?)) AND ' : ''}(? = '' OR instr(lower(e.conversation_peers), ?) > 0 OR instr(lower(coalesce(e.subject, '')), ?) > 0
+      WHERE ${requestedKey ? 'e.conversation_key = ? AND ' : ''}${categoryFilter}${cursor ? '(e.create_time < ? OR (e.create_time = ? AND e.email_id < ?)) AND ' : ''}(? = '' OR instr(lower(e.conversation_peers), ?) > 0 OR instr(lower(coalesce(e.subject, '')), ?) > 0
       OR EXISTS(SELECT 1 FROM email matched WHERE matched.user_id=e.user_id AND matched.account_id=e.account_id AND matched.conversation_key=e.conversation_key AND matched.is_del=0 AND matched.type IN (0,1) AND matched.status!=6 AND (instr(lower(coalesce(matched.text,'')), ?) > 0 OR instr(lower(coalesce(matched.subject,'')), ?) > 0))
       OR EXISTS(SELECT 1 FROM account pa JOIN user pu ON pu.user_id=pa.user_id JOIN mail_user_profile pp ON pp.user_id=pa.user_id WHERE lower(pa.email) IN (SELECT lower(value) FROM json_each(e.conversation_peers)) AND pa.status=0 AND pa.is_del=0 AND pu.status=0 AND pu.is_del=0 AND instr(lower(pp.display_name), ?) > 0)
       OR EXISTS(SELECT 1 FROM mail_contact_note n WHERE n.user_id=e.user_id AND lower(n.email) IN (SELECT lower(value) FROM json_each(e.conversation_peers)) AND instr(lower(n.remark), ?) > 0))
@@ -125,6 +133,7 @@ const mailChat = {
 			.bind(
 				account.user_id,
 				account.account_id,
+                ...(requestedKey ? [requestedKey] : []),
 				...(cursor ? [cursor.create_time, cursor.create_time, before] : []),
 				search,
 				search,
@@ -158,7 +167,7 @@ const mailChat = {
 				profile: addresses(row.peers).length === 1 ? profiles.get(addresses(row.peers)[0]) : null
 			})),
 			contacts: !query.before
-				? contacts.filter((r) => !search || r.peer_email.toLowerCase().includes(search) || profiles.get(r.peer_email.toLowerCase())?.displayName?.toLowerCase().includes(search) || profiles.get(r.peer_email.toLowerCase())?.remark?.toLowerCase().includes(search)).map((r) => ({
+				? contacts.filter(r => (!requestedKey || r.key === requestedKey) && (!category || (profiles.get(r.peer_email.toLowerCase())?.email ? 'internal' : 'external') === category)).filter((r) => !search || r.peer_email.toLowerCase().includes(search) || profiles.get(r.peer_email.toLowerCase())?.displayName?.toLowerCase().includes(search) || profiles.get(r.peer_email.toLowerCase())?.remark?.toLowerCase().includes(search)).map((r) => ({
 						key: r.key,
 						peers: [r.peer_email],
                         category: profiles.get(r.peer_email.toLowerCase())?.email ? 'internal' : 'external',

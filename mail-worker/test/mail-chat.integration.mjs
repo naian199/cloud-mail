@@ -316,6 +316,37 @@ await test(
 				assert(detail.data.text.includes('HTML incoming'));
 			}
 		);
+
+        await t.test('navigation categories filter before pagination and resolve old conversation links', async () => {
+          const d = await user();
+          const owner = fixture.prepare('SELECT user_id FROM account WHERE account_id=?').get(d.account).user_id;
+          const insert = fixture.prepare(`INSERT INTO email(user_id,account_id,send_email,recipient,subject,text,type,status,is_del,conversation_key,conversation_peers,create_time) VALUES(?,?,?,?,?,?,0,0,0,?,?,?)`);
+          const insideKey = createHash('sha256').update(a.email.toLowerCase()).digest('hex');
+          insert.run(owner,d.account,a.email,JSON.stringify([d.email]),'Only internal','Inside',insideKey,JSON.stringify([a.email]),'2020-01-01 00:00:00');
+          for(let i=0;i<40;i++) {
+            const sender=`sender${i}@outside.example`, key=createHash('sha256').update(sender).digest('hex');
+            insert.run(owner,d.account,sender,JSON.stringify([d.email]),'External fixture','Outside',key,JSON.stringify([sender]),`2026-01-01 00:00:${String(i).padStart(2,'0')}`);
+          }
+          const scoped = async extra => (await api(`mail-chat/conversations?accountId=${d.account}&${extra}`,d.token)).data;
+          const inside = await scoped('category=internal');
+          assert.equal(inside.conversations.length,1);
+          assert.equal(inside.conversations[0].key,insideKey);
+          assert.equal(inside.hasMore,false);
+          const outside = await scoped('category=external');
+          assert.equal(outside.conversations.length,30);
+          assert(outside.conversations.every(row=>row.category==='external'));
+          assert.equal(outside.hasMore,true);
+          const older=await scoped('category=external&before='+outside.conversations.at(-1).latestId);
+          assert.equal(older.conversations.length,10);
+          assert.equal(older.hasMore,false);
+          assert.equal(new Set([...outside.conversations,...older.conversations].map(row=>row.key)).size,40);
+          assert.equal((await scoped('category=internal&search=Only')).conversations.length,1);
+          assert.equal((await scoped('category=external&search=Only')).conversations.length,0);
+          assert.equal((await scoped('conversation='+insideKey)).conversations[0].key,insideKey);
+          assert.equal((await scoped('category=external&conversation='+insideKey)).conversations.length,0);
+          assert.equal((await api(`mail-chat/conversations?accountId=${d.account}&category=invalid`,d.token)).code,400);
+          assert.equal((await api(`mail-chat/conversations?accountId=${d.account}&category=external`,a.token)).code,403);
+        });
 		await t.test('message paging, bounded legacy indexing and safe pending retries', async () => {
 			for (let i = 0; i < 24; i++)
 				assert.equal(

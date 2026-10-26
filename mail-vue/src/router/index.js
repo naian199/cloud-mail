@@ -17,6 +17,11 @@ const routes = [
                 meta: { title: 'mailChatTitle', name: 'mail-chat', menu: true }
             },
             {
+                path: '/external-mail', name: 'external-mail',
+                component: () => import('@/views/mail-chat/index.vue'),
+                meta: { title: 'mailChatExternalGroup', name: 'external-mail', menu: true }
+            },
+            {
                 path: '/rooms', name: 'rooms',
                 component: () => import('@/views/rooms/index.vue'),
                 meta: { title: 'roomTitle', name: 'rooms', menu: true }
