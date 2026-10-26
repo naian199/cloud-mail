@@ -1,19 +1,26 @@
 <template>
-  <div ref="host" class="video-attachment" :class="{ expanded }" :aria-busy="loading || converting">
-    <video v-if="url" ref="player" :src="url" controls playsinline preload="metadata" :aria-label="file.filename" @error="playbackFailed" @pointerdown.stop @touchstart.stop />
-    <button v-else class="video-start" type="button" :disabled="loading || converting" @click="play">
-      <Icon icon="cloud-mail:play" width="38" aria-hidden="true" />
-      <span>{{ t(loading ? 'videoLoading' : 'videoPlay') }}</span>
-    </button>
-    <div class="video-caption"><strong :title="file.filename">{{ file.filename }}</strong><small>{{ formatBytes(file.size) }}</small></div>
-    <p v-if="converting" class="video-status" role="status">{{ t('videoConverting', { percent: percent }) }}</p>
-    <p v-else-if="error" class="video-status" role="status">{{ t(error) }}</p>
-    <div class="video-actions">
-      <button v-if="!expanded" type="button" :aria-label="t('mediaOpen')" :title="t('mediaOpen')" @click="player?.pause(); $emit('preview')"><Icon icon="cloud-mail:expand" width="16" /></button>
-      <button v-if="converting" type="button" @click="cancel">{{ t('cancel') }}</button>
-      <button v-else-if="!converted" type="button" :disabled="loading" @click="convert">{{ t('videoCompatible') }}</button>
-      <button type="button" @click="$emit('download')">{{ t('videoDownload') }}</button>
+  <div ref="host" class="video-attachment" :class="{ expanded }" :style="{ '--video-aspect': aspect }" :aria-busy="loading || converting">
+    <div class="video-frame">
+      <video v-if="url" ref="player" :src="url" controls playsinline preload="metadata" :aria-label="file.filename" @loadedmetadata="readDimensions" @error="playbackFailed" @pointerdown.stop @touchstart.stop />
+      <button v-else class="video-start" type="button" :disabled="loading || converting" @click="play">
+        <Icon icon="cloud-mail:play" width="38" aria-hidden="true" />
+        <span>{{ t(loading ? 'videoLoading' : 'videoPlay') }}</span>
+      </button>
+      <div class="video-actions">
+        <button v-if="!expanded" class="video-expand" type="button" :aria-label="t('mediaOpen')" :title="t('mediaOpen')" @click="player?.pause(); $emit('preview')"><Icon icon="cloud-mail:expand" width="17" /></button>
+        <el-dropdown trigger="click" placement="bottom-end" @command="action">
+          <button class="video-menu" type="button" :aria-label="file.filename + ' · ' + t('tabSetting')"><Icon icon="cloud-mail:more" width="18" /></button>
+          <template #dropdown><el-dropdown-menu>
+            <el-dropdown-item v-if="converting" command="cancel">{{ t('cancel') }}</el-dropdown-item>
+            <el-dropdown-item v-else-if="!converted" command="convert" :disabled="loading">{{ t('videoCompatible') }}</el-dropdown-item>
+            <el-dropdown-item command="download">{{ t('videoDownload') }}</el-dropdown-item>
+          </el-dropdown-menu></template>
+        </el-dropdown>
+      </div>
     </div>
+    <div v-if="!expanded" class="video-caption"><strong :title="file.filename">{{ file.filename }}</strong><small>{{ formatBytes(file.size) }}</small></div>
+    <p v-if="converting" class="video-status" role="status">{{ t('videoConverting', { percent: percent }) }} <button type="button" @click="cancel">{{ t('cancel') }}</button></p>
+    <p v-else-if="error" class="video-status" role="status">{{ t(error) }} <button v-if="!converted" type="button" :disabled="loading" @click="convert">{{ t('videoCompatible') }}</button></p>
   </div>
 </template>
 <script setup>
@@ -22,9 +29,18 @@ import { Icon } from '@iconify/vue';
 import { useI18n } from 'vue-i18n';
 import { videoMime } from '@/utils/video-files.mjs';
 const props = defineProps({ file: { type: Object, required: true }, load: { type: Function, required: true }, expanded: Boolean });
-defineEmits(['download', 'preview']);
+const emit = defineEmits(['download', 'preview']);
 const { t } = useI18n();
-const visible = ref(true);
+const visible = ref(true), aspect = ref(16 / 9);
+function readDimensions() {
+  const width = player.value?.videoWidth, height = player.value?.videoHeight;
+  if (width > 0 && height > 0) aspect.value = width / height;
+}
+function action(command) {
+  if (command === 'download') emit('download');
+  else if (command === 'convert') convert();
+  else if (command === 'cancel') cancel();
+}
 const host = ref(null), player = ref(null), url = ref(''), loading = ref(false), converting = ref(false),
   converted = ref(false), error = ref(''), percent = ref(0);
 let original, controller, disposed = false, observer;
@@ -94,18 +110,21 @@ onBeforeUnmount(() => {
 });
 </script>
 <style scoped>
-.video-attachment { width: min(300px, 100%); max-width: 100%; overflow: hidden; }
-video, .video-start { display: flex; width: 100%; height: auto; aspect-ratio: 16 / 9; max-height: 280px; border-radius: 9px; background: #101820; color: white; }
-.video-start { border: 0; align-items: center; justify-content: center; flex-direction: column; gap: 6px; cursor: pointer; min-height: 130px; }
-.video-start:disabled { opacity: .6; cursor: wait; }
-.video-caption { display: flex; align-items: baseline; gap: 8px; margin: 6px 0 2px; }
-.video-caption strong { font-size: 12px; font-weight: 500; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; min-width: 0; }
-.video-caption small { flex-shrink: 0; color: var(--el-text-color-secondary); font-size: 11px; }
-.video-status { margin: 5px 0; font-size: 12px; overflow-wrap: anywhere; }
-.video-actions { display: flex; flex-wrap: wrap; gap: 12px; }
-.video-actions button { border: 0; padding: 4px 0; background: none; font: inherit; color: var(--el-color-primary); font-size: 12px; cursor: pointer; }
-.video-actions button:disabled { color: var(--el-text-color-secondary); cursor: default; }
+.video-attachment { width:min(340px, calc(min(400px, 55dvh) * var(--video-aspect))); max-width:100%; overflow:hidden; }
+.video-frame { position:relative; border-radius:10px; overflow:hidden; background:#101820; }
+video { display:block; width:100%; height:auto; object-fit:contain; background:#101820; }
+.video-start { display:flex; width:100%; aspect-ratio:16 / 9; border:0; align-items:center; justify-content:center; flex-direction:column; gap:6px; cursor:pointer; min-height:130px; background:#101820; color:white; }
+.video-start:disabled { opacity:.6; cursor:wait; }
+.video-caption { display:flex; align-items:baseline; gap:8px; margin:5px 2px 0; min-width:0; }
+.video-caption strong { flex:1; font-size:11px; font-weight:400; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; min-width:0; color:var(--el-text-color-regular); }
+.video-caption small { flex-shrink:0; color:var(--el-text-color-secondary); font-size:10px; }
+.video-status { margin:5px 2px 0; font-size:12px; overflow-wrap:anywhere; }
+.video-status button { border:0; padding:2px; background:none; font:inherit; color:var(--el-color-primary); cursor:pointer; }
+.video-actions { position:absolute; inset-block-start:6px; inset-inline-end:6px; display:flex; gap:4px; }
+.video-actions button { display:grid; place-items:center; width:28px; height:28px; padding:0; border:0; border-radius:50%; background:#0008; color:white; cursor:pointer; }
+.video-actions button:hover { background:#000c; }.video-actions button:focus-visible { outline:2px solid white; outline-offset:1px; }
 .video-attachment.expanded { width:min(1100px,100%); }
-.expanded video,.expanded .video-start { max-height:calc(100dvh - 180px); object-fit:contain; }
-.video-actions button { display:inline-flex; align-items:center; }
+.expanded .video-frame { background:transparent; }
+.expanded video { width:auto; max-width:100%; max-height:calc(100dvh - 130px); margin:auto; }
+.expanded .video-start { max-height:calc(100dvh - 130px); }
 </style>

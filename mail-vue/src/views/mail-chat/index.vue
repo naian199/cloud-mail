@@ -147,7 +147,7 @@
             </button>
             <div
               class="bubble"
-              :class="{ 'internal-bubble': isChat(m) }"
+              :class="{ 'internal-bubble': isChat(m), 'video-only-bubble': !(m.replyText ?? m.text)?.trim() && !m.richHtml && !m.images?.length && m.attachments?.length && m.attachments.every(isVideoFile) }"
               :tabindex="0"
               @contextmenu="openMessageMenu($event, m)"
               @pointerdown="startPress($event, m)"
@@ -2241,7 +2241,10 @@ pre {
 .file-drop-overlay { position: absolute; inset: 10px; z-index: 12; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 12px; padding: 18px; border: 2px dashed #20bd79; border-radius: 18px; background: color-mix(in srgb, var(--el-bg-color) 87%, #10b981 13%); color: var(--el-text-color-primary); pointer-events: none; text-align: center; }
 .file-drop-overlay strong { font-size: 22px; font-weight: 500; }
 .file-drop-overlay small { max-width: 280px; line-height: 1.6; }
-.attachment:has(.video-attachment) { min-width: min(280px, 70vw); max-width: 100%; }
+.attachment:has(.video-attachment) { min-width:0; max-width:100%; width:fit-content; }
+.bubble.video-only-bubble { width:fit-content; padding:5px; }
+.video-only-bubble .attachment { margin:0; }
+.video-only-bubble .attachment + .attachment { margin-top:5px; }
 </style>
 
 <style scoped>
