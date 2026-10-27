@@ -1,4 +1,5 @@
 import http from '@/axios';
+import {afterUnreadChange} from '@/utils/unread-changes.mjs';
 const root='/chat/rooms';
 export const listRooms=()=>http.get(root);
 export const createRoom=data=>http.post(root,data);
@@ -12,5 +13,5 @@ export const respondRoom=(id,accept)=>http.put(`${root}/${id}/membership`,{accep
 export const leaveRoom=id=>http.delete(`${root}/${id}/membership`);
 export const roomMessages=(id,params={})=>http.get(`${root}/${id}/messages`,{params});
 export const sendRoomMessage=(id,body,clientId,voice)=>http.post(`${root}/${id}/messages`,{body,clientId,voice},{timeout:60000});
-export const readRoom=(id,through)=>http.put(`${root}/${id}/read`,{through});
+export const readRoom=(id,through)=>afterUnreadChange(http.put(`${root}/${id}/read`,{through}));
 export const translateRoomMessage=(id,messageId,target,signal)=>http.post(`${root}/${id}/messages/${messageId}/translate`,{target},{signal,noMsg:true,timeout:20000});

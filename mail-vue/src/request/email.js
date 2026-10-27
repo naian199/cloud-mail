@@ -1,4 +1,5 @@
 import http from '@/axios/index.js';
+import {afterUnreadChange} from '@/utils/unread-changes.mjs';
 
 export function emailList(accountId, allReceive, emailId, timeSort, size, type, full) {
     return http.get('/email/list', {params: {accountId, allReceive, emailId, timeSort, size, type, full}})
@@ -13,7 +14,7 @@ export function emailLatest(emailId, accountId, allReceive) {
 }
 
 export function emailRead(emailIds) {
-    return http.put('/email/read', {emailIds})
+    return afterUnreadChange(http.put('/email/read', {emailIds}))
 }
 
 export function emailSend(form,progress) {

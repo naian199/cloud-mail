@@ -1,8 +1,9 @@
 import http from '@/axios';
+import {afterUnreadChange} from '@/utils/unread-changes.mjs';
 export const mailConversations = (params) => http.get('/mail-chat/conversations', { params });
 export const mailMessages = (params) => http.get('/mail-chat/messages', { params });
 export const mailDetail = (id) => http.get(`/mail-chat/message/${id}`);
-export const mailRead = (data) => http.put('/mail-chat/read', data);
+export const mailRead = (data) => afterUnreadChange(http.put('/mail-chat/read', data));
 export const mailPin = (data) => http.put('/mail-chat/pin', data);
 export const mailSend = (data) => http.post('/mail-chat/send', data, { timeout: 60000 });
 export async function mailAttachment(id, { signal } = {}) {
