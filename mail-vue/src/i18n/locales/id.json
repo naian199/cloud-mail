@@ -698,5 +698,18 @@
   "stickersErrorNotFound": "Sticker pack not found. Check the name and whether the pack is still public.",
   "stickersErrorNetwork": "Cannot reach Telegram. Retry or upload local stickers.",
   "stickersErrorEmpty": "This pack has no importable stickers.",
-  "stickersErrorPublic": "No readable previews on the public page. Ask the administrator to configure a bot, or upload local stickers."
+  "stickersErrorPublic": "No readable previews on the public page. Ask the administrator to configure a bot, or upload local stickers.",
+  "appInstallTitle": "Install on desktop",
+  "appInstallMobileTitle": "Add to Home Screen",
+  "appInstallDescription": "Open your mailbox in its own app window, with quick access to chats and email.",
+  "appInstallNow": "Install now",
+  "appInstallGuide": "How to install",
+  "appInstallLater": "Not now",
+  "appInstallIosShare": "Tap the browser’s Share button.",
+  "appInstallIosAdd": "Choose “Add to Home Screen”, then tap “Add”.",
+  "appInstallIosFallback": "If “Add to Home Screen” is missing, open this site in Safari.",
+  "appInstallAndroid": "Open the browser menu, choose “Install app” or “Add to Home Screen”, and confirm.",
+  "appInstallMac": "In a supported Safari version, choose File → Add to Dock, then confirm.",
+  "appInstallDesktop": "In Chrome or Edge, click the install icon in the address bar, or choose “Install this page as an app” from the browser menu.",
+  "appInstallAvailability": "Installation depends on browser support. If no install option is available, try a current Chrome or Edge version."
 }

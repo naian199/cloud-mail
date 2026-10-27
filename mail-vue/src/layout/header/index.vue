@@ -4,6 +4,7 @@
       <span class="breadcrumb-item">{{ $t(route.meta.title) }}</span>
     </div>
     <div v-if="toolbar" class="toolbar">
+      <el-button v-if="!appInstalled" text :aria-label="t('appInstallTitle')" :title="t('appInstallTitle')" @click="openAppInstall"><Icon icon="cloud-mail:install" width="21" /></el-button>
       <div v-if="uiStore.dark" class="sun-icon icon-item" @click="openDark($event)">
         <Icon icon="mingcute:sun-fill"/>
       </div>
@@ -68,6 +69,7 @@
 </template>
 
 <script setup>
+import {useAppInstall} from '@/composables/use-app-install';
 import UserAvatar from '@/components/user-avatar.vue';
 import LanguageSelect from '@/components/language-select.vue';
 import router from "@/router";
@@ -83,10 +85,12 @@ import {useI18n} from "vue-i18n";
 
 const props = defineProps({ compact: Boolean, drawer: Boolean, toolbar: { type:Boolean, default:true } });
 const {t} = useI18n();
+const {installed:appInstalled,install:installApp}=useAppInstall();
 const route = useRoute();
 const settingStore = useSettingStore();
 const userStore = useUserStore();
 const uiStore = useUiStore();
+function openAppInstall(){uiStore.asideShow=false;installApp();}
 const logoutLoading = ref(false)
 const userInfoShow = ref(false)
 const userinfoRef = ref({})

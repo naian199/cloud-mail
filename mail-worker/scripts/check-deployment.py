@@ -50,6 +50,11 @@ for attempt in range(12):
         for src in expected:
             if not get(src):
                 raise RuntimeError('Empty frontend entry')
+        manifest = json.loads(get('manifest.webmanifest'))
+        if manifest.get('id') != '/' or manifest.get('start_url') != '/mail-chat' or manifest.get('scope') != '/' or manifest.get('display') != 'standalone':
+            raise RuntimeError('Application install manifest is invalid')
+        if not get('mail-pwa.png').startswith(b'\x89PNG') or b'<svg' not in get('mail-app.svg') or not get('sw.js'):
+            raise RuntimeError('Application install assets unavailable')
         video_base = 'video-engine/core-0.12.10-wrapper-0.12.15/'
         if b'FFMessageType' not in get(video_base + 'worker.js'):
             raise RuntimeError('Video worker asset unavailable')

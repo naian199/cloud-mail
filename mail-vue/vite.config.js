@@ -30,16 +30,22 @@ export default defineConfig(({mode}) => {
             VitePWA({
                 injectRegister: 'script-defer',
                 manifest: {
-                    name: env.VITE_PWA_NAME,
-                    short_name: env.VITE_PWA_NAME,
+                    id: '/',
+                    start_url: '/mail-chat',
+                    scope: '/',
+                    display: 'standalone',
+                    name: env.VITE_PWA_NAME || 'Cloud Mail',
+                    short_name: env.VITE_PWA_NAME || 'Cloud Mail',
                     background_color: '#FFFFFF',
                     theme_color: '#FFFFFF',
                     icons: [
                         {
-                            src: 'mail-pwa.png',
+                            src: '/mail-pwa.png',
                             sizes: '192x192',
                             type: 'image/png',
-                        }
+                            purpose: 'any',
+                        },
+                        {src:'/mail-app.svg',sizes:'any',type:'image/svg+xml',purpose:'any'}
                     ],
                 },
                 workbox: {

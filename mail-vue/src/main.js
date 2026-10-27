@@ -5,6 +5,8 @@ import './style.css';
 import '@/icons/chat';
 import { installMobileViewport } from '@/utils/mobile-viewport';
 installMobileViewport();
+import {initAppInstall} from '@/composables/use-app-install';
+initAppInstall();
 import { init } from '@/init/init.js';
 import { createPinia } from 'pinia';
 import piniaPersistedState from 'pinia-plugin-persistedstate';

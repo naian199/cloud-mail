@@ -167,5 +167,18 @@
   "stickersErrorNotFound": "找不到这个表情包，请确认链接名称正确，且表情包仍公开可用。",
   "stickersErrorNetwork": "暂时无法连接 Telegram，请重试或上传本地表情。",
   "stickersErrorEmpty": "这个表情包没有可导入的表情。",
-  "stickersErrorPublic": "Telegram 公开页面没有可读取的预览。请管理员配置机器人，或上传本地表情。"
+  "stickersErrorPublic": "Telegram 公开页面没有可读取的预览。请管理员配置机器人，或上传本地表情。",
+  "appInstallTitle": "安装到桌面",
+  "appInstallMobileTitle": "添加到主屏幕",
+  "appInstallDescription": "安装后可像应用一样独立打开邮箱，快速进入聊天和邮件。",
+  "appInstallNow": "立即安装",
+  "appInstallGuide": "查看安装方法",
+  "appInstallLater": "稍后再说",
+  "appInstallIosShare": "点击浏览器的“分享”按钮。",
+  "appInstallIosAdd": "选择“添加到主屏幕”，再点击“添加”。",
+  "appInstallIosFallback": "如果没有“添加到主屏幕”选项，请用 Safari 打开本站。",
+  "appInstallAndroid": "打开浏览器菜单，选择“安装应用”或“添加到主屏幕”，然后确认。",
+  "appInstallMac": "在支持的 Safari 中选择“文件”→“添加到程序坞”，再确认添加。",
+  "appInstallDesktop": "在 Chrome 或 Edge 地址栏点击安装图标，或在浏览器菜单中选择“安装此网页为应用”。",
+  "appInstallAvailability": "安装选项取决于浏览器支持；如果没有，请尝试新版 Chrome 或 Edge。"
 }

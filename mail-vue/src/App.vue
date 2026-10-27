@@ -1,8 +1,9 @@
 <template>
-  <el-config-provider :locale="elementLocale"><router-view /></el-config-provider>
+  <el-config-provider :locale="elementLocale"><router-view /><AppInstall /></el-config-provider>
 </template>
 <script setup>
 import { watch } from 'vue';
+import AppInstall from '@/components/app-install.vue';
 import { useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useSettingStore } from '@/store/setting';
