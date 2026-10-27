@@ -1,5 +1,5 @@
 import { roomSchema } from './room-schema.js';
-export const MAIL_CHAT_SCHEMA_MARKER = 'mail_chat_schema_v7';
+export const MAIL_CHAT_SCHEMA_MARKER = 'mail_chat_schema_v8';
 
 export async function migrateMailChat(db) {
 	const { results } = await db.prepare('PRAGMA table_info(email)').all();

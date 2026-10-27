@@ -64,7 +64,7 @@ for attempt in range(12):
         config = json.loads(get('api/setting/websiteConfig'))
         if config.get('code') != 200 or not isinstance(config.get('data'), dict):
             raise RuntimeError('Website configuration check failed')
-        for endpoint in ['api/mail-chat/conversations?accountId=1', 'api/chat/socket']:
+        for endpoint in ['api/mail-chat/conversations?accountId=1', 'api/chat/socket', 'api/my/push/config', 'api/my/push/poll']:
             if json.loads(get(endpoint)).get('code') != 401:
                 raise RuntimeError('Authentication protection check failed')
         print('PASS: production frontend matches this build; entry assets, website configuration, chat authentication, HTTPS transport policy, and private API cache protection checks passed.')

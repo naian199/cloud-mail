@@ -1,5 +1,6 @@
 import {createRouter, createWebHistory} from 'vue-router'
 import NProgress from 'nprogress';
+import {setPushIdentity} from '@/composables/use-push-notifications';
 import {clearMediaCache} from '@/utils/media-cache.mjs';
 import {useUiStore} from "@/store/ui.js";
 import {useSettingStore} from "@/store/setting.js";
@@ -121,7 +122,7 @@ router.beforeEach((to, from, next) => {
     }
 
     const token = localStorage.getItem('token')
-    if (!token) void clearMediaCache();
+    if (!token) {void clearMediaCache();void setPushIdentity(null);}
 
     if (!token && !to.path.startsWith('/login')) {
         return next({name: 'login'})

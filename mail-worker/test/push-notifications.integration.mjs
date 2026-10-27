@@ -1,0 +1,39 @@
+import {webcrypto} from 'node:crypto';
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { randomBytes,randomUUID } from 'node:crypto';
+import { setTimeout as delay } from 'node:timers/promises';
+const root=new URL(process.env.MAIL_CHAT_TEST_URL||'http://127.0.0.1:8787/');
+if(!['127.0.0.1','localhost','[::1]'].includes(root.hostname))throw Error('Local Worker required');
+async function api(path,user,method='GET',body){return(await fetch(new URL('api/'+path,root),{method,headers:{'Content-Type':'application/json',...(user?{Authorization:user.token}:{})},body:body===undefined?undefined:JSON.stringify(body)})).json();}
+async function user(){const credentials={email:'room'+randomBytes(6).toString('hex')+'@example.com',password:randomBytes(12).toString('hex')};assert.equal((await api('register',null,'POST',credentials)).code,200);const login=await api('login',null,'POST',credentials);const token=login.data.token;const profile=await api('my/loginUserInfo',{token});const username='member'+randomBytes(5).toString('hex');assert.equal((await api('my/username',{token},'PUT',{username})).code,200);return{...credentials,token,username,id:profile.data.userId};}
+const post=(id,user,body,clientId=randomUUID())=>api(`chat/rooms/${id}/messages`,user,'POST',{body,clientId});
+await test('push settings, private previews, room isolation, privacy and device ownership', {timeout:60000},async()=>{
+ const [a,b,c]=await Promise.all([user(),user(),user()]);
+ assert.equal((await api('my/push/config')).code,401);
+ const ca=await api('my/push/config',a),cb=await api('my/push/config',b);assert.equal(ca.code,200);assert.equal(ca.data.publicKey,cb.data.publicKey);assert.equal(ca.data.publicKey.length,87);assert(!JSON.stringify(ca).includes('privateKey'));
+ const before=(await api('my/push/poll',b)).data.cursor;
+ const account=(await api('my/loginUserInfo',a)).data.account.accountId;
+ const sent=await api('mail-chat/instant',a,'POST',{accountId:account,clientId:randomUUID(),recipients:[b.email],subject:'Push preview',text:'私人预览内容 123'});assert.equal(sent.code,200);
+ let poll=await api('my/push/poll?cursor='+before,b);assert.equal(poll.code,200);assert.equal(poll.data.messages.length,1);assert.equal(poll.data.messages[0].body,'私人预览内容 123');assert.equal(poll.data.messages[0].kind,'private');const context=poll.data.messages[0].context;
+ assert.equal((await api('my/push/poll?cursor='+before,c)).data.messages.length,0);
+ assert.equal((await api('my/push/preferences',b,'PUT',{preview:'none'})).code,200);poll=await api('my/push/poll?cursor='+before,b);assert.equal(poll.data.messages[0].title,'Cloud Mail');assert(!JSON.stringify(poll.data.messages).includes('私人预览内容'));
+ assert.equal((await api('my/push/mute',b,'PUT',{context,muted:true})).code,200);assert.equal((await api('my/push/poll?cursor='+before,b)).data.messages.length,0);
+ await api('my/push/mute',b,'PUT',{context,muted:false});await api('my/push/preferences',b,'PUT',{preview:'full'});
+ const group=(await api('chat/rooms',a,'POST',{kind:'group',name:'通知测试群'})).data.id;
+ await api(`chat/rooms/${group}/members`,a,'POST',{username:b.username});await api(`chat/rooms/${group}/membership`,b,'PUT',{accept:true});
+ const roomBefore=(await api('my/push/poll',b)).data.cursor;
+ await api(`chat/rooms/${group}/messages`,a,'POST',{body:'群聊消息预览',clientId:randomUUID()});
+ const rooms=await api('my/push/poll?cursor='+roomBefore,b);assert(rooms.data.messages.some(message=>message.body==='群聊消息预览'&&message.kind==='group'));
+ await api(`chat/rooms/${group}/members/${b.id}`,a,'DELETE');assert.equal((await api('my/push/poll?cursor='+roomBefore,b)).data.messages.length,0);
+ const key=await webcrypto.subtle.generateKey({name:'ECDH',namedCurve:'P-256'},true,['deriveBits']);
+ const subscription={endpoint:'https://fcm.googleapis.com/fcm/send/local-test-'+randomUUID(),keys:{p256dh:Buffer.from(await webcrypto.subtle.exportKey('raw',key.publicKey)).toString('base64url'),auth:randomBytes(16).toString('base64url')}};
+ assert.equal((await api('my/push/subscription',a,'POST',{subscription:{...subscription,endpoint:'https://127.0.0.1/private'}})).code,400);
+ assert.equal((await api('my/push/subscription',a,'POST',{subscription})).code,200);assert.equal((await api('my/push/config',a)).data.devices.length,1);
+ assert.equal((await api('my/push/subscription',c,'DELETE',{endpoint:subscription.endpoint})).code,200);assert.equal((await api('my/push/config',a)).data.devices.length,1);
+ assert.equal((await api('my/push/subscription',a,'DELETE',{endpoint:subscription.endpoint})).code,200);assert.equal((await api('my/push/config',a)).data.devices.length,0);
+ const results=await Promise.all(Array.from({length:6},(_,n)=>api('my/push/subscription',a,'POST',{subscription:{...subscription,endpoint:subscription.endpoint+'-'+n}})));assert.equal(results.filter(result=>result.code===200).length,5);assert.equal((await api('my/push/config',a)).data.devices.length,5);
+ for(let n=0;n<6;n++)await api('my/push/subscription',a,'DELETE',{endpoint:subscription.endpoint+'-'+n});
+ const revision=(await api('my/push/config',b)).data.preferences.revision;await api('my/push/preferences',b,'PUT',{preview:'sender'});assert.equal((await api('my/push/config',b)).data.preferences.revision,revision+1);
+ assert.equal((await api('my/push/preferences',a,'PUT',{preview:'invalid'})).code,400);
+});

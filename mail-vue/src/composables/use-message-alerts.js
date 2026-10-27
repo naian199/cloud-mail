@@ -1,136 +1,30 @@
-import { ref, watch, onMounted, onBeforeUnmount } from 'vue';
-import { ElNotification } from 'element-plus';
-import { useRouter } from 'vue-router';
-import { useI18n } from 'vue-i18n';
-import { messageAlerts } from '@/request/my';
-import { useMailSync } from './use-mail-sync';
-import { useSettingStore } from '@/store/setting';
-
-export const alertsEnabled = ref(localStorage.getItem('mail-alerts') !== 'off');
-export const notificationPermission = ref(
-  'Notification' in window ? Notification.permission : 'unsupported'
-);
-export function setAlertsEnabled(value) {
-  alertsEnabled.value = value;
-  localStorage.setItem('mail-alerts', value ? 'on' : 'off');
-}
-export async function enableBrowserAlerts() {
-  if (!('Notification' in window)) return;
-  notificationPermission.value = await Notification.requestPermission();
-}
-export function useMessageAlerts() {
-  const router = useRouter(),
-    { t, te, locale } = useI18n();
-  const settings = useSettingStore();
-  let baseTitle = document.title;
-  let cursor,
-    busy = false,
-    dirty = false,
-    stopped = false,
-    count = 0;
-  const notices = new Set();
-  watch(
-    [locale, () => router.currentRoute.value.meta.title],
-    () => {
-      const key = router.currentRoute.value.meta.title;
-      baseTitle = [key && te(key) ? t(key) : '', settings.settings.title]
-        .filter(Boolean)
-        .join(' · ');
-      document.title =
-        document.hidden && count
-          ? `(${count}) ${t('profileNewMessage')} · ${baseTitle}`
-          : baseTitle;
-    },
-    { immediate: true }
-  );
-  function clearTitle() {
-    if (!document.hidden) {
-      count = 0;
-      document.title = baseTitle;
-    }
-  }
-  function open(message) {
-    window.focus();
-    router.push({
-      path: '/mail-chat',
-      query: { accountId: String(message.accountId), conversation: message.conversationKey || '' }
-    });
-  }
-  async function refresh() {
-    if (stopped) return;
-    if (busy) {
-      dirty = true;
-      return;
-    }
-    busy = true;
-    try {
-      let more;
-      do {
-        dirty = false;
-        const data = await messageAlerts(cursor === undefined ? {} : { after: cursor });
-        if (stopped) return;
-        cursor = data.cursor;
-        more = data.hasMore;
-        if (!alertsEnabled.value) continue;
-        const grouped = data.messages.length > 3;
-        const incoming = grouped ? data.messages.slice(-1) : data.messages;
-        for (const message of incoming) {
-          if (document.hidden) {
-            count += grouped ? data.messages.length : 1;
-            document.title = `(${count}) ${t('profileNewMessage')} · ${baseTitle}`;
-          }
-          const text = grouped
-            ? t('profileMessagesCount', { count: data.messages.length })
-            : t('profileMessageFrom', { name: message.displayName });
-          const toast = ElNotification({
-            title: t('profileNewMessage'),
-            message: text,
-            duration: 6000,
-            onClick: () => {
-              open(message);
-              toast.close();
-            },
-            onClose: () => notices.delete(toast)
-          });
-          notices.add(toast);
-          if (
-            document.hidden &&
-            'Notification' in window &&
-            Notification.permission === 'granted'
-          ) {
-            try {
-              const notice = new Notification(t('profileNewMessage'), {
-                body: text,
-                tag: `mail-${message.emailId}`
-              });
-              notices.add(notice);
-              notice.onclick = () => {
-                open(message);
-                notice.close();
-                notices.delete(notice);
-              };
-              notice.onclose = () => notices.delete(notice);
-            } catch {
-              /* Safari may require a home-screen installation for system notifications. */
-            }
-          }
-        }
-      } while ((more || dirty) && !stopped);
-    } catch {
-      /* Reconnect and periodic reconciliation retry without losing the cursor. */
-    } finally {
-      busy = false;
-    }
-  }
-  useMailSync(refresh, { background: true });
-  onMounted(() => {
-    refresh();
-    document.addEventListener('visibilitychange', clearTitle);
-  });
-  onBeforeUnmount(() => {
-    stopped = true;
-    document.removeEventListener('visibilitychange', clearTitle);
-    document.title = baseTitle;
-    for (const notice of notices) notice.close();
-  });
+import {onMounted,onBeforeUnmount} from 'vue';
+import {ElNotification} from 'element-plus';
+import {useRouter} from 'vue-router';
+import {useUserStore} from '@/store/user';
+import {useMailSync} from './use-mail-sync';
+import {pushSettings,pushActive,applyPushPreferences,loadPushSettings,pollPush,setPushIdentity,pushRegistration} from './use-push-notifications';
+import {claimNotification,notificationState} from '@/utils/notification-store.mjs';
+export function useMessageAlerts(){
+ const router=useRouter(),user=useUserStore();let cursor,busy=false,stopped=false;const notices=new Set();
+ const activeContext=()=>document.querySelector('[data-notification-context]')?.dataset.notificationContext||'';
+ function show(message){
+  if(message.userId!==user.user.userId||document.hidden||!document.hasFocus())return false;
+  if(localStorage.getItem('mail-alerts')==='off'||activeContext()===message.context)return true;
+  const toast=ElNotification({title:message.title,message:message.body,duration:6000,onClick:()=>{router.push(message.url);toast.close();},onClose:()=>notices.delete(toast)});notices.add(toast);return true;
+ }
+ async function refresh(){
+  if(stopped||busy||document.hidden||!document.hasFocus())return;
+  busy=true;try{const data=await pollPush(cursor);if(stopped)return;cursor=data.cursor;await applyPushPreferences(data.preferences,user.user.userId);
+   const registration=await pushRegistration();
+   if(registration?.active){registration.active.postMessage({type:'CLOUD_MAIL_LOCAL_NOTIFICATIONS',messages:data.messages});}
+   else for(const message of data.messages){let claimed=false;try{claimed=await claimNotification(`${message.userId}:${message.id}`);}catch{const key=`cloud-mail:notice:${message.userId}:${message.id}`;claimed=!localStorage.getItem(key);if(claimed)localStorage.setItem(key,String(Date.now()));}if(claimed)show(message);}
+  }catch{}finally{busy=false;}
+ }
+ function receive(event){if(stopped){event.ports[0]?.postMessage({handled:false});return;}if(event.data?.type==='CLOUD_MAIL_NOTIFICATION'){if(event.data.deadline&&Date.now()>event.data.deadline){event.ports[0]?.postMessage({handled:false});return;}const handled=show(event.data.message);event.ports[0]?.postMessage({handled});}}
+ async function identity(){if(stopped)return;await setPushIdentity(user.user.userId);}
+ function storage(event){if(event.key==='token'&&event.newValue!==event.oldValue){stopped=true;for(const notice of notices)notice.close();setPushIdentity(null,user.user.userId);}}
+ onMounted(()=>{window.addEventListener('storage',storage);navigator.serviceWorker?.addEventListener('message',receive);navigator.serviceWorker?.addEventListener('controllerchange',identity);identity();loadPushSettings().catch(()=>{});window.addEventListener('focus',refresh);refresh();});
+ onBeforeUnmount(()=>{stopped=true;window.removeEventListener('storage',storage);navigator.serviceWorker?.removeEventListener('message',receive);navigator.serviceWorker?.removeEventListener('controllerchange',identity);window.removeEventListener('focus',refresh);setPushIdentity(null,user.user.userId);for(const notice of notices)notice.close();});
+ useMailSync(refresh,{background:false});
 }

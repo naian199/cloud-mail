@@ -34,43 +34,18 @@
     <el-button type="primary" native-type="submit" :loading="saving" :disabled="uploading">{{
       t('save')
     }}</el-button>
-    <div class="alert-settings">
-      <h3>{{ t('profileAlerts') }}</h3>
-      <el-switch
-        :model-value="alertsEnabled"
-        @change="setAlertsEnabled"
-        :active-text="t('profileWebAlerts')"
-      />
-      <el-button v-if="notificationPermission === 'default'" @click="enableBrowserAlerts">{{
-        t('profileEnableBrowser')
-      }}</el-button>
-      <p class="hint">
-        {{
-          t(
-            notificationPermission === 'granted'
-              ? 'profileBrowserGranted'
-              : notificationPermission === 'denied'
-                ? 'profileBrowserDenied'
-                : 'profileBrowserHint'
-          )
-        }}
-      </p>
-    </div>
+    <PushSettings />
   </form>
 </template>
 <script setup>
 import { reactive, ref, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { ElMessage } from 'element-plus';
+import PushSettings from '@/components/push-settings.vue';
 import UserAvatar from './user-avatar.vue';
 import { myProfile, saveProfile, saveUsername } from '@/request/my';
 import { useUserStore } from '@/store/user';
-import {
-  alertsEnabled,
-  setAlertsEnabled,
-  notificationPermission,
-  enableBrowserAlerts
-} from '@/composables/use-message-alerts';
+
 const { t } = useI18n(),
   user = useUserStore();
 const form = reactive({

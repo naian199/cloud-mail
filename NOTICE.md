@@ -34,6 +34,9 @@ lockfiles describe the versions in use. In particular:
   `licenses/ffmpeg-wasm.MIT.txt` and shipped alongside the engine assets as
   `LICENSE-core.txt` and `LICENSE-wrapper.txt`. These component licenses remain
   separate from the original project's MIT notice above.
+- Web Push encryption and VAPID authentication use
+  `@block65/webcrypto-web-push` 2.0.0 (MIT), with its supplied package license
+  retained in the installed dependency and `licenses/webcrypto-web-push.MIT.txt`.
 - Cloudflare, Vue, Element Plus, Hono, Drizzle and other library/service names
   identify dependencies, not ownership by this repository's maintainer.
 

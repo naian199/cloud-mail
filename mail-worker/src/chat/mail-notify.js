@@ -4,7 +4,7 @@ export async function notifyMail(env, ...users) {
 		[...new Set(users.filter((id) => id > 0))].map(async (id) => {
 			try {
 				const stub = env.CHAT_NOTIFICATIONS.get(env.CHAT_NOTIFICATIONS.idFromName(String(id)));
-				await stub.fetch('https://chat.internal/notify', { method: 'POST' });
+				await stub.fetch('https://chat.internal/notify', { method: 'POST',headers:{'X-Notification-User':String(id)} });
 			} catch {
 				console.error('Mail notification unavailable; clients will reconcile');
 			}

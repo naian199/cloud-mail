@@ -1,3 +1,4 @@
+import push from '../service/push-service';
 import app from '../hono/hono';
 import userService from '../service/user-service';
 import result from '../model/result';
@@ -29,3 +30,10 @@ app.delete('/my/delete', async (c) => {
 });
 
 
+
+app.get('/my/push/config',async c=>c.json(result.ok(await push.config(c))));
+app.put('/my/push/preferences',async c=>c.json(result.ok(await push.save(c,await c.req.json()))));
+app.put('/my/push/mute',async c=>c.json(result.ok(await push.mute(c,await c.req.json()))));
+app.post('/my/push/subscription',async c=>c.json(result.ok(await push.subscribe(c,await c.req.json()))));
+app.delete('/my/push/subscription',async c=>{await push.unsubscribe(c,await c.req.json());return c.json(result.ok());});
+app.get('/my/push/poll',async c=>c.json(result.ok(await push.poll(c,c.req.query()))));

@@ -1,5 +1,5 @@
 <template>
-  <section class="rooms" :class="{ 'has-active': active }">
+  <section :data-notification-context="activeId ? `room:${activeId}` : ''" class="rooms" :class="{ 'has-active': active }">
     <aside class="room-list">
       <div class="room-controls">
         <UniversalSearch ref="universalSearch" @active="universalActive = $event" />
@@ -19,6 +19,7 @@
       <header class="room-heading">
         <el-button class="back" text :aria-label="t('chatBack')" @click="choose(null)"><Icon icon="cloud-mail:back" width="22" /></el-button>
         <div class="room-heading-name"><strong>{{ active.name }}</strong><small>{{ t(active.kind === 'channel' ? 'roomChannel' : 'roomGroup') }} · {{ t('roomTextOnly') }}</small></div>
+        <el-button v-if="active.status === 'joined'" text :title="t(pushSettings.muted?.[`room:${active.id}`] ? 'pushUnmute' : 'pushMute')" :aria-label="t(pushSettings.muted?.[`room:${active.id}`] ? 'pushUnmute' : 'pushMute')" @click="muteRoom"><Icon :icon="pushSettings.muted?.[`room:${active.id}`] ? 'cloud-mail:bell-off' : 'cloud-mail:bell'" width="20" /></el-button>
         <el-popover v-model:visible="translationStatus.settingsOpen" trigger="click" :width="300"><template #reference><el-button text :aria-label="t('translateAuto')" :title="t(translationStatus.error || 'translateAuto')"><Icon icon="cloud-mail:translate" width="20" /></el-button></template><AutoTranslationSettings /></el-popover>
         <el-button v-if="active.status === 'joined'" text :aria-label="t('exploreTitle')" @click="roomSearchOpen = !roomSearchOpen"><Icon icon="cloud-mail:search" width="22" /></el-button>
         <el-button v-if="active.status === 'joined'" text :aria-label="t('roomMembers')" @click="openMembers"><Icon icon="cloud-mail:group" width="22" /></el-button>
@@ -92,6 +93,7 @@ import { useMailSync } from '@/composables/use-mail-sync';
 import { translationStatus } from '@/composables/use-auto-translation';
 import { randomUUID } from '@/utils/uuid';
 import UserAvatar from '@/components/user-avatar.vue';
+import {pushSettings,mutePush} from '@/composables/use-push-notifications';
 import VoiceTools from '@/components/voice-tools.vue';
 import AudioAttachment from '@/components/audio-attachment.vue';
 import {roomVoice} from '@/request/voice';
@@ -200,6 +202,7 @@ async function older() {
 }
 function composerKey(event){if(event.key==='Enter'&&!event.shiftKey&&!event.isComposing&&event.keyCode!==229){event.preventDefault();send();}}
 function insertVoice(text){const id=activeId.value;if(!canPost.value||!id)return;const value=(drafts[id]||'')+text;if(value.length<=20000)drafts[id]=value;}
+async function muteRoom(){if(activeId.value)try{await mutePush(`room:${activeId.value}`,!pushSettings.value.muted?.[`room:${activeId.value}`]);}catch{ElMessage.error(t('pushError'));}}
 async function send() {
   if(sending.value||!canPost.value)return;
   const id=activeId.value,original=drafts[id]||'',body=original.trim(),voice=voiceDrafts[id];if(!body&&!voice)return;

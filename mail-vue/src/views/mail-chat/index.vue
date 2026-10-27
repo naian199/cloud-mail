@@ -1,5 +1,5 @@
 <template>
-  <section class="mail-chat" :class="{ 'conversation-open': active }" @dragenter="dragEnter" @dragover="dragOver" @dragleave="dragLeave" @drop="dropFiles" @paste="pasteFiles">
+  <section :data-notification-context="selected ? `mail:${accountId}:${selected.key}` : ''" class="mail-chat" :class="{ 'conversation-open': active }" @dragenter="dragEnter" @dragover="dragOver" @dragleave="dragLeave" @drop="dropFiles" @paste="pasteFiles">
     <aside class="conversations">
       <div ref="contactScroll" class="conversation-list" @keydown.home="restoreContactControls">
       <div class="contact-controls">
@@ -395,6 +395,7 @@
     <Teleport to="body">
       <div v-if="conversationMenu" class="mail-menu-backdrop" @pointerdown="closeMenu" @contextmenu.prevent="closeMenu">
         <div ref="conversationMenuPanel" class="mail-message-menu conversation-menu" role="menu" :aria-label="t('conversationActions')" :style="{left:conversationMenu.x+'px',top:conversationMenu.y+'px',maxHeight:conversationMenu.maxHeight+'px',maxWidth:conversationMenu.maxWidth+'px'}" @pointerdown.stop @contextmenu.prevent @keydown="conversationMenuKey">
+          <button role="menuitem" @click="conversationAction('mute')">{{ t(pushSettings.muted?.[`mail:${conversationMenu.accountId}:${conversationMenu.key}`] ? 'pushUnmute' : 'pushMute') }}</button>
           <button role="menuitem" :disabled="conversationBusy" @click="conversationAction('pin')">{{ t(conversationMenu.conversation.pinned ? 'conversationUnpin' : 'conversationPin') }}</button>
           <button v-if="conversationMenu.conversation.unread" role="menuitem" :disabled="conversationBusy" @click="conversationAction('read')">{{ t('conversationMarkRead') }}</button>
           <button role="menuitem" :disabled="!neighbor(conversationMenu.conversation,-1)" @click="conversationAction('up')">{{ t('conversationMoveUp') }}</button>
@@ -476,6 +477,7 @@
 import UniversalSearch from '@/components/universal-search.vue';
 import ConversationCategories from '@/components/conversation-categories.vue';
 import ConversationResize from '@/components/conversation-resize.vue';
+import {pushSettings,mutePush} from '@/composables/use-push-notifications';
 import {mediaCacheKey,cachedMediaBlob} from '@/utils/media-cache.mjs';
 import {sortConversations,moveConversation} from '@/utils/conversation-order.mjs';
 import { randomUUID } from '@/utils/uuid';
@@ -658,6 +660,7 @@ function conversationMenuKey(event){
 }
 async function conversationAction(action){
   const menu=conversationMenu.value;if(!menu||conversationBusy.value)return;const c=menu.conversation;closeMenu();
+  if(action==='mute'){try{await mutePush(`mail:${menu.accountId}:${c.key}`,!pushSettings.value.muted?.[`mail:${menu.accountId}:${c.key}`]);}catch{ElMessage.error(t('pushError'));}return;}
   if(action==='up'||action==='down'){moveContact(c,action==='up'?-1:1);menuOrigin?.focus();return;}
   if(action==='reset'){saveOrder([]);menuOrigin?.focus();return;}
   if(action==='profile'){viewProfile(c.profile,c.peers[0]);return;}

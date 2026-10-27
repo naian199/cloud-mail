@@ -10,6 +10,22 @@ export class ChatNotifications {
   }
 
   async fetch(request) {
+    const path=new URL(request.url).pathname;
+    if(request.method==='POST'&&path==='/push/keys'){
+      const {generatePushKeys}=await import('../service/push-service');
+      const keys=await this.ctx.blockConcurrencyWhile(async()=>{let keys=await this.ctx.storage.get('vapid-keys');if(!keys){keys=await generatePushKeys();await this.ctx.storage.put('vapid-keys',keys);}return keys;});
+      return Response.json(keys);
+    }
+    if(request.method==='POST'&&path==='/push/disable'){await this.ctx.storage.put('push-enabled',false);return new Response(null,{status:204});}
+    if(request.method==='POST'&&path==='/push/seed'){
+      const userId=Number(request.headers.get('X-Notification-User'));if(!Number.isSafeInteger(userId)||userId<1)return new Response(null,{status:400});
+      const wasEnabled=await this.ctx.storage.get('push-enabled');
+      const {notificationCursor}=await import('../service/push-service');
+      if(!wasEnabled||!await this.ctx.storage.get('push-cursor'))await this.ctx.storage.put('push-cursor',await notificationCursor(this.env,userId));
+      if(!wasEnabled){await this.ctx.storage.delete('push-retries');await this.ctx.storage.delete('push-retry-start');}
+      await this.ctx.storage.put('push-enabled',true);
+      return new Response(null,{status:204});
+    }
     if(request.method==='POST' && new URL(request.url).pathname==='/rooms/notify') {
       const {users}=await request.json();
       if(!Array.isArray(users)||users.length>101||!users.every(id=>Number.isSafeInteger(id)&&id>0))return new Response(null,{status:400});
@@ -36,6 +52,11 @@ export class ChatNotifications {
       });
     }
     if (request.method !== 'POST') return new Response(null, { status: 405 });
+    const userId=Number(request.headers.get('X-Notification-User'));
+    if(this.env.db&&Number.isSafeInteger(userId)&&userId>0&&await this.ctx.storage.get('push-enabled')){
+      await this.ctx.storage.put('push-user',userId);
+      const alarm=await this.ctx.storage.getAlarm();if(!alarm||alarm>Date.now()+800)await this.ctx.storage.setAlarm(Date.now()+800);
+    }
     for (const socket of this.ctx.getWebSockets()) {
       try { socket.send(JSON.stringify({ type: 'refresh' })); }
       catch { socket.close(1011, 'Reconnect'); }
@@ -44,6 +65,30 @@ export class ChatNotifications {
   }
 
   async alarm() {
+    const userId=await this.ctx.storage.get?.('push-user');
+    if(userId&&this.env.db&&await this.ctx.storage.get('push-enabled')){
+      const {sendUserPush,notificationCursor}=await import('../service/push-service');
+      try{
+        const cursor=await sendUserPush(this.env,userId,await this.ctx.storage.get('push-cursor'));
+        await this.ctx.storage.put('push-cursor',cursor);
+        await this.ctx.storage.delete('push-retries');
+        await this.ctx.storage.delete('push-retry-start');
+      }catch{
+        const attempt=(await this.ctx.storage.get('push-retries')||0)+1;
+        const start=await this.ctx.storage.get('push-retry-start')||Date.now();
+        if(Date.now()-start<86400000){
+          await this.ctx.storage.put('push-retry-start',start);
+          await this.ctx.storage.put('push-retries',attempt);
+          const delays=[15000,45000,120000,300000,900000,3600000];
+          await this.ctx.storage.setAlarm(Date.now()+delays[Math.min(attempt-1,delays.length-1)]);
+        }else{
+          await this.ctx.storage.put('push-cursor',await notificationCursor(this.env,userId));
+          await this.ctx.storage.delete('push-retries');
+          await this.ctx.storage.delete('push-retry-start');
+        }
+        console.error('Web Push reconciliation unavailable');
+      }
+    }
     const batch=await this.ctx.storage.transaction(async txn=>{
       const pending=await txn.get('room-notify-users')||[];
       const selected=pending.slice(0,40),remaining=pending.slice(40);

@@ -1,4 +1,7 @@
 export const roomSchema = [
+  `CREATE TABLE IF NOT EXISTS mail_push_preference(user_id INTEGER PRIMARY KEY REFERENCES user(user_id) ON DELETE CASCADE,config TEXT NOT NULL)`,
+  `CREATE TABLE IF NOT EXISTS mail_push_subscription(id TEXT PRIMARY KEY,user_id INTEGER NOT NULL REFERENCES user(user_id) ON DELETE CASCADE,endpoint TEXT NOT NULL UNIQUE,p256dh TEXT NOT NULL,auth TEXT NOT NULL)`,
+  `CREATE INDEX IF NOT EXISTS idx_push_user ON mail_push_subscription(user_id)`,
   `CREATE TABLE IF NOT EXISTS mail_room (
     id TEXT PRIMARY KEY NOT NULL, kind TEXT NOT NULL CHECK(kind IN ('group','channel')),
     name TEXT NOT NULL CHECK(length(name) BETWEEN 1 AND 80),

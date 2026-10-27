@@ -21,7 +21,7 @@ export default defineConfig(({mode}) => {
             {
                 name: 'project-notices',
                 generateBundle() {
-                    for (const filename of ['LICENSE', 'NOTICE.md']) {
+                    for (const filename of ['LICENSE', 'NOTICE.md', 'licenses/webcrypto-web-push.MIT.txt']) {
                         this.emitFile({ type: 'asset', fileName: filename,
                             source: readFileSync(path.resolve(__dirname, '..', filename), 'utf8') });
                     }
@@ -29,6 +29,9 @@ export default defineConfig(({mode}) => {
             },
             VitePWA({
                 injectRegister: 'script-defer',
+                strategies:'injectManifest',
+                srcDir:'src',
+                filename:'sw.js',
                 manifest: {
                     id: '/',
                     start_url: '/mail-chat',
@@ -48,13 +51,7 @@ export default defineConfig(({mode}) => {
                         {src:'/mail-app.svg',sizes:'any',type:'image/svg+xml',purpose:'any'}
                     ],
                 },
-                workbox: {
-                    disableDevLogs: true,
-                    globPatterns: [],
-                    runtimeCaching: [],
-                    navigateFallback: null,
-                    cleanupOutdatedCaches: true,
-                }
+                injectManifest: { globPatterns: [], rollupFormat: 'iife' },
             }),
             AutoImport({
                 resolvers: [ElementPlusResolver()],
