@@ -1,6 +1,6 @@
 # 消息预览与后台推送
 
-版本：1.12.0。
+版本：1.12.1。
 
 ## 开启
 
@@ -21,6 +21,14 @@
 前台及后台标签每次核对未读时更新；关闭页面后，新消息推送由 Service Worker 更新。推送和查询携带计数快照时间，IndexedDB 原子校验当前账号与快照顺序，较旧推送不会覆盖较新的已读计数。退出或切换账号清除旧角标，不支持或权限拒绝时静默降级，不阻断聊天。
 
 完全关闭应用时，其他设备已读后的清零会延迟到本设备下次打开或收到后续推送。不发送只有角标、没有可见通知的静默推送，因为浏览器的 `userVisibleOnly` 要求及 iOS 限制不能保证这种用法可用。系统通知被划掉不等于消息已读。真实手机主屏幕、桌面任务栏显示仍需设备验收。
+
+## Ferdium 左侧服务图标
+
+Ferdium 的 Custom Website 通用服务脚本默认不读取网站未读数。网站从 1.12.1 起直接调用其页面桥 `window.ferdium.setBadge(未读总数, 0)`；这是独立于网页 favicon 和 Badging API 的 Ferdium 宿主接口，无需额外安装网站插件。计数覆盖当前账号站内私聊、外部邮件、群聊与频道，不依赖浏览器通知授权；已读、退出后传 0。超过 99 的真实数字照常传给 Ferdium，由它决定显示样式。
+
+发布后在 Ferdium 内重新加载邮箱服务，检查未关闭该服务的未读角标、服务未被暂停或休眠。角标由 Ferdium 本身渲染；不提供上述桥接的旧版本需要升级。接口缺失或调用失败时保留其他提醒，恢复焦点和桥接迟到后会重试同步，不访问 Electron 通用 IPC、文件或账号密钥。
+
+接口来源：[Ferdium 页面桥](https://github.com/ferdium/ferdium-app/blob/develop/src/webview/recipe.ts)、[未读 IPC 处理](https://github.com/ferdium/ferdium-app/blob/develop/src/webview/badge.ts)、[Custom Website 脚本](https://github.com/ferdium/ferdium-recipes/blob/main/recipes/franz-custom-website/webview.js)。自动化测试模拟该窄接口检查调用参数、迟到注入、重连、跨窗口已读与退出；未把模拟接口当成真实 Ferdium 客户端实测。
 
 ## 行为与边界
 
