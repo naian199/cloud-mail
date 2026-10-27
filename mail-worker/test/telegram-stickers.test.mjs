@@ -93,3 +93,25 @@ test('sticker downloads use only Telegram file paths and reject oversized or red
 		(error) => !error.message.includes(token)
 	);
 });
+
+test('copied short links and Telegram app links normalize without accepting other providers',()=>{
+ for(const value of ['t.me/addstickers/Animals','telegram.me/addemoji/Animals','tg://addstickers?set=Animals','tg://addemoji?set=Animals'])assert.equal(packName(value),'Animals');
+ for(const value of ['tg://evil?set=Animals','tg://addstickers?set=Animals&url=https://evil.com','tg://addstickers/secret?set=Animals'])assert.throws(()=>packName(value));
+});
+test('bot failures return actionable error codes without leaking provider messages or credentials',async()=>{
+ for(const [status,body,key] of [[401,{},'stickersErrorAuth'],[200,{ok:false,error_code:400,description:token},'stickersErrorNotFound'],[200,{ok:false,error_code:401,description:token},'stickersErrorAuth']])
+  await assert.rejects(()=>fetchPack(token,'Animals',async()=>Response.json(body,{status})),error=>error.message===key&&!error.message.includes(token));
+ await assert.rejects(()=>fetchPack(token,'Animals',async()=>{throw Error(token);}),error=>error.message==='stickersErrorNetwork');
+});
+test('public-page fallback extracts only Telegram CDN sticker previews, bounds images and keeps stable IDs',async()=>{
+ const {fetchPublicPack,fetchPublicSticker,publicStickerUrl}=await import('../src/lib/telegram-stickers.mjs');
+ const html=`<html><div class="tgme_page_title">Animals</div><img src="https://evil.com/outside.webp"><div class="tgme_page_stickers_wrap"><div class="tgme_page_stickers"><i class="tgme_widget_sticker js-sticker_image" data-webp="https://cdn4.cdn-telegram.org/file/first"><img src="https://cdn4.cdn-telegram.org/file/first"></i><i class="js-sticker_image"><img src="https://cdn5.cdn-telegram.org/file/second"></i><img src="https://cdn4.cdn-telegram.org.evil.com/file/bad"><img src="http://cdn4.cdn-telegram.org/file/bad"></div></div></html>`;
+ const pack=await fetchPublicPack('Animals',async(url,options)=>{assert.equal(url,'https://t.me/addstickers/Animals');assert.equal(options.redirect,'error');assert(!options.headers.Authorization);return new Response(html);});
+ assert.equal(pack.partial,true);assert.equal(pack.source,'public');assert.equal(pack.stickers.length,2);assert.equal(pack.title,'Animals');
+ const again=await fetchPublicPack('Animals',async()=>new Response(html.replace('first','replaced')));assert.equal(pack.stickers[1].id,again.stickers.find(s=>s.url.endsWith('second')).id);
+ for(const url of ['https://127.0.0.1/file/x','https://cdn4.cdn-telegram.org.evil.com/file/x','https://user@cdn4.cdn-telegram.org/file/x','https://cdn4.cdn-telegram.org:8443/file/x','https://cdn4.cdn-telegram.org/secret'])assert.equal(publicStickerUrl(url),null);
+ const bytes=await fetchPublicSticker(pack.stickers[0].url,async()=>new Response('RIFF0000WEBPdata'));assert.equal(bytes.mime,'image/webp');
+ await assert.rejects(()=>fetchPublicSticker(pack.stickers[0].url,async()=>new Response('<svg onload="bad()"/>')));
+ await assert.rejects(()=>fetchPublicSticker(pack.stickers[0].url,async()=>new Response(new Uint8Array(1024*1024+1))));
+ await assert.rejects(()=>fetchPublicPack('Animals',async()=>new Response('<img src="https://cdn4.cdn-telegram.org/file/outside">')),error=>error.message==='stickersErrorPublic');
+});

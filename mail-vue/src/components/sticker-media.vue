@@ -1,6 +1,6 @@
 <template>
   <div ref="host" class="sticker-media" :aria-label="label" :aria-busy="loading">
-    <img v-if="url && format === 'webp'" :src="url" :alt="label" />
+    <img v-if="url && ['webp','image'].includes(format)" :src="url" :alt="label" @error="fail" />
     <video
       v-else-if="url && format === 'webm'"
       :src="url"
@@ -114,9 +114,11 @@ async function start() {
         String.fromCharCode(...bytes.slice(0, 4)) === 'RIFF' &&
         String.fromCharCode(...bytes.slice(8, 12)) === 'WEBP';
       const webm = bytes[0] === 0x1a && bytes[1] === 0x45 && bytes[2] === 0xdf && bytes[3] === 0xa3;
-      if (!(props.format === 'webp' ? webp : webm)) throw Error('Invalid sticker');
+      const png=bytes[0]===137&&String.fromCharCode(...bytes.slice(1,4))==='PNG',jpeg=bytes[0]===255&&bytes[1]===216;
+      const mime=props.format==='image'?(webp?'image/webp':png?'image/png':jpeg?'image/jpeg':''):props.format==='webp'&&webp?'image/webp':props.format==='webm'&&webm?'video/webm':'';
+      if(!mime)throw Error('Invalid sticker');
       url.value = URL.createObjectURL(
-        new Blob([bytes], { type: props.format === 'webp' ? 'image/webp' : 'video/webm' })
+        new Blob([bytes], { type: mime })
       );
     }
   } catch {

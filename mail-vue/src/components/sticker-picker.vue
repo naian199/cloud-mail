@@ -78,19 +78,15 @@
               maxlength="300"
               :placeholder="t('stickersLink')"
               :aria-label="t('stickersLink')"
-            /><el-button :loading="loading" @click="importPack">{{
+              :disabled="loading || sending"
+            /><el-button :loading="loading" :disabled="!packInput.trim() || sending" @click="importPack">{{
               t('stickersImport')
             }}</el-button>
           </div>
-          <label class="upload-sticker"
-            >{{ t('stickersUpload')
-            }}<input
-              type="file"
-              accept=".webp,.tgs,.webm,image/webp,video/webm,application/x-tgsticker"
-              multiple
-              @change="upload"
-          /></label>
-          <p v-if="error" role="status">{{ t(error) }}</p>
+          <div class="sticker-upload-row"><el-button size="small" :disabled="sending" @click="uploadInput?.click()">{{ t('stickersUploadAction') }}</el-button><small>WebP · TGS · WebM</small><input ref="uploadInput" type="file" hidden accept=".webp,.tgs,.webm,image/webp,video/webm,application/x-tgsticker" multiple @change="upload" /></div>
+          <p v-if="!pack" class="sticker-hint">{{ t('stickersImportHint') }}</p>
+          <p v-if="pack?.partial" class="sticker-preview-note" role="status">{{ t('stickersPublicPreview') }}</p>
+          <p v-if="error" class="sticker-error" role="alert">{{ t(error) }}</p>
           <el-select
             v-if="names.length"
             v-model="activeName"
@@ -101,14 +97,14 @@
           <div class="sticker-grid">
             <button
               v-for="sticker in pack?.stickers || []"
-              :key="sticker.id"
+              :key="`${pack.name}:${sticker.id}`"
               type="button"
               :aria-label="sticker.emoji"
-              :disabled="sending"
+              :disabled="sending || loading || disabled"
               @click="choose(sticker)"
             >
               <StickerMedia
-                :format="sticker.format"
+                :format="pack.source === 'public' ? 'image' : sticker.format"
                 :label="sticker.emoji"
                 :load="() => loadFile(sticker)"
               />
@@ -125,6 +121,7 @@ import { useI18n } from 'vue-i18n';
 import http from '@/axios';
 import StickerMedia from './sticker-media.vue';
 import { fileToBase64 } from '@/utils/file-utils';
+import {packName as normalizePackName} from '../../../shared/telegram-pack-name.mjs';
 const props = defineProps({ disabled: Boolean, compact: Boolean, dock: Object, context: String });
 const emit = defineEmits(['emoji', 'attachment', 'upload', 'visibility']);
 const { t } = useI18n();
@@ -160,7 +157,7 @@ function close() {
   opened.value = false;
 }
 defineExpose({ close });
-onBeforeUnmount(() => emit('visibility', false));
+onBeforeUnmount(() => {disposed=true;invalidate();emit('visibility', false);});
 
 const opened = ref(false),
   tab = ref('emoji'),
@@ -174,6 +171,7 @@ const opened = ref(false),
   loading = ref(false),
   sending = ref(false),
   error = ref('');
+const uploadInput=ref();
 const filteredEmoji = computed(() => {
   const q = query.value.trim().toLowerCase();
   return emoji.value.filter((e) => !q || e.name.includes(q) || e.native.includes(q));
@@ -183,6 +181,7 @@ watch(
   (value) => {
     emit('visibility', value);
     if (value) init();
+    else invalidate();
   },
   { flush: 'sync' }
 );
@@ -193,12 +192,17 @@ watch([tab, query, activeName], () =>
   })
 );
 let initialized = false,
-  version = 0;
+  version = 0, pending, disposed=false;
+const blobCache=new Map();
+function invalidate(){version++;pending?.abort();pending=null;loading.value=false;sending.value=false;blobCache.clear();}
+function errorKey(error){return ['stickersErrorLink','stickersErrorConfig','stickersErrorAuth','stickersErrorNotFound','stickersErrorNetwork','stickersErrorEmpty','stickersErrorPublic'].includes(error?.message)?error.message:'stickersErrorNetwork';}
 async function init() {
-  if (initialized) return;
+  if (initialized || disposed) return;
   initialized = true;
   try {
     const data = (await import('@emoji-mart/data')).default;
+    if(disposed)return;
+    if(!opened.value){initialized=false;return;}
     emoji.value = Object.values(data.emojis).flatMap((e) =>
       e.skins.map((s) => ({
         native: s.native,
@@ -217,70 +221,71 @@ async function init() {
     error.value = 'stickersError';
   }
 }
-async function loadPack() {
-  const current = ++version;
-  loading.value = true;
-  pack.value = null;
-  error.value = '';
-  try {
-    const data = await http.get('/mail-chat/stickers/pack', {
-      params: { name: activeName.value },
-      noMsg: true
-    });
-    if (current === version) pack.value = data;
-  } catch {
-    if (current === version) error.value = 'stickersError';
-  } finally {
-    if (current === version) loading.value = false;
-  }
+async function loadPack(value=activeName.value) {
+  let name;try{name=normalizePackName(value);}catch{error.value='stickersErrorLink';return null;}
+  const current=++version;pending?.abort();pending=new AbortController();
+  loading.value=true;error.value='';
+  try{
+    const data=await http.get('/mail-chat/stickers/pack',{params:{name},signal:pending.signal,noMsg:true,timeout:35000});
+    if(current!==version)return null;
+    pack.value=data;activeName.value=data.name;blobCache.clear();return data;
+  }catch(failure){if(current===version){error.value=errorKey(failure);if(pack.value)activeName.value=pack.value.name;}return null;}
+  finally{if(current===version){loading.value=false;pending=null;}}
 }
-async function importPack() {
-  if (loading.value) return;
-  activeName.value = packInput.value;
-  await loadPack();
-  if (!pack.value) return;
-  activeName.value = pack.value.name;
-  names.value = [pack.value.name, ...names.value.filter((n) => n !== pack.value.name)].slice(0, 20);
-  try {
-    localStorage.setItem('cloud-mail:sticker-packs', JSON.stringify(names.value));
-  } catch {}
-  packInput.value = '';
+async function importPack(){
+  if(loading.value||sending.value)return;
+  const data=await loadPack(packInput.value);if(!data)return;
+  names.value=[data.name,...names.value.filter(name=>name.toLowerCase()!==data.name.toLowerCase())].slice(0,20);
+  try{localStorage.setItem('cloud-mail:sticker-packs',JSON.stringify(names.value));}catch{}
+  packInput.value='';
 }
 async function loadFile(sticker) {
+  const name=pack.value?.name;if(!name)throw Error('stickersErrorNetwork');
+  const key=`${name}:${sticker.id}`;if(blobCache.has(key))return blobCache.get(key);
+  const current=version;
   const url = new URL(`${import.meta.env.VITE_BASE_URL}/mail-chat/stickers/file`, location.origin);
-  url.search = new URLSearchParams({ name: pack.value.name, id: sticker.id });
+  url.search = new URLSearchParams({ name, id: sticker.id });
   const response = await fetch(url, {
     headers: { Authorization: localStorage.getItem('token') || '' }
   });
-  if (!response.ok || response.headers.get('content-type')?.includes('application/json'))
-    throw Error('Sticker unavailable');
-  return response.blob();
+  if (response.headers.get('content-type')?.includes('application/json')) {
+    const failure=await response.json();throw Error(errorKey(failure));
+  }
+  if (!response.ok) throw Error('stickersErrorNetwork');
+  const blob=await response.blob();if(current===version){blobCache.set(key,blob);if(blobCache.size>24)blobCache.delete(blobCache.keys().next().value);}
+  return blob;
 }
 async function choose(sticker) {
   if (sending.value || props.disabled) return;
   sending.value = true;
+  const current=version,context=props.context,source=pack.value?.source;
   error.value = '';
   try {
     const blob = await loadFile(sticker);
+    if(current!==version||context!==props.context||props.disabled)return;
+    const content=await fileToBase64(blob);
+    if(current!==version||context!==props.context||props.disabled)return;
+    const format=source==='public'?({'image/webp':'webp','image/png':'png','image/jpeg':'jpg'}[blob.type]||'webp'):sticker.format;
     emit('attachment', {
-      filename: `sticker.${sticker.format}`,
+      filename: `sticker.${format}`,
       size: blob.size,
       contentType:
-        sticker.format === 'webp'
+        source==='public'?blob.type:sticker.format === 'webp'
           ? 'image/webp'
           : sticker.format === 'webm'
             ? 'video/webm'
             : 'application/x-tgsticker',
-      content: await fileToBase64(blob)
+      content
     });
     opened.value = false;
-  } catch {
-    error.value = 'stickersError';
+  } catch(failure) {
+    if(current===version)error.value=errorKey(failure);
   } finally {
-    sending.value = false;
+    if(current===version)sending.value = false;
   }
 }
 function upload(event) {
+  if(!event.target.files?.length)return;
   emit('upload', event);
   opened.value = false;
 }
@@ -357,6 +362,12 @@ button:hover {
   display: flex;
   gap: 5px;
 }
+.sticker-import>.el-button{font-size:13px;padding:8px 12px;flex-shrink:0;min-height:32px;background:var(--el-color-primary);color:var(--el-color-white);border-radius:6px;}
+.sticker-upload-row{display:flex;align-items:center;gap:8px;margin-top:10px;}
+.sticker-upload-row .el-button{font-size:12px;padding:6px 10px;border:1px solid var(--el-border-color);border-radius:6px;background:var(--el-fill-color-light);}
+.sticker-upload-row small,.sticker-hint{color:var(--el-text-color-secondary);font-size:11px;}
+.sticker-preview-note{color:var(--el-color-warning);}
+.sticker-error{color:var(--el-color-danger);}
 .sticker-import .el-input {
   min-width: 0;
 }
@@ -374,9 +385,11 @@ input[type='file'] {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
+.sticker-grid>button{display:grid;place-items:center;min-width:0;min-height:82px;padding:3px;}
 .sticker-grid :deep(.sticker-media) {
-  width: 86px;
-  height: 86px;
+  width: 76px;
+  height: 76px;
+  overflow:hidden;
 }
 p {
   font-size: 12px;

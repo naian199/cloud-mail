@@ -11,8 +11,23 @@
           v-for="c in sortedConversations"
           :key="c.key"
           class="contact"
-          :class="{ selected: selected?.key === c.key }"
-          @click="select(c)"
+          :class="{ selected: selected?.key === c.key, 'contact-dragging': draggingKey === c.key, 'contact-drop-before': dropTarget?.key === c.key && !dropTarget.after, 'contact-drop-after': dropTarget?.key === c.key && dropTarget.after }"
+          draggable="true"
+          aria-haspopup="menu"
+          :aria-expanded="conversationMenu?.key === c.key"
+          @click="contactClick($event,c)"
+          @contextmenu.prevent="openConversationMenu($event,c)"
+          @keydown="contactKey($event,c)"
+          @dragstart="startConversationDrag($event,c)"
+          @dragover="overConversation($event,c)"
+          @dragleave="leaveConversation($event)"
+          @drop="dropConversation($event,c)"
+          @dragend="endConversationDrag"
+          @pointerdown="startContactPress($event,c)"
+          @pointermove="moveContactPress"
+          @pointerup="cancelContactPress"
+          @pointercancel="cancelContactPress"
+          @pointerleave="cancelContactPress"
         >
           <UserAvatar :profile="c.profile" :email="c.peers[0]" />
           <span class="contact-summary"
@@ -378,6 +393,17 @@
       </div>
     </el-drawer>
     <Teleport to="body">
+      <div v-if="conversationMenu" class="mail-menu-backdrop" @pointerdown="closeMenu" @contextmenu.prevent="closeMenu">
+        <div ref="conversationMenuPanel" class="mail-message-menu conversation-menu" role="menu" :aria-label="t('conversationActions')" :style="{left:conversationMenu.x+'px',top:conversationMenu.y+'px',maxHeight:conversationMenu.maxHeight+'px',maxWidth:conversationMenu.maxWidth+'px'}" @pointerdown.stop @contextmenu.prevent @keydown="conversationMenuKey">
+          <button role="menuitem" :disabled="conversationBusy" @click="conversationAction('pin')">{{ t(conversationMenu.conversation.pinned ? 'conversationUnpin' : 'conversationPin') }}</button>
+          <button v-if="conversationMenu.conversation.unread" role="menuitem" :disabled="conversationBusy" @click="conversationAction('read')">{{ t('conversationMarkRead') }}</button>
+          <button role="menuitem" :disabled="!neighbor(conversationMenu.conversation,-1)" @click="conversationAction('up')">{{ t('conversationMoveUp') }}</button>
+          <button role="menuitem" :disabled="!neighbor(conversationMenu.conversation,1)" @click="conversationAction('down')">{{ t('conversationMoveDown') }}</button>
+          <button v-if="customOrder.length" role="menuitem" @click="conversationAction('reset')">{{ t('conversationResetOrder') }}</button>
+          <button role="menuitem" @click="conversationAction('profile')">{{ t('profileView') }}</button>
+          <button role="menuitem" @click="conversationAction('copy')">{{ t('conversationCopyEmail') }}</button>
+        </div>
+      </div>
       <div
         v-if="messageMenu"
         class="mail-menu-backdrop"
@@ -450,6 +476,7 @@
 import UniversalSearch from '@/components/universal-search.vue';
 import ConversationCategories from '@/components/conversation-categories.vue';
 import ConversationResize from '@/components/conversation-resize.vue';
+import {sortConversations,moveConversation} from '@/utils/conversation-order.mjs';
 import { randomUUID } from '@/utils/uuid';
 
 import { computed, nextTick, onMounted, onBeforeUnmount, reactive, ref, watch } from 'vue';
@@ -566,15 +593,82 @@ const isChat = (message) => message.compactMail || (message.chatStyle ?? message
 const originalExpanded = reactive({});
 const richPreview = (message) => !isChat(message) && !originalExpanded[message.emailId] &&
   ((message.text || '').length > 500 || (message.richHtml || '').length > 12000);
-const sortedConversations = computed(() =>
-  [...conversations.value].sort(
-    (a, b) =>
-      Number(b.pinned) - Number(a.pinned) ||
-      (b.createTime ? mailDate(b.createTime).getTime() : 0) -
-        (a.createTime ? mailDate(a.createTime).getTime() : 0) ||
-      b.latestId - a.latestId
-  )
-);
+const orderScope=computed(()=>`${user.user.userId}:${accountId.value}:${category}`);
+const customOrder=computed(()=>ui.conversationOrders[orderScope.value] || []);
+const sortedConversations=computed(()=>sortConversations(conversations.value,customOrder.value));
+const conversationMenu=ref(null),conversationMenuPanel=ref(null),conversationBusy=ref(false);
+const draggingKey=ref(''),dropTarget=ref(null);
+let contactPress,contactPressStart,suppressContactUntil=0,menuOrigin;
+function saveOrder(keys){
+  const entries=Object.entries(ui.conversationOrders).filter(([key])=>key!==orderScope.value).slice(-19);
+  const merged=keys.length?[...keys,...customOrder.value.filter(key=>!keys.includes(key))]:[];
+  ui.conversationOrders=Object.fromEntries([...entries,[orderScope.value,merged.slice(0,1000)]]);
+}
+function contactClick(event,c){if(Date.now()<suppressContactUntil){event.preventDefault();return;}select(c);}
+function cancelContactPress(){clearTimeout(contactPress);contactPressStart=null;}
+function startContactPress(event,c){
+  if(event.pointerType!=='touch')return;
+  cancelContactPress();contactPressStart={x:event.clientX,y:event.clientY};
+  const point={clientX:event.clientX,clientY:event.clientY,currentTarget:event.currentTarget,preventDefault(){}};
+  contactPress=setTimeout(()=>{suppressContactUntil=Date.now()+800;openConversationMenu(point,c);},500);
+}
+function moveContactPress(event){if(contactPressStart&&Math.hypot(event.clientX-contactPressStart.x,event.clientY-contactPressStart.y)>10)cancelContactPress();}
+function startConversationDrag(event,c){
+  closeMenu();cancelContactPress();draggingKey.value=c.key;
+  event.dataTransfer.effectAllowed='move';event.dataTransfer.setData('application/x-cloud-mail-conversation',c.key);
+}
+function overConversation(event,c){
+  if(!draggingKey.value||draggingKey.value===c.key)return;
+  const source=conversations.value.find(row=>row.key===draggingKey.value);
+  if(!source||!!source.pinned!==!!c.pinned){dropTarget.value=null;event.dataTransfer.dropEffect='none';return;}
+  event.preventDefault();event.dataTransfer.dropEffect='move';
+  const box=event.currentTarget.getBoundingClientRect();dropTarget.value={key:c.key,after:event.clientY>box.top+box.height/2};
+}
+function leaveConversation(event){if(!event.currentTarget.contains(event.relatedTarget))dropTarget.value=null;}
+function dropConversation(event,c){
+  if(!draggingKey.value)return;
+  event.preventDefault();event.stopPropagation();
+  if(dropTarget.value?.key===c.key){const keys=moveConversation(sortedConversations.value,draggingKey.value,c.key,dropTarget.value.after);if(keys)saveOrder(keys);}
+  endConversationDrag();
+}
+function endConversationDrag(){if(draggingKey.value)suppressContactUntil=Date.now()+250;draggingKey.value='';dropTarget.value=null;}
+function neighbor(c,delta){const rows=sortedConversations.value,index=rows.findIndex(row=>row.key===c.key),target=rows[index+delta];return target&&!!target.pinned===!!c.pinned?target:null;}
+function moveContact(c,delta){const target=neighbor(c,delta);if(!target)return;const keys=moveConversation(sortedConversations.value,c.key,target.key,delta>0);if(keys)saveOrder(keys);}
+function contactKey(event,c){
+  if(event.key==='ContextMenu'||(event.shiftKey&&event.key==='F10')){event.preventDefault();openConversationMenu(event,c);}
+  else if(event.altKey&&['ArrowUp','ArrowDown'].includes(event.key)){event.preventDefault();moveContact(c,event.key==='ArrowUp'?-1:1);}
+}
+async function openConversationMenu(event,c){
+  event.preventDefault();closeMenu();cancelContactPress();menuOrigin=event.currentTarget;
+  const box=event.currentTarget?.getBoundingClientRect(),viewport=window.visualViewport;
+  const left=viewport?.offsetLeft||0,top=viewport?.offsetTop||0,width=viewport?.width||innerWidth,height=viewport?.height||innerHeight;
+  const config={key:c.key,conversation:c,accountId:accountId.value,x:event.clientX||box?.left||8,y:event.clientY||box?.bottom||8,maxHeight:height-16,maxWidth:Math.min(220,width-16)};
+  conversationMenu.value=config;const opened=conversationMenu.value;await nextTick();
+  if(conversationMenu.value!==opened||!conversationMenuPanel.value)return;
+  const size=conversationMenuPanel.value.getBoundingClientRect();opened.x=Math.max(left+8,Math.min(opened.x,left+width-size.width-8));opened.y=Math.max(top+8,Math.min(opened.y,top+height-size.height-8));
+  conversationMenuPanel.value.querySelector('button:not(:disabled)')?.focus();
+}
+function conversationMenuKey(event){
+  if(event.key==='Escape'){event.preventDefault();event.stopPropagation();closeMenu();menuOrigin?.focus();return;}
+  if(event.key==='Tab'){closeMenu();return;}
+  if(!['ArrowUp','ArrowDown','Home','End'].includes(event.key))return;
+  event.preventDefault();const buttons=[...conversationMenuPanel.value.querySelectorAll('button:not(:disabled)')],at=buttons.indexOf(document.activeElement);
+  const index=event.key==='Home'?0:event.key==='End'?buttons.length-1:(at+(event.key==='ArrowUp'?-1:1)+buttons.length)%buttons.length;buttons[index]?.focus();
+}
+async function conversationAction(action){
+  const menu=conversationMenu.value;if(!menu||conversationBusy.value)return;const c=menu.conversation;closeMenu();
+  if(action==='up'||action==='down'){moveContact(c,action==='up'?-1:1);menuOrigin?.focus();return;}
+  if(action==='reset'){saveOrder([]);menuOrigin?.focus();return;}
+  if(action==='profile'){viewProfile(c.profile,c.peers[0]);return;}
+  if(action==='copy'){try{await navigator.clipboard.writeText(c.peers.join(', '));ElMessage.success(t('copySuccessMsg'));}catch{ElMessage.error(t('copyFailMsg'));}return;}
+  conversationBusy.value=true;
+  try{
+    if(action==='pin')await mailPin({accountId:menu.accountId,key:c.key,pinned:!c.pinned});
+    if(action==='read')await mailRead({accountId:menu.accountId,key:c.key,through:c.latestId});
+    if(accountId.value===menu.accountId)await sync();
+  }catch{}finally{conversationBusy.value=false;menuOrigin?.focus();}
+}
+watch([accountId,universalActive],()=>{closeMenu();endConversationDrag();cancelContactPress();});
 const draftKey = computed(() => `${accountId.value}:${selected.value?.key || ''}`);
 const drafts = reactive({}),
   fileReads = reactive({}),
@@ -621,6 +715,7 @@ let pressTimer,
   pressStart,
   suppressUntil = 0;
 function closeMenu() {
+  conversationMenu.value = null;
   messageMenu.value = null;
 }
 function cancelPress() {
@@ -664,6 +759,7 @@ function suppressAfterPress(event) {
 async function openMessageMenu(event, message) {
   if (!message && !(live.value.internal || messages.value.some(row => row.internal))) return;
   event.preventDefault();
+  closeMenu();
   cancelPress();
   const box = event.currentTarget?.getBoundingClientRect();
   const x = event.clientX || box?.left || 16,
@@ -699,7 +795,7 @@ async function menuAction(action) {
 function menuEscape(event) {
   if(event.key!=='Escape'||event.isComposing||event.keyCode===229||document.fullscreenElement||ui.asideShow)return;
   const consume=()=>{event.preventDefault();event.stopPropagation();};
-  if(messageMenu.value){closeMenu();consume();return;}
+  if(messageMenu.value||conversationMenu.value){closeMenu();consume();return;}
   if(translationStatus.settingsOpen){translationStatus.settingsOpen=false;consume();return;}
   if(pickerOpen.value){stickerPicker.value?.close();consume();return;}
   if(mediaId.value||hasChatOverlay())return;
@@ -1587,6 +1683,7 @@ onMounted(async () => {
 });
 onBeforeUnmount(() => {
   ui.mobileChatFocused = false;
+  cancelContactPress();
   cancelPress();
   document.removeEventListener('keydown', menuEscape);
   window.removeEventListener('resize', closeMenu);
@@ -1625,6 +1722,12 @@ onBeforeUnmount(() => {
   min-width: 0;
   overflow: hidden;
 }
+.contact-dragging { opacity:.45; }
+.contact.contact-drop-before { box-shadow:inset 0 3px var(--el-color-primary); }
+.contact.contact-drop-after { box-shadow:inset 0 -3px var(--el-color-primary); }
+.contact :deep(img) { -webkit-user-drag:none; }
+:global(.conversation-menu button:disabled) { opacity:.4; cursor:default; }
+:global(.conversation-menu button:focus-visible) { outline:2px solid var(--el-color-primary); outline-offset:-2px; }
 .contact-controls { flex-shrink: 0; padding-top: 10px; }
 .search-actions { padding: 0 4px; height: 24px; font-size: 22px; }
 .translation-notice { display: inline-flex; color: var(--el-text-color-secondary); }
