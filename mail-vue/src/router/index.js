@@ -1,5 +1,6 @@
 import {createRouter, createWebHistory} from 'vue-router'
 import NProgress from 'nprogress';
+import {clearMediaCache} from '@/utils/media-cache.mjs';
 import {useUiStore} from "@/store/ui.js";
 import {useSettingStore} from "@/store/setting.js";
 import {cvtR2Url} from "@/utils/convert.js";
@@ -120,6 +121,7 @@ router.beforeEach((to, from, next) => {
     }
 
     const token = localStorage.getItem('token')
+    if (!token) void clearMediaCache();
 
     if (!token && !to.path.startsWith('/login')) {
         return next({name: 'login'})

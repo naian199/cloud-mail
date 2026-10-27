@@ -62,17 +62,9 @@ export function videoPoster(load, { signal } = {}) {
         probe.currentTime = Math.min(.5, duration / 10);
         await seeked;
       }
-      const canvas = document.createElement('canvas');
-      const scale = Math.min(1, 640 / Math.max(width, height));
-      canvas.width = Math.max(1, Math.round(width * scale)); canvas.height = Math.max(1, Math.round(height * scale));
-      const context = canvas.getContext('2d');
-      if (!context) throw Error('Canvas unavailable');
-      context.drawImage(probe, 0, 0, canvas.width, canvas.height);
-      const poster = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', .8));
-      canvas.width = canvas.height = 0;
-      if (controller.signal.aborted) throw aborted();
-      if (!poster) throw Error('Video preview unavailable');
-      return { poster, width, height, duration: Number.isFinite(duration) ? duration : 0 };
+      const result=await captureVideoPoster(probe);
+      if(controller.signal.aborted)throw aborted();
+      return result;
     } finally {
       clearTimeout(timer); signal?.removeEventListener('abort', cancel);
       if (cancelRead) controller.signal.removeEventListener('abort', cancelRead);
@@ -80,4 +72,20 @@ export function videoPoster(load, { signal } = {}) {
       if (source) URL.revokeObjectURL(source);
     }
   }, signal);
+}
+
+// Capture an already decoded frame without another attachment download or seek.
+export async function captureVideoPoster(video) {
+  const width=video.videoWidth,height=video.videoHeight,duration=video.duration;
+  if(!width||!height||video.readyState<2)throw Error('Invalid video dimensions');
+  const canvas=document.createElement('canvas');
+  try{
+    const scale=Math.min(1,640/Math.max(width,height));
+    canvas.width=Math.max(1,Math.round(width*scale));canvas.height=Math.max(1,Math.round(height*scale));
+    const context=canvas.getContext('2d');if(!context)throw Error('Canvas unavailable');
+    context.drawImage(video,0,0,canvas.width,canvas.height);
+    const poster=await new Promise(resolve=>canvas.toBlob(resolve,'image/jpeg',.8));
+    if(!poster)throw Error('Video preview unavailable');
+    return {poster,width,height,duration:Number.isFinite(duration)?duration:0};
+  }finally{canvas.width=canvas.height=0;}
 }

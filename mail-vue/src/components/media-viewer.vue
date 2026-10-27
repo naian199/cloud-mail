@@ -11,7 +11,7 @@
     <div v-if="current" class="media-stage">
       <el-button class="media-prev" circle :disabled="index <= 0" :aria-label="t('mediaPrevious')" @click="step(-1)"><Icon icon="cloud-mail:back" width="24" /></el-button>
       <div class="media-content" :key="current.id">
-        <VideoAttachment v-if="current.kind === 'video'" expanded :file="current.file" :load="current.load" @download="$emit('download', current)" />
+        <VideoAttachment v-if="current.kind === 'video'" expanded :file="current.file" :cache-key="current.cacheKey" :load="current.load" @download="$emit('download', current)" />
         <img v-else-if="current.src" :src="current.src" :alt="current.file.filename" referrerpolicy="no-referrer" />
         <span v-else role="status">{{ t('mailChatImageLoading') }}</span>
       </div>

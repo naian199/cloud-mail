@@ -232,7 +232,7 @@
               </div>
               <div v-for="att in m.attachments" :key="att.attId" class="attachment">
                 <AudioAttachment v-if="isAudioFile(att)" :file="att" :load="options=>mailAttachment(att.attId, options)" :source="{attId:att.attId}" @resize="imageLoaded" />
-                <VideoAttachment v-else-if="isVideoFile(att)" :file="att" :load="options=>mailAttachment(att.attId, options)" @download="download(att)" @preview="openMedia(`video:${m.emailId}:${att.attId}`)" @resize="imageLoaded" />
+                <VideoAttachment v-else-if="isVideoFile(att)" :file="att" :cache-key="mediaCacheKey(user.user.userId,accountId,att)" :load="options=>mailAttachment(att.attId, options)" @download="download(att)" @preview="openMedia(`video:${m.emailId}:${att.attId}`)" @resize="imageLoaded" />
                 <StickerMedia v-else-if="isStickerFile(att)" :format="att.filename.toLowerCase().endsWith('.tgs') ? 'tgs' : 'webm'" :label="'🙂'" :load="options=>mailAttachment(att.attId, options)" @error="stickerErrors[att.attId] = true" />
                 <el-button v-if="(!isVideoFile(att) && !isStickerFile(att) && !isAudioFile(att)) || stickerErrors[att.attId]" text @click="download(att)">
                   <Icon icon="cloud-mail:file" width="26" aria-hidden="true" />
@@ -476,6 +476,7 @@
 import UniversalSearch from '@/components/universal-search.vue';
 import ConversationCategories from '@/components/conversation-categories.vue';
 import ConversationResize from '@/components/conversation-resize.vue';
+import {mediaCacheKey,cachedMediaBlob} from '@/utils/media-cache.mjs';
 import {sortConversations,moveConversation} from '@/utils/conversation-order.mjs';
 import { randomUUID } from '@/utils/uuid';
 
@@ -846,7 +847,7 @@ async function deleteSelected(scope) {
 const mediaId = ref('');
 const mediaItems = computed(() => messages.value.flatMap(row => [
   ...(row.images || []).map(image => ({ id: `image:${row.emailId}:${image.attId || image.src}`, kind: 'image', src: image.src || imageUrls[image.attId], file: { attId: image.attId, filename: image.alt || 'image' } })),
-  ...(row.attachments || []).filter(isVideoFile).map(file => ({ id: `video:${row.emailId}:${file.attId}`, kind: 'video', file, load: options => mailAttachment(file.attId, options) }))
+  ...(row.attachments || []).filter(isVideoFile).map(file => ({ id: `video:${row.emailId}:${file.attId}`, kind: 'video', file, cacheKey: mediaCacheKey(user.user.userId,accountId.value,file), load: options => mailAttachment(file.attId, options) }))
 ]));
 function openMedia(id) { if (!selecting.value) { document.querySelectorAll('.messages video').forEach(player => player.pause()); mediaId.value = id; } }
 async function downloadMedia(item) {
@@ -1366,7 +1367,7 @@ async function expand(m) {
 }
 async function download(att) {
   try {
-    const blob = await mailAttachment(att.attId);
+    const blob = isVideoFile(att) ? await cachedMediaBlob(mediaCacheKey(user.user.userId,accountId.value,att), options=>mailAttachment(att.attId,options)) : await mailAttachment(att.attId);
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;

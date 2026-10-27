@@ -1,11 +1,11 @@
 <template>
   <div ref="host" class="video-attachment" :class="{ expanded }" :style="{ '--video-aspect': aspect }" :aria-busy="loading || converting">
     <div class="video-frame">
-      <video v-if="url" ref="player" :src="url" controls playsinline preload="metadata" :poster="poster" :aria-label="file.filename" @loadedmetadata="readDimensions" @error="playbackFailed" @pointerdown.stop @touchstart.stop />
+      <video v-if="url" ref="player" :src="url" controls playsinline preload="metadata" :poster="poster" :aria-label="file.filename" @loadedmetadata="readDimensions" @loadeddata="savePlayerPoster" @error="playbackFailed" @pointerdown.stop @touchstart.stop />
       <button v-else class="video-start" :class="{ 'has-poster': poster, 'preview-loading': preparing }" type="button" :aria-label="t('videoPlay')" :disabled="loading || converting" @click="play">
         <img v-if="poster" class="video-poster" :src="poster" alt="" />
         <span class="video-play-icon"><Icon icon="cloud-mail:play" width="34" aria-hidden="true" /></span>
-        <span v-if="!poster" class="video-placeholder">{{ t(loading || preparing ? 'videoLoading' : 'videoPlay') }}</span>
+        <span v-if="!poster" class="video-placeholder">{{ t(loading ? 'videoLoading' : 'videoPlay') }}</span>
         <span v-if="duration" class="video-duration">{{ clock(duration) }}</span>
       </button>
       <span v-if="poster && !url" class="video-size">{{ formatBytes(file.size) }}</span>
@@ -31,18 +31,25 @@ import { ref, nextTick, onBeforeUnmount, onMounted } from 'vue';
 import { Icon } from '@iconify/vue';
 import { useI18n } from 'vue-i18n';
 import { videoMime } from '@/utils/video-files.mjs';
-import { videoPoster } from '@/utils/video-poster.mjs';
-const props = defineProps({ file: { type: Object, required: true }, load: { type: Function, required: true }, expanded: Boolean });
+import { videoPoster,captureVideoPoster } from '@/utils/video-poster.mjs';
+import {cachedMediaBlob,peekMediaCache,readMediaCache,writeMediaCache} from '@/utils/media-cache.mjs';
+const props = defineProps({ file: { type: Object, required: true }, load: { type: Function, required: true }, expanded: Boolean, cacheKey: {type:String,default:''} });
 const emit = defineEmits(['download', 'preview', 'resize']);
 const { t } = useI18n();
 const visible = ref(true), aspect = ref(16 / 9), poster = ref(''), duration = ref(0), preparing = ref(false);
-let previewController, previewAttempted = false;
+let previewController, previewAttempted = false, capturing=false;
 const clock = value => { const seconds = Math.floor(value); return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`; };
 async function preparePreview() {
   if (props.expanded || previewAttempted || poster.value || url.value || loading.value || converting.value || disposed) return;
-  previewAttempted = true; preparing.value = true;
+  previewAttempted = true;
   const mine = new AbortController(); previewController = mine;
   try {
+    const cached=await readMediaCache(props.cacheKey,'poster');
+    if(disposed||mine.signal.aborted)return;
+    if(cached){applyPoster({...cached.metadata,poster:cached.blob});return;}
+    // Large attachments are downloaded only after an explicit play/download action.
+    if(Number(props.file.size)>8*1024*1024)return;
+    preparing.value=true;
     const result = await videoPoster(async signal => {
       const cancelRead = () => { if (!loading.value && !converting.value) readController?.abort(); };
       signal.addEventListener('abort', cancelRead, { once: true });
@@ -54,17 +61,29 @@ async function preparePreview() {
       } finally { signal.removeEventListener('abort', cancelRead); }
     }, { signal: mine.signal });
     if (disposed || mine.signal.aborted || url.value) return;
-    aspect.value = result.width / result.height; duration.value = result.duration;
-    poster.value = URL.createObjectURL(result.poster);
-    await nextTick(); emit('resize');
+    applyPoster(result);
+    rememberPoster(result);
   } catch (reason) {
     if (reason.name === 'AbortError') previewAttempted = false;
-    if (!mine.signal.aborted) error.value = reason.message === 'Unsupported video preview' ? 'videoUnsupported' : 'videoLoadFailed';
+    // A missing cover is not a playback failure. Keep the play button available.
   } finally {
+    if(mine.signal.aborted)previewAttempted=false;
     if (previewController === mine) { preparing.value = false; previewController = null; }
     if (!visible.value && !url.value) original = null;
-    if (mine.signal.aborted && visible.value && !disposed && !url.value && !poster.value) queueMicrotask(preparePreview);
+    if(mine.signal.aborted&&visible.value&&!disposed&&!loading.value&&!converting.value&&!url.value&&!poster.value)queueMicrotask(preparePreview);
   }
+}
+function applyPoster(result){
+  if(disposed||!result.width||!result.height)return;
+  aspect.value=result.width/result.height;duration.value=result.duration||0;
+  if(poster.value)URL.revokeObjectURL(poster.value);
+  poster.value=URL.createObjectURL(result.poster);nextTick(()=>{if(!disposed)emit('resize');});
+}
+function rememberPoster(result){void writeMediaCache(props.cacheKey,'poster',result.poster,{width:result.width,height:result.height,duration:result.duration});}
+async function savePlayerPoster(){
+  if(disposed||poster.value||capturing||!player.value)return;
+  capturing=true;
+  try{const result=await captureVideoPoster(player.value);if(!disposed){applyPoster(result);rememberPoster(result);}}catch{}finally{capturing=false;}
 }
 function readDimensions() {
   const width = player.value?.videoWidth, height = player.value?.videoHeight;
@@ -90,7 +109,7 @@ async function originalBlob() {
     readController = new AbortController();
     originalRequest = (async () => {
       if (Number(props.file.size) > 50 * 1024 * 1024) throw Error('videoLoadFailed');
-      const blob = await props.load({ signal: readController.signal });
+      const blob = await cachedMediaBlob(props.cacheKey,props.load,{signal:readController.signal});
       if (blob.size > 50 * 1024 * 1024) throw Error('videoLoadFailed');
       if (disposed) throw new DOMException('Cancelled', 'AbortError');
       original = blob;
@@ -142,6 +161,7 @@ async function convert() {
 }
 function cancel() { controller?.abort(); }
 onMounted(() => {
+  const cached=peekMediaCache(props.cacheKey,'poster');if(cached)applyPoster({...cached.metadata,poster:cached.blob});
   if (props.expanded) { play(); return; }
   if (!('IntersectionObserver' in window)) { preparePreview(); return; }
   visible.value = false;
