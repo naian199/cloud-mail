@@ -3,7 +3,7 @@ import {decodeVoice,voiceHash} from '../lib/voice-audio.mjs';
 import BizError from '../error/biz-error';
 import userContext from '../security/user-context';
 import { normalizeUsername } from './contact-service';
-import { notifyRoomUsers } from '../chat/mail-notify';
+import { notifyMail, notifyRoomUsers } from '../chat/mail-notify';
 import { v4 as uuid } from 'uuid';
 import translation from './translation-service';
 
@@ -194,8 +194,9 @@ export default {
   async read(c,id,params) {
     await this.access(c,id);
     const through=positive(params?.through);
-    await c.env.db.prepare(`UPDATE mail_room_member SET read_id=max(read_id,?) WHERE room_id=? AND user_id=? AND status='joined'
-      AND EXISTS(SELECT 1 FROM mail_room_message WHERE room_id=? AND id=?)`).bind(through,id,userContext.getUserId(c),id,through).run();
+    const changed=await c.env.db.prepare(`UPDATE mail_room_member SET read_id=max(read_id,?) WHERE room_id=? AND user_id=? AND status='joined'
+      AND read_id<? AND EXISTS(SELECT 1 FROM mail_room_message WHERE room_id=? AND id=?)`).bind(through,id,userContext.getUserId(c),through,id,through).run();
+    if(changed.meta.changes)c.executionCtx.waitUntil(notifyMail(c.env,userContext.getUserId(c)));
   },
   async translate(c,id,rawMessageId,params) {
     await this.access(c,id);

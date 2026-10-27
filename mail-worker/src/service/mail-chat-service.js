@@ -423,7 +423,7 @@ const mailChat = {
 			.run();
 		if (changed.meta.changes) {
 			const peer = await live.resolve(c, account, conversationKey);
-			c.executionCtx.waitUntil(notifyMail(c.env, peer?.user_id));
+			c.executionCtx.waitUntil(notifyMail(c.env, account.user_id, peer?.user_id));
 		}
 	},
 

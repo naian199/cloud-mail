@@ -2,6 +2,7 @@
   <el-config-provider :locale="elementLocale"><router-view /><AppInstall /></el-config-provider>
 </template>
 <script setup>
+import {tabUnread,useTabBadge} from '@/composables/use-tab-badge';
 import { watch } from 'vue';
 import AppInstall from '@/components/app-install.vue';
 import { useRoute } from 'vue-router';
@@ -10,8 +11,10 @@ import { useSettingStore } from '@/store/setting';
 import { elementLocale } from '@/i18n';
 import('@/icons/index.js');
 const route = useRoute(), { t, locale, te } = useI18n(), settings = useSettingStore();
-watch([locale, () => route.meta.title], () => {
+useTabBadge();
+watch([locale, () => route.meta.title, () => settings.settings.title, tabUnread], () => {
   const title = route.meta.title && te(route.meta.title) ? t(route.meta.title) : '';
-  document.title = [title, settings.settings.title].filter(Boolean).join(' · ');
+  const base=[title, settings.settings.title].filter(Boolean).join(' · ');
+  document.title = (tabUnread.value ? `(${tabUnread.value>99?'99+':tabUnread.value}) ` : '') + base;
 }, { immediate: true });
 </script>

@@ -12,11 +12,12 @@ await test('push settings, private previews, room isolation, privacy and device 
  const [a,b,c]=await Promise.all([user(),user(),user()]);
  assert.equal((await api('my/push/config')).code,401);
  const ca=await api('my/push/config',a),cb=await api('my/push/config',b);assert.equal(ca.code,200);assert.equal(ca.data.publicKey,cb.data.publicKey);assert.equal(ca.data.publicKey.length,87);assert(!JSON.stringify(ca).includes('privateKey'));
- const before=(await api('my/push/poll',b)).data.cursor;
+ const baseline=(await api('my/push/poll',b)).data;assert.equal(baseline.unread,0);const before=baseline.cursor;
  const account=(await api('my/loginUserInfo',a)).data.account.accountId;
  const sent=await api('mail-chat/instant',a,'POST',{accountId:account,clientId:randomUUID(),recipients:[b.email],subject:'Push preview',text:'私人预览内容 123'});assert.equal(sent.code,200);
- let poll=await api('my/push/poll?cursor='+before,b);assert.equal(poll.code,200);assert.equal(poll.data.messages.length,1);assert.equal(poll.data.messages[0].body,'私人预览内容 123');assert.equal(poll.data.messages[0].kind,'private');const context=poll.data.messages[0].context;
+ let poll=await api('my/push/poll?cursor='+before,b);assert.equal(poll.code,200);assert.equal(poll.data.unread,1);assert.equal((await api('my/push/poll',c)).data.unread,0);assert.equal(poll.data.messages.length,1);assert.equal(poll.data.messages[0].body,'私人预览内容 123');assert.equal(poll.data.messages[0].kind,'private');const context=poll.data.messages[0].context;
  assert.equal((await api('my/push/poll?cursor='+before,c)).data.messages.length,0);
+ await api('my/push/preferences',b,'PUT',{enabled:false});assert.equal((await api('my/push/poll',b)).data.unread,1);await api('my/push/preferences',b,'PUT',{enabled:true});
  assert.equal((await api('my/push/preferences',b,'PUT',{preview:'none'})).code,200);poll=await api('my/push/poll?cursor='+before,b);assert.equal(poll.data.messages[0].title,'Cloud Mail');assert(!JSON.stringify(poll.data.messages).includes('私人预览内容'));
  assert.equal((await api('my/push/mute',b,'PUT',{context,muted:true})).code,200);assert.equal((await api('my/push/poll?cursor='+before,b)).data.messages.length,0);
  await api('my/push/mute',b,'PUT',{context,muted:false});await api('my/push/preferences',b,'PUT',{preview:'full'});
@@ -24,8 +25,10 @@ await test('push settings, private previews, room isolation, privacy and device 
  await api(`chat/rooms/${group}/members`,a,'POST',{username:b.username});await api(`chat/rooms/${group}/membership`,b,'PUT',{accept:true});
  const roomBefore=(await api('my/push/poll',b)).data.cursor;
  await api(`chat/rooms/${group}/messages`,a,'POST',{body:'群聊消息预览',clientId:randomUUID()});
- const rooms=await api('my/push/poll?cursor='+roomBefore,b);assert(rooms.data.messages.some(message=>message.body==='群聊消息预览'&&message.kind==='group'));
- await api(`chat/rooms/${group}/members/${b.id}`,a,'DELETE');assert.equal((await api('my/push/poll?cursor='+roomBefore,b)).data.messages.length,0);
+ const rooms=await api('my/push/poll?cursor='+roomBefore,b);assert.equal(rooms.data.unread,2);const roomMessage=rooms.data.messages.find(message=>message.kind==='group');await api(`chat/rooms/${group}/read`,b,'PUT',{through:Number(roomMessage.id.split(':')[1])});assert.equal((await api('my/push/poll',b)).data.unread,1);await post(group,a,'待移除的未读消息');assert.equal((await api('my/push/poll',b)).data.unread,2);assert(rooms.data.messages.some(message=>message.body==='群聊消息预览'&&message.kind==='group'));
+ await api(`chat/rooms/${group}/members/${b.id}`,a,'DELETE');assert.equal((await api('my/push/poll',b)).data.unread,1);assert.equal((await api('my/push/poll?cursor='+roomBefore,b)).data.messages.length,0);
+ const mailbox=(await api('my/loginUserInfo',b)).data.account.accountId;const conversation=(await api('mail-chat/conversations?accountId='+mailbox,b)).data.conversations[0];await api('mail-chat/read',b,'PUT',{accountId:mailbox,key:conversation.key,through:conversation.latestId});assert.equal((await api('my/push/poll?cursor='+rooms.data.cursor,b)).data.unread,0);
+ const channel=(await api('chat/rooms',a,'POST',{kind:'channel',name:'未读频道'})).data.id;await api(`chat/rooms/${channel}/members`,a,'POST',{username:b.username});await api(`chat/rooms/${channel}/membership`,b,'PUT',{accept:true});const publication=await post(channel,a,'频道未读');assert.equal((await api('my/push/poll',b)).data.unread,1);assert.equal((await api('my/push/poll',c)).data.unread,0);await api(`chat/rooms/${channel}/read`,b,'PUT',{through:publication.data.id});assert.equal((await api('my/push/poll',b)).data.unread,0);
  const key=await webcrypto.subtle.generateKey({name:'ECDH',namedCurve:'P-256'},true,['deriveBits']);
  const subscription={endpoint:'https://fcm.googleapis.com/fcm/send/local-test-'+randomUUID(),keys:{p256dh:Buffer.from(await webcrypto.subtle.exportKey('raw',key.publicKey)).toString('base64url'),auth:randomBytes(16).toString('base64url')}};
  assert.equal((await api('my/push/subscription',a,'POST',{subscription:{...subscription,endpoint:'https://127.0.0.1/private'}})).code,400);

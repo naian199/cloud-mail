@@ -10,6 +10,21 @@ export async function generatePushKeys(){const keys=await crypto.subtle.generate
 export async function pushKeys(env){if(!env.CHAT_NOTIFICATIONS)fail('pushUnavailable',503);const response=await env.CHAT_NOTIFICATIONS.get(env.CHAT_NOTIFICATIONS.idFromName('web-push-keys')).fetch('https://chat.internal/push/keys',{method:'POST'});if(!response.ok)fail('pushUnavailable',503);return response.json();}
 export async function pushPreferences(env,userId){const row=await env.db.prepare('SELECT config FROM mail_push_preference WHERE user_id=?').bind(userId).first();return {...notificationDefaults,...(row?JSON.parse(row.config):{})};}
 export async function notificationCursor(env,userId){const mail=await env.db.prepare('SELECT coalesce(max(email_id),0) AS id FROM email WHERE user_id=? AND type=0').bind(userId).first();const room=await env.db.prepare(`SELECT coalesce(max(id),0) AS id FROM mail_room_message WHERE room_id IN (SELECT room_id FROM mail_room_member WHERE user_id=? AND status='joined')`).bind(userId).first();return {mail:mail.id,room:room.id};}
+// Count independently of push preferences and delivery cursors: a read in any tab must clear the badge.
+export async function unreadMessages(env,userId){
+ const rows=await env.db.batch([
+  env.db.prepare(`SELECT count(DISTINCT e.account_id||':'||CASE WHEN coalesce(e.message_id,'')!='' THEN 'm:'||e.message_id ELSE 'i:'||e.email_id END) AS count
+   FROM email e JOIN account a ON a.account_id=e.account_id JOIN user u ON u.user_id=e.user_id
+   WHERE e.user_id=? AND e.type=0 AND e.is_del=0 AND e.unread=0 AND e.status!=6
+   AND coalesce(e.ingest_key,'') NOT LIKE 'legacy-chat:%' AND a.is_del=0 AND a.status=0 AND u.is_del=0 AND u.status=0`).bind(userId),
+  env.db.prepare(`SELECT count(*) AS count FROM mail_room_message m
+   JOIN mail_room_member member ON member.room_id=m.room_id AND member.user_id=? AND member.status='joined'
+   JOIN mail_room r ON r.id=m.room_id JOIN user owner ON owner.user_id=r.owner_id AND owner.is_del=0 AND owner.status=0
+   JOIN user actor ON actor.user_id=member.user_id AND actor.is_del=0 AND actor.status=0
+   WHERE m.id>member.read_id AND m.sender_id!=member.user_id`).bind(userId)
+ ]);
+ return rows.reduce((sum,row)=>sum+Number(row.results[0].count),0);
+}
 export async function collectNotifications(env,userId,cursor){
  const prefs=await pushPreferences(env,userId),current=await notificationCursor(env,userId);if(cursor&&cursor.mail===current.mail&&cursor.room===current.room)return {cursor:current,messages:[],preferences:prefs};if(!cursor)return {cursor:current,messages:[],preferences:prefs};
  const mail=await env.db.prepare(`SELECT e.email_id AS id,e.account_id AS accountId,e.send_email AS email,e.conversation_key AS key,substr(e.text,1,1500) AS text,substr(e.content,1,16000) AS content,
@@ -64,5 +79,5 @@ export default {
  await c.env.db.prepare(`INSERT INTO mail_push_subscription(id,user_id,endpoint,p256dh,auth) SELECT ?,?,?,?,? WHERE (SELECT count(*) FROM mail_push_subscription WHERE user_id=? AND id!=?)<5 ON CONFLICT(id) DO UPDATE SET user_id=excluded.user_id,endpoint=excluded.endpoint,p256dh=excluded.p256dh,auth=excluded.auth`).bind(id,userId,endpoint,subscription.keys.p256dh,subscription.keys.auth,userId,id).run();const stored=await c.env.db.prepare('SELECT user_id AS userId FROM mail_push_subscription WHERE id=?').bind(id).first();if(stored?.userId!==userId)fail('pushDeviceLimit');
  await c.env.CHAT_NOTIFICATIONS.get(c.env.CHAT_NOTIFICATIONS.idFromName(String(userId))).fetch('https://chat.internal/push/seed',{method:'POST',headers:{'X-Notification-User':String(userId)}});return {subscribed:true};},
  async unsubscribe(c,params){if(typeof params?.endpoint!=='string')fail();await c.env.db.prepare('DELETE FROM mail_push_subscription WHERE endpoint=? AND user_id=?').bind(params.endpoint,userContext.getUserId(c)).run();const userId=userContext.getUserId(c),row=await c.env.db.prepare('SELECT count(*) AS count FROM mail_push_subscription WHERE user_id=?').bind(userId).first();if(!row.count)await c.env.CHAT_NOTIFICATIONS.get(c.env.CHAT_NOTIFICATIONS.idFromName(String(userId))).fetch('https://chat.internal/push/disable',{method:'POST'});},
- async poll(c,query){let cursor;if(query.cursor){if(!/^\d+-\d+$/.test(query.cursor))fail();const [mail,room]=query.cursor.split('-').map(Number);if(!Number.isSafeInteger(mail)||!Number.isSafeInteger(room))fail();cursor={mail,room};}const data=await collectNotifications(c.env,userContext.getUserId(c),cursor);return {...data,cursor:`${data.cursor.mail}-${data.cursor.room}`};}
+ async poll(c,query){let cursor;if(query.cursor){if(!/^\d+-\d+$/.test(query.cursor))fail();const [mail,room]=query.cursor.split('-').map(Number);if(!Number.isSafeInteger(mail)||!Number.isSafeInteger(room))fail();cursor={mail,room};}const data=await collectNotifications(c.env,userContext.getUserId(c),cursor);return {...data,unread:await unreadMessages(c.env,userContext.getUserId(c)),cursor:`${data.cursor.mail}-${data.cursor.room}`};}
 };
