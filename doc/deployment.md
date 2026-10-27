@@ -5,7 +5,7 @@
 
 ## 现有站点
 
-现有站点为 `https://199.naian.edu.kg`。在同一 Cloudflare Worker、D1、KV 和附件存储上发布代码，会继续使用原有业务数据。不要为普通版本发布新建替代数据库、修改资源 ID 或清空资源。
+现有站点为 `https://e.naian.edu.kg`。在同一 Cloudflare Worker、D1、KV 和附件存储上发布代码，会继续使用原有业务数据。不要为普通版本发布新建替代数据库、修改资源 ID 或清空资源。
 
 ## GitHub Actions 配置
 
@@ -15,14 +15,14 @@
 - `D1_DATABASE_ID`、`KV_NAMESPACE_ID`：现有数据库与 KV。
 - `DOMAIN`：邮箱域名的 JSON 数组；`ADMIN`：管理员邮箱。
 - `JWT_SECRET`：沿用现有密钥，勿在普通更新时更换。
-- `CUSTOM_DOMAIN`：现有网站域名；`NAME`：现有 Worker 名称。
+- 网站域名固定为工作流中的 `CUSTOM_DOMAIN: e.naian.edu.kg`，不再读取同名 Secret/Variable，以防旧值 `199.naian.edu.kg` 在发布时覆盖当前绑定；`NAME` 仍为现有 Worker 名称。
 - `R2_BUCKET_NAME`：使用 R2 时的现有附件桶；其他存储遵循站点现有设置。
 - `CLOUDFLARE_EMAIL`：使用 Cloudflare 发件绑定时启用；否则沿用配置的邮件服务。
 - `AI_MODEL`、`ANALYSIS_CACHE`、`PROJECT_LINK`：保留现有配置。`PROJECT_LINK` 只控制登录页是否显示本项目仓库入口。
 
 具体必填校验及生成的 Wrangler 配置以当前工作流为准。不要将密钥写入源码、Issues、截图或文档。
 
-向 `main` 推送 `mail-worker/`、`mail-vue/`、`shared/` 下的变更会触发部署；仅修改文档或工作流时可在 Actions 手动运行。流程安装依赖、检查项目身份和语言目录、运行测试、构建前端、部署 Worker、运行增量初始化并验证线上版本。
+向 `main` 推送 `mail-worker/`、`mail-vue/`、`shared/` 或部署工作流的变更会触发部署；仅修改文档时可在 Actions 手动运行。流程安装依赖、检查项目身份和语言目录、运行测试、构建前端、部署 Worker、运行增量初始化并验证线上版本。
 
 ## 本地开发
 
