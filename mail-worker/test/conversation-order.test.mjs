@@ -3,5 +3,10 @@ import assert from 'node:assert/strict';
 import {sortConversations,moveConversation} from '../../mail-vue/src/utils/conversation-order.mjs';
 const rows=[{key:'a',pinned:false,createTime:'2026-10-27 09:00:00'},{key:'b',pinned:false,createTime:'2026-10-27 10:00:00'},{key:'p',pinned:true,createTime:'2026-10-26 10:00:00'}];
 test('default sorting keeps pins first and otherwise uses newest message',()=>{assert.deepEqual(sortConversations(rows).map(r=>r.key),['p','b','a']);assert.deepEqual(rows.map(r=>r.key),['a','b','p']);});
-test('manual ordering survives message updates while new contacts stay discoverable',()=>{assert.deepEqual(sortConversations(rows,['a','b','p']).map(r=>r.key),['p','a','b']);const updated=rows.map(r=>r.key==='b'?{...r,createTime:'2026-10-28 10:00:00'}:r);assert.deepEqual(sortConversations(updated,['a','b']).map(r=>r.key),['p','a','b']);assert.deepEqual(sortConversations([...rows,{key:'new',pinned:false}],['a','b']).map(r=>r.key),['p','new','a','b']);});
+test('manual ordering survives message updates while new contacts stay discoverable',()=>{assert.deepEqual(sortConversations(rows,['a','b','p']).map(r=>r.key),['p','a','b']);const updated=rows.map(r=>r.key==='b'?{...r,createTime:'2026-10-28 10:00:00'}:r);assert.deepEqual(sortConversations(updated,['a','b']).map(r=>r.key),['p','a','b']);assert.deepEqual(sortConversations([...rows,{key:'new',pinned:false,createTime:'2026-10-28 10:00:00'}],['a','b']).map(r=>r.key),['p','new','a','b']);});
 test('drop before and after are directional and cannot cross pinned boundaries',()=>{const ordered=sortConversations(rows);assert.deepEqual(moveConversation(ordered,'a','b'),['p','a','b']);assert.deepEqual(moveConversation(ordered,'b','a',true),['p','a','b']);assert.equal(moveConversation(ordered,'p','b'),null);assert.equal(moveConversation(ordered,'a','a'),null);assert.equal(moveConversation(ordered,'missing','a'),null);});
+
+test('loading older pages does not move unknown old conversations ahead of a manual order',()=>{
+ const older={key:'older',pinned:false,createTime:'2026-10-01 00:00:00'};
+ assert.deepEqual(sortConversations([...rows,older],['a','b']).map(row=>row.key),['p','a','b','older']);
+});
