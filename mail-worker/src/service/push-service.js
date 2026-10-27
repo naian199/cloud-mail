@@ -52,6 +52,8 @@ export async function sendUserPush(env,userId,cursor){
  if(!subscriptions.length)return notificationCursor(env,userId);
  const collected=await collectNotifications(env,userId,cursor);
  if(!collected.messages.length)return collected.cursor;
+ const updatedAt=Date.now(),count=await unreadMessages(env,userId);
+ for(const message of collected.messages)message.badge={count,updatedAt};
  const keys=await pushKeys(env);let failed=false;
  for(const subscription of subscriptions){if(!pushEndpoint(subscription.endpoint))continue;
   for(const message of collected.messages){try{
@@ -79,5 +81,5 @@ export default {
  await c.env.db.prepare(`INSERT INTO mail_push_subscription(id,user_id,endpoint,p256dh,auth) SELECT ?,?,?,?,? WHERE (SELECT count(*) FROM mail_push_subscription WHERE user_id=? AND id!=?)<5 ON CONFLICT(id) DO UPDATE SET user_id=excluded.user_id,endpoint=excluded.endpoint,p256dh=excluded.p256dh,auth=excluded.auth`).bind(id,userId,endpoint,subscription.keys.p256dh,subscription.keys.auth,userId,id).run();const stored=await c.env.db.prepare('SELECT user_id AS userId FROM mail_push_subscription WHERE id=?').bind(id).first();if(stored?.userId!==userId)fail('pushDeviceLimit');
  await c.env.CHAT_NOTIFICATIONS.get(c.env.CHAT_NOTIFICATIONS.idFromName(String(userId))).fetch('https://chat.internal/push/seed',{method:'POST',headers:{'X-Notification-User':String(userId)}});return {subscribed:true};},
  async unsubscribe(c,params){if(typeof params?.endpoint!=='string')fail();await c.env.db.prepare('DELETE FROM mail_push_subscription WHERE endpoint=? AND user_id=?').bind(params.endpoint,userContext.getUserId(c)).run();const userId=userContext.getUserId(c),row=await c.env.db.prepare('SELECT count(*) AS count FROM mail_push_subscription WHERE user_id=?').bind(userId).first();if(!row.count)await c.env.CHAT_NOTIFICATIONS.get(c.env.CHAT_NOTIFICATIONS.idFromName(String(userId))).fetch('https://chat.internal/push/disable',{method:'POST'});},
- async poll(c,query){let cursor;if(query.cursor){if(!/^\d+-\d+$/.test(query.cursor))fail();const [mail,room]=query.cursor.split('-').map(Number);if(!Number.isSafeInteger(mail)||!Number.isSafeInteger(room))fail();cursor={mail,room};}const data=await collectNotifications(c.env,userContext.getUserId(c),cursor);return {...data,unread:await unreadMessages(c.env,userContext.getUserId(c)),cursor:`${data.cursor.mail}-${data.cursor.room}`};}
+ async poll(c,query){let cursor;if(query.cursor){if(!/^\d+-\d+$/.test(query.cursor))fail();const [mail,room]=query.cursor.split('-').map(Number);if(!Number.isSafeInteger(mail)||!Number.isSafeInteger(room))fail();cursor={mail,room};}const data=await collectNotifications(c.env,userContext.getUserId(c),cursor),updatedAt=Date.now(),unread=await unreadMessages(c.env,userContext.getUserId(c));return {...data,unread,badge:{count:unread,updatedAt},cursor:`${data.cursor.mail}-${data.cursor.room}`};}
 };

@@ -17,8 +17,8 @@ test('Web Push uses padded aes128gcm encryption accepted by modern push services
 });
 test('service worker deduplicates notifications, respects account/privacy identity and keeps navigation on site',async()=>{
  const state=new Map([['user',1],['pushEnabled',true]]),seen=new Set(),shown=[],listeners={},scope={__WB_MANIFEST:[],location:{origin:'https://e.naian.edu.kg'},clients:{matchAll:async()=>[],openWindow:async()=>{}},registration:{showNotification:async(title,options)=>shown.push({title,...options})},addEventListener:(name,fn)=>listeners[name]=fn};
- const context=vm.createContext({self:scope,URL,Date,Promise,MessageChannel,console,setTimeout,clearTimeout,notificationState:async(key,value)=>value===undefined?state.get(key):state.set(key,value),claimNotification:async id=>{if(seen.has(id))return false;seen.add(id);return true;},releaseNotification:async id=>seen.delete(id),pruneNotifications:async()=>{}});
- vm.runInContext(readFileSync(new URL('../../mail-vue/src/sw.js',import.meta.url),'utf8').replace(/^import[^\n]+\n/,''),context);
+ const context=vm.createContext({self:scope,URL,Date,Promise,MessageChannel,console,setTimeout,clearTimeout,notificationState:async(key,value)=>value===undefined?state.get(key):state.set(key,value),claimNotification:async id=>{if(seen.has(id))return false;seen.add(id);return true;},releaseNotification:async id=>seen.delete(id),pruneNotifications:async()=>{},acceptAppBadge:async()=>null,updateAppBadge:async()=>{}});
+ vm.runInContext(readFileSync(new URL('../../mail-vue/src/sw.js',import.meta.url),'utf8').replace(/^import[^\n]+\n/gm,''),context);
  const notify=vm.runInContext('queueNotify',context),message={id:'mail:1',userId:1,kind:'private',title:'Alice',body:'secret',url:'/mail-chat?conversation=x',context:'mail:1:x',created:Date.now(),tag:'one'};
  await notify({...message,userId:2});assert.equal(shown.length,0);await notify(message);await notify(message);assert.equal(shown.length,1);
  state.set('preferences',{enabled:true,preview:'none'});await notify({...message,id:'mail:2'});assert.equal(shown[1].title,'Cloud Mail');assert.notEqual(shown[1].body,'secret');

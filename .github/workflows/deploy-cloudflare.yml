@@ -77,7 +77,7 @@ jobs:
           node --test mail-worker/test/media-cache.test.mjs
           node --test mail-worker/test/app-install.test.mjs
           node --check mail-worker/src/service/push-service.js
-          node --test mail-worker/test/push-notifications.test.mjs
+          node --test mail-worker/test/push-notifications.test.mjs mail-worker/test/app-badge.test.mjs
 
       - name: Check optional brand icon source
         run: node scripts/check-brand-avatar.mjs

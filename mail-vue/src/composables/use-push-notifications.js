@@ -1,3 +1,4 @@
+import {updateAppBadge} from '@/utils/app-badge.mjs';
 import {ref} from 'vue';
 import {notificationDefaults} from '../../../shared/notification-previews.mjs';
 import {notificationState} from '@/utils/notification-store.mjs';
@@ -8,7 +9,20 @@ let identityVersion=0,settingsUser;
 async function api(path,method='GET',body){const token=localStorage.getItem('token')||'';const response=await fetch(`${import.meta.env.VITE_BASE_URL}/my/push/${path}`,{method,signal:AbortSignal.timeout(10000),headers:{Authorization:token,'Content-Type':'application/json'},body:body===undefined?undefined:JSON.stringify(body)});const data=await response.json();if(token!==(localStorage.getItem('token')||''))throw Error('pushSessionChanged');if(data.code!==200)throw Error(data.message||'pushError');return data.data;}
 const bytes=value=>Uint8Array.from(atob(value.replaceAll('-','+').replaceAll('_','/')),c=>c.charCodeAt(0));
 export async function pushRegistration(){if(!('serviceWorker'in navigator))return null;return navigator.serviceWorker.getRegistration('/');}
-export async function setPushIdentity(userId,expectedUser){const version=++identityVersion;try{const next=Number.isSafeInteger(userId)?userId:null,old=await notificationState('user');if(version!==identityVersion||(expectedUser!==undefined&&old!==expectedUser))return;if(old!==next){await notificationState('preferences',null);if(version!==identityVersion)return;await notificationState('pushEnabled',false);}if(version!==identityVersion)return;await notificationState('user',next);const registration=await pushRegistration();if(version===identityVersion)registration?.active?.postMessage({type:'CLOUD_MAIL_IDENTITY',userId});}catch{}}
+export async function setPushIdentity(userId,expectedUser){
+ const version=++identityVersion;
+ try{
+  const next=Number.isSafeInteger(userId)?userId:null,old=await notificationState('user');
+  if(version!==identityVersion||(expectedUser!==undefined&&old!==expectedUser))return;
+  if(old!==next){
+   for(const [key,value] of [['badge',null],['preferences',null],['pushEnabled',false]]){await notificationState(key,value);if(version!==identityVersion)return;}
+  }
+  await notificationState('user',next);if(version!==identityVersion)return;
+  if(old!==next)await updateAppBadge(0);
+  const registration=await pushRegistration();
+  if(version===identityVersion)registration?.active?.postMessage({type:'CLOUD_MAIL_IDENTITY',userId});
+ }catch{}
+}
 
 export async function applyPushPreferences(preferences,userId){if(userId!==undefined&&userId!==settingsUser){settingsUser=userId;pushSettings.value={...notificationDefaults};}if((preferences.revision||0)<(pushSettings.value.revision||0))return pushSettings.value;pushSettings.value=preferences;try{await notificationState('preferences',preferences);}catch{}return preferences;}
 export async function loadPushSettings(){const data=await api('config');await setPushIdentity(data.userId);await applyPushPreferences(data.preferences,data.userId);const registration=await pushRegistration(),subscription=await registration?.pushManager.getSubscription();let id='';if(subscription){const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(subscription.endpoint));id=btoa(String.fromCharCode(...new Uint8Array(digest))).replaceAll('+','-').replaceAll('/','_').replace(/=+$/,'');}const matchesKey=!subscription?.options?.applicationServerKey||btoa(String.fromCharCode(...new Uint8Array(subscription.options.applicationServerKey))).replaceAll('+','-').replaceAll('/','_').replace(/=+$/,'')===data.publicKey;const active=!!subscription&&matchesKey&&data.devices.includes(id)&&localStorage.getItem(KEY)!=='off';await notificationState('pushEnabled',active);pushActive.value=active;return data;}

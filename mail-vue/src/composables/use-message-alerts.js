@@ -1,3 +1,4 @@
+import {syncAppBadge} from './app-badge-sync';
 import {setTabUnread} from './use-tab-badge';
 import {onMounted,onBeforeUnmount} from 'vue';
 import {ElNotification} from 'element-plus';
@@ -16,7 +17,7 @@ export function useMessageAlerts(){
  }
  async function refresh(){
   if(stopped)return;if(busy){pending=true;return;}
-  busy=true;try{const data=await pollPush(cursor);if(stopped)return;cursor=data.cursor;setTabUnread(data.unread);await applyPushPreferences(data.preferences,user.user.userId);
+  busy=true;try{const data=await pollPush(cursor);if(stopped)return;cursor=data.cursor;setTabUnread(data.unread);syncAppBadge(user.user.userId,data.badge);await applyPushPreferences(data.preferences,user.user.userId);
    if(document.hidden||!document.hasFocus())return;
    const registration=await pushRegistration();
    if(registration?.active){registration.active.postMessage({type:'CLOUD_MAIL_LOCAL_NOTIFICATIONS',messages:data.messages});}

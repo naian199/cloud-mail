@@ -12,10 +12,10 @@ await test('push settings, private previews, room isolation, privacy and device 
  const [a,b,c]=await Promise.all([user(),user(),user()]);
  assert.equal((await api('my/push/config')).code,401);
  const ca=await api('my/push/config',a),cb=await api('my/push/config',b);assert.equal(ca.code,200);assert.equal(ca.data.publicKey,cb.data.publicKey);assert.equal(ca.data.publicKey.length,87);assert(!JSON.stringify(ca).includes('privateKey'));
- const baseline=(await api('my/push/poll',b)).data;assert.equal(baseline.unread,0);const before=baseline.cursor;
+ const baseline=(await api('my/push/poll',b)).data;assert.equal(baseline.unread,0);assert.equal(baseline.badge.count,0);assert(Number.isSafeInteger(baseline.badge.updatedAt));const before=baseline.cursor;
  const account=(await api('my/loginUserInfo',a)).data.account.accountId;
  const sent=await api('mail-chat/instant',a,'POST',{accountId:account,clientId:randomUUID(),recipients:[b.email],subject:'Push preview',text:'私人预览内容 123'});assert.equal(sent.code,200);
- let poll=await api('my/push/poll?cursor='+before,b);assert.equal(poll.code,200);assert.equal(poll.data.unread,1);assert.equal((await api('my/push/poll',c)).data.unread,0);assert.equal(poll.data.messages.length,1);assert.equal(poll.data.messages[0].body,'私人预览内容 123');assert.equal(poll.data.messages[0].kind,'private');const context=poll.data.messages[0].context;
+ let poll=await api('my/push/poll?cursor='+before,b);assert.equal(poll.code,200);assert.equal(poll.data.unread,1);assert.equal(poll.data.badge.count,1);assert.equal((await api('my/push/poll',c)).data.unread,0);assert.equal(poll.data.messages.length,1);assert.equal(poll.data.messages[0].body,'私人预览内容 123');assert.equal(poll.data.messages[0].kind,'private');const context=poll.data.messages[0].context;
  assert.equal((await api('my/push/poll?cursor='+before,c)).data.messages.length,0);
  await api('my/push/preferences',b,'PUT',{enabled:false});assert.equal((await api('my/push/poll',b)).data.unread,1);await api('my/push/preferences',b,'PUT',{enabled:true});
  assert.equal((await api('my/push/preferences',b,'PUT',{preview:'none'})).code,200);poll=await api('my/push/poll?cursor='+before,b);assert.equal(poll.data.messages[0].title,'Cloud Mail');assert(!JSON.stringify(poll.data.messages).includes('私人预览内容'));
