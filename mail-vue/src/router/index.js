@@ -1,3 +1,4 @@
+import {finishStartupLoader} from '@/utils/startup-loader.mjs';
 import {createRouter, createWebHistory} from 'vue-router'
 import NProgress from 'nprogress';
 import {setPushIdentity} from '@/composables/use-push-notifications';
@@ -172,9 +173,10 @@ function loadBackground(next) {
 
 }
 
-router.afterEach((to) => {
+router.afterEach((to, from, failure) => {
 
     clearTimeout(timer)
+    if (failure) { NProgress.done(); return; }
     if (first) {
         removeLoading()
     } else {
@@ -201,7 +203,7 @@ function removeLoading() {
         return;
     }
 
-    doc.remove()
+    void finishStartupLoader(doc)
 }
 
 export default router

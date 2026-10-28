@@ -75,7 +75,7 @@ jobs:
           node --test mail-worker/test/voice-audio.test.mjs
           node --test mail-worker/test/conversation-order.test.mjs
           node --test mail-worker/test/media-cache.test.mjs
-          node --test mail-worker/test/app-install.test.mjs
+          node --test mail-worker/test/app-install.test.mjs mail-worker/test/startup-loader.test.mjs
           node --check mail-worker/src/service/push-service.js
           node --test mail-worker/test/push-notifications.test.mjs mail-worker/test/app-badge.test.mjs mail-worker/test/ferdium-badge.test.mjs mail-worker/test/unread-changes.test.mjs
 

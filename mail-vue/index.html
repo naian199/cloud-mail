@@ -35,110 +35,61 @@
     background: #141414;
   }
   #loading-first {
-    position: fixed;
-    left: 0;
-    top: 0;
-    height: 100%;
-    width: 100%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 500;
-    background: var(--el-bg-color);
+    position:fixed;inset:0;display:flex;justify-content:center;align-items:center;z-index:500;
+    background:var(--el-bg-color,#fff);transition:opacity 160ms ease-out;
   }
-
-  .loading-hide {
-    pointer-events: none;
-    opacity: 0;
-  }
-
-  .loading-icon {
-    display: inline-flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 2px;
-  }
-
-  .loading-image {
-    width: 70px;
-    height: 70px;
-    object-fit: contain;
-  }
-
-  .loading-progress {
-    position: relative;
-    width: 64px;
-    height: 4px;
-    overflow: hidden;
-    border-radius: 999px;
-    background: rgba(64, 158, 255, 0.18);
-  }
-
-  .loading-progress::before {
-    content: "";
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    border-radius: inherit;
-    background: #409EFF;
-    transform: scaleX(0);
-    transform-origin: left center;
-    animation: loading-progress-grow 2.4s linear forwards;
-  }
-
-  .loading-progress::after {
-    content: "";
-    position: absolute;
-    top: 0;
-    width: 24px;
-    height: 100%;
-    border-radius: inherit;
-    background: rgba(64, 158, 255, 0.45);
-    filter: blur(4px);
-    transform: translateX(-24px);
-    animation: loading-progress-peg 2.4s linear forwards;
-  }
-
-  .loading-complete .loading-progress::before {
-    animation: none;
-    transform: scaleX(1);
-    transition: transform 200ms linear;
-  }
-
-  .loading-complete .loading-progress::after {
-    animation: none;
-    transform: translateX(60px);
-    transition: transform 200ms linear;
-  }
-
-  @keyframes loading-progress-grow {
-    0% {
-      transform: scaleX(0);
-    }
-    100% {
-      transform: scaleX(1);
-    }
-  }
-
-  @keyframes loading-progress-peg {
-    0% {
-      transform: translateX(-24px);
-    }
-    100% {
-      transform: translateX(60px);
-    }
+  .dark #loading-first {background:var(--el-bg-color,#141414);}
+  #loading-first.loading-hide {pointer-events:none;opacity:0;}
+  .loading-icon {display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;}
+  .startup-mark {display:block;width:116px;height:116px;overflow:visible;}
+  .startup-envelope {fill:none;stroke-width:4.8;stroke-linecap:round;stroke-linejoin:round;}
+  .startup-envelope-white {animation:envelope-white-in 560ms cubic-bezier(.2,.7,.2,1) both;}
+  .startup-envelope-orange {animation:envelope-orange-in 560ms cubic-bezier(.2,.7,.2,1) both;}
+  .startup-cut {animation:envelope-cuts 560ms ease-out both;}
+  .connection-light {opacity:0;}
+  .loading-complete .startup-envelope-white,.loading-complete .startup-envelope-orange {animation:none;transform:none;}
+  .loading-complete .startup-cut {animation:none;opacity:1;}
+  .loading-complete .connection-light {animation:connection-success 360ms ease-out both;}
+  .loading-progress {position:relative;width:76px;height:3px;overflow:hidden;border-radius:999px;background:rgba(35,137,245,.18);}
+  .loading-progress::before {content:"";position:absolute;inset:0;background:#2389f5;border-radius:inherit;transform:translateX(-100%);animation:startup-progress 1.3s ease-in-out infinite;}
+  .loading-complete .loading-progress::before {animation:none;transform:none;transition:transform 160ms ease-out;}
+  @keyframes envelope-white-in {from{transform:translate(-9px,8px);opacity:.35;}to{transform:translate(0,0);opacity:1;}}
+  @keyframes envelope-orange-in {from{transform:translate(9px,-8px);opacity:.35;}to{transform:translate(0,0);opacity:1;}}
+  @keyframes envelope-cuts {0%,82%{opacity:0;}100%{opacity:1;}}
+  @keyframes connection-success {0%{opacity:0;filter:drop-shadow(0 0 0 #80ffd8);}35%{opacity:1;filter:drop-shadow(0 0 4px #80ffd8);}100%{opacity:.9;filter:drop-shadow(0 0 1px #80ffd8);}}
+  @keyframes startup-progress {0%{transform:translateX(-100%);}100%{transform:translateX(100%);}}
+  @media(max-width:480px){.startup-mark{width:104px;height:104px;}}
+  @media(prefers-reduced-motion:reduce){
+    #loading-first{transition:none;}
+    .startup-envelope-white,.startup-envelope-orange{animation:none;transform:none;}
+    .startup-cut{animation:none;opacity:1;}
+    .loading-progress::before{animation:none;transform:none;opacity:.45;}
+    .loading-complete .connection-light{animation:none;opacity:1;filter:none;}
   }
 </style>
 <body>
-<div id="loading-first" >
+<div id="loading-first" role="status" aria-label="Cloud Mail loading" aria-busy="true">
   <div class="loading-icon">
-    <img class="loading-image" src="/mail-pwa.png" alt="Cloud Mail">
+    <svg class="startup-mark" viewBox="0 0 128 128" aria-hidden="true" focusable="false">
+      <defs>
+        <path id="startup-envelope" d="M24.8 63.7 43.5 75.8Q45.6 77.2 47.5 75.8L68.2 59.4Q71.6 56.5 74.8 59.4Q77.4 61.7 77.4 65.4V88.2Q77.4 95.8 70.2 95.8H26.1Q18.1 95.8 18.1 87.7V62.5Q18.1 54.6 26.1 54.6H55.1" />
+        <mask id="startup-white-cut" maskUnits="userSpaceOnUse" x="0" y="0" width="128" height="128">
+          <rect width="128" height="128" fill="white"/><circle class="startup-cut" cx="56" cy="68.9" r="4.1" fill="black"/>
+        </mask>
+        <mask id="startup-orange-cut" maskUnits="userSpaceOnUse" x="0" y="0" width="128" height="128">
+          <rect width="128" height="128" fill="white"/><g class="startup-cut" fill="black"><circle cx="54.1" cy="54.6" r="4.1"/><circle cx="77.4" cy="71.8" r="4.1"/></g>
+        </mask>
+      </defs>
+      <rect width="128" height="128" rx="25" fill="#2389f5"/>
+      <g class="startup-envelope startup-envelope-white" stroke="#fff" mask="url(#startup-white-cut)"><use href="#startup-envelope"/></g>
+      <g class="startup-envelope startup-envelope-orange" stroke="#ff7855" mask="url(#startup-orange-cut)"><use href="#startup-envelope" transform="translate(36 -24)"/></g>
+      <g class="connection-light"><circle cx="56" cy="68.9" r="4" fill="#80ffd8" opacity=".3"/><circle cx="56" cy="68.9" r="1.7" fill="#fff"/></g>
+      <g class="connection-light"><circle cx="77.4" cy="71.8" r="4" fill="#80ffd8" opacity=".3"/><circle cx="77.4" cy="71.8" r="1.7" fill="#fff"/></g>
+    </svg>
     <div class="loading-progress" aria-hidden="true"></div>
   </div>
 </div>
+<script>document.getElementById('loading-first').dataset.startedAt=String(performance.now());</script>
 <div id="app"></div>
 <script type="module" src="/src/main.js"></script>
 </body>
