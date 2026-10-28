@@ -1,3 +1,4 @@
+import {setCategoryUnread} from './use-category-unread';
 import {UNREAD_CHANGED} from '@/utils/unread-changes.mjs';
 import {syncAppBadge} from './app-badge-sync';
 import {setTabUnread} from './use-tab-badge';
@@ -18,7 +19,7 @@ export function useMessageAlerts(){
  }
  async function refresh(){
   if(stopped)return;if(busy){pending=true;return;}
-  busy=true;try{const data=await pollPush(cursor);if(stopped)return;cursor=data.cursor;setTabUnread(data.unread);syncAppBadge(user.user.userId,data.badge);await applyPushPreferences(data.preferences,user.user.userId);
+  busy=true;try{const data=await pollPush(cursor);if(stopped)return;cursor=data.cursor;setTabUnread(data.unread);setCategoryUnread(data.unreadSummary);syncAppBadge(user.user.userId,data.badge);await applyPushPreferences(data.preferences,user.user.userId);
    if(document.hidden||!document.hasFocus())return;
    const registration=await pushRegistration();
    if(registration?.active){registration.active.postMessage({type:'CLOUD_MAIL_LOCAL_NOTIFICATIONS',messages:data.messages});}
@@ -27,8 +28,8 @@ export function useMessageAlerts(){
  }
  function receive(event){if(stopped){event.ports[0]?.postMessage({handled:false});return;}if(event.data?.type==='CLOUD_MAIL_NOTIFICATION'){if(event.data.deadline&&Date.now()>event.data.deadline){event.ports[0]?.postMessage({handled:false});return;}const handled=show(event.data.message);event.ports[0]?.postMessage({handled});}}
  async function identity(){if(stopped)return;await setPushIdentity(user.user.userId);}
- function storage(event){if(event.key===UNREAD_CHANGED){refresh();return;}if(event.key==='token'&&event.newValue!==event.oldValue){stopped=true;setTabUnread(0);for(const notice of notices)notice.close();setPushIdentity(null,user.user.userId);}}
+ function storage(event){if(event.key===UNREAD_CHANGED){refresh();return;}if(event.key==='token'&&event.newValue!==event.oldValue){stopped=true;setTabUnread(0);setCategoryUnread(null);for(const notice of notices)notice.close();setPushIdentity(null,user.user.userId);}}
  onMounted(()=>{window.addEventListener(UNREAD_CHANGED,refresh);window.addEventListener('storage',storage);navigator.serviceWorker?.addEventListener('message',receive);navigator.serviceWorker?.addEventListener('controllerchange',identity);identity();loadPushSettings().catch(()=>{});window.addEventListener('focus',refresh);refresh();});
- onBeforeUnmount(()=>{stopped=true;setTabUnread(0);window.removeEventListener(UNREAD_CHANGED,refresh);window.removeEventListener('storage',storage);navigator.serviceWorker?.removeEventListener('message',receive);navigator.serviceWorker?.removeEventListener('controllerchange',identity);window.removeEventListener('focus',refresh);setPushIdentity(null,user.user.userId);for(const notice of notices)notice.close();});
+ onBeforeUnmount(()=>{stopped=true;setTabUnread(0);setCategoryUnread(null);window.removeEventListener(UNREAD_CHANGED,refresh);window.removeEventListener('storage',storage);navigator.serviceWorker?.removeEventListener('message',receive);navigator.serviceWorker?.removeEventListener('controllerchange',identity);window.removeEventListener('focus',refresh);setPushIdentity(null,user.user.userId);for(const notice of notices)notice.close();});
  useMailSync(refresh,{background:true});
 }

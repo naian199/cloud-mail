@@ -4,7 +4,7 @@
       <div ref="contactScroll" class="conversation-list" @keydown.home="restoreContactControls">
       <div class="contact-controls">
       <UniversalSearch ref="universalSearch" :account-id="accountId" :accounts="accounts" @active="universalActive = $event" @action="searchAction" @account="switchMailbox" />
-      <ConversationCategories v-show="!universalActive" />
+      <ConversationCategories v-show="!universalActive" :account-id="accountId" />
       </div>
       <div class="contact-entries" v-show="!universalActive" v-loading="listLoading">
         <button
