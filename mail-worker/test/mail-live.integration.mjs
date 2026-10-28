@@ -349,6 +349,21 @@ await test(
 			);
 		});
 
+        await t.test('cleared history keeps both contacts, repairs old missing entries and allows a fresh message without restoring history',async()=>{
+            for(const [u,k,peer] of [[a,ak,b],[b,bk,a]]){
+                const listed=(await api(`mail-chat/conversations?accountId=${u.account}&category=internal`,u)).data;
+                const contact=listed.contacts.find(row=>row.key===k);assert(contact);assert.equal(contact.latestId,0);assert.equal(contact.unread,0);assert.deepEqual(contact.peers,[peer.email]);
+                assert.equal((await history(u,k)).messages.length,0);
+                db.prepare('DELETE FROM mail_conversation_contact WHERE account_id=? AND conversation_key=?').run(u.account,k);
+                const repaired=(await api(`mail-chat/conversations?accountId=${u.account}&category=internal&search=${encodeURIComponent(peer.email)}`,u)).data;
+                assert(repaired.contacts.some(row=>row.key===k));assert.equal((await history(u,k)).messages.length,0);
+                assert.equal((await api(`mail-chat/conversations?accountId=${u.account}&category=external`,u)).data.contacts.some(row=>row.key===k),false);
+            }
+            const outsider=await api(`mail-chat/conversations?accountId=${a.account}`,c);assert.notEqual(outsider.code,200);
+            assert.equal((await instant(b,a,'Fresh conversation after clearing')).code,200);
+            for(const [u,k] of [[a,ak],[b,bk]])assert.deepEqual((await history(u,k)).messages.map(m=>m.replyText),['Fresh conversation after clearing']);
+        });
+
 		for (const u of [a, b, c]) await api('logout', u, 'DELETE');
 		db.close();
 	}

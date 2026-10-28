@@ -242,18 +242,13 @@ export default {
 				)
 				.bind(peer.friendship_id || 0, ...sourceArgs)
 		);
-		if (!messageId)
-			for (const [uid, aid, k] of [
-				[account.user_id, account.account_id, params.key],
-				[peer.user_id, peer.account_id, peerKey]
-			])
-				statements.push(
-					c.env.db
-						.prepare(
-							'DELETE FROM mail_conversation_contact WHERE user_id=? AND account_id=? AND conversation_key=?'
-						)
-						.bind(uid, aid, k)
-				);
+        // Deleting history never deletes the peer. Keep both entry points even after the last message.
+        for (const [uid, aid, k, email] of [
+            [account.user_id, account.account_id, params.key, peer.email],
+            [peer.user_id, peer.account_id, peerKey, account.email]
+        ]) statements.push(c.env.db.prepare(
+            'INSERT OR IGNORE INTO mail_conversation_contact(user_id,account_id,conversation_key,peer_email) VALUES(?,?,?,?)'
+        ).bind(uid,aid,k,email.toLowerCase()));
 		// Record both revisions in the same transaction so reconnects discard cached deleted messages.
 		for (const [uid, aid, k] of [
 			[account.user_id, account.account_id, params.key],
@@ -318,6 +313,20 @@ export default {
 			.run();
 		return results.length === 100;
 	},
+    async restoreContacts(c,account) {
+        // Repair entry points lost by older releases, using only this mailbox's existing history.
+        // Tombstoned messages stay deleted; inactive peers and multi-recipient mail are excluded.
+        await c.env.db.prepare(`INSERT OR IGNORE INTO mail_conversation_contact(user_id,account_id,conversation_key,peer_email)
+          SELECT r.user_id,r.account_id,r.conversation_key,lower(peer.email)
+          FROM mail_conversation_revision r JOIN email e ON e.user_id=r.user_id AND e.account_id=r.account_id AND e.conversation_key=r.conversation_key
+          JOIN account peer ON peer.email=json_extract(e.conversation_peers,'$[0]') COLLATE NOCASE
+          JOIN user u ON u.user_id=peer.user_id
+          WHERE r.user_id=? AND r.account_id=? AND json_array_length(e.conversation_peers)=1
+          AND peer.user_id!=r.user_id AND peer.is_del=0 AND peer.status=0 AND u.is_del=0 AND u.status=0
+          AND NOT EXISTS(SELECT 1 FROM mail_conversation_contact c WHERE c.user_id=r.user_id AND c.account_id=r.account_id AND c.conversation_key=r.conversation_key)
+          AND e.email_id=(SELECT max(latest.email_id) FROM email latest WHERE latest.user_id=r.user_id AND latest.account_id=r.account_id AND latest.conversation_key=r.conversation_key)`)
+          .bind(account.user_id,account.account_id).run();
+    },
 	async open(c, account, email) {
 		if (typeof email !== 'string' || email.length > 254) fail('Invalid email');
 		const peer = await c.env.db

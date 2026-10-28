@@ -1249,13 +1249,14 @@ async function sync() {
               !list.conversations.some((f) => f.key === c.key)
           )
         : [];
+      const kept=retained.filter((c) => !list.removedKeys?.includes(c.key));
       conversations.value = [
         ...list.conversations,
-        ...retained.filter((c) => !list.removedKeys?.includes(c.key)),
+        ...kept,
         ...(list.contacts || []).filter(
           (c) =>
             !list.conversations.some((r) => r.key === c.key) &&
-            !retained.some((r) => r.key === c.key)
+            !kept.some((r) => r.key === c.key)
         )
       ];
       indexing.value = list.indexing;

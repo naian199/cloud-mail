@@ -145,6 +145,7 @@ const mailChat = {
 				search
 			)
 			.all();
+		if (!query.before) await live.restoreContacts(c, account);
 		const { results: contacts } = await c.env.db
 			.prepare(
 				`SELECT conversation_key AS key,peer_email FROM mail_conversation_contact WHERE user_id=? AND account_id=?`
