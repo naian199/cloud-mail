@@ -269,15 +269,28 @@ jobs:
             exit 1
           fi
           
-          HTTP_CODE=$(curl -sL -w "%{http_code}" -o response.txt "$WORKER_URL/api/init/${JWT_SECRET}")
-          RESPONSE_BODY=$(cat response.txt)
-
-          if [ "$RESPONSE_BODY" = "success" ]; then
-            echo "✅ Setup completed."
-          else
-            echo "❌ Failed. HTTP: $HTTP_CODE, Response: $RESPONSE_BODY"
+          for ATTEMPT in 1 2 3; do
+            HTTP_CODE="000"
+            if ! HTTP_CODE=$(curl -sL --connect-timeout 10 --max-time 90 --max-filesize 8192 \
+                -w "%{http_code}" -o response.txt "$WORKER_URL/api/init/${JWT_SECRET}"); then
+              HTTP_CODE="${HTTP_CODE:-000}"
+            fi
+            if [ "$HTTP_CODE" = "200" ] && [ "$(cat response.txt 2>/dev/null)" = "success" ]; then
+              echo "✅ Setup completed."
+              exit 0
+            fi
+            case "$HTTP_CODE" in
+              000|408|425|429|500|502|503|504)
+                if [ "$ATTEMPT" -lt 3 ]; then
+                  echo "::warning::Initialization confirmation unavailable (HTTP $HTTP_CODE), retrying."
+                  sleep "$((ATTEMPT * 5))"
+                  continue
+                fi
+                ;;
+            esac
+            echo "::error::Database initialization did not return success (HTTP $HTTP_CODE, attempt $ATTEMPT)."
             exit 1
-          fi
+          done
 
       - name: ✅ 验证线上版本 / Verify production version
         env:
