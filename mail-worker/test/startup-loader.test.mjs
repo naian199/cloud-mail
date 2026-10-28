@@ -11,9 +11,10 @@ test('success is shown only after arrival, then fades and removes the blocking o
  const loader=fixture(),steps=[];
  const job=finishStartupLoader(loader,{reducedMotion:false,now:()=>100,wait:ms=>new Promise(resolve=>steps.push({ms,resolve}))});
  assert.equal(steps[0].ms,460);assert(!loader.classes.has('loading-complete'));
- steps[0].resolve();await tick();assert(loader.classes.has('loading-complete'));assert.equal(loader.attributes['aria-busy'],'false');assert.equal(steps[1].ms,360);
- steps[1].resolve();await tick();assert(loader.classes.has('loading-hide'));assert.equal(steps[2].ms,160);assert(loader.isConnected);
- steps[2].resolve();await job;assert.equal(loader.isConnected,false);
+ steps[0].resolve();await tick();assert(loader.classes.has('loading-locking'));assert(!loader.classes.has('loading-complete'));assert.equal(steps[1].ms,220);
+ steps[1].resolve();await tick();assert(loader.classes.has('loading-complete'));assert.equal(loader.attributes['aria-busy'],'false');assert.equal(steps[2].ms,360);
+ steps[2].resolve();await tick();assert(loader.classes.has('loading-hide'));assert.equal(steps[3].ms,160);assert(loader.isConnected);
+ steps[3].resolve();await job;assert.equal(loader.isConnected,false);
 });
 test('reduced motion avoids entrance/fade delays, while duplicate completion does not start extra timers',async()=>{
  const loader=fixture(),steps=[];let release;

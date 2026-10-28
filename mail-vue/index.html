@@ -40,30 +40,28 @@
   }
   .dark #loading-first {background:var(--el-bg-color,#141414);}
   #loading-first.loading-hide {pointer-events:none;opacity:0;}
-  .loading-icon {display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;}
+  .loading-icon {display:flex;flex-direction:column;align-items:center;justify-content:center;}
   .startup-mark {display:block;width:116px;height:116px;overflow:visible;}
   .startup-envelope {fill:none;stroke-width:4.8;stroke-linecap:round;stroke-linejoin:round;}
-  .startup-envelope-white {animation:envelope-white-in 560ms cubic-bezier(.2,.7,.2,1) both;}
-  .startup-envelope-orange {animation:envelope-orange-in 560ms cubic-bezier(.2,.7,.2,1) both;}
-  .startup-cut {animation:envelope-cuts 560ms ease-out both;}
+  .startup-envelope-white {animation:envelope-white-wait 1.6s ease-in-out infinite;}
+  .startup-envelope-orange {animation:envelope-orange-wait 1.6s ease-in-out infinite;}
+  .startup-cut {animation:envelope-cuts 1.6s ease-in-out infinite;}
   .connection-light {opacity:0;}
+  .loading-locking .startup-envelope-white,.loading-locking .startup-envelope-orange {animation:envelope-lock 220ms ease-out both;}
+  .loading-locking .startup-cut {animation:none;opacity:1;}
   .loading-complete .startup-envelope-white,.loading-complete .startup-envelope-orange {animation:none;transform:none;}
   .loading-complete .startup-cut {animation:none;opacity:1;}
   .loading-complete .connection-light {animation:connection-success 360ms ease-out both;}
-  .loading-progress {position:relative;width:76px;height:3px;overflow:hidden;border-radius:999px;background:rgba(35,137,245,.18);}
-  .loading-progress::before {content:"";position:absolute;inset:0;background:#2389f5;border-radius:inherit;transform:translateX(-100%);animation:startup-progress 1.3s ease-in-out infinite;}
-  .loading-complete .loading-progress::before {animation:none;transform:none;transition:transform 160ms ease-out;}
-  @keyframes envelope-white-in {from{transform:translate(-9px,8px);opacity:.35;}to{transform:translate(0,0);opacity:1;}}
-  @keyframes envelope-orange-in {from{transform:translate(9px,-8px);opacity:.35;}to{transform:translate(0,0);opacity:1;}}
-  @keyframes envelope-cuts {0%,82%{opacity:0;}100%{opacity:1;}}
+  @keyframes envelope-white-wait {0%,100%{transform:translate(-9px,8px);opacity:.65;}45%,65%{transform:translate(0,0);opacity:1;}}
+  @keyframes envelope-orange-wait {0%,100%{transform:translate(9px,-8px);opacity:.65;}45%,65%{transform:translate(0,0);opacity:1;}}
+  @keyframes envelope-cuts {0%,22%,92%,100%{opacity:0;}44%,68%{opacity:1;}}
+  @keyframes envelope-lock {from{transform:var(--startup-from,none);}to{transform:translate(0,0);opacity:1;}}
   @keyframes connection-success {0%{opacity:0;filter:drop-shadow(0 0 0 #80ffd8);}35%{opacity:1;filter:drop-shadow(0 0 4px #80ffd8);}100%{opacity:.9;filter:drop-shadow(0 0 1px #80ffd8);}}
-  @keyframes startup-progress {0%{transform:translateX(-100%);}100%{transform:translateX(100%);}}
   @media(max-width:480px){.startup-mark{width:104px;height:104px;}}
   @media(prefers-reduced-motion:reduce){
     #loading-first{transition:none;}
-    .startup-envelope-white,.startup-envelope-orange{animation:none;transform:none;}
+    .startup-envelope-white,.startup-envelope-orange,.loading-locking .startup-envelope-white,.loading-locking .startup-envelope-orange{animation:none;transform:none;}
     .startup-cut{animation:none;opacity:1;}
-    .loading-progress::before{animation:none;transform:none;opacity:.45;}
     .loading-complete .connection-light{animation:none;opacity:1;filter:none;}
   }
 </style>
@@ -86,7 +84,6 @@
       <g class="connection-light"><circle cx="56" cy="68.9" r="4" fill="#80ffd8" opacity=".3"/><circle cx="56" cy="68.9" r="1.7" fill="#fff"/></g>
       <g class="connection-light"><circle cx="77.4" cy="71.8" r="4" fill="#80ffd8" opacity=".3"/><circle cx="77.4" cy="71.8" r="1.7" fill="#fff"/></g>
     </svg>
-    <div class="loading-progress" aria-hidden="true"></div>
   </div>
 </div>
 <script>document.getElementById('loading-first').dataset.startedAt=String(performance.now());</script>

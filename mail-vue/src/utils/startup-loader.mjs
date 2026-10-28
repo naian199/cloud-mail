@@ -8,6 +8,11 @@ export async function finishStartupLoader(loader,{
  const started=Number(loader.dataset.startedAt);
  if(!reducedMotion&&Number.isFinite(started))await wait(Math.max(0,560-(now()-started)));
  if(!loader.isConnected)return;
+ if(!reducedMotion){
+  for(const envelope of loader.querySelectorAll?.('.startup-envelope')||[])envelope.style.setProperty('--startup-from',getComputedStyle(envelope).transform);
+  loader.classList.add('loading-locking');await wait(220);
+  if(!loader.isConnected)return;
+ }
  loader.classList.add('loading-complete');loader.setAttribute('aria-busy','false');
  await wait(reducedMotion?80:360);
  if(!loader.isConnected)return;
