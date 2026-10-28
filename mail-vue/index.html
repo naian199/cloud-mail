@@ -41,28 +41,57 @@
   .dark #loading-first {background:var(--el-bg-color,#141414);}
   #loading-first.loading-hide {pointer-events:none;opacity:0;}
   .loading-icon {display:flex;flex-direction:column;align-items:center;justify-content:center;}
-  .startup-mark {display:block;width:116px;height:116px;overflow:visible;}
-  .startup-envelope {fill:none;stroke-width:4.8;stroke-linecap:round;stroke-linejoin:round;}
-  .startup-envelope-white {animation:envelope-white-wait 1.6s ease-in-out infinite;}
-  .startup-envelope-orange {animation:envelope-orange-wait 1.6s ease-in-out infinite;}
-  .startup-cut {animation:envelope-cuts 1.6s ease-in-out infinite;}
+  .startup-mark {display:block;width:124px;height:124px;overflow:visible;}
+  .startup-envelope {fill:none;stroke-width:4.8;stroke-linecap:round;stroke-linejoin:round;animation:envelope-breathe 2.8s ease-in-out 960ms infinite;}
+  .startup-motion {transform-box:view-box;transform-origin:66px 70px;}
+  .startup-white-motion {animation:white-thread 960ms cubic-bezier(.25,.65,.25,1) both,white-tension 2.8s ease-in-out 960ms infinite;}
+  .startup-orange-motion {animation:orange-thread 960ms cubic-bezier(.25,.65,.25,1) both,orange-tension 2.8s ease-in-out 960ms infinite;}
   .connection-light {opacity:0;}
-  .loading-locking .startup-envelope-white,.loading-locking .startup-envelope-orange {animation:envelope-lock 220ms ease-out both;}
-  .loading-locking .startup-cut {animation:none;opacity:1;}
-  .loading-complete .startup-envelope-white,.loading-complete .startup-envelope-orange {animation:none;transform:none;}
-  .loading-complete .startup-cut {animation:none;opacity:1;}
-  .loading-complete .connection-light {animation:connection-success 360ms ease-out both;}
-  @keyframes envelope-white-wait {0%,100%{transform:translate(-9px,8px);opacity:.65;}45%,65%{transform:translate(0,0);opacity:1;}}
-  @keyframes envelope-orange-wait {0%,100%{transform:translate(9px,-8px);opacity:.65;}45%,65%{transform:translate(0,0);opacity:1;}}
-  @keyframes envelope-cuts {0%,22%,92%,100%{opacity:0;}44%,68%{opacity:1;}}
-  @keyframes envelope-lock {from{transform:var(--startup-from,none);}to{transform:translate(0,0);opacity:1;}}
-  @keyframes connection-success {0%{opacity:0;filter:drop-shadow(0 0 0 #80ffd8);}35%{opacity:1;filter:drop-shadow(0 0 4px #80ffd8);}100%{opacity:.9;filter:drop-shadow(0 0 1px #80ffd8);}}
-  @media(max-width:480px){.startup-mark{width:104px;height:104px;}}
+  .loading-locking .startup-motion {animation:envelope-lock 240ms ease-out both;}
+  .loading-locking .startup-white-motion {--settle-x:.35px;--settle-y:-.25px;}
+  .loading-locking .startup-orange-motion {--settle-x:-.35px;--settle-y:.25px;}
+  .loading-locking .startup-envelope,.loading-complete .startup-envelope {animation:none;opacity:1;}
+  .loading-complete .startup-motion {animation:none;transform:none;}
+  .loading-complete .connection-light {animation:connection-success 420ms ease-out both;}
+  .loading-complete .connection-ring {transform-box:fill-box;transform-origin:center;animation:connection-ripple 420ms ease-out both;}
+  @keyframes white-thread {
+    0%{transform:translate(-9px,9px) rotate(-4deg);}
+    22%{transform:translate(-4px,4px) rotate(-2deg);}
+    50%{transform:translate(1px,-1px) rotate(1deg);}
+    73%{transform:translate(-1.7px,1.2px) rotate(-1.1deg);}
+    88%{transform:translate(.45px,-.3px) rotate(.3deg);}
+    100%{transform:translate(0,0) rotate(0);}
+  }
+  @keyframes orange-thread {
+    0%{transform:translate(9px,-9px) rotate(4deg);}
+    22%{transform:translate(4px,-4px) rotate(2deg);}
+    50%{transform:translate(-1px,1px) rotate(-1deg);}
+    73%{transform:translate(1.7px,-1.2px) rotate(1.1deg);}
+    88%{transform:translate(-.45px,.3px) rotate(-.3deg);}
+    100%{transform:translate(0,0) rotate(0);}
+  }
+  @keyframes white-tension {
+    0%,100%{transform:translate(0,0) rotate(0);}
+    38%{transform:translate(-1.25px,.85px) rotate(-1.1deg);}
+    62%{transform:translate(.35px,-.25px) rotate(.3deg);}
+    80%{transform:translate(-.25px,.15px) rotate(-.15deg);}
+  }
+  @keyframes orange-tension {
+    0%,100%{transform:translate(0,0) rotate(0);}
+    38%{transform:translate(1.25px,-.85px) rotate(1.1deg);}
+    62%{transform:translate(-.35px,.25px) rotate(-.3deg);}
+    80%{transform:translate(.25px,-.15px) rotate(.15deg);}
+  }
+  @keyframes envelope-breathe {0%,100%{opacity:1;}45%{opacity:.88;}70%{opacity:.98;}}
+  @keyframes envelope-lock {0%{transform:var(--startup-from,none);}68%{transform:translate(var(--settle-x),var(--settle-y));}100%{transform:translate(0,0);}}
+  @keyframes connection-success {0%{opacity:0;filter:drop-shadow(0 0 0 #80ffd8);}30%{opacity:1;filter:drop-shadow(0 0 4px #80ffd8);}100%{opacity:.9;filter:drop-shadow(0 0 1px #80ffd8);}}
+  @keyframes connection-ripple {0%{opacity:0;transform:scale(.5);}25%{opacity:.9;}100%{opacity:0;transform:scale(2.4);}}
+  @media(max-width:480px){.startup-mark{width:112px;height:112px;}}
   @media(prefers-reduced-motion:reduce){
     #loading-first{transition:none;}
-    .startup-envelope-white,.startup-envelope-orange,.loading-locking .startup-envelope-white,.loading-locking .startup-envelope-orange{animation:none;transform:none;}
-    .startup-cut{animation:none;opacity:1;}
+    .startup-motion,.loading-locking .startup-motion,.startup-envelope{animation:none;transform:none;opacity:1;}
     .loading-complete .connection-light{animation:none;opacity:1;filter:none;}
+    .loading-complete .connection-ring{animation:none;opacity:0;}
   }
 </style>
 <body>
@@ -71,18 +100,26 @@
     <svg class="startup-mark" viewBox="0 0 128 128" aria-hidden="true" focusable="false">
       <defs>
         <path id="startup-envelope" d="M24.8 63.7 43.5 75.8Q45.6 77.2 47.5 75.8L68.2 59.4Q71.6 56.5 74.8 59.4Q77.4 61.7 77.4 65.4V88.2Q77.4 95.8 70.2 95.8H26.1Q18.1 95.8 18.1 87.7V62.5Q18.1 54.6 26.1 54.6H55.1" />
-        <mask id="startup-white-cut" maskUnits="userSpaceOnUse" x="0" y="0" width="128" height="128">
-          <rect width="128" height="128" fill="white"/><circle class="startup-cut" cx="56" cy="68.9" r="4.1" fill="black"/>
+        <clipPath id="startup-orange-front"><rect x="46" y="61" width="25" height="20"/></clipPath>
+        <clipPath id="startup-white-front"><rect x="45" y="44" width="20" height="17"/><rect x="71" y="60" width="16" height="24"/></clipPath>
+        <mask id="startup-white-cut" maskUnits="userSpaceOnUse" x="0" y="0" width="128" height="128" style="mask-type:luminance">
+          <rect width="128" height="128" fill="white"/>
+          <g clip-path="url(#startup-orange-front)" fill="none" stroke="black" stroke-width="7.2" stroke-linecap="round" stroke-linejoin="round">
+            <g class="startup-motion startup-orange-motion"><use href="#startup-envelope" transform="translate(36 -24)"/></g>
+          </g>
         </mask>
-        <mask id="startup-orange-cut" maskUnits="userSpaceOnUse" x="0" y="0" width="128" height="128">
-          <rect width="128" height="128" fill="white"/><g class="startup-cut" fill="black"><circle cx="54.1" cy="54.6" r="4.1"/><circle cx="77.4" cy="71.8" r="4.1"/></g>
+        <mask id="startup-orange-cut" maskUnits="userSpaceOnUse" x="0" y="0" width="128" height="128" style="mask-type:luminance">
+          <rect width="128" height="128" fill="white"/>
+          <g clip-path="url(#startup-white-front)" fill="none" stroke="black" stroke-width="7.2" stroke-linecap="round" stroke-linejoin="round">
+            <g class="startup-motion startup-white-motion"><use href="#startup-envelope"/></g>
+          </g>
         </mask>
       </defs>
       <rect width="128" height="128" rx="25" fill="#2389f5"/>
-      <g class="startup-envelope startup-envelope-white" stroke="#fff" mask="url(#startup-white-cut)"><use href="#startup-envelope"/></g>
-      <g class="startup-envelope startup-envelope-orange" stroke="#ff7855" mask="url(#startup-orange-cut)"><use href="#startup-envelope" transform="translate(36 -24)"/></g>
-      <g class="connection-light"><circle cx="56" cy="68.9" r="4" fill="#80ffd8" opacity=".3"/><circle cx="56" cy="68.9" r="1.7" fill="#fff"/></g>
-      <g class="connection-light"><circle cx="77.4" cy="71.8" r="4" fill="#80ffd8" opacity=".3"/><circle cx="77.4" cy="71.8" r="1.7" fill="#fff"/></g>
+      <g class="startup-envelope startup-envelope-white" stroke="#fff" mask="url(#startup-white-cut)"><g class="startup-motion startup-white-motion"><use href="#startup-envelope"/></g></g>
+      <g class="startup-envelope startup-envelope-orange" stroke="#ff7855" mask="url(#startup-orange-cut)"><g class="startup-motion startup-orange-motion"><use href="#startup-envelope" transform="translate(36 -24)"/></g></g>
+      <g class="connection-light"><circle cx="56" cy="68.9" r="4" fill="#80ffd8" opacity=".35"/><circle class="connection-ring" cx="56" cy="68.9" r="2.6" fill="none" stroke="#80ffd8" stroke-width=".7"/><circle cx="56" cy="68.9" r="1.7" fill="#fff"/></g>
+      <g class="connection-light"><circle cx="77.4" cy="71.8" r="4" fill="#80ffd8" opacity=".35"/><circle class="connection-ring" cx="77.4" cy="71.8" r="2.6" fill="none" stroke="#80ffd8" stroke-width=".7"/><circle cx="77.4" cy="71.8" r="1.7" fill="#fff"/></g>
     </svg>
   </div>
 </div>

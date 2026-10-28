@@ -6,15 +6,15 @@ export async function finishStartupLoader(loader,{
  if(!loader||loader.dataset.finishing==='true')return;
  loader.dataset.finishing='true';
  const started=Number(loader.dataset.startedAt);
- if(!reducedMotion&&Number.isFinite(started))await wait(Math.max(0,560-(now()-started)));
+ if(!reducedMotion&&Number.isFinite(started))await wait(Math.max(0,960-(now()-started)));
  if(!loader.isConnected)return;
  if(!reducedMotion){
-  for(const envelope of loader.querySelectorAll?.('.startup-envelope')||[])envelope.style.setProperty('--startup-from',getComputedStyle(envelope).transform);
-  loader.classList.add('loading-locking');await wait(220);
+  for(const envelope of loader.querySelectorAll?.('.startup-motion')||[])envelope.style.setProperty('--startup-from',getComputedStyle(envelope).transform);
+  loader.classList.add('loading-locking');await wait(240);
   if(!loader.isConnected)return;
  }
  loader.classList.add('loading-complete');loader.setAttribute('aria-busy','false');
- await wait(reducedMotion?80:360);
+ await wait(reducedMotion?80:420);
  if(!loader.isConnected)return;
  loader.classList.add('loading-hide');
  if(!reducedMotion)await wait(160);
