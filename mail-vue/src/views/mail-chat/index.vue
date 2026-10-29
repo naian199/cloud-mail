@@ -83,8 +83,8 @@
           <strong translate="no" :title="selected.peers.join(', ')">{{
             selected.profile?.remark || selected.profile?.displayName || selected.peers.join(', ')
           }}</strong
-          ><span v-if="live.internal || messages.some(message => message.internal)" class="live-status" :class="{ online: live.online }">{{
-            live.unknown ? t('chatReconnecting') : live.typing
+          ><span v-if="live.internal || messages.some(message => message.internal)" class="live-status" :class="{ online: live.online }" aria-live="polite">{{
+            live.unknown ? t('chatReconnecting') : live.selectingSticker ? t('mailChatSelectingSticker') : live.typing
               ? t('mailChatTyping')
               : live.online
                 ? t('mailChatOnline')
@@ -914,7 +914,7 @@ watch(
 const pendingRequests = new Map();
 const readThrough = new Map();
 const { connected } = useMailSync(sync);
-const { live, refreshLive, liveInput, stopTyping } = useMailLive(accountId, selected, connected);
+const { live, refreshLive, liveInput, stopTyping, selectSticker } = useMailLive(accountId, selected, connected);
 const canSend = computed(() => hasPerm('email:send') || live.value.internal || selected.value?.internal || messages.value.some(message => message.internal));
 const friendsOpen = ref(false),
   friends = ref([]),
@@ -1403,6 +1403,7 @@ function switchMailbox(value) {
 const stickerDock = ref(null), stickerPicker = ref(null), pickerOpen = ref(false);
 function stickerVisibility(value) {
   pickerOpen.value = value;
+  selectSticker(value);
   if (value && compactChat.value) document.activeElement?.blur();
 }
 function insertEmoji(value, focus = true) {
@@ -1411,7 +1412,7 @@ function insertEmoji(value, focus = true) {
   const start = input?.selectionStart ?? text.length, end = input?.selectionEnd ?? text.length;
   if (text.length - (end - start) + value.length > 20000) return;
   drafts[current] = text.slice(0, start) + value + text.slice(end);
-  liveInput();
+  liveInput(drafts[current]);
   nextTick(() => { if (focus && !pickerOpen.value) input?.focus({preventScroll:true}); input?.setSelectionRange(start + value.length, start + value.length); });
 }
 function addSticker(file) {
@@ -1578,6 +1579,7 @@ async function send() {
     if (drafts[current] === text) drafts[current] = '';
     files[current] = [];
     if (version === selectionVersion) quoteTarget.value = null;
+    stickerPicker.value?.close();
     stopTyping();
     await showSent(a, result, selectionVersion);
   } catch {

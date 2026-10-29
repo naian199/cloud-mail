@@ -735,5 +735,6 @@
   "pushDeviceLimit": "The five-device limit was reached. Disable notifications on an unused device.",
   "pushLimits": "iPhone/iPad requires iOS/iPadOS 16.4 or later. Delivery depends on system power settings, browser and network. Lock-screen previews also follow system settings.",
   "mailChatLastSeen": "最近上線：{time}",
-  "mailChatLastSeenUnknown": "暫無最近上線紀錄"
+  "mailChatLastSeenUnknown": "暫無最近上線紀錄",
+  "mailChatSelectingSticker": "對方正在選擇表情包…"
 }

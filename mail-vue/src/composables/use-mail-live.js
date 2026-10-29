@@ -10,6 +10,8 @@ export function useMailLive(accountId, selected, connected) {
     typingTimer,
     expiryTimer,
     lastTyping = 0,
+    choosing = false,
+    selectionTimer,
     chain = Promise.resolve();
   function announce(typing = false) {
     if (stopped) return;
@@ -18,7 +20,8 @@ export function useMailLive(accountId, selected, connected) {
       accountId: accountId.value,
       key: selected.value?.key,
       active: !document.hidden && connected.value,
-      typing: typing && !document.hidden && connected.value
+      typing: typing && !document.hidden && connected.value,
+      selectingSticker: choosing && !document.hidden && connected.value
     };
     chain = chain
       .catch(() => {})
@@ -37,9 +40,9 @@ export function useMailLive(accountId, selected, connected) {
       if (stopped || a !== accountId.value || k !== selected.value?.key) return;
       state.value = data;
       clearTimeout(expiryTimer);
-      if (data.typing)
+      if (data.typing || data.selectingSticker)
         expiryTimer = setTimeout(() => {
-          state.value = { ...state.value, typing: false };
+          state.value = { ...state.value, typing: false, selectingSticker: false };
         }, 6500);
     } catch {
       if (!stopped && a === accountId.value && k === selected.value?.key) state.value = { internal: state.value.internal, unknown: true };
@@ -48,6 +51,7 @@ export function useMailLive(accountId, selected, connected) {
   function input(value) {
     clearTimeout(typingTimer);
     if (!value?.trim()) {
+      lastTyping = 0;
       announce(false);
       return;
     }
@@ -55,21 +59,37 @@ export function useMailLive(accountId, selected, connected) {
       lastTyping = Date.now();
       announce(true);
     }
-    typingTimer = setTimeout(() => announce(false), 3000);
+    typingTimer = setTimeout(() => { lastTyping = 0; announce(false); }, 3000);
+  }
+  function selectSticker(open) {
+    choosing = !!open;
+    lastTyping = 0;
+    clearInterval(selectionTimer);
+    clearTimeout(typingTimer);
+    announce(false);
+    if (choosing) selectionTimer = setInterval(() => {
+      if (!document.hidden && connected.value) announce(false);
+    }, 3000);
   }
   function visibility() {
+    lastTyping = 0;
     announce(false);
     refresh();
   }
-  watch([accountId, () => selected.value?.key, connected], () => {
+  watch([accountId, () => selected.value?.key], () => {
     state.value = { internal: false };
+    choosing = false;
+    lastTyping = 0;
+    clearInterval(selectionTimer);
+    clearTimeout(typingTimer);
     announce(false);
     refresh();
   });
+  watch(connected, visibility);
   onMounted(() => {
     announce(false);
     timer = setInterval(() => {
-      announce(false);
+      announce(Date.now() - lastTyping < 3000);
       refresh();
     }, 20000);
     document.addEventListener('visibilitychange', visibility);
@@ -77,6 +97,7 @@ export function useMailLive(accountId, selected, connected) {
   onBeforeUnmount(() => {
     stopped = true;
     clearInterval(timer);
+    clearInterval(selectionTimer);
     clearTimeout(typingTimer);
     clearTimeout(expiryTimer);
     document.removeEventListener('visibilitychange', visibility);
@@ -103,7 +124,9 @@ export function useMailLive(accountId, selected, connected) {
     live: state,
     refreshLive: refresh,
     liveInput: input,
+    selectSticker,
     stopTyping: () => {
+      lastTyping = 0;
       clearTimeout(typingTimer);
       announce(false);
     }

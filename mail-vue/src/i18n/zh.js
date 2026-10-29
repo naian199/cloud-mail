@@ -25,6 +25,7 @@ const zh = {
     mailChatQuoteReply: "引用回复",
     mailChatCancelQuote: "取消引用",
     mailChatContacts: "联系人",
+    mailChatSelectingSticker: "对方正在选择表情包…",
     mailChatTyping: "对方正在输入…",
     mailChatLastSeen: "最近在线：{time}",
     mailChatLastSeenUnknown: "暂无最近在线记录",

@@ -50,9 +50,9 @@ export default {
 		const now = Date.now();
 		const state = await c.env.db
 			.prepare(
-				`SELECT count(*)>0 AS online, coalesce(max(CASE WHEN account_id=? AND peer_account_id=? THEN typing_until ELSE 0 END),0)>? AS typing FROM mail_live_session WHERE user_id=? AND expires_at>?`
+				`SELECT count(*)>0 AS online, coalesce(max(CASE WHEN account_id=? AND peer_account_id=? THEN typing_until ELSE 0 END),0)>? AS typing, coalesce(max(CASE WHEN account_id=? AND peer_account_id=? THEN selecting_until ELSE 0 END),0)>? AS selectingSticker FROM mail_live_session WHERE user_id=? AND expires_at>?`
 			)
-			.bind(peer.account_id, account.account_id, now, peer.user_id, now)
+			.bind(peer.account_id, account.account_id, now, peer.account_id, account.account_id, now, peer.user_id, now)
 			.first();
 		const seen = await c.env.db.prepare('SELECT seen_at FROM mail_last_seen WHERE user_id=?').bind(peer.user_id).first();
 		return {
@@ -60,7 +60,8 @@ export default {
 			internal: true,
 			friend: !!peer.friendship_id,
 			online: !!state.online,
-			typing: !!state.typing
+			typing: !!state.typing,
+			selectingSticker: !!state.selectingSticker
 		};
 	},
 	async pulse(c, account, params) {
@@ -68,7 +69,8 @@ export default {
 			typeof params.sessionId !== 'string' ||
 			!/^[a-zA-Z0-9_-]{16,80}$/.test(params.sessionId) ||
 			typeof params.active !== 'boolean' ||
-			typeof params.typing !== 'boolean'
+			typeof params.typing !== 'boolean' ||
+      (params.selectingSticker !== undefined && typeof params.selectingSticker !== 'boolean')
 		)
 			fail('Invalid presence');
 		const previous = await c.env.db
@@ -92,7 +94,7 @@ export default {
 		else
 			await c.env.db
 				.prepare(
-					`INSERT INTO mail_live_session(user_id,session_id,account_id,peer_account_id,expires_at,typing_until) VALUES(?,?,?,?,?,?) ON CONFLICT(user_id,session_id) DO UPDATE SET account_id=excluded.account_id,peer_account_id=excluded.peer_account_id,expires_at=excluded.expires_at,typing_until=excluded.typing_until`
+					`INSERT INTO mail_live_session(user_id,session_id,account_id,peer_account_id,expires_at,typing_until,selecting_until) VALUES(?,?,?,?,?,?,?) ON CONFLICT(user_id,session_id) DO UPDATE SET account_id=excluded.account_id,peer_account_id=excluded.peer_account_id,expires_at=excluded.expires_at,typing_until=excluded.typing_until,selecting_until=excluded.selecting_until`
 				)
 				.bind(
 					account.user_id,
@@ -100,7 +102,8 @@ export default {
 					account.account_id,
 					peer?.account_id || null,
 					now + 45000,
-					params.typing && peer ? now + 6000 : 0
+					params.typing && peer ? now + 6000 : 0,
+          params.selectingSticker && peer ? now + 6000 : 0
 				)
 				.run();
 		// Notify active conversations involving this user; payloads contain no presence or mail data.

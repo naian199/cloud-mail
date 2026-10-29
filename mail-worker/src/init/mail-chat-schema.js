@@ -1,5 +1,5 @@
 import { roomSchema } from './room-schema.js';
-export const MAIL_CHAT_SCHEMA_MARKER = 'mail_chat_schema_v9';
+export const MAIL_CHAT_SCHEMA_MARKER = 'mail_chat_schema_v10';
 
 export async function migrateMailChat(db) {
 	const { results } = await db.prepare('PRAGMA table_info(email)').all();
@@ -87,7 +87,7 @@ export async function migrateMailChat(db) {
 		db.prepare(`CREATE TABLE IF NOT EXISTS mail_live_session (
       user_id INTEGER NOT NULL REFERENCES user(user_id) ON DELETE CASCADE,
       session_id TEXT NOT NULL, account_id INTEGER NOT NULL REFERENCES account(account_id) ON DELETE CASCADE,
-      peer_account_id INTEGER, expires_at INTEGER NOT NULL, typing_until INTEGER NOT NULL DEFAULT 0,
+      peer_account_id INTEGER, expires_at INTEGER NOT NULL, typing_until INTEGER NOT NULL DEFAULT 0, selecting_until INTEGER NOT NULL DEFAULT 0,
       PRIMARY KEY(user_id, session_id)
     )`),
 		db.prepare(
@@ -110,9 +110,18 @@ export async function migrateMailChat(db) {
     )`),
 		db.prepare(`CREATE TRIGGER IF NOT EXISTS mail_keep_bilateral_deleted AFTER UPDATE OF is_del ON email
       WHEN NEW.is_del=0 AND EXISTS(SELECT 1 FROM mail_removed_message WHERE email_id=NEW.email_id)
-      BEGIN UPDATE email SET is_del=1 WHERE email_id=NEW.email_id; END`),
-		db.prepare(`CREATE TABLE IF NOT EXISTS ${MAIL_CHAT_SCHEMA_MARKER} (id INTEGER PRIMARY KEY)`)
+      BEGIN UPDATE email SET is_del=1 WHERE email_id=NEW.email_id; END`)
 	]);
+  const liveColumns = await db.prepare('PRAGMA table_info(mail_live_session)').all();
+  if (!liveColumns.results.some(column => column.name === 'selecting_until')) {
+    try {
+      await db.prepare('ALTER TABLE mail_live_session ADD COLUMN selecting_until INTEGER NOT NULL DEFAULT 0').run();
+    } catch (error) {
+      const current = await db.prepare('PRAGMA table_info(mail_live_session)').all();
+      if (!current.results.some(column => column.name === 'selecting_until')) throw error;
+    }
+  }
+  await db.prepare(`CREATE TABLE IF NOT EXISTS ${MAIL_CHAT_SCHEMA_MARKER} (id INTEGER PRIMARY KEY)`).run();
 }
 
 const readyBindings = new WeakSet();

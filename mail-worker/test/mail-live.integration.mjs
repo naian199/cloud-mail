@@ -155,9 +155,24 @@ await test(
 					internal: true,
 					friend: true,
 					online: true,
-					typing: true
+					typing: true,
+          selectingSticker: false
 				});
-				await pulse(b, bk, sb2);
+				const selecting = await api('mail-chat/presence', b, 'PUT', {accountId:b.account,key:bk,sessionId:sb,active:true,typing:false,selectingSticker:true});
+        assert.equal(selecting.code,200);
+        assert.equal((await state(a,ak)).selectingSticker,true);
+        assert.equal((await state(c,ak)).selectingSticker,undefined);
+        db.prepare('UPDATE mail_live_session SET selecting_until=? WHERE session_id=?').run(Date.now()-1,sb);
+        assert.equal((await state(a,ak)).selectingSticker,false);
+        assert.equal((await state(a,ak)).online,true);
+        assert.equal((await api('mail-chat/presence', b, 'PUT', {accountId:b.account,key:bk,sessionId:sb,active:true,typing:false,selectingSticker:'yes'})).code,400);
+        await api('mail-chat/presence', b, 'PUT', {accountId:b.account,key:bk,sessionId:sb,active:true,typing:false,selectingSticker:true});
+        await api('mail-chat/presence', b, 'PUT', {accountId:b.account,sessionId:sb,active:true,typing:false,selectingSticker:true});
+        assert.equal((await state(a,ak)).selectingSticker,false);
+
+        await pulse(b,bk,sb);
+        assert.equal((await state(a,ak)).selectingSticker,false);
+        await pulse(b, bk, sb2);
 				await pulse(b, bk, sb, false);
 				assert.equal((await state(a, ak)).online, true);
 				assert.equal((await state(a, ak)).typing, false);
