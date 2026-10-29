@@ -1,6 +1,6 @@
 # Cloud Mail · naian199
 
-An independently maintained email and chat application on Cloudflare. Independent release: **1.18.1**.
+An independently maintained email and chat application on Cloudflare. Independent release: **1.19.0**.
 
 [简体中文](README.md) · [Repository](https://github.com/naian199/cloud-mail) · [Changelog](CHANGELOG.md) · [Deployment](doc/deployment.md)
 

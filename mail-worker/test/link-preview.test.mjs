@@ -22,7 +22,7 @@ test('public preview returns bounded Open Graph text and resolves relative image
   reads++;assert.equal(options.redirect,'manual');
   return new Response('<title>Fallback</title><meta property="og:title" content="Hello &amp; world"><meta name="description" content="A useful summary"><meta property="og:image" content="/cover.png">',{headers:{'Content-Type':'text/html; charset=utf-8'}});
  });
- assert.equal(reads,1);assert.equal(data.title,'Hello & world');assert.equal(data.description,'A useful summary');assert.equal(data.imageSource,'https://example.org/cover.png');
+ assert.equal(reads,1);assert.equal(data.title,'Hello & world');assert.equal(data.description,'A useful summary');assert.equal(data.previewAvailable,true);assert.equal(data.imageSource,'https://example.org/cover.png');
  assert.equal(parsePreview('<title>No image</title>','https://example.org').imageSource,null);
 });
 test('private DNS answers and redirect targets are not fetched; inaccessible sites fall back to their host',async()=>{
@@ -32,10 +32,19 @@ test('private DNS answers and redirect targets are not fetched; inaccessible sit
   siteReads++;return new Response('must not be read');
  });assert.equal(siteReads,0);assert.equal(data.title,'example.org');
  let calls=0;await pagePreview('https://example.org/redirect',async(url)=>{if(String(url).includes('/dns-query?'))return dns(url);calls++;return new Response(null,{status:302,headers:{Location:'https://localhost/'}});});assert.equal(calls,1);
- const missing=await pagePreview('https://example.org/',async(url)=>String(url).includes('/dns-query?')?dns(url):new Response('blocked',{status:403}));assert.equal(missing.title,'example.org');assert.equal(missing.imageSource,null);
+ const missing=await pagePreview('https://example.org/',async(url)=>String(url).includes('/dns-query?')?dns(url):new Response('blocked',{status:403}));assert.equal(missing.previewAvailable,false);assert.equal(missing.title,'example.org');assert.equal(missing.imageSource,null);
 });
 test('image proxy accepts only bounded raster payloads and rejects active or oversized content',async()=>{
  const request=body=>async(url)=>String(url).includes('/dns-query?')?dns(url):new Response(body,{headers:{'Content-Type':'image/png'}});
  const image=await previewImage('https://example.org/cover.png',request(png));assert.equal(image.type,'image/png');assert.deepEqual(image.data,png);
  for(const body of ['<svg onload="alert(1)"/>',new Uint8Array(2*1024*1024+1)])assert.equal(await previewImage('https://example.org/image',request(body)),null);
+});
+
+test('structured page metadata supplies a bounded useful preview without executing embedded scripts',()=>{
+ const html='<script type="application/ld+json">'+JSON.stringify({'@graph':[{'@type':'WebPage',name:'Structured title',description:'Structured summary',image:{url:'/structured.png'}}]})+'</script>';
+ const preview=parsePreview(html,'https://example.org/article');
+ assert.equal(preview.title,'Structured title');assert.equal(preview.description,'Structured summary');assert.equal(preview.imageSource,'https://example.org/structured.png');
+ const blocked=parsePreview('<script type="application/ld+json">'+JSON.stringify({'@type':'Article',headline:'Safe title',image:'https://localhost/private'})+'</script>','https://example.org');
+ assert.equal(blocked.title,'Safe title');assert.equal(blocked.imageSource,null);
+ assert.equal(parsePreview('<script type="application/ld+json">{bad json}</script><title>Still valid</title>','https://example.org').title,'Still valid');
 });

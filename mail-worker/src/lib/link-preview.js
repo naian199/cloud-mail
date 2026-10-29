@@ -59,11 +59,27 @@ const clean = (text,max) => String(text||'').replace(/[\u0000-\u001f\u007f]/g,' 
 export function parsePreview(html,url) {
   const {document}=parseHTML(html),meta=new Map();
   for(const node of document.querySelectorAll('meta[property],meta[name]')){const name=(node.getAttribute('property')||node.getAttribute('name')||'').toLowerCase();if(!meta.has(name))meta.set(name,node.getAttribute('content')||'');}
-  const candidate=meta.get('og:image')||meta.get('twitter:image');const image=candidate?publicPreviewUrl(candidate,url):null;
-  return {title:clean(meta.get('og:title')||meta.get('twitter:title')||document.querySelector('title')?.textContent,200),description:clean(meta.get('og:description')||meta.get('twitter:description')||meta.get('description'),500),siteName:clean(meta.get('og:site_name'),80),imageSource:image?.href||null};
+  let structured={};
+  const queue=[];
+  for(const node of [...document.querySelectorAll('script[type="application/ld+json"]')].slice(0,8)) {
+    try {const text=node.textContent;if(text.length<=65536)queue.push(JSON.parse(text));} catch {}
+  }
+  for(let visited=0;queue.length&&visited<32;visited++) {
+    const item=queue.shift();
+    if(Array.isArray(item)){queue.push(...item.slice(0,16));continue;}
+    if(!item||typeof item!=='object')continue;
+    if(Array.isArray(item['@graph']))queue.push(...item['@graph'].slice(0,16));
+    const types=[item['@type']].flat();
+    if(types.some(type=>/^(?:Article|NewsArticle|BlogPosting|WebPage|VideoObject|Product)$/i.test(type||''))){structured=item;break;}
+  }
+  const text=value=>typeof value==='string'?value:'';
+  const structuredImage=[structured.image].flat().find(Boolean);
+  const candidate=meta.get('og:image:secure_url')||meta.get('og:image')||meta.get('twitter:image')||meta.get('twitter:image:src')||text(structuredImage)||text(structuredImage?.url)||text(structuredImage?.contentUrl)||text(structured.thumbnailUrl);
+  const image=candidate?publicPreviewUrl(candidate,url):null;
+  return {title:clean(meta.get('og:title')||meta.get('twitter:title')||document.querySelector('title')?.textContent||text(structured.headline)||text(structured.name),200),description:clean(meta.get('og:description')||meta.get('twitter:description')||meta.get('description')||text(structured.description),500),siteName:clean(meta.get('og:site_name'),80),imageSource:image?.href||null};
 }
 export async function pagePreview(value,request=fetch) {
-  const original=new URL(value),fallback={url:original.href,title:original.hostname,description:'',siteName:original.hostname,imageSource:null};
+  const original=new URL(value),fallback={url:original.href,title:original.hostname,description:'',siteName:original.hostname,imageSource:null,previewAvailable:false};
   // HTTP links remain clickable; preview reads use TLS and never send user cookies.
   const target=new URL(original);if(target.protocol==='http:'){target.protocol='https:';if(target.port==='80')target.port='';}
   const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),7000);
@@ -71,7 +87,7 @@ export async function pagePreview(value,request=fetch) {
     const found=await fetchPublicPreview(target.href,{request,signal:controller.signal});if(!found)return fallback;
     if(!/^(text\/html|application\/xhtml\+xml)(?:;|$)/i.test(found.response.headers.get('content-type')||'')){await found.response.body?.cancel();return fallback;}
     const body=await bytes(found.response,131072,true),parsed=parsePreview(new TextDecoder().decode(body),found.url.href);
-    return {...fallback,...parsed,title:parsed.title||fallback.title,siteName:parsed.siteName||found.url.hostname};
+    return {...fallback,...parsed,previewAvailable:!!(parsed.title||parsed.description||parsed.imageSource),title:parsed.title||fallback.title,siteName:parsed.siteName||found.url.hostname};
   }catch{return fallback;}finally{clearTimeout(timer);}
 }
 export async function previewImage(value,request=fetch) {

@@ -1,1 +1,1 @@
-export { chatLinkParts,chatLinks } from '../../../shared/chat-links.mjs';
+export { chatLinkParts,chatLinks,normalizeChatLink } from '../../../shared/chat-links.mjs';

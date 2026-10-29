@@ -202,5 +202,17 @@
   "pushDenied": "Notifications were not allowed. Enable them in browser or system site settings and retry.",
   "pushIosInstall": "On iPhone/iPad, add this site to the Home Screen, then open its app icon to enable notifications.",
   "pushDeviceLimit": "The five-device limit was reached. Disable notifications on an unused device.",
-  "pushLimits": "iPhone/iPad requires iOS/iPadOS 16.4 or later. Delivery depends on system power settings, browser and network. Lock-screen previews also follow system settings."
+  "pushLimits": "iPhone/iPad requires iOS/iPadOS 16.4 or later. Delivery depends on system power settings, browser and network. Lock-screen previews also follow system settings.",
+  "browserTitle": "Web view",
+  "browserView": "View here",
+  "browserExternal": "Open externally",
+  "browserReload": "Reload page",
+  "browserNotice": "Content comes from the original website. If blank, blocked or unable to sign in, open externally.",
+  "browserLoading": "Loading page…",
+  "browserSlow": "This site is slow or may block embedding. Keep waiting or open externally.",
+  "browserHttp": "This link uses HTTP. Open it externally.",
+  "browserPreviewLoading": "Loading link preview…",
+  "browserPreviewUnavailable": "No page summary available. Open the page to view it.",
+  "browserRetryPreview": "Retry preview",
+  "browserOriginalLink": "Original link"
 }

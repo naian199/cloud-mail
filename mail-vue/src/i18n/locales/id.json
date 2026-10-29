@@ -736,5 +736,17 @@
   "pushLimits": "iPhone/iPad requires iOS/iPadOS 16.4 or later. Delivery depends on system power settings, browser and network. Lock-screen previews also follow system settings.",
   "mailChatLastSeen": "Last seen: {time}",
   "mailChatLastSeenUnknown": "Last seen unavailable",
-  "mailChatSelectingSticker": "Choosing a sticker…"
+  "mailChatSelectingSticker": "Choosing a sticker…",
+  "browserTitle": "Web view",
+  "browserView": "View here",
+  "browserExternal": "Open externally",
+  "browserReload": "Reload page",
+  "browserNotice": "Content comes from the original website. If blank, blocked or unable to sign in, open externally.",
+  "browserLoading": "Loading page…",
+  "browserSlow": "This site is slow or may block embedding. Keep waiting or open externally.",
+  "browserHttp": "This link uses HTTP. Open it externally.",
+  "browserPreviewLoading": "Loading link preview…",
+  "browserPreviewUnavailable": "No page summary available. Open the page to view it.",
+  "browserRetryPreview": "Retry preview",
+  "browserOriginalLink": "Original link"
 }

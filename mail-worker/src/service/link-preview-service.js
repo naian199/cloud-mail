@@ -19,7 +19,7 @@ async function authorize(c,params) {
 async function metadata(url) {
   const entry=cached.get(url);if(entry&&entry.expires>Date.now())return entry.data;
   const data=await pagePreview(url);if(cached.size>=128)cached.delete(cached.keys().next().value);
-  cached.set(url,{expires:Date.now()+300000,data});return data;
+  cached.set(url,{expires:Date.now()+(data.previewAvailable?300000:30000),data});return data;
 }
 export default {
   async get(c,params){const url=await authorize(c,params),data=await metadata(url);const {imageSource,...visible}=data;return {...visible,hasImage:!!imageSource};},
