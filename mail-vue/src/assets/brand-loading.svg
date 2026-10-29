@@ -1,55 +1,23 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" aria-hidden="true" focusable="false">
-      <style>  .startup-envelope {fill:none;stroke-width:4.8;stroke-linecap:round;stroke-linejoin:round;animation:envelope-breathe 2.8s ease-in-out 960ms infinite;}
-  .startup-motion {transform-box:view-box;transform-origin:66px 70px;}
-  .startup-white-motion {animation:white-thread 960ms cubic-bezier(.25,.65,.25,1) both,white-tension 2.8s ease-in-out 960ms infinite;}
-  .startup-orange-motion {animation:orange-thread 960ms cubic-bezier(.25,.65,.25,1) both,orange-tension 2.8s ease-in-out 960ms infinite;}
-  .connection-light {opacity:0;}
-  .loading-locking .startup-motion {animation:envelope-lock 240ms ease-out both;}
-  .loading-locking .startup-white-motion {--settle-x:.35px;--settle-y:-.25px;}
-  .loading-locking .startup-orange-motion {--settle-x:-.35px;--settle-y:.25px;}
-  .loading-locking .startup-envelope,.loading-complete .startup-envelope {animation:none;opacity:1;}
-  .loading-complete .startup-motion {animation:none;transform:none;}
-  .loading-complete .connection-light {animation:connection-success 420ms ease-out both;}
-  .loading-complete .connection-ring {transform-box:fill-box;transform-origin:center;animation:connection-ripple 420ms ease-out both;}
-  @keyframes white-thread {
-    0%{transform:translate(-9px,9px) rotate(-4deg);}
-    22%{transform:translate(-4px,4px) rotate(-2deg);}
-    50%{transform:translate(1px,-1px) rotate(1deg);}
-    73%{transform:translate(-1.7px,1.2px) rotate(-1.1deg);}
-    88%{transform:translate(.45px,-.3px) rotate(.3deg);}
-    100%{transform:translate(0,0) rotate(0);}
-  }
-  @keyframes orange-thread {
-    0%{transform:translate(9px,-9px) rotate(4deg);}
-    22%{transform:translate(4px,-4px) rotate(2deg);}
-    50%{transform:translate(-1px,1px) rotate(-1deg);}
-    73%{transform:translate(1.7px,-1.2px) rotate(1.1deg);}
-    88%{transform:translate(-.45px,.3px) rotate(-.3deg);}
-    100%{transform:translate(0,0) rotate(0);}
-  }
-  @keyframes white-tension {
-    0%,100%{transform:translate(0,0) rotate(0);}
-    38%{transform:translate(-1.25px,.85px) rotate(-1.1deg);}
-    62%{transform:translate(.35px,-.25px) rotate(.3deg);}
-    80%{transform:translate(-.25px,.15px) rotate(-.15deg);}
-  }
-  @keyframes orange-tension {
-    0%,100%{transform:translate(0,0) rotate(0);}
-    38%{transform:translate(1.25px,-.85px) rotate(1.1deg);}
-    62%{transform:translate(-.35px,.25px) rotate(-.3deg);}
-    80%{transform:translate(.25px,-.15px) rotate(.15deg);}
-  }
-  @keyframes envelope-breathe {0%,100%{opacity:1;}45%{opacity:.88;}70%{opacity:.98;}}
-  @keyframes envelope-lock {0%{transform:var(--startup-from,none);}68%{transform:translate(var(--settle-x),var(--settle-y));}100%{transform:translate(0,0);}}
-  @keyframes connection-success {0%{opacity:0;filter:drop-shadow(0 0 0 #80ffd8);}30%{opacity:1;filter:drop-shadow(0 0 4px #80ffd8);}100%{opacity:.9;filter:drop-shadow(0 0 1px #80ffd8);}}
-  @keyframes connection-ripple {0%{opacity:0;transform:scale(.5);}25%{opacity:.9;}100%{opacity:0;transform:scale(2.4);}}
-  @media(max-width:480px){.startup-mark{width:112px;height:112px;}}
-  @media(prefers-reduced-motion:reduce){
-    #loading-first{transition:none;}
-    .startup-motion,.loading-locking .startup-motion,.startup-envelope{animation:none;transform:none;opacity:1;}
-    .loading-complete .connection-light{animation:none;opacity:1;filter:none;}
-    .loading-complete .connection-ring{animation:none;opacity:0;}
-  }
+      <style>
+.startup-envelope {fill:none;stroke-width:4.8;stroke-linecap:round;stroke-linejoin:round;animation:loading-breathe 1.8s ease-in-out infinite;}
+.startup-motion {transform-box:view-box;transform-origin:66px 70px;}
+.startup-white-motion {animation:white-loading 1.8s ease-in-out infinite;}
+.startup-orange-motion {animation:orange-loading 1.8s ease-in-out infinite;}
+@keyframes white-loading {
+  0%,100% {transform:translate(0,0) rotate(0);}
+  25% {transform:translate(-4px,3px) rotate(-3deg);}
+  52% {transform:translate(2px,-1.5px) rotate(1.5deg);}
+  76% {transform:translate(-.8px,.6px) rotate(-.5deg);}
+}
+@keyframes orange-loading {
+  0%,100% {transform:translate(0,0) rotate(0);}
+  25% {transform:translate(4px,-3px) rotate(3deg);}
+  52% {transform:translate(-2px,1.5px) rotate(-1.5deg);}
+  76% {transform:translate(.8px,-.6px) rotate(.5deg);}
+}
+@keyframes loading-breathe {0%,100%{opacity:1;}25%{opacity:.65;}52%{opacity:1;}76%{opacity:.85;}}
+@media(prefers-reduced-motion:reduce){.startup-motion,.startup-envelope{animation:none;transform:none;opacity:1;}}
 </style>
       <defs>
         <path id="startup-envelope" d="M24.8 63.7 43.5 75.8Q45.6 77.2 47.5 75.8L68.2 59.4Q71.6 56.5 74.8 59.4Q77.4 61.7 77.4 65.4V88.2Q77.4 95.8 70.2 95.8H26.1Q18.1 95.8 18.1 87.7V62.5Q18.1 54.6 26.1 54.6H55.1" />
