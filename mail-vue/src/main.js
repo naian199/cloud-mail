@@ -1,5 +1,6 @@
 import {createApp} from 'vue';
 import App from './App.vue';
+import BrandLoading from '@/components/loading/index.vue';
 import router from './router';
 import './style.css';
 import '@/icons/chat';
@@ -16,6 +17,7 @@ import perm from "@/perm/perm.js";
 const pinia = createPinia().use(piniaPersistedState)
 import i18n from "@/i18n/index.js";
 const app = createApp(App).use(pinia)
+app.component('BrandLoading', BrandLoading)
 await init()
 app.use(router).use(i18n).directive('perm',perm)
 app.config.devtools = true;

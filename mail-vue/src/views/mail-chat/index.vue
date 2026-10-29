@@ -228,7 +228,7 @@
                   @click="loadImage(image.attId)"
                   >{{ t('mailChatImageRetry') }}</el-button
                 >
-                <span v-else>{{ t('mailChatImageLoading') }}</span>
+                <span v-else class="brand-loading-status" role="status"><BrandLoading :size="40" />{{ t('mailChatImageLoading') }}</span>
               </div>
               <div v-for="att in m.attachments" :key="att.attId" class="attachment">
                 <AudioAttachment v-if="isAudioFile(att)" :file="att" :load="options=>mailAttachment(att.attId, options)" :source="{attId:att.attId}" @resize="imageLoaded" />

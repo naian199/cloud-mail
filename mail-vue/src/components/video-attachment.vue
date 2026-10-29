@@ -4,7 +4,8 @@
       <video v-if="url" ref="player" :src="url" controls playsinline preload="metadata" :poster="poster" :aria-label="file.filename" @loadedmetadata="readDimensions" @loadeddata="savePlayerPoster" @error="playbackFailed" @pointerdown.stop @touchstart.stop />
       <button v-else class="video-start" :class="{ 'has-poster': poster, 'preview-loading': preparing }" type="button" :aria-label="t('videoPlay')" :disabled="loading || converting" @click="play">
         <img v-if="poster" class="video-poster" :src="poster" alt="" />
-        <span class="video-play-icon"><Icon icon="cloud-mail:play" width="34" aria-hidden="true" /></span>
+        <BrandLoading v-if="loading || converting || preparing" :size="48" style="z-index:1" />
+        <span v-else class="video-play-icon"><Icon icon="cloud-mail:play" width="34" aria-hidden="true" /></span>
         <span v-if="!poster" class="video-placeholder">{{ t(loading ? 'videoLoading' : 'videoPlay') }}</span>
         <span v-if="duration" class="video-duration">{{ clock(duration) }}</span>
       </button>
@@ -22,7 +23,7 @@
       </div>
     </div>
     <div v-if="!expanded" class="video-caption"><strong :title="file.filename">{{ file.filename }}</strong><small>{{ formatBytes(file.size) }}</small></div>
-    <p v-if="converting" class="video-status" role="status">{{ t('videoConverting', { percent: percent }) }} <button type="button" @click="cancel">{{ t('cancel') }}</button></p>
+    <p v-if="converting" class="video-status brand-loading-status" role="status"><BrandLoading :size="24" />{{ t('videoConverting', { percent: percent }) }} <button type="button" @click="cancel">{{ t('cancel') }}</button></p>
     <p v-else-if="error" class="video-status" role="status">{{ t(error) }} <button v-if="!converted" type="button" :disabled="loading" @click="convert">{{ t('videoCompatible') }}</button></p>
   </div>
 </template>

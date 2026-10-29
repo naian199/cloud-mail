@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 128 128" aria-hidden="true" focusable="false">
+
+      <defs>
+        <path id="startup-envelope" d="M24.8 63.7 43.5 75.8Q45.6 77.2 47.5 75.8L68.2 59.4Q71.6 56.5 74.8 59.4Q77.4 61.7 77.4 65.4V88.2Q77.4 95.8 70.2 95.8H26.1Q18.1 95.8 18.1 87.7V62.5Q18.1 54.6 26.1 54.6H55.1" />
+        <clipPath id="startup-orange-front"><rect x="46" y="61" width="25" height="20"/></clipPath>
+        <clipPath id="startup-white-front"><rect x="45" y="44" width="20" height="17"/><rect x="71" y="60" width="16" height="24"/></clipPath>
+        <mask id="startup-white-cut" maskUnits="userSpaceOnUse" x="0" y="0" width="128" height="128" style="mask-type:luminance">
+          <rect width="128" height="128" fill="white"/>
+          <g clip-path="url(#startup-orange-front)" fill="none" stroke="black" stroke-width="7.2" stroke-linecap="round" stroke-linejoin="round">
+            <g class="startup-motion startup-orange-motion"><use href="#startup-envelope" transform="translate(36 -24)"/></g>
+          </g>
+        </mask>
+        <mask id="startup-orange-cut" maskUnits="userSpaceOnUse" x="0" y="0" width="128" height="128" style="mask-type:luminance">
+          <rect width="128" height="128" fill="white"/>
+          <g clip-path="url(#startup-white-front)" fill="none" stroke="black" stroke-width="7.2" stroke-linecap="round" stroke-linejoin="round">
+            <g class="startup-motion startup-white-motion"><use href="#startup-envelope"/></g>
+          </g>
+        </mask>
+      </defs>
+      <rect width="128" height="128" rx="25" fill="#2389f5"/>
+      <g class="startup-envelope startup-envelope-white" fill="none" stroke-width="4.8" stroke-linecap="round" stroke-linejoin="round" stroke="#fff" mask="url(#startup-white-cut)"><g class="startup-motion startup-white-motion"><use href="#startup-envelope"/></g></g>
+      <g class="startup-envelope startup-envelope-orange" fill="none" stroke-width="4.8" stroke-linecap="round" stroke-linejoin="round" stroke="#ff7855" mask="url(#startup-orange-cut)"><g class="startup-motion startup-orange-motion"><use href="#startup-envelope" transform="translate(36 -24)"/></g></g>
+    </svg>

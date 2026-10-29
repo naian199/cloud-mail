@@ -7,7 +7,7 @@
       <p class="omni-scope">{{ t('omniScope', {email: mailbox?.email || ''}) }}</p>
       <el-select v-if="availableAccounts.length>1" popper-class="omni-account-options" :model-value="account" :aria-label="t('mailChatMailbox')" @change="changeAccount"><el-option v-for="item in availableAccounts" :key="item.accountId" :value="item.accountId" :label="item.email" /></el-select>
       <p v-if="!query" class="omni-hint">{{ t('omniHint') }}</p>
-      <p v-if="loading" class="omni-loading" role="status">{{ t('omniLoading') }}</p>
+      <p v-if="loading" class="omni-loading brand-loading-status" role="status"><BrandLoading :size="24" />{{ t('omniLoading') }}</p>
       <p v-if="data.indexing" class="omni-hint" role="status">{{ t('mailChatIndexing') }}</p>
       <p v-if="error" class="omni-error" role="alert">{{ t('omniError') }} <button type="button" @click="load()">{{ t('omniRetry') }}</button></p>
       <template v-if="query">

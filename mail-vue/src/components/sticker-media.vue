@@ -16,7 +16,8 @@
       ref="animationHost"
       class="sticker-animation"
     ></div>
-    <span v-if="failed || loading" class="sticker-fallback">{{ label || '🙂' }}</span>
+    <BrandLoading v-if="loading" :size="32" class="sticker-fallback" />
+    <span v-else-if="failed" class="sticker-fallback">{{ label || '🙂' }}</span>
   </div>
 </template>
 <script setup>

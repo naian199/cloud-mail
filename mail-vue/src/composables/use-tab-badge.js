@@ -24,7 +24,7 @@ export function useTabBadge(){
   const current=++version;
   if(!count){restore();return;}
   try{
-   image||=new Promise((resolve,reject)=>{const img=new Image();img.onload=()=>resolve(img);img.onerror=reject;img.src=original.href||'/mail-pwa.png';});
+   image||=new Promise((resolve,reject)=>{const img=new Image();img.onload=()=>resolve(img);img.onerror=reject;img.src=original.href||'/mail-brand-192.png';});
    const img=await image;if(current!==version)return;
    const canvas=document.createElement('canvas');canvas.width=64;canvas.height=64;
    const context=canvas.getContext('2d');if(!context)return;

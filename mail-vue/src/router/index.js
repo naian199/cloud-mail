@@ -102,7 +102,7 @@ const router = createRouter({
 })
 
 NProgress.configure({
-    showSpinner: false,   // 不显示旋转图标
+    showSpinner: true,    // Shared brand loading mark
     trickleSpeed: 50,    // 自动递增速度
     minimum: 0.1          // 最小百分比
 });

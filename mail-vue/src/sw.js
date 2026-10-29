@@ -1,10 +1,10 @@
 import {updateAppBadge} from './utils/app-badge.mjs';
 import {acceptAppBadge,notificationState,claimNotification,pruneNotifications,releaseNotification} from './utils/notification-store.mjs';
 const assets=self.__WB_MANIFEST;
-const CACHE='cloud-mail-install-icons-v2';
-self.addEventListener('install',event=>event.waitUntil((async()=>{const cache=await caches.open(CACHE);await cache.addAll(assets.map(item=>item.url).filter(url=>/mail-(?:pwa\.png|app\.svg)$/.test(url)));await self.skipWaiting();})()));
+const CACHE='cloud-mail-install-icons-v3';
+self.addEventListener('install',event=>event.waitUntil((async()=>{const cache=await caches.open(CACHE);await cache.addAll(assets.map(item=>item.url).filter(url=>/mail-(?:pwa\.png|app\.svg|brand(?:-192|-512)?\.png|brand\.svg)$/.test(url)));await self.skipWaiting();})()));
 self.addEventListener('activate',event=>event.waitUntil((async()=>{for(const key of await caches.keys())if(key!==CACHE&&(key.startsWith('workbox-precache')||key.startsWith('cloud-mail-install-icons')))await caches.delete(key);await self.clients.claim();})()));
-self.addEventListener('fetch',event=>{const url=new URL(event.request.url);if(event.request.method==='GET'&&url.origin===self.location.origin&&['/mail-pwa.png','/mail-app.svg'].includes(url.pathname))event.respondWith(fetch(event.request).catch(async()=>{const cached=await caches.match(event.request);return cached||Response.error();}));});
+self.addEventListener('fetch',event=>{const url=new URL(event.request.url);if(event.request.method==='GET'&&url.origin===self.location.origin&&['/mail-pwa.png','/mail-app.svg','/mail-brand.png','/mail-brand-192.png','/mail-brand-512.png','/mail-brand.svg'].includes(url.pathname))event.respondWith(fetch(event.request).catch(async()=>{const cached=await caches.match(event.request);return cached||Response.error();}));});
 function ask(client,message){return new Promise(resolve=>{const channel=new MessageChannel(),timer=setTimeout(()=>{channel.port1.close();resolve(false);},500);channel.port1.onmessage=event=>{clearTimeout(timer);channel.port1.close();resolve(event.data?.handled===true);};client.postMessage({...message,deadline:Date.now()+400},[channel.port2]);});}
 async function notify(message,localOnly=false){
  if(!message||typeof message.id!=='string'||typeof message.context!=='string'||!Number.isSafeInteger(message.userId)||message.created<Date.now()-86400000)return;
@@ -12,7 +12,7 @@ async function notify(message,localOnly=false){
  if(!localOnly&&!await notificationState('pushEnabled'))return;
  await applyBadge(message.userId,message.badge);
  const preferences=await notificationState('preferences');
- if(preferences&&(preferences.revision||0)>=(message.preferenceRevision||0)){if(!preferences.enabled||preferences.muted?.[message.context]||preferences[message.kind]===false)return;const generic=/^zh/.test(preferences.locale)?'收到新消息':'New message';if(preferences.preview==='none'){message={...message,title:'Cloud Mail',body:generic,icon:'/mail-pwa.png'};}else if(preferences.preview==='sender')message={...message,body:generic};}
+ if(preferences&&(preferences.revision||0)>=(message.preferenceRevision||0)){if(!preferences.enabled||preferences.muted?.[message.context]||preferences[message.kind]===false)return;const generic=/^zh/.test(preferences.locale)?'收到新消息':'New message';if(preferences.preview==='none'){message={...message,title:'Cloud Mail',body:generic,icon:'/mail-brand-192.png'};}else if(preferences.preview==='sender')message={...message,body:generic};}
  const url=new URL(message.url,self.location.origin);if(url.origin!==self.location.origin||!['/mail-chat','/external-mail','/rooms'].includes(url.pathname))return;
  const clients=await self.clients.matchAll({type:'window',includeUncontrolled:true});
  const active=clients.find(client=>client.focused&&client.visibilityState==='visible');
@@ -21,7 +21,7 @@ async function notify(message,localOnly=false){
  if(active&&await ask(active,{type:'CLOUD_MAIL_NOTIFICATION',message}))return;
  if(localOnly){await releaseNotification(`${message.userId}:${message.id}`);return;}
  if(await notificationState('user')!==message.userId)return;
- await self.registration.showNotification(message.title,{body:message.body,icon:message.icon||'/mail-pwa.png',badge:'/mail-pwa.png',tag:message.tag,renotify:false,data:{url:url.pathname+url.search,userId:message.userId,id:message.id}});
+ await self.registration.showNotification(message.title,{body:message.body,icon:message.icon||'/mail-brand-192.png',badge:'/mail-brand-192.png',tag:message.tag,renotify:false,data:{url:url.pathname+url.search,userId:message.userId,id:message.id}});
 }
 async function applyBadge(userId,badge){const accepted=await acceptAppBadge(userId,badge);if(accepted&&await notificationState('user')===userId)await updateAppBadge(accepted.count);}
 let notificationQueue=Promise.resolve();

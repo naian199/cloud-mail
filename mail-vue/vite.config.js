@@ -43,12 +43,13 @@ export default defineConfig(({mode}) => {
                     theme_color: '#FFFFFF',
                     icons: [
                         {
-                            src: '/mail-pwa.png',
+                            src: '/mail-brand-192.png',
                             sizes: '192x192',
                             type: 'image/png',
                             purpose: 'any',
                         },
-                        {src:'/mail-app.svg',sizes:'any',type:'image/svg+xml',purpose:'any'}
+                        {src:'/mail-brand-512.png',sizes:'512x512',type:'image/png',purpose:'any'},
+                        {src:'/mail-brand.svg',sizes:'any',type:'image/svg+xml',purpose:'any'}
                     ],
                 },
                 injectManifest: { globPatterns: [], rollupFormat: 'iife' },

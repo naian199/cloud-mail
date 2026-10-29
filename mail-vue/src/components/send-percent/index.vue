@@ -1,6 +1,6 @@
 <template>
   <div class="percent">
-    <Icon icon="line-md:loading-loop" width="18" height="18" />
+    <BrandLoading :size="24" />
     <div>
       <span>{{value}}%</span>
       <span style="margin-left: 5px">{{desc}}</span>
@@ -8,7 +8,7 @@
   </div>
 </template>
 <script setup>
-import {Icon} from "@iconify/vue";
+
 defineProps({
   value: [Number,String],
   desc: [String]

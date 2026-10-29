@@ -13,7 +13,7 @@
       <div class="media-content" :key="current.id">
         <VideoAttachment v-if="current.kind === 'video'" expanded :file="current.file" :cache-key="current.cacheKey" :load="current.load" @download="$emit('download', current)" />
         <img v-else-if="current.src" :src="current.src" :alt="current.file.filename" referrerpolicy="no-referrer" />
-        <span v-else role="status">{{ t('mailChatImageLoading') }}</span>
+        <span v-else class="brand-loading-status" role="status"><BrandLoading :size="48" />{{ t('mailChatImageLoading') }}</span>
       </div>
       <el-button class="media-next" circle :disabled="index >= items.length - 1" :aria-label="t('mediaNext')" @click="step(1)"><Icon icon="cloud-mail:back" width="24" /></el-button>
     </div>
