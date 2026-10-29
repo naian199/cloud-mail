@@ -145,9 +145,13 @@ await test(
 		await t.test(
 			'online, typing, multiple sessions, explicit offline and expiry are scoped to participants',
 			async () => {
+				assert.equal((await state(a, ak)).lastSeen, null);
 				assert.equal((await pulse(a, ak, sa)).code, 200);
 				assert.equal((await pulse(b, bk, sb, true, true)).code, 200);
-				assert.deepEqual(await state(a, ak), {
+				const online = await state(a, ak);
+				assert.ok(online.lastSeen > Date.now() - 5000);
+				const { lastSeen, ...presence } = online;
+				assert.deepEqual(presence, {
 					internal: true,
 					friend: true,
 					online: true,
@@ -158,6 +162,7 @@ await test(
 				assert.equal((await state(a, ak)).online, true);
 				assert.equal((await state(a, ak)).typing, false);
 				await pulse(b, bk, sb2, false);
+				assert.ok((await state(a, ak)).lastSeen >= lastSeen);
 				assert.equal((await state(a, ak)).online, false);
 				await pulse(b, bk, sb, true, true);
 				db.prepare('UPDATE mail_live_session SET expires_at=? WHERE session_id=?').run(
@@ -166,6 +171,8 @@ await test(
 				);
 				assert.equal((await state(a, ak)).online, false);
 				assert.equal((await state(a, ak)).typing, false);
+				db.prepare('DELETE FROM mail_live_session WHERE session_id=?').run(sb);
+				assert.ok((await state(a, ak)).lastSeen >= lastSeen);
 				assert.equal((await api(`mail-chat/live?accountId=${a.account}&key=${ak}`, c)).code, 403);
 				assert.equal((await state(c, ak)).internal, false);
 				assert.equal(

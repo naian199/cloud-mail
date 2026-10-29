@@ -2,6 +2,7 @@
   <el-config-provider :locale="elementLocale"><router-view /><AppInstall /></el-config-provider>
 </template>
 <script setup>
+import { useUserPresence } from '@/composables/use-user-presence';
 import {tabUnread,useTabBadge} from '@/composables/use-tab-badge';
 import {useFerdiumBadge} from '@/composables/use-ferdium-badge';
 import { watch } from 'vue';
@@ -13,6 +14,7 @@ import { elementLocale } from '@/i18n';
 import('@/icons/index.js');
 const route = useRoute(), { t, locale, te } = useI18n(), settings = useSettingStore();
 useTabBadge();
+useUserPresence();
 useFerdiumBadge(tabUnread);
 watch([locale, () => route.meta.title, () => settings.settings.title, tabUnread], () => {
   const title = route.meta.title && te(route.meta.title) ? t(route.meta.title) : '';

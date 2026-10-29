@@ -733,5 +733,7 @@
   "pushDenied": "Notifications were not allowed. Enable them in browser or system site settings and retry.",
   "pushIosInstall": "On iPhone/iPad, add this site to the Home Screen, then open its app icon to enable notifications.",
   "pushDeviceLimit": "The five-device limit was reached. Disable notifications on an unused device.",
-  "pushLimits": "iPhone/iPad requires iOS/iPadOS 16.4 or later. Delivery depends on system power settings, browser and network. Lock-screen previews also follow system settings."
+  "pushLimits": "iPhone/iPad requires iOS/iPadOS 16.4 or later. Delivery depends on system power settings, browser and network. Lock-screen previews also follow system settings.",
+  "mailChatLastSeen": "最近上線：{time}",
+  "mailChatLastSeenUnknown": "暫無最近上線紀錄"
 }

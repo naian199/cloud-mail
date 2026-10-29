@@ -1,5 +1,5 @@
 import { roomSchema } from './room-schema.js';
-export const MAIL_CHAT_SCHEMA_MARKER = 'mail_chat_schema_v8';
+export const MAIL_CHAT_SCHEMA_MARKER = 'mail_chat_schema_v9';
 
 export async function migrateMailChat(db) {
 	const { results } = await db.prepare('PRAGMA table_info(email)').all();
@@ -80,6 +80,10 @@ export async function migrateMailChat(db) {
       account_id INTEGER NOT NULL REFERENCES account(account_id) ON DELETE CASCADE,
       conversation_key TEXT NOT NULL, PRIMARY KEY(user_id, account_id, conversation_key)
 			)`),
+		db.prepare(`CREATE TABLE IF NOT EXISTS mail_last_seen (
+      user_id INTEGER PRIMARY KEY REFERENCES user(user_id) ON DELETE CASCADE,
+      seen_at INTEGER NOT NULL
+    )`),
 		db.prepare(`CREATE TABLE IF NOT EXISTS mail_live_session (
       user_id INTEGER NOT NULL REFERENCES user(user_id) ON DELETE CASCADE,
       session_id TEXT NOT NULL, account_id INTEGER NOT NULL REFERENCES account(account_id) ON DELETE CASCADE,

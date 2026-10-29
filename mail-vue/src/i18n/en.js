@@ -26,6 +26,8 @@ const en = {
     mailChatCancelQuote: "Cancel quote",
     mailChatContacts: "Contacts",
     mailChatTyping: "Typing…",
+    mailChatLastSeen: "Last seen: {time}",
+    mailChatLastSeenUnknown: "Last seen unavailable",
     mailChatOnline: "Online",
     mailChatOffline: "Offline",
     mailChatClearBoth: "Clear for both",

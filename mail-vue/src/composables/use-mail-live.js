@@ -42,7 +42,7 @@ export function useMailLive(accountId, selected, connected) {
           state.value = { ...state.value, typing: false };
         }, 6500);
     } catch {
-      if (!stopped) state.value = { internal: false };
+      if (!stopped && a === accountId.value && k === selected.value?.key) state.value = { internal: state.value.internal, unknown: true };
     }
   }
   function input(value) {

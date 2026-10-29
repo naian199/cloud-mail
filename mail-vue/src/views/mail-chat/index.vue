@@ -84,11 +84,11 @@
             selected.profile?.remark || selected.profile?.displayName || selected.peers.join(', ')
           }}</strong
           ><span v-if="live.internal || messages.some(message => message.internal)" class="live-status" :class="{ online: live.online }">{{
-            live.typing
+            live.unknown ? t('chatReconnecting') : live.typing
               ? t('mailChatTyping')
               : live.online
                 ? t('mailChatOnline')
-                : t('mailChatOffline')
+                : live.lastSeen ? t('mailChatLastSeen', { time: new Date(live.lastSeen).toLocaleString() }) : t('mailChatLastSeenUnknown')
           }}</span>
           <span v-else :title="conversationSubject(selected)">{{ conversationSubject(selected) || (connected ? t('mailChatLive') : t('chatReconnecting')) }}</span>
         </div>

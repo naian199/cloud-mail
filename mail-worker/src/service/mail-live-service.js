@@ -54,7 +54,9 @@ export default {
 			)
 			.bind(peer.account_id, account.account_id, now, peer.user_id, now)
 			.first();
+		const seen = await c.env.db.prepare('SELECT seen_at FROM mail_last_seen WHERE user_id=?').bind(peer.user_id).first();
 		return {
+			lastSeen: seen?.seen_at || null,
 			internal: true,
 			friend: !!peer.friendship_id,
 			online: !!state.online,
@@ -70,13 +72,18 @@ export default {
 		)
 			fail('Invalid presence');
 		const previous = await c.env.db
-			.prepare('SELECT peer_account_id FROM mail_live_session WHERE user_id=? AND session_id=?')
+			.prepare('SELECT peer_account_id, expires_at FROM mail_live_session WHERE user_id=? AND session_id=?')
 			.bind(account.user_id, params.sessionId)
 			.first();
 		const peer = params.key ? await this.resolve(c, account, params.key) : null;
 		if (params.key && (typeof params.key !== 'string' || !/^[a-f0-9]{64}$/.test(params.key)))
 			fail('Invalid conversation');
 		const now = Date.now();
+		// Only a known live session may advance an offline timestamp. Delayed beacons cannot fabricate activity.
+		if (params.active || previous) {
+			const seenAt = params.active ? now : Math.min(now, previous.expires_at);
+			await c.env.db.prepare(`INSERT INTO mail_last_seen(user_id,seen_at) VALUES(?,?) ON CONFLICT(user_id) DO UPDATE SET seen_at=max(seen_at,excluded.seen_at)`).bind(account.user_id, seenAt).run();
+		}
 		if (!params.active)
 			await c.env.db
 				.prepare('DELETE FROM mail_live_session WHERE user_id=? AND session_id=?')

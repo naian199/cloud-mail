@@ -26,6 +26,8 @@ const zh = {
     mailChatCancelQuote: "取消引用",
     mailChatContacts: "联系人",
     mailChatTyping: "对方正在输入…",
+    mailChatLastSeen: "最近在线：{time}",
+    mailChatLastSeenUnknown: "暂无最近在线记录",
     mailChatOnline: "在线",
     mailChatOffline: "离线",
     mailChatClearBoth: "清空聊天（双方）",
