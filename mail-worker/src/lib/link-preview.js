@@ -25,24 +25,42 @@ export function publicAddress(value) {
     return first>=0x2000&&first<=0x3fff&&first!==0x2002&&!(first===0x2001&&([0,2,0xdb8].includes(second)||second>=0x10&&second<=0x2f));
   } catch { return false; }
 }
-async function publicHost(host, request, signal) {
-  const answers=await Promise.all(['A','AAAA'].map(async type=>{
-    const response=await request('https://cloudflare-dns.com/dns-query?'+new URLSearchParams({name:host,type}),{headers:{Accept:'application/dns-json'},redirect:'error',signal});
-    if(!response.ok)throw Error('DNS unavailable');
-    const result=await response.json();if(result.Status!==0)throw Error('DNS unavailable');
-    return (result.Answer||[]).filter(item=>item.type===1||item.type===28).map(item=>item.data);
-  }));
-  const addresses=answers.flat();return addresses.length>0&&addresses.every(publicAddress);
+async function publicHost(host, request, signal, diagnostics) {
+  // An unavailable DNS-over-HTTPS provider must not disable every link preview.
+  for (const endpoint of ['https://cloudflare-dns.com/dns-query','https://dns.google/resolve']) {
+    const controller=new AbortController(),abort=()=>controller.abort();
+    signal?.addEventListener('abort',abort,{once:true});
+    if(signal?.aborted)controller.abort();
+    const timer=setTimeout(abort,1800);
+    try {
+      const answers=await Promise.all(['A','AAAA'].map(async type=>{
+        const response=await request(endpoint+'?'+new URLSearchParams({name:host,type}),{headers:{Accept:'application/dns-json'},redirect:'error',signal:controller.signal});
+        if(!response.ok)throw Error('DNS unavailable');
+        const result=await response.json();
+        if(result.Status===3)return [];
+        if(result.Status!==0)throw Error('DNS unavailable');
+        return (result.Answer||[]).filter(item=>item.type===1||item.type===28).map(item=>item.data);
+      }));
+      const addresses=answers.flat();
+      if(addresses.some(value=>!publicAddress(value))){diagnostics.reason='restricted';return false;}
+      if(!addresses.length){diagnostics.reason='dns';return false;}
+      return true;
+    } catch {
+      if(signal?.aborted)throw Error('Preview aborted');
+      diagnostics.reason='dns';
+    } finally {clearTimeout(timer);controller.abort();signal?.removeEventListener('abort',abort);}
+  }
+  return false;
 }
-export async function fetchPublicPreview(value, { request=fetch, signal }={}) {
-  let url=publicPreviewUrl(value);if(!url)return null;
+export async function fetchPublicPreview(value, { request=fetch, signal, diagnostics={} }={}) {
+  let url=publicPreviewUrl(value);if(!url){diagnostics.reason='restricted';return null;}
   for(let redirects=0;redirects<3;redirects++){
-    if(!(await publicHost(url.hostname,request,signal)))return null;
-    const response=await request(url.href,{redirect:'manual',signal,headers:{'User-Agent':'Cloud-Mail-Link-Preview/1.0',Accept:'text/html,image/avif,image/webp,image/png,image/jpeg,image/gif;q=0.9'}});
+    if(!(await publicHost(url.hostname,request,signal,diagnostics)))return null;
+    const response=await request(url.href,{redirect:'manual',signal,headers:{'User-Agent':'Mozilla/5.0 (compatible; CloudMailPreview/1.0; +https://github.com/naian199/cloud-mail)',Accept:'text/html,application/xhtml+xml,image/webp,image/png,image/jpeg,image/gif;q=0.9', 'Accept-Language':'zh-CN,zh;q=0.9,en;q=0.8'}});
     if([301,302,303,307,308].includes(response.status)){
       await response.body?.cancel();const location=response.headers.get('location');if(!location)return null;url=publicPreviewUrl(location,url);if(!url)return null;continue;
     }
-    if(!response.ok){await response.body?.cancel();return null;}
+    if(!response.ok){diagnostics.reason=[401,403,429,451].includes(response.status)?'blocked':'http';await response.body?.cancel();return null;}
     return {response,url};
   }
   return null;
@@ -79,23 +97,28 @@ export function parsePreview(html,url) {
   return {title:clean(meta.get('og:title')||meta.get('twitter:title')||document.querySelector('title')?.textContent||text(structured.headline)||text(structured.name),200),description:clean(meta.get('og:description')||meta.get('twitter:description')||meta.get('description')||text(structured.description),500),siteName:clean(meta.get('og:site_name'),80),imageSource:image?.href||null};
 }
 export async function pagePreview(value,request=fetch) {
-  const original=new URL(value),fallback={url:original.href,title:original.hostname,description:'',siteName:original.hostname,imageSource:null,previewAvailable:false};
+  const original=new URL(value),fallback={url:original.href,title:original.hostname,description:'',siteName:original.hostname,imageSource:null,previewAvailable:false,reason:'unavailable'};
   // HTTP links remain clickable; preview reads use TLS and never send user cookies.
   const target=new URL(original);if(target.protocol==='http:'){target.protocol='https:';if(target.port==='80')target.port='';}
-  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),7000);
+  const diagnostics={},controller=new AbortController(),timer=setTimeout(()=>controller.abort(),10000);
   try{
-    const found=await fetchPublicPreview(target.href,{request,signal:controller.signal});if(!found)return fallback;
-    if(!/^(text\/html|application\/xhtml\+xml)(?:;|$)/i.test(found.response.headers.get('content-type')||'')){await found.response.body?.cancel();return fallback;}
-    const body=await bytes(found.response,131072,true),parsed=parsePreview(new TextDecoder().decode(body),found.url.href);
-    return {...fallback,...parsed,previewAvailable:!!(parsed.title||parsed.description||parsed.imageSource),title:parsed.title||fallback.title,siteName:parsed.siteName||found.url.hostname};
-  }catch{return fallback;}finally{clearTimeout(timer);}
+    const found=await fetchPublicPreview(target.href,{request,signal:controller.signal,diagnostics});if(!found)return {...fallback,reason:diagnostics.reason||'unavailable'};
+    if(!/^(text\/html|application\/xhtml\+xml)(?:;|$)/i.test(found.response.headers.get('content-type')||'')){await found.response.body?.cancel();return {...fallback,reason:'not-html'};}
+    const body=await bytes(found.response,524288,true);
+    const prefix=new TextDecoder().decode(body.slice(0,2048));
+    const encoding=found.response.headers.get('content-type')?.match(/charset=["']?([\w-]+)/i)?.[1]||prefix.match(/<meta[^>]+charset=["']?([\w-]+)/i)?.[1]||'utf-8';
+    let html;try{html=new TextDecoder(encoding).decode(body);}catch{html=new TextDecoder().decode(body);}
+    const parsed=parsePreview(html,found.url.href);
+    if(/(?:just a moment|checking your browser|attention required|access denied)/i.test(parsed.title)&&/(?:cf-chl|challenge-platform|captcha)/i.test(html))return {...fallback,reason:'blocked'};
+    return {...fallback,...parsed,reason:parsed.title||parsed.description||parsed.imageSource?null:'no-metadata',previewAvailable:!!(parsed.title||parsed.description||parsed.imageSource),title:parsed.title||fallback.title,siteName:parsed.siteName||found.url.hostname};
+  }catch{return {...fallback,reason:controller.signal.aborted?'timeout':'network'};}finally{clearTimeout(timer);}
 }
 export async function previewImage(value,request=fetch) {
   const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),7000);
   try{
     const found=await fetchPublicPreview(value,{request,signal:controller.signal});if(!found)return null;
     const data=await bytes(found.response,2*1024*1024);if(!data)return null;
-    const type=data.length>=8&&data[0]===137&&data[1]===80&&data[2]===78&&data[3]===71?'image/png':data.length>=3&&data[0]===255&&data[1]===216&&data[2]===255?'image/jpeg':data.length>=6&&String.fromCharCode(...data.slice(0,6)).match(/^GIF8[79]a$/)?'image/gif':data.length>=12&&String.fromCharCode(...data.slice(0,4))==='RIFF'&&String.fromCharCode(...data.slice(8,12))==='WEBP'?'image/webp':null;
+    const type=data.length>=8&&data[0]===137&&data[1]===80&&data[2]===78&&data[3]===71?'image/png':data.length>=3&&data[0]===255&&data[1]===216&&data[2]===255?'image/jpeg':data.length>=6&&String.fromCharCode(...data.slice(0,6)).match(/^GIF8[79]a$/)?'image/gif':data.length>=12&&String.fromCharCode(...data.slice(0,4))==='RIFF'&&String.fromCharCode(...data.slice(8,12))==='WEBP'?'image/webp':data.length>=16&&String.fromCharCode(...data.slice(4,8))==='ftyp'&&/avif|avis/.test(String.fromCharCode(...data.slice(8,48)))?'image/avif':null;
     return type?{data,type}:null;
   }catch{return null;}finally{clearTimeout(timer);}
 }

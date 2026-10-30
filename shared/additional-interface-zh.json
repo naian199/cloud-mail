@@ -214,5 +214,8 @@
   "browserPreviewLoading": "正在获取网页预览…",
   "browserPreviewUnavailable": "暂未获取到网页摘要，可直接打开查看。",
   "browserRetryPreview": "重试预览",
-  "browserOriginalLink": "原始链接"
+  "browserOriginalLink": "原始链接",
+  "linkPreviewBlocked": "网站拒绝了预览抓取，点击重试。",
+  "linkPreviewTimedOut": "获取网页预览超时，点击重试。",
+  "linkPreviewFailed": "未能获取网页预览，点击重试。"
 }

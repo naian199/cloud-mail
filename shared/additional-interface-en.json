@@ -214,5 +214,8 @@
   "browserPreviewLoading": "Loading link preview…",
   "browserPreviewUnavailable": "No page summary available. Open the page to view it.",
   "browserRetryPreview": "Retry preview",
-  "browserOriginalLink": "Original link"
+  "browserOriginalLink": "Original link",
+  "linkPreviewBlocked": "This site refused preview fetching. Click to retry.",
+  "linkPreviewTimedOut": "Link preview timed out. Click to retry.",
+  "linkPreviewFailed": "Could not fetch link preview. Click to retry."
 }

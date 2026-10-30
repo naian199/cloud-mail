@@ -48,3 +48,37 @@ test('structured page metadata supplies a bounded useful preview without executi
  assert.equal(blocked.title,'Safe title');assert.equal(blocked.imageSource,null);
  assert.equal(parsePreview('<script type="application/ld+json">{bad json}</script><title>Still valid</title>','https://example.org').title,'Still valid');
 });
+
+test('a failed DNS provider falls back without relaxing checks on private address results',async()=>{
+ let fallback=0,sites=0;
+ const data=await pagePreview('https://example.org/article',async url=>{
+  if(String(url).startsWith('https://cloudflare-dns.com/'))return new Response('',{status:503});
+  if(String(url).startsWith('https://dns.google/')){fallback++;return dns(url);}
+  sites++;return new Response('<title>Recovered preview</title>',{headers:{'Content-Type':'text/html'}});
+ });
+ assert.equal(data.title,'Recovered preview');assert.equal(fallback,2);assert.equal(sites,1);
+ let forbiddenFallback=0;
+ const denied=await pagePreview('https://example.org/private',async url=>{
+  if(String(url).startsWith('https://dns.google/')){forbiddenFallback++;return dns(url);}
+  return new Response(JSON.stringify({Status:0,Answer:[{type:1,data:'127.0.0.1'}]}));
+ });
+ assert.equal(denied.reason,'restricted');assert.equal(forbiddenFallback,0);
+});
+test('AVIF covers are accepted while unrelated ISO media formats stay rejected',async()=>{
+ const avif=Uint8Array.from([0,0,0,24,...Buffer.from('ftypavif'),0,0,0,0,...Buffer.from('avifmif1')]);
+ const image=await previewImage('https://example.org/image.avif',async url=>String(url).includes('/dns-query?')?dns(url):new Response(avif));
+ assert.equal(image.type,'image/avif');assert.deepEqual(image.data,avif);
+ const heic=Uint8Array.from([0,0,0,24,...Buffer.from('ftypheic'),0,0,0,0,...Buffer.from('heicmif1')]);
+ assert.equal(await previewImage('https://example.org/image.heic',async url=>String(url).includes('/dns-query?')?dns(url):new Response(heic)),null);
+});
+test('previews read metadata after large inline scripts and decode declared non-UTF8 titles',async()=>{
+ const data=await pagePreview('https://example.org/article',async url=>String(url).includes('/dns-query?')?dns(url):new Response('<script>'+ ' '.repeat(200000)+'</script><meta property="og:title" content="Late metadata">',{headers:{'Content-Type':'text/html'}}));
+ assert.equal(data.title,'Late metadata');
+ const bytes=Uint8Array.from([...Buffer.from('<title>'),0xd6,0xd0,0xce,0xc4,...Buffer.from('</title>')]);
+ const encoded=await pagePreview('https://example.org/article',async url=>String(url).includes('/dns-query?')?dns(url):new Response(bytes,{headers:{'Content-Type':'text/html; charset=gb2312'}}));
+ assert.equal(encoded.title,'中文');
+});
+test('challenge screens are not presented as successful article previews',async()=>{
+ const result=await pagePreview('https://example.org/article',async url=>String(url).includes('/dns-query?')?dns(url):new Response('<title>Just a moment...</title><script src="/cdn-cgi/challenge-platform/cf-chl.js"></script>',{headers:{'Content-Type':'text/html'}}));
+ assert.equal(result.previewAvailable,false);assert.equal(result.reason,'blocked');assert.equal(result.imageSource,null);
+});
