@@ -751,5 +751,7 @@
   "browserOriginalLink": "Original link",
   "linkPreviewBlocked": "This site refused preview fetching. Click to retry.",
   "linkPreviewTimedOut": "Link preview timed out. Click to retry.",
-  "linkPreviewFailed": "Could not fetch link preview. Click to retry."
+  "linkPreviewFailed": "Could not fetch link preview. Click to retry.",
+  "mobileChatActions": "More chat actions",
+  "mobileEnterHint": "Enter inserts a line break. Tap Send to send."
 }

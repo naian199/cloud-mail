@@ -288,3 +288,30 @@ html {
 }
 .brand-loading-status { display:inline-flex; align-items:center; justify-content:center; gap:10px; }
 .el-button.is-loading .el-icon.is-loading { position:relative; z-index:2; }
+
+/* Touch dialogs use the same visible viewport as the chat, including keyboard contraction. */
+@media(any-pointer:coarse){
+ .el-overlay .el-dialog.is-fullscreen {width:100%;max-width:100%;height:var(--app-viewport-height,100dvh);margin:0;top:var(--app-viewport-top,0px);}
+ .el-overlay .el-dialog:not(.is-fullscreen) {top:var(--app-viewport-top,0px);max-height:calc(var(--app-viewport-height,100dvh) - 32px);overflow-y:auto;overscroll-behavior:contain;--el-dialog-margin-top:16px;}
+ .el-dialog__headerbtn {width:44px;height:44px;top:0;}
+ .el-dialog__header.show-close {padding-inline-end:44px;}
+ .el-dropdown-menu__item,.mail-message-menu button {min-height:44px;}
+ .el-popper {max-width:calc(100vw - 16px);}
+ .el-dropdown-menu {max-height:calc(var(--app-viewport-height,100dvh) * .65);overflow-y:auto;overscroll-behavior:contain;}
+ .chat-media-viewer .media-toolbar>.el-button,.browser-toolbar>.el-button {min-width:44px;min-height:44px;padding:0;}
+ .el-dialog.chat-media-viewer .media-stage {grid-template-columns:44px minmax(0,1fr) 44px;gap:2px;}
+ .chat-media-viewer .media-stage>.el-button {width:44px;height:44px;min-width:44px;min-height:44px;}
+ .chat-media-viewer .media-content>img {max-height:calc(var(--app-viewport-height,100dvh) - 112px);}
+ .mobile-keyboard-open .layout .composer,.mobile-keyboard-open .layout .room-composer {padding-bottom:4px;}
+}
+@media(any-pointer:coarse){
+ .conversation-categories>a {min-height:44px;}
+ .el-overlay .el-dialog.is-fullscreen {padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom);}
+ .mobile-keyboard-open .el-dialog.is-fullscreen {padding-bottom:0;}
+}
+
+@media(any-pointer:coarse){
+ .el-overlay .el-drawer.ltr,.el-overlay .el-drawer.rtl {height:var(--app-viewport-height,100dvh);top:var(--app-viewport-top,0px);max-height:var(--app-viewport-height,100dvh);padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom);}
+ .el-drawer__close-btn {min-width:44px;min-height:44px;}
+ .navigation-drawer .navigation-close {top:calc(env(safe-area-inset-top) + 4px);width:44px;height:44px;}
+}

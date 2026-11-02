@@ -1,5 +1,5 @@
 <template>
-  <el-container class="layout" :class="{ 'navigation-open': uiStore.asideShow, 'mobile-chat-focused': uiStore.mobileChatFocused }" :style="{ '--chat-viewport-height': viewportHeight + 'px', '--chat-viewport-top': viewportTop + 'px', '--conversation-width': conversationWidth + 'px' }">
+  <el-container class="layout" :class="{ 'navigation-open': uiStore.asideShow, 'mobile-chat-focused': uiStore.mobileChatFocused }" :style="{ '--chat-viewport-height': 'var(--app-viewport-height, 100dvh)', '--chat-viewport-top': 'var(--app-viewport-top, 0px)', '--conversation-width': conversationWidth + 'px' }">
     <button type="button" class="global-navigation-toggle" :aria-label="$t('navigationMenu')" :title="$t('navigationMenu')" :aria-expanded="uiStore.asideShow" aria-controls="main-navigation" aria-haspopup="dialog" @click="uiStore.asideShow = !uiStore.asideShow">
       <Icon icon="cloud-mail:menu" width="20" height="20" />
     </button>
@@ -23,7 +23,7 @@ import Aside from '@/layout/aside/index.vue'
 import { Icon } from '@iconify/vue'
 import Header from '@/layout/header/index.vue'
 import Main from '@/layout/main/index.vue'
-import { computed, ref, watch, onMounted, onBeforeUnmount } from 'vue'
+import { computed, ref, watch, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import {useUiStore} from "@/store/ui.js";
 import writer from '@/layout/write/index.vue'
@@ -37,29 +37,10 @@ const chatRoute = computed(() => ['mail-chat', 'external-mail', 'rooms'].include
 const conversationWidth = computed(() => Math.min(420, Math.max(260, Number(uiStore.conversationWidth) || 300)));
 uiStore.asideShow = false;
 watch(() => route.fullPath, () => { uiStore.asideShow = false; });
-const viewportHeight = ref(window.visualViewport?.height || window.innerHeight);
-const viewportTop = ref(window.visualViewport?.offsetTop || 0);
-function updateViewport() {
-  const viewport = window.visualViewport;
-  if (viewport && viewport.scale !== 1) return;
-  viewportHeight.value = viewport?.height || window.innerHeight;
-  viewportTop.value = viewport?.offsetTop || 0;
-}
-
 const writerRef = ref({})
 onMounted(() => {
   uiStore.writerRef = writerRef
 
-  window.addEventListener('resize', updateViewport)
-  window.visualViewport?.addEventListener('resize', updateViewport)
-  window.visualViewport?.addEventListener('scroll', updateViewport)
-  updateViewport()
-})
-
-onBeforeUnmount(() => {
-  window.removeEventListener('resize', updateViewport)
-  window.visualViewport?.removeEventListener('resize', updateViewport)
-  window.visualViewport?.removeEventListener('scroll', updateViewport)
 })
 </script>
 
@@ -101,8 +82,8 @@ onBeforeUnmount(() => {
 
 @media (max-width: 767px), (max-width: 1024px) and (max-height: 500px) and (pointer: coarse) {
   .layout {
-    height: var(--chat-viewport-height, 100dvh);
-    top: var(--chat-viewport-top, 0px);
+    height: var(--app-viewport-height, 100dvh);
+    top: var(--app-viewport-top, 0px);
   }
   .layout.mobile-chat-focused {
     padding-bottom: 0;
@@ -117,7 +98,8 @@ onBeforeUnmount(() => {
 .layout :deep(.header-btn) { padding-inline-start: 52px; }
 .layout :deep(.mail-chat .contact-controls .search) { margin-inline-start: 52px; width: calc(100% - 64px); }
 @media (max-width: 767px), (max-width: 1024px) and (max-height: 500px) and (pointer: coarse) {
-  .layout.mobile-chat-focused :deep(.mail-chat .thread-header), .layout.mobile-chat-focused :deep(.rooms .room-heading) { padding-inline-start: 48px; }
+  .layout.mobile-chat-focused .global-navigation-toggle { display:none; }
+  .layout.mobile-chat-focused :deep(.mail-chat .thread-header), .layout.mobile-chat-focused :deep(.rooms .room-heading) { padding-inline-start: 4px; }
 }
 </style>
 

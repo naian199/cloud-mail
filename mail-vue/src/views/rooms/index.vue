@@ -19,10 +19,11 @@
       <header class="room-heading">
         <el-button class="back" text :aria-label="t('chatBack')" @click="choose(null)"><Icon icon="cloud-mail:back" width="22" /></el-button>
         <div class="room-heading-name"><strong>{{ active.name }}</strong><small>{{ t(active.kind === 'channel' ? 'roomChannel' : 'roomGroup') }} · {{ t('roomTextOnly') }}</small></div>
-        <el-button v-if="active.status === 'joined'" text :title="t(pushSettings.muted?.[`room:${active.id}`] ? 'pushUnmute' : 'pushMute')" :aria-label="t(pushSettings.muted?.[`room:${active.id}`] ? 'pushUnmute' : 'pushMute')" @click="muteRoom"><Icon :icon="pushSettings.muted?.[`room:${active.id}`] ? 'cloud-mail:bell-off' : 'cloud-mail:bell'" width="20" /></el-button>
-        <el-popover v-model:visible="translationStatus.settingsOpen" trigger="click" :width="300"><template #reference><el-button text :aria-label="t('translateAuto')" :title="t(translationStatus.error || 'translateAuto')"><Icon icon="cloud-mail:translate" width="20" /></el-button></template><AutoTranslationSettings /></el-popover>
+        <el-button class="desktop-room-action" v-if="active.status === 'joined'" text :title="t(pushSettings.muted?.[`room:${active.id}`] ? 'pushUnmute' : 'pushMute')" :aria-label="t(pushSettings.muted?.[`room:${active.id}`] ? 'pushUnmute' : 'pushMute')" @click="muteRoom"><Icon :icon="pushSettings.muted?.[`room:${active.id}`] ? 'cloud-mail:bell-off' : 'cloud-mail:bell'" width="20" /></el-button>
+        <el-popover v-model:visible="translationStatus.settingsOpen" trigger="click" :width="300"><template #reference><el-button class="desktop-room-action" text :aria-label="t('translateAuto')" :title="t(translationStatus.error || 'translateAuto')"><Icon icon="cloud-mail:translate" width="20" /></el-button></template><AutoTranslationSettings /></el-popover>
         <el-button v-if="active.status === 'joined'" text :aria-label="t('exploreTitle')" @click="roomSearchOpen = !roomSearchOpen"><Icon icon="cloud-mail:search" width="22" /></el-button>
-        <el-button v-if="active.status === 'joined'" text :aria-label="t('roomMembers')" @click="openMembers"><Icon icon="cloud-mail:group" width="22" /></el-button>
+        <el-button class="desktop-room-action" v-if="active.status === 'joined'" text :aria-label="t('roomMembers')" @click="openMembers"><Icon icon="cloud-mail:group" width="22" /></el-button>
+        <el-dropdown class="mobile-room-more" trigger="click" @command="mobileRoomAction"><el-button text :aria-label="t('mobileChatActions')"><Icon icon="cloud-mail:more" width="22" /></el-button><template #dropdown><el-dropdown-menu><el-dropdown-item command="translate">{{ t('translateAuto') }}</el-dropdown-item><el-dropdown-item v-if="active.status === 'joined'" command="mute">{{ t(pushSettings.muted?.[`room:${active.id}`] ? 'pushUnmute' : 'pushMute') }}</el-dropdown-item><el-dropdown-item v-if="active.status === 'joined'" command="members">{{ t('roomMembers') }}</el-dropdown-item></el-dropdown-menu></template></el-dropdown>
       </header>
       <div v-if="active.status === 'invited'" class="room-invitation"><p>{{ t('roomInvited') }}</p><p>{{ t('roomOwner') }} · {{ active.ownerName || active.ownerUsername || active.ownerId }}</p><el-button type="primary" :loading="acting" @click="respond(true)">{{ t('mailChatAccept') }}</el-button><el-button :disabled="acting" @click="respond(false)">{{ t('mailChatDecline') }}</el-button></div>
       <template v-else>
@@ -47,7 +48,7 @@
         <div v-if="canPost && voiceDrafts[active.id]" class="room-voice-draft">{{ t('voiceMessage') }} · {{ voiceDrafts[active.id].filename }} <el-button text @click="delete voiceDrafts[active.id]">{{ t('cancel') }}</el-button></div>
         <form v-if="canPost" class="room-composer" @submit.prevent="send">
           <VoiceTools :context="active.id" :disabled="sending || messageLoading" @text="insertVoice" @attachment="attachVoice" />
-          <el-input v-model="drafts[active.id]" type="textarea" :autosize="{minRows:1,maxRows:4}" resize="none" maxlength="20000" :placeholder="t('mailChatCompactInput')" :aria-label="t('mailChatInput')" @keydown="composerKey" />
+          <el-input v-model="drafts[active.id]" type="textarea" :autosize="{minRows:1,maxRows:4}" resize="none" maxlength="20000" :placeholder="t('mailChatCompactInput')" :aria-label="t('mailChatInput')" :title="t(compactRoom && touchKeyboard ? 'mobileEnterHint' : 'chatEnterHint')" @keydown="composerKey" />
           <el-button type="primary" native-type="submit" :loading="sending" :disabled="(!drafts[active.id]?.trim() && !voiceDrafts[active.id]) || messageLoading" :aria-label="t('chatSend')"><Icon icon="cloud-mail:send" width="20" /></el-button>
         </form>
         <p v-else class="room-readonly">{{ t('roomChannelReadOnly') }}</p>
@@ -72,9 +73,12 @@
         <el-button v-if="active.role !== 'owner'" type="danger" :loading="acting" @click="leave">{{ t('roomLeave') }}</el-button><el-button v-else type="danger" :loading="acting" @click="remove">{{ t('delete') }}</el-button>
       </template>
     </el-dialog>
+    <el-dialog v-model="mobileTranslationOpen" :title="t('translateAuto')" width="min(360px,92vw)" append-to-body><AutoTranslationSettings /></el-dialog>
   </section>
 </template>
 <script setup>
+import { useMediaQuery, useResizeObserver } from '@vueuse/core';
+import { shouldSendOnEnter } from '@/utils/chat-keyboard.mjs';
 import LinkifiedText from '@/components/linkified-text.vue';
 import LinkPreview from '@/components/link-preview.vue';
 import { chatLinks } from '@/utils/chat-links.mjs';
@@ -200,7 +204,11 @@ async function older() {
   olderLoading.value=true;const id=activeId.value,mine=version,element=scroll.value,height=element.scrollHeight,top=element.scrollTop;
   try {const data=await roomMessages(id,{before:messages.value[0].id});if(mine!==version||stopped)return;merge(data);hasOlder.value=data.hasMore;await nextTick();element.scrollTop=top+element.scrollHeight-height;}catch{}finally{olderLoading.value=false;}
 }
-function composerKey(event){if(event.key==='Enter'&&!event.shiftKey&&!event.isComposing&&event.keyCode!==229){event.preventDefault();send();}}
+const touchKeyboard=useMediaQuery('(any-pointer: coarse)'), compactRoom=useMediaQuery('(max-width:767px), (max-width:1024px) and (max-height:500px) and (pointer:coarse)');
+useResizeObserver(scroll,()=>{if(scroll.value&&atBottom.value&&!historyTarget.value&&!messageLoading.value)scroll.value.scrollTop=scroll.value.scrollHeight;});
+const mobileTranslationOpen=ref(false);
+function mobileRoomAction(command){if(command==='translate')mobileTranslationOpen.value=true;else if(command==='mute')muteRoom();else if(command==='members')openMembers();}
+function composerKey(event){if(shouldSendOnEnter(event,compactRoom.value&&touchKeyboard.value)){event.preventDefault();send();}}
 function insertVoice(text){const id=activeId.value;if(!canPost.value||!id)return;const value=(drafts[id]||'')+text;if(value.length<=20000)drafts[id]=value;}
 async function muteRoom(){if(activeId.value)try{await mutePush(`room:${activeId.value}`,!pushSettings.value.muted?.[`room:${activeId.value}`]);}catch{ElMessage.error(t('pushError'));}}
 async function send() {
@@ -267,4 +275,20 @@ onBeforeUnmount(()=>{document.removeEventListener('keydown',roomEscape);stopped=
 .room-thread { background:var(--room-canvas); }.room-bubble { background:var(--room-incoming); border-radius:14px 14px 14px 5px; box-shadow:0 1px 2px #0001; }.mine .room-bubble { background:var(--room-outgoing); border-radius:14px 14px 5px 14px; }
 .room-heading-name small { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }.room-date { width:max-content; margin:12px auto; padding:4px 10px; border-radius:14px; font-size:11px; background:var(--el-fill-color); color:var(--el-text-color-secondary); }
 .room-controls { flex-shrink:0; padding-top:10px; }.room-controls>.el-input { margin:0 12px 10px 52px; width:calc(100% - 64px); }.room-create { padding:0 4px; height:24px; font-size:22px; }
+</style>
+
+<style scoped>
+.mobile-room-more {display:none;}
+@media(max-width:767px),(max-width:1024px) and (max-height:500px) and (pointer:coarse){
+ .desktop-room-action {display:none !important;}
+ .mobile-room-more {display:inline-flex;flex-shrink:0;}
+ .room-heading {height:56px;min-height:56px;gap:4px;padding:4px;}
+ .room-heading>.el-button,.mobile-room-more :deep(.el-button) {width:44px;min-width:44px;height:44px;padding:0;margin:0;}
+ .room-heading-name {min-width:0;flex:1;}
+ .room-heading-name strong,.room-heading-name small {overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block;}
+ .room-composer {grid-template-columns:44px minmax(0,1fr) 44px;gap:4px;}
+ .room-composer :deep(.voice-trigger),.room-composer>.el-button {width:44px;height:44px;padding:0;margin:0;}
+ .room-composer :deep(textarea) {min-height:44px;}
+ .room-messages {overscroll-behavior-y:contain;}
+}
 </style>

@@ -16,7 +16,7 @@
         <span class="form-desc" v-else>{{ $t('regTitle') }}</span>
         <div v-show="show === 'login'">
           <el-input :class="!hideLoginDomain ? 'email-input' : ''" v-model="form.email"
-                    type="text" :placeholder="$t('emailAccount')" autocomplete="off" @keyup.enter="submit">
+                    type="text" inputmode="email" autocapitalize="none" :spellcheck="false" :placeholder="$t('emailAccount')" autocomplete="username" @keyup.enter="submit">
             <template #append v-if="!hideLoginDomain">
               <div @click.stop="openSelect">
                 <el-select
@@ -40,7 +40,7 @@
               </div>
             </template>
           </el-input>
-          <el-input v-model="form.password" :placeholder="$t('password')" type="password" autocomplete="off" @keyup.enter="submit">
+          <el-input v-model="form.password" :placeholder="$t('password')" type="password" autocomplete="current-password" @keyup.enter="submit">
           </el-input>
           <el-button class="btn" type="primary" @click="submit" :loading="loginLoading"
           >{{ $t('loginBtn') }}
@@ -52,8 +52,8 @@
           </el-button>
         </div>
         <div v-show="show !== 'login'">
-          <el-input :class="!hideLoginDomain ? 'email-input' : ''" v-model="registerForm.email" type="text" :placeholder="$t('emailAccount')"
-                    autocomplete="off" @keyup.enter="submitRegister">
+          <el-input :class="!hideLoginDomain ? 'email-input' : ''" v-model="registerForm.email" type="text" inputmode="email" autocapitalize="none" :spellcheck="false" :placeholder="$t('emailAccount')"
+                    autocomplete="username" @keyup.enter="submitRegister">
             <template #append v-if="!hideLoginDomain">
               <div @click.stop="openSelect">
                 <el-select
@@ -77,9 +77,9 @@
               </div>
             </template>
           </el-input>
-          <el-input v-model="registerForm.password" :placeholder="$t('password')" type="password" autocomplete="off" @keyup.enter="submitRegister"/>
+          <el-input v-model="registerForm.password" :placeholder="$t('password')" type="password" autocomplete="new-password" @keyup.enter="submitRegister"/>
           <el-input v-model="registerForm.confirmPassword" :placeholder="$t('confirmPwd')" type="password"
-                    autocomplete="off" @keyup.enter="submitRegister"/>
+                    autocomplete="new-password" @keyup.enter="submitRegister"/>
           <el-input v-if="settingStore.settings.regKey === 0" v-model="registerForm.code" :placeholder="$t('regKey')"
                     type="text" autocomplete="off" @keyup.enter="submitRegister"/>
           <el-input v-if="settingStore.settings.regKey === 2" v-model="registerForm.code"
@@ -883,4 +883,13 @@ function submitRegister() {
   top: -90px;
 }
 
+</style>
+
+<style scoped>
+@media(max-width:767px),(max-width:1024px) and (max-height:500px) and (pointer:coarse){
+ .form-wrapper {width:100%;top:var(--app-viewport-top,0px);height:var(--app-viewport-height,100dvh);padding:max(16px,env(safe-area-inset-top)) 12px max(16px,env(safe-area-inset-bottom));overflow-y:auto;overscroll-behavior:contain;align-items:flex-start;}
+ .container {margin:auto 0;max-width:420px;width:100%;height:auto;flex-shrink:0;padding:20px 18px;}
+ .container .btn {min-height:44px;}
+ .container :deep(.el-input__wrapper) {min-height:44px;}
+}
 </style>

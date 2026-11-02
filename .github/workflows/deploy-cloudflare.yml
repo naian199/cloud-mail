@@ -71,6 +71,7 @@ jobs:
           node --test mail-worker/test/video-attachments.test.mjs
           node --test mail-worker/test/video-poster.test.mjs
           node --test mail-worker/test/link-preview.test.mjs
+          node --test mail-worker/test/chat-keyboard.test.mjs mail-worker/test/visual-viewport.test.mjs
           node --test mail-worker/test/chat-refresh.test.mjs
           node --test mail-worker/test/voice-audio.test.mjs
           node --test mail-worker/test/conversation-order.test.mjs

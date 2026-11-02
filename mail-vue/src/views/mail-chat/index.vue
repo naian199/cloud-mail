@@ -93,13 +93,17 @@
           <span v-else :title="conversationSubject(selected)">{{ conversationSubject(selected) || (connected ? t('mailChatLive') : t('chatReconnecting')) }}</span>
         </div>
         <el-popover v-model:visible="translationStatus.settingsOpen" trigger="click" :width="300" placement="bottom-end">
-          <template #reference><el-button text :aria-label="t('translateAuto')" :title="t(translationStatus.error || 'translateAuto')" :type="translationStatus.error ? 'warning' : 'default'"><Icon icon="cloud-mail:translate" width="20" /></el-button></template>
+          <template #reference><el-button class="desktop-thread-action" text :aria-label="t('translateAuto')" :title="t(translationStatus.error || 'translateAuto')" :type="translationStatus.error ? 'warning' : 'default'"><Icon icon="cloud-mail:translate" width="20" /></el-button></template>
           <AutoTranslationSettings />
         </el-popover>
         <el-button text :aria-label="t('exploreTitle')" :title="t('exploreTitle')" @click="explorer?.open()"><Icon icon="cloud-mail:search" width="22" /></el-button>
-        <el-button text :aria-label="t('mailChatPin')" @click="togglePin">{{
+        <el-button class="desktop-thread-action" text :aria-label="t('mailChatPin')" @click="togglePin">{{
           selected.pinned ? '★' : '☆'
         }}</el-button>
+        <el-dropdown class="mobile-thread-more" trigger="click" @command="mobileHeaderAction">
+          <el-button text :aria-label="t('mobileChatActions')"><Icon icon="cloud-mail:more" width="22" /></el-button>
+          <template #dropdown><el-dropdown-menu><el-dropdown-item command="profile">{{ t('profileView') }}</el-dropdown-item><el-dropdown-item command="translate">{{ t('translateAuto') }}</el-dropdown-item><el-dropdown-item command="pin">{{ t('mailChatPin') }} {{ selected.pinned ? '★' : '☆' }}</el-dropdown-item></el-dropdown-menu></template>
+        </el-dropdown>
       </header>
       <div ref="scroll" class="messages" v-loading="messageLoading" @scroll="onScroll">
         <el-button v-if="hasOlder" class="load-more" text :loading="olderLoading" @click="older">{{
@@ -297,7 +301,7 @@
           resize="none"
           maxlength="20000"
           :placeholder="t('mailChatCompactInput')"
-          :title="t('chatEnterHint')"
+          :title="t(compactChat && touchKeyboard ? 'mobileEnterHint' : 'chatEnterHint')"
           :aria-label="t('mailChatInput')"
           @keydown="keyDown"
           @focus="stickerPicker?.close()"
@@ -323,6 +327,7 @@
         <div ref="stickerDock" class="sticker-dock"></div>
       </form>
     </main>
+    <el-dialog v-model="mobileTranslationOpen" :title="t('translateAuto')" width="min(360px,92vw)" append-to-body><AutoTranslationSettings /></el-dialog>
     <ConversationExplorer v-if="selected" ref="explorer" :account-id="Number(accountId)" :conversation-key="selected.key" :peer="selected.profile?.remark || selected.profile?.displayName || selected.peers.join(', ')" :revision="explorerRevision" @jump="jumpToResult" />
     <div v-if="!active" class="empty-thread"><el-empty :description="t('mailChatChoose')" /></div>
     <el-dialog v-model="newOpen" :title="t('mailChatNew')" width="min(500px, calc(100% - 24px))">
@@ -491,9 +496,10 @@ import { isVideoFile, isStickerFile } from '@/utils/video-files.mjs';
 import LinkifiedText from '@/components/linkified-text.vue';
 import LinkPreview from '@/components/link-preview.vue';
 import { chatLinks } from '@/utils/chat-links.mjs';
+import { shouldSendOnEnter } from '@/utils/chat-keyboard.mjs';
 import { hasChatOverlay } from '@/utils/chat-escape.mjs';
 import UserAvatar from '@/components/user-avatar.vue';
-import { useMediaQuery } from '@vueuse/core';
+import { useMediaQuery, useResizeObserver } from '@vueuse/core';
 import { useUiStore } from '@/store/ui';
 import ConversationExplorer from '@/components/conversation-explorer.vue';
 import MessageTranslation from '@/components/message-translation.vue';
@@ -584,6 +590,14 @@ const conversations = ref([]),
   selected = ref(null),
   messages = ref([]),
   search = ref('');
+const touchKeyboard = useMediaQuery('(any-pointer: coarse)');
+const mobileTranslationOpen = ref(false);
+function mobileHeaderAction(command) {
+  if (!selected.value) return;
+  if (command === 'translate') mobileTranslationOpen.value = true;
+  else if (command === 'pin') togglePin();
+  else if (command === 'profile') viewProfile(selected.value.profile, selected.value.peers.join(', '));
+}
 const compactChat = useMediaQuery('(max-width: 767px), (max-width: 1024px) and (max-height: 500px) and (pointer: coarse)');
 const ui = useUiStore();
 const contactScroll = ref(null), universalActive = ref(false), universalSearch = ref(null);
@@ -914,6 +928,9 @@ watch(
 const pendingRequests = new Map();
 const readThrough = new Map();
 const { connected } = useMailSync(sync);
+useResizeObserver(scroll, () => {
+  if (scroll.value && atBottom.value && !historyAnchor.value && !messageLoading.value) scroll.value.scrollTop = scroll.value.scrollHeight;
+});
 const { live, refreshLive, liveInput, stopTyping, selectSticker } = useMailLive(accountId, selected, connected);
 const canSend = computed(() => hasPerm('email:send') || live.value.internal || selected.value?.internal || messages.value.some(message => message.internal));
 const friendsOpen = ref(false),
@@ -1474,7 +1491,7 @@ async function chooseFiles(event, current = draftKey.value) {
   }
 }
 function keyDown(e) {
-  if (e.key === 'Enter' && !e.shiftKey && !e.isComposing && e.keyCode !== 229) {
+  if (shouldSendOnEnter(e, compactChat.value && touchKeyboard.value)) {
     e.preventDefault();
     send();
   }
@@ -2367,4 +2384,30 @@ pre {
 .mail-message.message-selected { background:var(--el-color-primary-light-9); outline:1px solid var(--el-color-primary-light-5); }
 .message-selector { position:absolute; inset-inline-start:5px; top:50%; transform:translateY(-50%); width:18px; height:18px; accent-color:var(--el-color-primary); cursor:pointer; }
 @media(max-width:480px) { .selection-toolbar { padding:4px; gap:0; } .selection-toolbar :deep(.el-button) { padding-inline:7px; } }
+</style>
+
+<style scoped>
+.mobile-thread-more {display:none;}
+@media(max-width:767px),(max-width:1024px) and (max-height:500px) and (pointer:coarse){
+  .desktop-thread-action {display:none !important;}
+  .mobile-thread-more {display:inline-flex;flex-shrink:0;}
+  .thread-header {height:56px;min-height:56px;gap:4px;padding:4px;}
+  .thread-header>.el-button,.mobile-thread-more :deep(.el-button) {width:44px;min-width:44px;height:44px;padding:0;margin:0;}
+  .profile-button {flex-shrink:0;width:44px;height:44px;}
+  .thread-title {min-width:0;}
+  .thread-title strong {font-size:15px;}
+  .messages {overscroll-behavior-y:contain;scroll-padding-block:12px;}
+  .compose-input-row {grid-template-columns:44px 44px 44px minmax(0,1fr) 44px;gap:4px;}
+  .attach-label,.composer-footer :deep(.sticker-trigger),.composer-footer :deep(.voice-trigger) {height:44px;min-width:44px;}
+  .composer-footer>.el-button:not(.sticker-trigger):not(.voice-trigger) {width:44px;height:44px;}
+  .composer :deep(.el-textarea__inner) {min-height:44px;}
+  .chosen-file {max-width:100%;min-width:0;}
+  .chosen-file>span {min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+}
+@media(max-width:359px){
+  .compose-input-row {grid-template-columns:44px 44px 44px minmax(0,1fr) 44px;row-gap:2px;}
+  .compose-input-row>.el-textarea {grid-column:1 / -1;grid-row:1;}
+  .attach-label,.composer-footer :deep(.sticker-trigger),.composer-footer :deep(.voice-trigger),.composer-footer>.el-button:not(.sticker-trigger):not(.voice-trigger) {grid-row:2;}
+  .composer-footer :deep(.voice-trigger) {width:44px;}
+}
 </style>
