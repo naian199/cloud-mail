@@ -95,7 +95,8 @@ function action(id,email='') {
   else if(['mail-chat','external-mail'].includes(route.name))emit('action',{id,email});
   else router.push({path:'/mail-chat',query:id==='contacts'?{contacts:'1'}:{compose:'1',...(email?{to:email}:{})}});
 }
-defineExpose({close});
+function focus(){setActive(true);nextTick(()=>input.value?.focus());}
+defineExpose({close,focus});
 onMounted(()=>document.addEventListener('pointerdown',outside,true));
 onBeforeUnmount(()=>{disposed=true;sequence++;clearTimeout(timer);clearTimeout(indexTimer);controller?.abort();document.removeEventListener('pointerdown',outside,true);});
 </script>

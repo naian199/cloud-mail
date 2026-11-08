@@ -1,10 +1,12 @@
 <template>
-  <div class="conversation-resize" role="separator" tabindex="0" aria-orientation="vertical" :aria-label="t('conversationWidth')" :aria-valuemin="260" :aria-valuemax="420" :aria-valuenow="width" @pointerdown="start" @pointermove="move" @pointerup="stop" @pointercancel="stop" @lostpointercapture="drag = null" @keydown="key" @dblclick="ui.conversationWidth = 300"></div>
+  <div v-if="!collapsed" class="conversation-resize" role="separator" tabindex="0" aria-orientation="vertical" :aria-label="t('conversationWidth')" :aria-valuemin="260" :aria-valuemax="420" :aria-valuenow="width" @pointerdown="start" @pointermove="move" @pointerup="stop" @pointercancel="stop" @lostpointercapture="drag = null" @keydown="key" @dblclick="ui.conversationWidth = 300"></div>
 </template>
 <script setup>
+import { useConversationSidebar } from '@/composables/use-conversation-sidebar';
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useUiStore } from '@/store/ui';
+const {collapsed}=useConversationSidebar();
 const { t } = useI18n(), ui = useUiStore(), drag = ref(null);
 const clamp = value => Math.min(420, Math.max(260, Number(value) || 300));
 const width = computed(() => clamp(ui.conversationWidth));

@@ -756,5 +756,7 @@
   "mobileEnterHint": "Enter inserts a line break. Tap Send to send.",
   "registrationRetryChallenge": "Reload verification",
   "registrationChallengeCode": "Verification error: {code}",
-  "registrationChallengeDomainError": "This domain is not authorized for verification. Ask the administrator to check the Turnstile domain settings."
+  "registrationChallengeDomainError": "This domain is not authorized for verification. Ask the administrator to check the Turnstile domain settings.",
+  "conversationCollapse": "Collapse conversation list",
+  "conversationExpand": "Expand conversation list"
 }

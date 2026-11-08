@@ -5,6 +5,7 @@ export const useUiStore = defineStore('ui', {
         mobileChatFocused: false,
         asideShow: false,
         conversationWidth: 300,
+        conversationCollapsed: false,
         conversationOrders: {},
         accountShow: false,
         backgroundLoading: true,
@@ -30,6 +31,6 @@ export const useUiStore = defineStore('ui', {
         }
     },
     persist: {
-        pick: ['accountShow','dark','conversationWidth','conversationOrders'],
+        pick: ['accountShow','dark','conversationWidth','conversationCollapsed','conversationOrders'],
     },
 })

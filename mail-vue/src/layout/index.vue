@@ -1,5 +1,5 @@
 <template>
-  <el-container class="layout" :class="{ 'navigation-open': uiStore.asideShow, 'mobile-chat-focused': uiStore.mobileChatFocused }" :style="{ '--chat-viewport-height': 'var(--app-viewport-height, 100dvh)', '--chat-viewport-top': 'var(--app-viewport-top, 0px)', '--conversation-width': conversationWidth + 'px' }">
+  <el-container class="layout" :class="{ 'navigation-open': uiStore.asideShow, 'mobile-chat-focused': uiStore.mobileChatFocused, 'sidebar-collapsible': !compactSidebar && chatRoute, 'conversation-sidebar-collapsed': sidebarCollapsed && chatRoute }" :style="{ '--chat-viewport-height': 'var(--app-viewport-height, 100dvh)', '--chat-viewport-top': 'var(--app-viewport-top, 0px)', '--conversation-width': conversationWidth + 'px' }">
     <button type="button" class="global-navigation-toggle" :aria-label="$t('navigationMenu')" :title="$t('navigationMenu')" :aria-expanded="uiStore.asideShow" aria-controls="main-navigation" aria-haspopup="dialog" @click="uiStore.asideShow = !uiStore.asideShow">
       <Icon icon="cloud-mail:menu" width="20" height="20" />
     </button>
@@ -19,6 +19,7 @@
 </template>
 
 <script setup>
+import { useConversationSidebar } from '@/composables/use-conversation-sidebar';
 import Aside from '@/layout/aside/index.vue'
 import { Icon } from '@iconify/vue'
 import Header from '@/layout/header/index.vue'
@@ -34,7 +35,8 @@ useMessageAlerts();
 const uiStore = useUiStore();
 const route = useRoute();
 const chatRoute = computed(() => ['mail-chat', 'external-mail', 'rooms'].includes(route.name));
-const conversationWidth = computed(() => Math.min(420, Math.max(260, Number(uiStore.conversationWidth) || 300)));
+const {collapsed:sidebarCollapsed,compact:compactSidebar}=useConversationSidebar();
+const conversationWidth = computed(() => sidebarCollapsed.value ? 64 : Math.min(420, Math.max(260, Number(uiStore.conversationWidth) || 300)));
 uiStore.asideShow = false;
 watch(() => route.fullPath, () => { uiStore.asideShow = false; });
 const writerRef = ref({})
@@ -108,4 +110,9 @@ onMounted(() => {
 .navigation-drawer .el-drawer__footer { padding:8px 12px; border-top:1px solid var(--el-border-color); }
 .navigation-close { position:absolute; top:4px; left:4px; width:40px; height:40px; z-index:1; display:grid; place-items:center; padding:0; border:0; border-radius:6px; background:var(--el-bg-color); color:var(--el-text-color-primary); cursor:pointer; }
 .navigation-close:focus-visible { outline:2px solid var(--el-color-primary); }
+</style>
+
+<style scoped>
+.layout.sidebar-collapsible :deep(.contact-controls .search),.layout.sidebar-collapsible :deep(.room-controls .search) {width:calc(100% - 100px);margin-inline-end:48px;}
+.layout.conversation-sidebar-collapsed .global-navigation-toggle {width:32px;inset-inline-start:0;}
 </style>

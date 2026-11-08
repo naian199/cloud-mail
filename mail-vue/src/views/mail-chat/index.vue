@@ -1,9 +1,10 @@
 <template>
-  <section :data-notification-context="selected ? `mail:${accountId}:${selected.key}` : ''" class="mail-chat" :class="{ 'conversation-open': active }" @dragenter="dragEnter" @dragover="dragOver" @dragleave="dragLeave" @drop="dropFiles" @paste="pasteFiles">
-    <aside class="conversations">
+  <section :data-notification-context="selected ? `mail:${accountId}:${selected.key}` : ''" class="mail-chat" :class="{ 'conversation-open': active, 'sidebar-collapsed': collapsed }" @dragenter="dragEnter" @dragover="dragOver" @dragleave="dragLeave" @drop="dropFiles" @paste="pasteFiles">
+    <aside id="conversation-sidebar" class="conversations">
       <div ref="contactScroll" class="conversation-list" @keydown.home="restoreContactControls">
       <div class="contact-controls">
-      <UniversalSearch ref="universalSearch" :account-id="accountId" :accounts="accounts" @active="universalActive = $event" @action="searchAction" @account="switchMailbox" />
+      <ConversationSidebarTools @toggle="universalSearch?.close()" @search="universalSearch?.focus()" />
+      <UniversalSearch v-show="!collapsed" ref="universalSearch" :account-id="accountId" :accounts="accounts" @active="universalActive = $event" @action="searchAction" @account="switchMailbox" />
       <ConversationCategories v-show="!universalActive" :account-id="accountId" />
       </div>
       <div class="contact-entries" v-show="!universalActive" v-loading="listLoading">
@@ -11,6 +12,8 @@
           v-for="c in sortedConversations"
           :key="c.key"
           class="contact"
+          :title="collapsed ? contactLabel(c) : undefined"
+          :aria-label="contactLabel(c)"
           :class="{ selected: selected?.key === c.key, 'contact-dragging': draggingKey === c.key, 'contact-drop-before': dropTarget?.key === c.key && !dropTarget.after, 'contact-drop-after': dropTarget?.key === c.key && dropTarget.after }"
           draggable="true"
           aria-haspopup="menu"
@@ -29,7 +32,7 @@
           @pointercancel="cancelContactPress"
           @pointerleave="cancelContactPress"
         >
-          <UserAvatar :profile="c.profile" :email="c.peers[0]" />
+          <UserAvatar :profile="c.profile" :email="c.peers[0]" v-bind="collapsed ? { title:contactLabel(c) } : {}" />
           <span class="contact-summary"
             ><span class="peers" translate="no" :title="c.peers.join(', ')">{{
               c.profile?.remark || c.profile?.displayName || c.peers.join(', ')
@@ -42,14 +45,15 @@
             ><span v-if="c.unread" class="badge">{{ c.unread > 99 ? $n(99) + '+' : $n(c.unread) }}</span></span
           >
         </button>
-        <el-empty v-if="!listLoading && !conversations.length" :description="t('mailChatEmpty')" :image-size="70" />
+        <el-empty v-if="!collapsed && !listLoading && !conversations.length" :description="t('mailChatEmpty')" :image-size="70" />
         <el-button
           v-if="listHasMore"
           class="load-more"
           text
           :loading="listLoading"
+          :aria-label="t('mailChatMoreConversations')"
           @click="moreConversations"
-          >{{ t('mailChatMoreConversations') }}</el-button
+          ><template v-if="collapsed">⋯</template><template v-else>{{ t('mailChatMoreConversations') }}</template></el-button
         >
       </div>
       </div>
@@ -481,6 +485,8 @@
 <script setup>
 import UniversalSearch from '@/components/universal-search.vue';
 import ConversationCategories from '@/components/conversation-categories.vue';
+import { useConversationSidebar } from '@/composables/use-conversation-sidebar';
+import ConversationSidebarTools from '@/components/conversation-sidebar-tools.vue';
 import ConversationResize from '@/components/conversation-resize.vue';
 import {pushSettings,mutePush} from '@/composables/use-push-notifications';
 import {mediaCacheKey,cachedMediaBlob} from '@/utils/media-cache.mjs';
@@ -590,6 +596,8 @@ const conversations = ref([]),
   selected = ref(null),
   messages = ref([]),
   search = ref('');
+const {collapsed}=useConversationSidebar();
+function contactLabel(c){return (c.profile?.remark || c.profile?.displayName || c.peers.join(', ')) + (c.unread ? ` · ${c.unread} ${t('chatUnread')}` : '');}
 const touchKeyboard = useMediaQuery('(any-pointer: coarse)');
 const mobileTranslationOpen = ref(false);
 function mobileHeaderAction(command) {
@@ -2410,4 +2418,19 @@ pre {
   .attach-label,.composer-footer :deep(.sticker-trigger),.composer-footer :deep(.voice-trigger),.composer-footer>.el-button:not(.sticker-trigger):not(.voice-trigger) {grid-row:2;}
   .composer-footer :deep(.voice-trigger) {width:44px;}
 }
+</style>
+
+<style scoped>
+.contact-controls {position:relative;}
+.sidebar-collapsed .contact {position:relative;width:52px;min-height:54px;margin:2px 5px;padding:6px;justify-content:center;gap:0;}
+.sidebar-collapsed .contact-summary {display:none;}
+.sidebar-collapsed .contact-meta {display:contents;}
+.sidebar-collapsed .contact-meta>span:not(.badge) {display:none;}
+.sidebar-collapsed .contact .badge {position:absolute;inset-block-start:2px;inset-inline-end:0;min-width:18px;height:18px;line-height:16px;padding:0 3px;border:1px solid var(--el-bg-color);background:var(--el-color-danger);color:white;font-size:10px;}
+.sidebar-collapsed .load-more {width:44px;min-width:0;padding:4px;margin:4px auto;}
+</style>
+
+<style scoped>
+.sidebar-collapsed .contact-entries {scrollbar-width:none;overflow-x:hidden;}
+.sidebar-collapsed .contact-entries::-webkit-scrollbar {display:none;}
 </style>

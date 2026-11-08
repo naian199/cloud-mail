@@ -222,5 +222,7 @@
   "mobileEnterHint": "回车换行，点击发送按钮发送",
   "registrationRetryChallenge": "重新加载验证",
   "registrationChallengeCode": "验证错误码：{code}",
-  "registrationChallengeDomainError": "当前域名未获人机验证授权，请联系管理员检查 Turnstile 域名配置。"
+  "registrationChallengeDomainError": "当前域名未获人机验证授权，请联系管理员检查 Turnstile 域名配置。",
+  "conversationCollapse": "收起会话列表",
+  "conversationExpand": "展开会话列表"
 }

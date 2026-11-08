@@ -1,17 +1,18 @@
 <template>
-  <section :data-notification-context="activeId ? `room:${activeId}` : ''" class="rooms" :class="{ 'has-active': active }">
-    <aside class="room-list">
+  <section :data-notification-context="activeId ? `room:${activeId}` : ''" class="rooms" :class="{ 'has-active': active, 'sidebar-collapsed': collapsed }">
+    <aside id="conversation-sidebar" class="room-list">
       <div class="room-controls">
-        <UniversalSearch ref="universalSearch" @active="universalActive = $event" />
+        <ConversationSidebarTools @toggle="universalSearch?.close()" @search="universalSearch?.focus()" />
+        <UniversalSearch v-show="!collapsed" ref="universalSearch" @active="universalActive = $event" />
         <ConversationCategories v-show="!universalActive" :kind="filter" />
       </div>
       <div class="room-entries" v-show="!universalActive">
-        <button v-for="room in filtered" :key="room.id" class="room-entry" :class="{ selected: activeId === room.id }" @click="choose(room.id)">
-          <span class="room-symbol">{{ room.kind === 'channel' ? '#' : '☷' }}</span>
+        <button v-for="room in filtered" :key="room.id" class="room-entry" :title="roomLabel(room)" :aria-label="roomLabel(room)" :class="{ selected: activeId === room.id }" @click="choose(room.id)">
+          <span class="room-symbol">{{ collapsed ? (Array.from(room.name || '')[0] || '#') : room.kind === 'channel' ? '#' : '☷' }}</span>
           <span class="room-summary"><strong>{{ room.name }}</strong><small>{{ room.status === 'invited' ? t('roomInvited') : room.preview || t(room.kind === 'channel' ? 'roomChannel' : 'roomGroup') }}</small></span>
           <span v-if="room.unread" class="room-unread">{{ room.unread > 99 ? '99+' : room.unread }}</span>
         </button>
-        <el-empty v-if="!loading && !filtered.length" :description="t('roomEmpty')" :image-size="70" />
+        <el-empty v-if="!collapsed && !loading && !filtered.length" :description="t('roomEmpty')" :image-size="70" />
       </div>
       <ConversationResize />
     </aside>
@@ -85,6 +86,8 @@ import { chatLinks } from '@/utils/chat-links.mjs';
 import { hasChatOverlay } from '@/utils/chat-escape.mjs';
 import UniversalSearch from '@/components/universal-search.vue';
 import ConversationCategories from '@/components/conversation-categories.vue';
+import { useConversationSidebar } from '@/composables/use-conversation-sidebar';
+import ConversationSidebarTools from '@/components/conversation-sidebar-tools.vue';
 import ConversationResize from '@/components/conversation-resize.vue';
 import { computed, reactive, ref, watch, nextTick, onMounted, onBeforeUnmount } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
@@ -106,6 +109,8 @@ import AutoTranslationSettings from '@/components/auto-translation-settings.vue'
 import { listRooms, createRoom, renameRoom, deleteRoom, roomMembers, inviteMember, setMemberRole, removeMember, respondRoom, leaveRoom, roomMessages, sendRoomMessage, readRoom, translateRoomMessage } from '@/request/rooms';
 
 const { t, locale }=useI18n(), route=useRoute(), router=useRouter(), ui=useUiStore();
+const {collapsed}=useConversationSidebar();
+function roomLabel(room){return room.name+(room.unread?` · ${room.unread} ${t('chatUnread')}`:'');}
 const userId=useUserStore().user.userId;
 const voiceDrafts=reactive({});
 async function attachVoice(file){const id=activeId.value;if(!canPost.value)return;const content=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result.split(',')[1]);reader.onerror=reject;reader.readAsDataURL(file);});voiceDrafts[id]={filename:file.name,contentType:file.type,content};}
@@ -291,4 +296,17 @@ onBeforeUnmount(()=>{document.removeEventListener('keydown',roomEscape);stopped=
  .room-composer :deep(textarea) {min-height:44px;}
  .room-messages {overscroll-behavior-y:contain;}
 }
+</style>
+
+<style scoped>
+.room-controls {position:relative;}
+.sidebar-collapsed .room-entry {position:relative;width:52px;min-height:54px;margin:2px 5px;padding:6px;justify-content:center;gap:0;}
+.sidebar-collapsed .room-summary {display:none;}
+.sidebar-collapsed .room-symbol {font-size:18px;}
+.sidebar-collapsed .room-unread {position:absolute;inset-block-start:2px;inset-inline-end:0;min-width:18px;height:18px;line-height:16px;padding:0 3px;border:1px solid var(--el-bg-color);background:var(--el-color-danger);color:white;font-size:10px;}
+</style>
+
+<style scoped>
+.sidebar-collapsed .room-entries {scrollbar-width:none;overflow-x:hidden;}
+.sidebar-collapsed .room-entries::-webkit-scrollbar {display:none;}
 </style>
