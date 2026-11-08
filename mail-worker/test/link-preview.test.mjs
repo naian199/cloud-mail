@@ -105,3 +105,39 @@ test('broken or disallowed redirects retain their actual failure rather than a p
  const missing=await pagePreview('https://example.org/',request(null));assert.equal(missing.reason,'http');assert.equal(missing.httpStatus,302);
  const restricted=await pagePreview('https://example.org/',request('https://localhost/'));assert.equal(restricted.reason,'restricted');
 });
+
+
+test('empty DNS answers and missing domains try the independent resolver',async()=>{
+ for(const status of [0,3]){
+  let fallback=0,sites=0;
+  const result=await pagePreview('https://example.org/article',async url=>{
+   if(String(url).startsWith('https://cloudflare-dns.com/'))return Response.json({Status:status,Answer:[]});
+   if(String(url).startsWith('https://dns.google/')){fallback++;return dns(url);}
+   sites++;return new Response('<title>Recovered</title>',{headers:{'Content-Type':'text/html'}});
+  });
+  assert.equal(result.title,'Recovered');assert.equal(fallback,2);assert.equal(sites,1);
+ }
+});
+test('partial DNS failures still inspect private answers before considering fallback',async()=>{
+ for(const privateAnswer of [false,true]){
+  let fallback=0,sites=0;
+  const result=await pagePreview('https://example.org/article',async url=>{
+   if(String(url).startsWith('https://cloudflare-dns.com/')){
+    if(new URL(url).searchParams.get('type')==='AAAA')throw Error('resolver failed');
+    return Response.json({Status:0,Answer:[{type:1,data:privateAnswer?'127.0.0.1':'93.184.216.34'}]});
+   }
+   if(String(url).startsWith('https://dns.google/')){fallback++;return dns(url);}
+   sites++;return new Response('<title>Recovered</title>',{headers:{'Content-Type':'text/html'}});
+  });
+  assert.equal(result.reason,privateAnswer?'restricted':null);
+  assert.equal(fallback,privateAnswer?0:2);assert.equal(sites,privateAnswer?0:1);
+ }
+});
+test('no public answer from either resolver never fetches the website',async()=>{
+ let sites=0;
+ const result=await pagePreview('https://example.org/article',async url=>{
+  if(String(url).startsWith('https://cloudflare-dns.com/')||String(url).startsWith('https://dns.google/'))return Response.json({Status:3});
+  sites++;throw Error('must not fetch');
+ });
+ assert.equal(result.reason,'dns');assert.equal(sites,0);
+});

@@ -33,7 +33,7 @@ async function publicHost(host, request, signal, diagnostics) {
     if(signal?.aborted)controller.abort();
     const timer=setTimeout(abort,1800);
     try {
-      const answers=await Promise.all(['A','AAAA'].map(async type=>{
+      const answers=await Promise.allSettled(['A','AAAA'].map(async type=>{
         const response=await request(endpoint+'?'+new URLSearchParams({name:host,type}),{headers:{Accept:'application/dns-json'},redirect:'error',signal:controller.signal});
         if(!response.ok)throw Error('DNS unavailable');
         const result=await response.json();
@@ -41,9 +41,11 @@ async function publicHost(host, request, signal, diagnostics) {
         if(result.Status!==0)throw Error('DNS unavailable');
         return (result.Answer||[]).filter(item=>item.type===1||item.type===28).map(item=>item.data);
       }));
-      const addresses=answers.flat();
+      const addresses=answers.filter(answer=>answer.status==='fulfilled').flatMap(answer=>answer.value);
       if(addresses.some(value=>!publicAddress(value))){diagnostics.reason='restricted';return false;}
-      if(!addresses.length){diagnostics.reason='dns';return false;}
+      // Empty answers or a failed address family must try the other resolver.
+      // Inspect every received answer before fallback so private results stay blocked.
+      if(answers.some(answer=>answer.status==='rejected')||!addresses.length){diagnostics.reason='dns';continue;}
       return true;
     } catch {
       if(signal?.aborted)throw Error('Preview aborted');
