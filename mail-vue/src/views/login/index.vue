@@ -84,17 +84,9 @@
                     type="text" autocomplete="off" @keyup.enter="submitRegister"/>
           <el-input v-if="settingStore.settings.regKey === 2" v-model="registerForm.code"
                     :placeholder="$t('regKeyOptional')" type="text" autocomplete="off" @keyup.enter="submitRegister"/>
-          <div v-show="verifyShow"
-               class="register-turnstile"
-               :data-sitekey="settingStore.settings.siteKey"
-               data-callback="onTurnstileSuccess"
-               data-error-callback="onTurnstileError"
-               data-after-interactive-callback="loadAfter"
-               data-before-interactive-callback="loadBefore"
-          >
-            <span style="font-size: 12px;color: #F56C6C" v-if="botJsError">{{ $t('verifyModuleFailed') }}</span>
-          </div>
-          <el-button class="btn" style="margin: 0" type="primary" @click="submitRegister" :loading="registerLoading"
+          <div v-show="verifyShow" class="register-turnstile"></div>
+          <div v-if="verifyShow && botJsError" class="registration-verification-error" role="alert"><span>{{ $t(challengeErrorCode === '110200' ? 'registrationChallengeDomainError' : 'verifyModuleFailed') }}</span><span v-if="challengeErrorCode">{{ $t('registrationChallengeCode', { code: challengeErrorCode }) }}</span><el-button text :loading="challengeLoading" @click="renderRegisterChallenge">{{ $t('registrationRetryChallenge') }}</el-button></div>
+          <el-button class="btn" style="margin: 0" type="primary" @click="submitRegister" :loading="registerLoading || challengeLoading"
           >{{ $t('regBtn') }}
           </el-button>
           <el-button v-for="p in oauthProviders" :key="p.key" class="btn" style="margin-top: 10px" @click="oauthLogin(p.key)">
@@ -152,11 +144,12 @@
 </template>
 
 <script setup>
+import { registrationEmail, registrationPrefix, registrationNeedsChallenge } from '@/utils/registration.mjs';
 import LanguageSelect from '@/components/language-select.vue';
 import { projectInfo } from '../../../../shared/project-info.mjs';
 import router from "@/router";
 import {useRoute} from "vue-router";
-import {computed, nextTick, reactive, ref} from "vue";
+import {computed, nextTick, reactive, ref, onBeforeUnmount} from "vue";
 import {login} from "@/request/login.js";
 import {register} from "@/request/login.js";
 import {websiteConfig} from "@/request/setting.js";
@@ -227,37 +220,50 @@ suffix.value = domainList[0]
 const verifyShow = ref(false)
 let verifyToken = ''
 let turnstileId = null
-let botJsError = ref(false)
-let verifyErrorCount = 0
-
-window.onTurnstileSuccess = (token) => {
-  verifyToken = token;
-};
-
-window.onTurnstileError = (e) => {
-  if (verifyErrorCount >= 4) {
-    return
-  }
-  verifyErrorCount++
-  console.warn('人机验加载失败', e)
-  setTimeout(() => {
-    nextTick(() => {
-      if (!turnstileId) {
-        turnstileId = window.turnstile.render('.register-turnstile')
-      } else {
-        window.turnstile.reset(turnstileId);
-      }
-    })
-  }, 1500)
-};
-
-window.loadAfter = (e) => {
-  console.log('loadAfter')
+const botJsError = ref(false), challengeLoading = ref(false), challengeErrorCode = ref('');
+let registrationDisposed = false, cancelChallengeLoad;
+async function renderRegisterChallenge() {
+  if (challengeLoading.value || registrationDisposed) return;
+  verifyToken = ''; challengeErrorCode.value=''; verifyShow.value = true; challengeLoading.value = true;
+  await nextTick();
+  if (registrationDisposed) {challengeLoading.value=false;return;}
+  try {
+    if (!settingStore.settings.siteKey) throw Error('Challenge not configured');
+    if (!window.turnstile?.render) {
+      await new Promise((resolve,reject) => {
+        document.querySelectorAll('script[src^="https://challenges.cloudflare.com/turnstile/v0/api.js"]').forEach(script => script.remove());
+        const script=document.createElement('script');
+        const finish=(error)=>{clearTimeout(timer);script.onload=null;script.onerror=null;cancelChallengeLoad=null;if(error){script.remove();reject(error);}else resolve();};
+        const timer=setTimeout(()=>finish(Error('Challenge script timeout')),10000);
+        cancelChallengeLoad=()=>finish(Error('Challenge cancelled'));
+        script.src='https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';script.async=true;
+        script.onload=()=>finish();script.onerror=()=>finish(Error('Challenge script unavailable'));
+        document.head.append(script);
+      });
+    }
+    if (registrationDisposed) return;
+    botJsError.value = false;
+    if (turnstileId !== null) window.turnstile.reset(turnstileId);
+    else turnstileId=window.turnstile.render('.register-turnstile',{
+      sitekey:settingStore.settings.siteKey,
+      size:(document.querySelector('.register-turnstile')?.clientWidth||0)<300?'compact':'normal',
+      callback:token=>{if(!registrationDisposed){verifyToken=token;botJsError.value=false;challengeErrorCode.value='';}},
+      'expired-callback':()=>{verifyToken='';},
+      'error-callback':code=>{if(!registrationDisposed){verifyToken='';botJsError.value=true;challengeErrorCode.value=/^\d{3,8}$/.test(String(code))?String(code):'';}}
+    });
+  } catch {
+    try{if(turnstileId!==null)window.turnstile?.remove?.(turnstileId);}catch{}
+    turnstileId=null;
+    if (!registrationDisposed) {
+      botJsError.value=true;
+      ElMessage({message:t('verifyModuleFailed'),type:'error',plain:true,grouping:true});
+    }
+  } finally { challengeLoading.value=false; }
 }
-
-window.loadBefore = (e) => {
-  console.log('loadBefore')
-}
+onBeforeUnmount(()=>{
+  registrationDisposed=true;cancelChallengeLoad?.();
+  try{if(turnstileId!==null)window.turnstile?.remove?.(turnstileId);}catch{}
+});
 
 const loginOpacity = computed(() => {
   const opacity = settingStore.settings.loginOpacity
@@ -281,11 +287,11 @@ const openSelect = () => {
 }
 
 const getFullEmail = (email) => {
-  return hideLoginDomain.value ? email : email + suffix.value
+  return registrationEmail(email, suffix.value, hideLoginDomain.value)
 }
 
 const getEmailName = (email) => {
-  return email.split('@')[0]
+  return registrationPrefix(email)
 }
 
 function oauthLogin(provider) {
@@ -474,7 +480,7 @@ function refreshWebsiteConfig() {
 
 function submitRegister() {
 
-  if (registerLoading.value) return
+  if (registerLoading.value || challengeLoading.value) return
 
   if (!registerForm.email) {
     ElMessage({
@@ -485,7 +491,6 @@ function submitRegister() {
     return
   }
 
-  console.log(registerForm.email)
 
   if (getEmailName(registerForm.email).length < settingStore.settings.minEmailPrefix) {
     ElMessage({
@@ -550,27 +555,8 @@ function submitRegister() {
   }
 
   if (!verifyToken && (settingStore.settings.registerVerify === 0 || (settingStore.settings.registerVerify === 2 && settingStore.settings.regVerifyOpen))) {
-    if (!verifyShow.value) {
-      verifyShow.value = true
-      nextTick(() => {
-        if (!turnstileId) {
-          try {
-            turnstileId = window.turnstile.render('.register-turnstile')
-          } catch (e) {
-            botJsError.value = true
-            console.log('人机验证js加载失败')
-          }
-        } else {
-          window.turnstile.reset('.register-turnstile')
-        }
-      })
-    } else if (!botJsError.value) {
-      ElMessage({
-        message: t('botVerifyMsg'),
-        type: "error",
-        plain: true
-      })
-    }
+    if (!verifyShow.value || botJsError.value) renderRegisterChallenge();
+    else ElMessage({message:t('botVerifyMsg'),type:'error',plain:true});
     return;
   }
 
@@ -602,18 +588,14 @@ function submitRegister() {
 
     registerLoading.value = false
 
-    if (res.code === 400) {
-      verifyToken = ''
-      settingStore.settings.regVerifyOpen = true
-      if (turnstileId) {
-        window.turnstile.reset(turnstileId)
-      } else {
-        nextTick(() => {
-          turnstileId = window.turnstile.render('.register-turnstile')
-        })
-      }
-      verifyShow.value = true
-
+    if (registrationNeedsChallenge(res)) {
+      verifyToken = '';
+      settingStore.settings.regVerifyOpen = true;
+      renderRegisterChallenge();
+    } else if (form.token && verifyShow.value) {
+      // Tokens are single-use even when a later registration step fails.
+      verifyToken = '';
+      renderRegisterChallenge();
     }
   });
 }
@@ -892,4 +874,9 @@ function submitRegister() {
  .container .btn {min-height:44px;}
  .container :deep(.el-input__wrapper) {min-height:44px;}
 }
+</style>
+
+<style scoped>
+.registration-verification-error {display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:6px 0 10px;color:var(--el-color-danger);font-size:12px;line-height:1.5;}
+.registration-verification-error .el-button {margin:0;}
 </style>

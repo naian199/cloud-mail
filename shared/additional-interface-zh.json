@@ -219,5 +219,8 @@
   "linkPreviewTimedOut": "获取网页预览超时，点击重试。",
   "linkPreviewFailed": "未能获取网页预览，点击重试。",
   "mobileChatActions": "更多聊天操作",
-  "mobileEnterHint": "回车换行，点击发送按钮发送"
+  "mobileEnterHint": "回车换行，点击发送按钮发送",
+  "registrationRetryChallenge": "重新加载验证",
+  "registrationChallengeCode": "验证错误码：{code}",
+  "registrationChallengeDomainError": "当前域名未获人机验证授权，请联系管理员检查 Turnstile 域名配置。"
 }
