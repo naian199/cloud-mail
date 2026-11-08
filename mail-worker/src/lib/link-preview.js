@@ -58,7 +58,7 @@ export async function fetchPublicPreview(value, { request=fetch, signal, diagnos
     if(!(await publicHost(url.hostname,request,signal,diagnostics)))return null;
     const response=await request(url.href,{redirect:'manual',signal,headers:{'User-Agent':'Mozilla/5.0 (compatible; CloudMailPreview/1.0; +https://github.com/naian199/cloud-mail)',Accept:'text/html,application/xhtml+xml,image/webp,image/png,image/jpeg,image/gif;q=0.9', 'Accept-Language':'zh-CN,zh;q=0.9,en;q=0.8'}});
     if([301,302,303,307,308].includes(response.status)){
-      await response.body?.cancel();const location=response.headers.get('location');if(!location)return null;url=publicPreviewUrl(location,url);if(!url)return null;continue;
+      await response.body?.cancel();const location=response.headers.get('location');if(!location){diagnostics.reason='http';diagnostics.httpStatus=response.status;return null;}url=publicPreviewUrl(location,url);if(!url){diagnostics.reason='restricted';return null;}continue;
     }
     if(!response.ok){diagnostics.httpStatus=response.status;diagnostics.reason=[401,403,429,451].includes(response.status)?'blocked':'http';await response.body?.cancel();return null;}
     return {response,url};

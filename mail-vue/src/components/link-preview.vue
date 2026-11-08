@@ -19,7 +19,7 @@ const props=defineProps({url:{type:String,required:true},source:{type:Object,req
 const { t } = useI18n();
 const host=ref(null),data=ref({}),image=ref(''),pending=ref(true);
 const available=computed(()=>!!(data.value.previewAvailable||data.value.description||image.value||(data.value.title&&data.value.title!==hostname.value)));
-const failureText=computed(()=>{const status=Number(data.value.httpStatus);return t(previewFailureKey(data.value.reason))+(status>=400&&status<=599?` (HTTP ${status})`:'');});
+const failureText=computed(()=>{const status=Number(data.value.httpStatus);return t(previewFailureKey(data.value.reason))+(status>=300&&status<=599?` (HTTP ${status})`:'');});
 const parsed=computed(()=>new URL(props.url)),hostname=computed(()=>parsed.value.hostname),path=computed(()=>parsed.value.pathname+parsed.value.search);
 let observer,controller,attempted=false,visible=false,disposed=false,generation=0;
 function clearImage(){if(image.value)URL.revokeObjectURL(image.value);image.value='';}

@@ -95,3 +95,13 @@ test('website refusal exposes only its HTTP status, and normal multi-step redire
  const looping=await pagePreview('https://example.org/loop',async url=>{if(String(url).includes('/dns-query?'))return dns(url);loops++;return new Response(null,{status:302,headers:{Location:'/loop'}});});
  assert.equal(loops,6);assert.equal(looping.reason,'redirect');assert.equal(looping.previewAvailable,false);
 });
+
+test('broken or disallowed redirects retain their actual failure rather than a previous DNS fallback',async()=>{
+ const request=location=>async url=>{
+  if(String(url).startsWith('https://cloudflare-dns.com'))return new Response('',{status:503});
+  if(String(url).startsWith('https://dns.google'))return dns(url);
+  return new Response(null,{status:302,headers:location?{Location:location}:{}});
+ };
+ const missing=await pagePreview('https://example.org/',request(null));assert.equal(missing.reason,'http');assert.equal(missing.httpStatus,302);
+ const restricted=await pagePreview('https://example.org/',request('https://localhost/'));assert.equal(restricted.reason,'restricted');
+});
