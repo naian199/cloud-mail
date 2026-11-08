@@ -224,23 +224,36 @@ const botJsError = ref(false), challengeLoading = ref(false), challengeErrorCode
 let registrationDisposed = false, cancelChallengeLoad;
 async function renderRegisterChallenge() {
   if (challengeLoading.value || registrationDisposed) return;
-  verifyToken = ''; challengeErrorCode.value=''; verifyShow.value = true; challengeLoading.value = true;
+  verifyToken = ''; challengeErrorCode.value=''; botJsError.value=false; verifyShow.value = true; challengeLoading.value = true;
   await nextTick();
   if (registrationDisposed) {challengeLoading.value=false;return;}
   try {
     if (!settingStore.settings.siteKey) throw Error('Challenge not configured');
-    if (!window.turnstile?.render) {
-      await new Promise((resolve,reject) => {
-        document.querySelectorAll('script[src^="https://challenges.cloudflare.com/turnstile/v0/api.js"]').forEach(script => script.remove());
-        const script=document.createElement('script');
-        const finish=(error)=>{clearTimeout(timer);script.onload=null;script.onerror=null;cancelChallengeLoad=null;if(error){script.remove();reject(error);}else resolve();};
-        const timer=setTimeout(()=>finish(Error('Challenge script timeout')),10000);
-        cancelChallengeLoad=()=>finish(Error('Challenge cancelled'));
-        script.src='https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';script.async=true;
-        script.onload=()=>finish();script.onerror=()=>finish(Error('Challenge script unavailable'));
-        document.head.append(script);
-      });
-    }
+    await new Promise((resolve,reject) => {
+      let script, settled=false;
+      const finish=(error)=>{
+        if(settled)return;
+        settled=true;clearTimeout(timer);
+        if(script){script.onload=null;script.onerror=null;if(error)script.remove();}
+        cancelChallengeLoad=null;
+        if(error)reject(error);else resolve();
+      };
+      const ready=()=>{
+        if(!window.turnstile?.render){finish(Error('Challenge SDK unavailable'));return;}
+        try {
+          if(window.turnstile.ready)window.turnstile.ready(()=>finish());
+          else finish();
+        } catch(error){finish(error);}
+      };
+      // Mobile connections may take longer; do not remove an SDK still loading.
+      const timer=setTimeout(()=>finish(Error('Challenge script timeout')),30000);
+      cancelChallengeLoad=()=>finish(Error('Challenge cancelled'));
+      if(window.turnstile?.render){ready();return;}
+      script=document.createElement('script');
+      script.src='https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';script.async=true;
+      script.onload=ready;script.onerror=()=>finish(Error('Challenge script unavailable'));
+      document.head.append(script);
+    });
     if (registrationDisposed) return;
     botJsError.value = false;
     if (turnstileId !== null) window.turnstile.reset(turnstileId);
@@ -256,7 +269,6 @@ async function renderRegisterChallenge() {
     turnstileId=null;
     if (!registrationDisposed) {
       botJsError.value=true;
-      ElMessage({message:t('verifyModuleFailed'),type:'error',plain:true,grouping:true});
     }
   } finally { challengeLoading.value=false; }
 }
