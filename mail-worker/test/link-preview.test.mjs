@@ -80,5 +80,18 @@ test('previews read metadata after large inline scripts and decode declared non-
 });
 test('challenge screens are not presented as successful article previews',async()=>{
  const result=await pagePreview('https://example.org/article',async url=>String(url).includes('/dns-query?')?dns(url):new Response('<title>Just a moment...</title><script src="/cdn-cgi/challenge-platform/cf-chl.js"></script>',{headers:{'Content-Type':'text/html'}}));
- assert.equal(result.previewAvailable,false);assert.equal(result.reason,'blocked');assert.equal(result.imageSource,null);
+ assert.equal(result.previewAvailable,false);assert.equal(result.reason,'challenge');assert.equal(result.imageSource,null);
+});
+
+test('website refusal exposes only its HTTP status, and normal multi-step redirects can finish',async()=>{
+ const blocked=await pagePreview('https://example.org/',async url=>String(url).includes('/dns-query?')?dns(url):new Response('private response body',{status:403}));
+ assert.equal(blocked.reason,'blocked');assert.equal(blocked.httpStatus,403);assert(!JSON.stringify(blocked).includes('private response body'));
+ let steps=0;
+ const data=await pagePreview('https://example.org/short',async url=>{
+  if(String(url).includes('/dns-query?'))return dns(url);
+  steps++;return steps<=4?new Response(null,{status:302,headers:{Location:'/redirect-'+steps}}):new Response('<title>Final article</title>',{headers:{'Content-Type':'text/html'}});
+ });assert.equal(data.title,'Final article');assert.equal(steps,5);
+ let loops=0;
+ const looping=await pagePreview('https://example.org/loop',async url=>{if(String(url).includes('/dns-query?'))return dns(url);loops++;return new Response(null,{status:302,headers:{Location:'/loop'}});});
+ assert.equal(loops,6);assert.equal(looping.reason,'redirect');assert.equal(looping.previewAvailable,false);
 });

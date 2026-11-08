@@ -224,5 +224,17 @@
   "registrationChallengeCode": "验证错误码：{code}",
   "registrationChallengeDomainError": "当前域名未获人机验证授权，请联系管理员检查 Turnstile 域名配置。",
   "conversationCollapse": "收起会话列表",
-  "conversationExpand": "展开会话列表"
+  "conversationExpand": "展开会话列表",
+  "previewReasonBlocked": "网站拒绝提供预览",
+  "previewReasonChallenge": "网站要求人机验证，无法自动预览",
+  "previewReasonDns": "网页域名解析失败",
+  "previewReasonTimeout": "获取网页预览超时",
+  "previewReasonNetwork": "抓取网页时网络连接失败",
+  "previewReasonHttp": "网站返回了错误响应",
+  "previewReasonNoMetadata": "网页未提供可用的预览信息",
+  "previewReasonContent": "该链接不是可预览的网页",
+  "previewReasonRestricted": "此链接无法生成公开网页预览",
+  "previewReasonRedirect": "网页跳转次数过多",
+  "previewReasonPermission": "无法读取这条消息的预览",
+  "previewReasonApi": "预览服务请求失败"
 }

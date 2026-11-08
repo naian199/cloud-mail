@@ -5,10 +5,11 @@
       <div v-if="image || (pending && data.hasImage)" class="link-cover"><img v-if="image" :src="image" alt="" @error="clearImage" @load="$emit('resize')" /><BrandLoading v-else :size="32" /></div>
     </a>
     <span v-else-if="pending" class="link-preview-pending" role="status"><BrandLoading :size="18" /><span>{{ t('browserPreviewLoading') }}</span></span>
-    <button v-else class="link-preview-retry" type="button" :title="failureText" :aria-label="failureText" @click="retry">↻ <span>{{ t('browserRetryPreview') }}</span></button>
+    <div v-else class="link-preview-failure"><span role="status">{{ failureText }}</span><button class="link-preview-retry" type="button" :title="failureText" :aria-label="failureText" @click="retry">↻ <span>{{ t('browserRetryPreview') }}</span></button></div>
   </div>
 </template>
 <script setup>
+import { previewRequestFailure, previewFailureKey } from '@/utils/link-preview.mjs';
 import { useI18n } from 'vue-i18n';
 import { openLinkBrowser } from '@/composables/use-link-browser';
 import { computed, ref, nextTick, watch, onMounted, onBeforeUnmount } from 'vue';
@@ -18,17 +19,17 @@ const props=defineProps({url:{type:String,required:true},source:{type:Object,req
 const { t } = useI18n();
 const host=ref(null),data=ref({}),image=ref(''),pending=ref(true);
 const available=computed(()=>!!(data.value.previewAvailable||data.value.description||image.value||(data.value.title&&data.value.title!==hostname.value)));
-const failureText=computed(()=>t(data.value.reason==='blocked'?'linkPreviewBlocked':data.value.reason==='timeout'?'linkPreviewTimedOut':'linkPreviewFailed'));
+const failureText=computed(()=>{const status=Number(data.value.httpStatus);return t(previewFailureKey(data.value.reason))+(status>=400&&status<=599?` (HTTP ${status})`:'');});
 const parsed=computed(()=>new URL(props.url)),hostname=computed(()=>parsed.value.hostname),path=computed(()=>parsed.value.pathname+parsed.value.search);
 let observer,controller,attempted=false,visible=false,disposed=false,generation=0;
 function clearImage(){if(image.value)URL.revokeObjectURL(image.value);image.value='';}
 async function load(){
   if(attempted||disposed)return;attempted=true;pending.value=true;controller=new AbortController();const signal=controller.signal,mine=generation,params={...props.source,url:props.url};
   try{
-    const result=await fetchLinkPreview(params,signal);if(disposed||signal.aborted||mine!==generation)return;data.value=result;await nextTick();emit('resize');
+    const result=await fetchLinkPreview(params,signal);if(disposed||signal.aborted||mine!==generation)return;if(!result||typeof result.title!=='string')throw Error('Invalid preview response');data.value=result;await nextTick();emit('resize');
     if(result.hasImage){const blob=await fetchLinkPreviewImage(params,signal);if(!disposed&&!signal.aborted&&mine===generation){image.value=URL.createObjectURL(blob);await nextTick();emit('resize');}}
-  }catch(reason){if(signal.aborted&&mine===generation){attempted=false;if(visible&&!disposed)queueMicrotask(load);}/* Keep a usable domain card when a site disallows previews. */}
-  finally{if(!disposed&&mine===generation){pending.value=false;await nextTick();emit('resize');}}
+  }catch(reason){if(signal.aborted&&mine===generation){attempted=false;if(visible&&!disposed)queueMicrotask(load);}else if(!disposed&&mine===generation&&controller?.signal===signal&&!data.value.previewAvailable){data.value={reason:previewRequestFailure(reason)};}}
+  finally{if(!disposed&&mine===generation&&controller?.signal===signal){pending.value=false;await nextTick();emit('resize');}}
 }
 function retry(){attempted=false;load();}
 watch([()=>props.url,()=>props.source.emailId,()=>props.source.roomId,()=>props.source.messageId],()=>{generation++;controller?.abort();clearImage();data.value={};pending.value=true;attempted=false;if(visible)load();});
@@ -50,6 +51,8 @@ onBeforeUnmount(()=>{disposed=true;generation++;observer?.disconnect();controlle
 .link-cover {display:grid;place-items:center;min-height:110px;background:#0001;}
 .link-cover img {display:block;width:100%;max-height:220px;object-fit:cover;}
 .link-preview-pending {display:inline-flex;align-items:center;gap:6px;margin-top:5px;font-size:11px;opacity:.7;}
+.link-preview-failure {display:flex;align-items:baseline;flex-wrap:wrap;gap:3px 8px;margin-top:4px;font-size:11px;line-height:1.5;color:var(--el-text-color-secondary);}
+.link-preview-failure>span {max-width:100%;overflow-wrap:anywhere;}
 .link-preview-retry {display:inline-flex;gap:4px;align-items:center;border:0;background:none;color:inherit;opacity:.55;font:inherit;font-size:11px;padding:4px 0 0;cursor:pointer;}
 .link-preview-retry:hover,.link-preview-retry:focus-visible {opacity:1;color:var(--chat-accent,var(--el-color-primary));}
 .chat-link-preview:focus-visible,.link-preview-retry:focus-visible {outline:2px solid var(--el-color-primary);outline-offset:2px;}

@@ -1,4 +1,5 @@
 import http from '@/axios';
+import { isLinkPreviewImageType } from '@/utils/link-preview.mjs';
 import {afterUnreadChange} from '@/utils/unread-changes.mjs';
 export const mailConversations = (params) => http.get('/mail-chat/conversations', { params });
 export const mailMessages = (params) => http.get('/mail-chat/messages', { params });
@@ -36,6 +37,6 @@ export const universalSearch = (params, signal) => http.get('/mail-chat/search',
 export const fetchLinkPreview = (data, signal) => http.post('/mail-chat/link-preview',data,{signal,noMsg:true});
 export async function fetchLinkPreviewImage(data,signal) {
   const response=await fetch(new URL(`${import.meta.env.VITE_BASE_URL}/mail-chat/link-preview-image`,location.origin),{method:'POST',signal,headers:{Authorization:localStorage.getItem('token')||'','Content-Type':'application/json'},body:JSON.stringify(data)});
-  if(!response.ok||!/^image\/(png|jpeg|gif|webp)(?:;|$)/i.test(response.headers.get('content-type')||''))throw Error('Preview unavailable');
+  if(!response.ok||!isLinkPreviewImageType(response.headers.get('content-type')))throw Error('Preview unavailable');
   return response.blob();
 }

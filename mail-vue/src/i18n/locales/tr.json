@@ -758,5 +758,17 @@
   "registrationChallengeCode": "Verification error: {code}",
   "registrationChallengeDomainError": "This domain is not authorized for verification. Ask the administrator to check the Turnstile domain settings.",
   "conversationCollapse": "Collapse conversation list",
-  "conversationExpand": "Expand conversation list"
+  "conversationExpand": "Expand conversation list",
+  "previewReasonBlocked": "The website refused preview access",
+  "previewReasonChallenge": "The website requires a bot challenge",
+  "previewReasonDns": "Website DNS lookup failed",
+  "previewReasonTimeout": "Link preview timed out",
+  "previewReasonNetwork": "Could not connect to the website",
+  "previewReasonHttp": "The website returned an error",
+  "previewReasonNoMetadata": "The page has no usable preview metadata",
+  "previewReasonContent": "This link is not a previewable web page",
+  "previewReasonRestricted": "This link cannot generate a public preview",
+  "previewReasonRedirect": "The website redirected too many times",
+  "previewReasonPermission": "Cannot read this message preview",
+  "previewReasonApi": "The preview service request failed"
 }

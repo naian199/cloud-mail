@@ -54,16 +54,16 @@ async function publicHost(host, request, signal, diagnostics) {
 }
 export async function fetchPublicPreview(value, { request=fetch, signal, diagnostics={} }={}) {
   let url=publicPreviewUrl(value);if(!url){diagnostics.reason='restricted';return null;}
-  for(let redirects=0;redirects<3;redirects++){
+  for(let redirects=0;redirects<=5;redirects++){
     if(!(await publicHost(url.hostname,request,signal,diagnostics)))return null;
     const response=await request(url.href,{redirect:'manual',signal,headers:{'User-Agent':'Mozilla/5.0 (compatible; CloudMailPreview/1.0; +https://github.com/naian199/cloud-mail)',Accept:'text/html,application/xhtml+xml,image/webp,image/png,image/jpeg,image/gif;q=0.9', 'Accept-Language':'zh-CN,zh;q=0.9,en;q=0.8'}});
     if([301,302,303,307,308].includes(response.status)){
       await response.body?.cancel();const location=response.headers.get('location');if(!location)return null;url=publicPreviewUrl(location,url);if(!url)return null;continue;
     }
-    if(!response.ok){diagnostics.reason=[401,403,429,451].includes(response.status)?'blocked':'http';await response.body?.cancel();return null;}
+    if(!response.ok){diagnostics.httpStatus=response.status;diagnostics.reason=[401,403,429,451].includes(response.status)?'blocked':'http';await response.body?.cancel();return null;}
     return {response,url};
   }
-  return null;
+  diagnostics.reason='redirect';return null;
 }
 async function bytes(response,limit,truncate=false) {
   if(!response.body)return new Uint8Array();
@@ -102,14 +102,14 @@ export async function pagePreview(value,request=fetch) {
   const target=new URL(original);if(target.protocol==='http:'){target.protocol='https:';if(target.port==='80')target.port='';}
   const diagnostics={},controller=new AbortController(),timer=setTimeout(()=>controller.abort(),10000);
   try{
-    const found=await fetchPublicPreview(target.href,{request,signal:controller.signal,diagnostics});if(!found)return {...fallback,reason:diagnostics.reason||'unavailable'};
+    const found=await fetchPublicPreview(target.href,{request,signal:controller.signal,diagnostics});if(!found)return {...fallback,reason:diagnostics.reason||'unavailable',...(diagnostics.httpStatus?{httpStatus:diagnostics.httpStatus}:{})};
     if(!/^(text\/html|application\/xhtml\+xml)(?:;|$)/i.test(found.response.headers.get('content-type')||'')){await found.response.body?.cancel();return {...fallback,reason:'not-html'};}
     const body=await bytes(found.response,524288,true);
     const prefix=new TextDecoder().decode(body.slice(0,2048));
     const encoding=found.response.headers.get('content-type')?.match(/charset=["']?([\w-]+)/i)?.[1]||prefix.match(/<meta[^>]+charset=["']?([\w-]+)/i)?.[1]||'utf-8';
     let html;try{html=new TextDecoder(encoding).decode(body);}catch{html=new TextDecoder().decode(body);}
     const parsed=parsePreview(html,found.url.href);
-    if(/(?:just a moment|checking your browser|attention required|access denied)/i.test(parsed.title)&&/(?:cf-chl|challenge-platform|captcha)/i.test(html))return {...fallback,reason:'blocked'};
+    if(/(?:just a moment|checking your browser|attention required|access denied)/i.test(parsed.title)&&/(?:cf-chl|challenge-platform|captcha)/i.test(html))return {...fallback,reason:'challenge'};
     return {...fallback,...parsed,reason:parsed.title||parsed.description||parsed.imageSource?null:'no-metadata',previewAvailable:!!(parsed.title||parsed.description||parsed.imageSource),title:parsed.title||fallback.title,siteName:parsed.siteName||found.url.hostname};
   }catch{return {...fallback,reason:controller.signal.aborted?'timeout':'network'};}finally{clearTimeout(timer);}
 }
