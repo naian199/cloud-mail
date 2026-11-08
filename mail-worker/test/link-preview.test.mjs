@@ -141,3 +141,18 @@ test('no public answer from either resolver never fetches the website',async()=>
  });
  assert.equal(result.reason,'dns');assert.equal(sites,0);
 });
+
+
+test('DNS requests use the Workers-supported manual redirect mode and never follow resolver redirects',async()=>{
+ for(const redirected of [false,true]){
+  let sites=0;
+  const result=await pagePreview('https://example.org/article',async(url,options)=>{
+   if(String(url).startsWith('https://cloudflare-dns.com/')||String(url).startsWith('https://dns.google/')){
+    assert.equal(options.redirect,'manual','Workers rejects redirect:error before making a request');
+    return redirected?new Response(null,{status:302,headers:{Location:'https://localhost/private'}}):dns(url);
+   }
+   sites++;return new Response('<title>Worker-compatible preview</title>',{headers:{'Content-Type':'text/html'}});
+  });
+  assert.equal(sites,redirected?0:1);assert.equal(result.previewAvailable,!redirected);
+ }
+});

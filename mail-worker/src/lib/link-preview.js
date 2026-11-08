@@ -34,7 +34,8 @@ async function publicHost(host, request, signal, diagnostics) {
     const timer=setTimeout(abort,1800);
     try {
       const answers=await Promise.allSettled(['A','AAAA'].map(async type=>{
-        const response=await request(endpoint+'?'+new URLSearchParams({name:host,type}),{headers:{Accept:'application/dns-json'},redirect:'error',signal:controller.signal});
+        // Workers rejects redirect:error before sending any network request.
+        const response=await request(endpoint+'?'+new URLSearchParams({name:host,type}),{headers:{Accept:'application/dns-json'},redirect:'manual',signal:controller.signal});
         if(!response.ok)throw Error('DNS unavailable');
         const result=await response.json();
         if(result.Status===3)return [];
