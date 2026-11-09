@@ -346,3 +346,8 @@ html {
     --cm-on-accent: #0d1b2a;
     --cm-outgoing: #1f3550;
 }
+
+/* The navigation drawer shares the v2 paper ground. */
+.navigation-drawer.el-drawer {
+    --el-drawer-bg-color: var(--cm-paper);
+}
