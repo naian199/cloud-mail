@@ -5,7 +5,7 @@
         <Icon icon="cloud-mail:external-mail" width="24" height="24" />
         <div>{{settingStore.settings.title}}</div>
       </div>
-      <el-menu class="primary-menu" @select="ui.asideShow = false" :collapse="false" :default-active="route.meta.name" :default-openeds="isManagementPage ? ['management'] : []" text-color="#fff" active-text-color="#fff" style="margin-top: 10px">
+      <el-menu class="primary-menu" @select="ui.asideShow = false" :collapse="false" :default-active="route.meta.name" :default-openeds="isManagementPage ? ['management'] : []" style="margin-top: 10px">
         <el-menu-item @click="router.push({name: 'mail-chat'})" index="mail-chat"
                       :class="route.meta.name === 'mail-chat' ? 'choose-item' : ''">
           <Icon icon="cloud-mail:chat" width="20" height="20" />
@@ -40,7 +40,7 @@
         </el-menu-item>
         </el-menu-item-group>
       </el-menu>
-      <el-menu ref="menu" class="footer-menu" @select="ui.asideShow = false" :default-active="route.meta.name" :default-openeds="isManagementPage ? ['management'] : []" text-color="#fff" active-text-color="#fff">
+      <el-menu ref="menu" class="footer-menu" @select="ui.asideShow = false" :default-active="route.meta.name" :default-openeds="isManagementPage ? ['management'] : []">
         <el-menu-item @click="router.push({name: 'setting'})" index="setting"
                       :class="route.meta.name === 'setting' ? 'choose-item' : ''">
           <Icon icon="cloud-mail:settings" width="20" height="20" />
@@ -221,4 +221,42 @@ watch(() => route.meta.name, () => {
 .scroll { height:100%; }:deep(.el-scrollbar__view) { display:flex; flex-direction:column; min-height:100%; }.el-menu { width:100%; }
 :deep(.el-menu-item-group__title) { color:var(--el-text-color-secondary); padding:12px 20px 3px; font-size:11px; }
 
+</style>
+
+<style lang="scss" scoped>
+/* Navigation skin v2: light warm drawer that matches the conversation pages (tokens in style.css). */
+.scroll {
+  --aside-backgound: var(--cm-paper);
+  --aside-menu-active-background: var(--cm-outgoing);
+  background: var(--cm-paper);
+  color: var(--cm-ink);
+}
+.scroll :deep(.el-menu) {
+  --el-menu-text-color: var(--cm-ink);
+  --el-menu-hover-text-color: var(--cm-ink);
+  --el-menu-active-color: var(--cm-accent-ink);
+  --el-menu-hover-bg-color: var(--cm-hover);
+}
+.title {
+  background: var(--cm-surface);
+  color: var(--cm-ink);
+  border: 1px solid var(--cm-line);
+  border-radius: 12px;
+  :deep(svg) { color: var(--cm-accent); }
+  .user-right-icon { color: var(--cm-muted); }
+}
+.el-menu-item { border-radius: 10px; color: var(--cm-ink); }
+.scroll .choose-item { color: var(--cm-accent-ink); font-weight: 600; backdrop-filter: none; }
+@media (hover: hover) {
+  .scroll .el-menu-item:hover { background: var(--cm-hover) !important; }
+  .scroll .choose-item:hover { background: var(--cm-outgoing) !important; }
+}
+.management-menu :deep(.el-sub-menu__title) {
+  color: var(--cm-ink);
+  border-radius: 10px;
+  &:hover { background: var(--cm-hover); }
+}
+.management-menu :deep(.el-menu) { border-inline-start-color: var(--cm-line); }
+.scroll :deep(.el-menu-item-group__title) { color: var(--cm-muted); }
+.scroll :deep(.el-divider__text) { color: var(--cm-muted); }
 </style>

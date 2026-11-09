@@ -315,3 +315,39 @@ html {
  .el-drawer__close-btn {min-width:44px;min-height:44px;}
  .navigation-drawer .navigation-close {top:calc(env(safe-area-inset-top) + 4px);width:44px;height:44px;}
 }
+
+/* Conversation skin v2: warm paper ground, flat incoming messages, tinted outgoing messages. */
+:root {
+    --cm-paper: #f6f5f2;
+    --cm-surface: #ffffff;
+    --cm-ink: #1f2329;
+    --cm-muted: #5f6368;
+    --cm-line: #e6e3dd;
+    --cm-hover: #f4f2ee;
+    --cm-selected: #ece9e2;
+    --cm-quote: #efece6;
+    --cm-accent: #1064c0;
+    --cm-accent-ink: #0b4c94;
+    --cm-on-accent: #ffffff;
+    --cm-outgoing: #e8f1fc;
+}
+
+.dark {
+    --cm-paper: #17181b;
+    --cm-surface: #1f2024;
+    --cm-ink: #e8e6e3;
+    --cm-muted: #a3a6ad;
+    --cm-line: #2e3035;
+    --cm-hover: #24262b;
+    --cm-selected: #2b2e34;
+    --cm-quote: #2a2c31;
+    --cm-accent: #5aa2ef;
+    --cm-accent-ink: #8cc0f5;
+    --cm-on-accent: #0d1b2a;
+    --cm-outgoing: #1f3550;
+}
+
+/* The navigation drawer shares the v2 paper ground. */
+.navigation-drawer.el-drawer {
+    --el-drawer-bg-color: var(--cm-paper);
+}

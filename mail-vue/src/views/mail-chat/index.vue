@@ -2434,3 +2434,37 @@ pre {
 .sidebar-collapsed .contact-entries {scrollbar-width:none;overflow-x:hidden;}
 .sidebar-collapsed .contact-entries::-webkit-scrollbar {display:none;}
 </style>
+
+<style scoped>
+/* Conversation skin v2 (tokens in style.css). Incoming chat messages sit flat on the page;
+   only my own messages get a tinted block. Avatars are rounded squares. */
+.mail-chat,
+:global(html.dark .mail-chat) {
+  --chat-canvas: var(--cm-paper);
+  --chat-accent: var(--cm-accent);
+  --chat-outgoing: var(--cm-outgoing);
+  --chat-incoming: transparent;
+  --chat-shadow: none;
+}
+.conversations { background: var(--cm-surface); }
+.contact { border-radius: 14px; }
+.contact:hover { background: var(--cm-hover); }
+.contact.selected { background: var(--cm-selected); color: var(--cm-ink); }
+.contact.selected .preview, .contact.selected .contact-meta { color: var(--cm-muted); }
+.contact .badge, .contact.selected .badge { border-radius: 6px; background: var(--cm-accent); color: var(--cm-on-accent); }
+.mail-chat :deep(.user-avatar) { border-radius: 30%; }
+.thread-header { background: var(--cm-paper); border-bottom: 1px solid var(--cm-line); box-shadow: none; }
+.date-divider { display: flex; align-items: center; gap: 12px; width: 100%; max-width: 100%; margin: 18px auto 10px; padding: 0; border-radius: 0; background: transparent; box-shadow: none; color: var(--cm-muted); font-size: 12px; }
+.date-divider::before, .date-divider::after { content: ''; flex: 1; height: 1px; background: var(--cm-line); }
+.mail-message:not(.mine) .internal-bubble:not(.media-only-bubble) { background: transparent; box-shadow: none; border-radius: 0; padding: 2px 0; }
+.mail-message.mine .internal-bubble:not(.media-only-bubble) { background: var(--cm-outgoing); color: var(--cm-ink); border-radius: 14px; box-shadow: none; }
+.external .bubble { background: var(--cm-surface); border: 1px solid var(--cm-line); border-radius: 16px; box-shadow: none; }
+.mail-message.mine.external .bubble { background: var(--cm-surface); }
+.quote-card, .compose-quote { border-inline-start: 0; background: var(--cm-quote); border-radius: 8px; }
+.quote-card strong, .compose-quote strong { color: var(--cm-accent-ink); }
+.mail-message.mine .quote-card { background: color-mix(in srgb, var(--cm-outgoing) 70%, var(--cm-accent) 12%); }
+.read-receipt { color: var(--cm-muted); }
+.composer { background: var(--cm-paper); border-top: 1px solid var(--cm-line); }
+.composer :deep(.el-textarea__inner) { background: var(--cm-surface); border-radius: 16px; box-shadow: 0 0 0 1px var(--cm-line) inset; }
+.attachment .el-button { background: var(--cm-surface); border: 1px solid var(--cm-line); border-radius: 14px; }
+</style>
