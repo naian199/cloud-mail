@@ -310,3 +310,27 @@ onBeforeUnmount(()=>{document.removeEventListener('keydown',roomEscape);stopped=
 .sidebar-collapsed .room-entries {scrollbar-width:none;overflow-x:hidden;}
 .sidebar-collapsed .room-entries::-webkit-scrollbar {display:none;}
 </style>
+
+<style scoped>
+/* Conversation skin v2 for groups and channels (tokens in style.css). */
+.rooms,
+:global(html.dark .rooms) { --room-canvas: var(--cm-paper); --room-incoming: transparent; --room-outgoing: var(--cm-outgoing); }
+.room-list { background: var(--cm-surface); }
+.room-entry { border-radius: 14px; }
+.room-entry:hover { background: var(--cm-hover); }
+.room-entry.selected { background: var(--cm-selected); color: var(--cm-ink); }
+.room-entry.selected small { color: var(--cm-muted); opacity: 1; }
+.room-symbol { border-radius: 30%; }
+.room-unread { border-radius: 6px; background: var(--cm-accent); color: var(--cm-on-accent); }
+.room-heading { background: var(--cm-paper); border-bottom-color: var(--cm-line); }
+.room-date { display: flex; align-items: center; gap: 12px; width: 100%; margin: 18px 0 10px; padding: 0; border-radius: 0; background: transparent; color: var(--cm-muted); font-size: 12px; }
+.room-date::before, .room-date::after { content: ''; flex: 1; height: 1px; background: var(--cm-line); }
+.room-message { align-items: flex-start; }
+.room-bubble { background: transparent; box-shadow: none; border-radius: 0; padding: 0 2px; }
+.room-bubble > small { display: block; font-size: 13px; font-weight: 600; color: var(--cm-ink); }
+.mine .room-bubble { background: var(--room-outgoing); border-radius: 14px; padding: 8px 12px; }
+.mine .room-bubble > small { display: none; }
+.room-composer { background: var(--cm-paper); border-top-color: var(--cm-line); }
+.room-composer :deep(textarea) { background: var(--cm-surface); }
+.room-readonly { background: var(--cm-paper); color: var(--cm-muted); }
+</style>
