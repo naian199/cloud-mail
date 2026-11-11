@@ -770,5 +770,6 @@
   "previewReasonRestricted": "This link cannot generate a public preview",
   "previewReasonRedirect": "The website redirected too many times",
   "previewReasonPermission": "Cannot read this message preview",
-  "previewReasonApi": "The preview service request failed"
+  "previewReasonApi": "The preview service request failed",
+  "authConnectionTagline": "نقرّب المسافات ونوصل الرسائل."
 }

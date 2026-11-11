@@ -1,5 +1,6 @@
 <template>
-  <aside v-if="showCard" class="app-install-card" :aria-label="t('appInstallTitle')">
+  <button v-if="isLogin && !installed && !keyboard && !guide" class="auth-install-link" type="button" :disabled="busy" @click="install"><Icon icon="cloud-mail:install" width="16" />{{ t('appInstallTitle') }}</button>
+  <aside v-else-if="showCard" class="app-install-card" :aria-label="t('appInstallTitle')">
     <button class="install-dismiss" type="button" :aria-label="t('appInstallLater')" @click="dismiss">×</button>
     <span class="install-mark" aria-hidden="true"><Icon icon="cloud-mail:install" width="21" /></span>
     <strong>{{ t(platform === 'ios' || platform === 'android' ? 'appInstallMobileTitle' : 'appInstallTitle') }}</strong>
@@ -19,13 +20,19 @@
   </el-dialog>
 </template>
 <script setup>
+import {computed} from 'vue';
+import {useRoute} from 'vue-router';
 import {useI18n} from 'vue-i18n';
 import {Icon} from '@iconify/vue';
 import {useAppInstall} from '@/composables/use-app-install';
 const {t}=useI18n();
-const {platform,guide,busy,install,dismiss,canPrompt,showCard}=useAppInstall();
+const route=useRoute();
+const isLogin=computed(()=>route.path==='/login');
+const {keyboard,installed,platform,guide,busy,install,dismiss,canPrompt,showCard}=useAppInstall();
 </script>
 <style scoped>
+.auth-install-link{position:fixed;inset-inline-start:24px;bottom:max(20px,env(safe-area-inset-bottom));display:flex;align-items:center;gap:8px;z-index:20;background:var(--el-bg-color);color:var(--el-text-color-secondary);border:1px solid var(--el-border-color-light);border-radius:24px;padding:10px 16px;min-height:40px;font:inherit;font-size:12px;cursor:pointer;box-shadow:0 2px 12px #00000005;}.auth-install-link:hover{color:var(--el-color-primary);}.auth-install-link:focus-visible{outline:2px solid var(--el-color-primary);outline-offset:3px;}
+
 .app-install-card{position:fixed;inset-inline-start:16px;bottom:max(16px,env(safe-area-inset-bottom));z-index:1800;width:216px;max-width:calc(100vw - 24px);box-sizing:border-box;padding:14px;border:1px solid var(--el-border-color-light);border-radius:12px;background:var(--el-bg-color-overlay);color:var(--el-text-color-primary);box-shadow:0 6px 24px #0002;text-align:start;}
 .install-dismiss{position:absolute;inset-inline-end:6px;top:4px;border:0;background:none;color:var(--el-text-color-secondary);font-size:19px;cursor:pointer;width:28px;height:28px;}
 .install-mark{display:grid;place-items:center;width:30px;height:30px;background:#10834e;color:white;border-radius:9px;margin-bottom:8px;}

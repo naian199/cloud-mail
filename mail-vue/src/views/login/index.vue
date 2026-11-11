@@ -1,16 +1,15 @@
 <template>
-  <div id="login-box" :style=" background ? 'background: var(--el-bg-color)' : ''" v-loading="oauthLoading" :element-loading-text="$t('loginBtn')">
-    <div id="background-wrap" v-if="!settingStore.settings.background">
-      <div class="x1 cloud"></div>
-      <div class="x2 cloud"></div>
-      <div class="x3 cloud"></div>
-      <div class="x4 cloud"></div>
-      <div class="x5 cloud"></div>
-    </div>
-    <div v-else :style="background"></div>
-    <div class="form-wrapper">
+  <div id="login-box" :class="{'auth-dark':uiStore.dark}"  v-loading="oauthLoading" :element-loading-text="$t('loginBtn')">
+    <div class="auth-background" v-if="background" :style="background" aria-hidden="true"></div>
+    <header class="auth-header"><a class="auth-wordmark" href="/login"><img src="/mail-brand.svg" alt="" width="30" height="30"><span>{{ settingStore.settings.title }}</span></a><LanguageSelect class="login-language" /></header>
+    <main class="form-wrapper">
+      <section class="auth-brand" :aria-label="settingStore.settings.title">
+        <img class="auth-brand-symbol" src="/mail-auth-connect.svg" alt="" width="160" height="160">
+        <h1>{{ $t('authConnectionTagline') }}</h1>
+        <p>{{ settingStore.settings.title }}</p>
+      </section>
       <div class="container">
-        <LanguageSelect class="login-language" />
+        <img class="auth-mobile-symbol" src="/mail-auth-connect.svg" alt="" width="56" height="56">
         <span class="form-title">{{ settingStore.settings.title }}</span>
         <span class="form-desc" v-if="show === 'login'">{{ $t('loginTitle') }}</span>
         <span class="form-desc" v-else>{{ $t('regTitle') }}</span>
@@ -40,11 +39,12 @@
               </div>
             </template>
           </el-input>
-          <el-input v-model="form.password" :placeholder="$t('password')" type="password" autocomplete="current-password" @keyup.enter="submit">
+          <el-input v-model="form.password" :placeholder="$t('password')" type="password" show-password autocomplete="current-password" @keyup.enter="submit">
           </el-input>
           <el-button class="btn" type="primary" @click="submit" :loading="loginLoading"
           >{{ $t('loginBtn') }}
           </el-button>
+          <div v-if="oauthProviders.length" class="auth-divider" aria-hidden="true"></div>
           <el-button v-for="p in oauthProviders" :key="p.key" class="btn" style="margin-top: 10px" @click="oauthLogin(p.key)">
             <el-avatar v-if="p.iconType === 'image'" :src="p.icon" :size="18" style="margin-right: 10px" />
             <Icon v-else :icon="p.icon" width="18" height="18" style="margin-right: 10px" />
@@ -77,8 +77,8 @@
               </div>
             </template>
           </el-input>
-          <el-input v-model="registerForm.password" :placeholder="$t('password')" type="password" autocomplete="new-password" @keyup.enter="submitRegister"/>
-          <el-input v-model="registerForm.confirmPassword" :placeholder="$t('confirmPwd')" type="password"
+          <el-input v-model="registerForm.password" :placeholder="$t('password')" type="password" show-password autocomplete="new-password" @keyup.enter="submitRegister"/>
+          <el-input v-model="registerForm.confirmPassword" :placeholder="$t('confirmPwd')" type="password" show-password
                     autocomplete="new-password" @keyup.enter="submitRegister"/>
           <el-input v-if="settingStore.settings.regKey === 0" v-model="registerForm.code" :placeholder="$t('regKey')"
                     type="text" autocomplete="off" @keyup.enter="submitRegister"/>
@@ -89,6 +89,7 @@
           <el-button class="btn" style="margin: 0" type="primary" @click="submitRegister" :loading="registerLoading || challengeLoading"
           >{{ $t('regBtn') }}
           </el-button>
+          <div v-if="oauthProviders.length" class="auth-divider" aria-hidden="true"></div>
           <el-button v-for="p in oauthProviders" :key="p.key" class="btn" style="margin-top: 10px" @click="oauthLogin(p.key)">
             <el-avatar v-if="p.iconType === 'image'" :src="p.icon" :size="18" style="margin-right: 10px" />
             <Icon v-else :icon="p.icon" width="18" height="18" style="margin-right: 10px" />
@@ -96,13 +97,13 @@
           </el-button>
         </div>
         <template v-if="settingStore.settings.register === 0">
-          <div class="switch" @click="show = 'register'" v-if="show === 'login'">{{ $t('noAccount') }}
-            <span>{{ $t('regSwitch') }}</span></div>
-          <div class="switch" @click="show = 'login'" v-else>{{ $t('hasAccount') }} <span>{{ $t('loginSwitch') }}</span>
-          </div>
+          <button type="button" class="switch" @click="show = 'register'" v-if="show === 'login'">{{ $t('noAccount') }}
+            <span>{{ $t('regSwitch') }}</span></button>
+          <button type="button" class="switch" @click="show = 'login'" v-else>{{ $t('hasAccount') }} <span>{{ $t('loginSwitch') }}</span>
+          </button>
         </template>
       </div>
-    </div>
+    </main>
     <el-dialog class="bind-dialog" v-model="showBindForm"  :title="$t('regBtn')" >
       <div class="bind-container">
         <el-input :class="!hideLoginDomain ? 'email-input' : ''" v-model="bindForm.email" type="text" :placeholder="$t('emailAccount')" autocomplete="off" @keyup.enter="bind">
@@ -276,11 +277,6 @@ onBeforeUnmount(()=>{
   registrationDisposed=true;cancelChallengeLoad?.();
   try{if(turnstileId!==null)window.turnstile?.remove?.(turnstileId);}catch{}
 });
-
-const loginOpacity = computed(() => {
-  const opacity = settingStore.settings.loginOpacity
-  return uiStore.dark ? `rgba(0, 0, 0, ${opacity})` : `rgba(255, 255, 255, ${opacity})`
-})
 
 const hideLoginDomain = computed(() => settingStore.settings.loginDomain === 1)
 
@@ -627,268 +623,31 @@ function submitRegister() {
 }
 </style>
 
-<style lang="scss" scoped>
-
-.form-wrapper {
-  position: fixed;
-  right: 0;
-  height: 100%;
-  z-index: 10;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  @media (max-width: 767px) {
-    width: 100%;
-  }
-}
-
-.container {
-  background: v-bind(loginOpacity);
-  padding-left: 40px;
-  padding-right: 40px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  width: 450px;
-  height: 100%;
-  border-left: 1px solid var(--login-border);
-  box-shadow: var(--el-box-shadow-light);
-  @media (max-width: 1024px) {
-    padding: 20px 18px;
-    width: 384px;
-    margin-left: 18px;
-  }
-  @media (max-width: 767px) {
-    border: 1px solid var(--login-border);
-    padding: 20px 18px;
-    border-radius: 6px;
-    height: fit-content;
-    width: 100%;
-    margin-right: 18px;
-    margin-left: 18px;
-  }
-
-  .btn {
-    height: 36px;
-    width: 100%;
-    border-radius: 6px;
-  }
-
-  .form-desc {
-    margin-top: 5px;
-    margin-bottom: 18px;
-    color: var(--form-desc-color);
-  }
-
-  .form-title {
-    font-weight: bold;
-    font-size: 22px !important;
-  }
-
-  .switch {
-    margin-top: 20px;
-    text-align: center;
-
-    span {
-      color: var(--login-switch-color);
-      cursor: pointer;
-    }
-  }
-
-  :deep(.el-input__wrapper) {
-    border-radius: 6px;
-    background: var(--el-bg-color);
-  }
-
-  .email-input :deep(.el-input__wrapper) {
-    border-radius: 6px 0 0 6px;
-    background: var(--el-bg-color);
-  }
-
-  .el-input {
-    height: 38px;
-    width: 100%;
-    margin-bottom: 18px;
-
-    :deep(.el-input__inner) {
-      height: 36px;
-    }
-  }
-}
-
-:deep(.el-select-dropdown__item) {
-  padding: 0 10px;
-}
-
-:deep(.bind-dialog) {
-  width: 400px !important;
-  @media (max-width: 440px) {
-    width: calc(100% - 40px) !important;
-    margin-right: 20px !important;
-    margin-left: 20px !important;
-  }
-}
-
-.bind-container {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 15px;
-}
-
-.setting-icon {
-  position: relative;
-  top: 6px;
-}
-
-.github {
-  position: fixed;
-  width: 35px;
-  height: 35px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  border-radius: 50%;
-  background: var(--el-bg-color);
-  bottom: 10px;
-  right: 10px;
-  z-index: 1000;
-  border: 1px solid var(--el-border-color-light);
-  box-shadow: var(--el-box-shadow-light);
-  cursor: pointer;
-}
-
-:deep(.el-input-group__append) {
-  padding: 0 !important;
-  padding-left: 8px !important;
-  padding-right: 4px !important;
-  background: var(--el-bg-color);
-  border-radius: 0 8px 8px 0;
-}
-
-:deep(.el-button+.el-button) {
-  margin: 0;
-}
-
-.register-turnstile {
-  margin-bottom: 18px;
-}
-
-.select {
-  position: absolute;
-  right: 30px;
-  width: 100px;
-  opacity: 0;
-  pointer-events: none;
-  visibility: hidden;
-}
-
-.custom-style {
-  margin-bottom: 10px;
-}
-
-.custom-style .el-segmented {
-  --el-border-radius-base: 6px;
-  width: 180px;
-}
-
-
-#login-box {
-  background: linear-gradient(to bottom, #2980b9, #6dd5fa, #fff);
-  font: 100% Arial, sans-serif;
-  height: 100%;
-  margin: 0;
-  padding: 0;
-  overflow-x: hidden;
-  display: grid;
-  grid-template-columns: 1fr;
-}
-
-
-#background-wrap {
-  height: 100%;
-  z-index: 0;
-}
-
-@keyframes animateCloud {
-  0% {
-    margin-left: -500px;
-  }
-
-  100% {
-    margin-left: 100%;
-  }
-}
-
-.x1 {
-  animation: animateCloud 30s linear infinite;
-  transform: scale(0.65);
-}
-
-.x2 {
-  animation: animateCloud 15s linear infinite;
-  transform: scale(0.3);
-}
-
-.x3 {
-  animation: animateCloud 25s linear infinite;
-  transform: scale(0.5);
-}
-
-.x4 {
-  animation: animateCloud 13s linear infinite;
-  transform: scale(0.4);
-}
-
-.x5 {
-  animation: animateCloud 20s linear infinite;
-  transform: scale(0.55);
-}
-
-.cloud {
-  background: linear-gradient(to bottom, #fff 5%, #f1f1f1 100%);
-  border-radius: 100px;
-  box-shadow: 0 8px 5px rgba(0, 0, 0, 0.1);
-  height: 120px;
-  width: 350px;
-  position: relative;
-}
-
-.cloud:after,
-.cloud:before {
-  content: "";
-  position: absolute;
-  background: #fff;
-  z-index: -1;
-}
-
-.cloud:after {
-  border-radius: 100px;
-  height: 100px;
-  left: 50px;
-  top: -50px;
-  width: 100px;
-}
-
-.cloud:before {
-  border-radius: 200px;
-  height: 180px;
-  width: 180px;
-  right: 50px;
-  top: -90px;
-}
-
-</style>
-
 <style scoped>
+#login-box{--auth-bg:#f5f8fd;--auth-card:#fff;--auth-ink:#172b46;--auth-muted:#6b7b90;--auth-line:#e2e9f3;position:relative;isolation:isolate;min-height:var(--app-viewport-height,100dvh);background:radial-gradient(ellipse at 12% 20%,#dcecff 0,transparent 52%),radial-gradient(ellipse at 85% 85%,#fff0e9 0,transparent 42%),var(--auth-bg);color:var(--auth-ink);overflow-x:clip;}
+#login-box.auth-dark{--auth-bg:#0d1724;--auth-card:#152234;--auth-ink:#edf4ff;--auth-muted:#a7b5c8;--auth-line:#2a3b51;background:radial-gradient(ellipse at 12% 20%,#142e4a 0,transparent 55%),var(--auth-bg);}
+.auth-background{position:absolute;inset:0;z-index:-2;opacity:.13;pointer-events:none;}
+.auth-header{position:relative;display:flex;align-items:center;justify-content:space-between;gap:16px;max-width:1240px;margin:auto;padding:28px 48px;}
+.auth-wordmark{display:flex;align-items:center;gap:10px;font-size:17px;font-weight:650;letter-spacing:-.3px;text-decoration:none;color:inherit;}
+.login-language{width:156px;flex-shrink:0;}.login-language :deep(.el-select__wrapper){background:transparent;box-shadow:none;}
+.form-wrapper{position:relative;display:grid;grid-template-columns:minmax(0,1fr) minmax(340px,420px);align-items:center;gap:clamp(40px,8vw,120px);width:100%;max-width:1136px;margin:0 auto;padding:52px 48px 100px;min-height:calc(var(--app-viewport-height,100dvh) - 100px);box-sizing:border-box;}
+.auth-brand{padding-bottom:36px;}.auth-brand-symbol{display:block;width:144px;height:144px;border-radius:32px;box-shadow:0 22px 56px #2389f524;margin-bottom:34px;}
+.auth-brand h1{font-size:clamp(32px,4.3vw,56px);line-height:1.25;letter-spacing:-1.8px;max-width:560px;margin:0 0 22px;font-weight:700;text-wrap:balance;}
+.auth-brand p{font-size:18px;line-height:1.6;color:var(--auth-muted);margin:0;letter-spacing:.5px;}
+.container{width:100%;box-sizing:border-box;padding:36px;border:1px solid var(--auth-line);border-radius:24px;background:var(--auth-card);box-shadow:0 20px 70px #172b460a;display:flex;flex-direction:column;min-width:0;}
+.auth-mobile-symbol{display:none;}.form-title{font-size:25px;font-weight:700;line-height:1.35;letter-spacing:-.6px;overflow-wrap:anywhere;}.form-desc{font-size:13px;line-height:1.65;color:var(--auth-muted);margin:8px 0 28px;}
+.container .el-input{width:100%;height:48px;margin-bottom:16px;}.container :deep(.el-input__wrapper){border-radius:10px;background:var(--auth-card);box-shadow:0 0 0 1px var(--auth-line) inset;padding:1px 14px;}.container :deep(.el-input__wrapper.is-focus){box-shadow:0 0 0 2px var(--el-color-primary) inset;}.container :deep(.el-input__inner){height:46px;font-size:14px;}
+.container .email-input :deep(.el-input__wrapper){border-radius:10px 0 0 10px;min-width:0;padding-inline:12px;}.container :deep(.el-input-group__append){background:var(--auth-card);color:var(--auth-ink);padding:0 8px;border-radius:0 10px 10px 0;box-shadow:0 0 0 1px var(--auth-line) inset;font-size:12px;max-width:52%;}.container :deep(.el-input-group__append>div){display:flex;align-items:center;min-width:0;cursor:pointer;}.container :deep(.el-input-group__append>div>div){white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis;}
+.setting-icon{vertical-align:middle;}.select{position:absolute;right:20px;width:100px;opacity:0;pointer-events:none;visibility:hidden;}
+.container .btn{width:100%;min-height:46px;border-radius:10px;font-weight:600;font-size:14px;}.container .btn:not(.el-button--primary){background:var(--auth-card);border-color:var(--auth-line);}.container .el-button--primary{background:#2389f5;border-color:#2389f5;box-shadow:0 5px 14px #2389f51c;}.container .el-button--primary:hover{background:#1478e4;}.container :deep(.el-button+.el-button){margin-left:0;}
+.auth-divider{height:1px;background:var(--auth-line);margin:24px 0 14px;}.switch{border:0;background:none;padding:0;margin-top:26px;text-align:center;font:inherit;font-size:13px;line-height:1.7;color:var(--auth-muted);cursor:pointer;}.switch span{color:var(--el-color-primary);font-weight:600;margin-inline-start:4px;}.switch:focus-visible{outline:2px solid var(--el-color-primary);outline-offset:5px;}
+.register-turnstile{margin:0 0 16px;}.registration-verification-error{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:6px 0 14px;color:var(--el-color-danger);font-size:12px;line-height:1.5;}.registration-verification-error .el-button{margin:0;}
+:deep(.bind-dialog){width:min(400px,calc(100% - 32px))!important;border-radius:18px;}.bind-container{display:grid;gap:15px;}
+.github{position:fixed;bottom:max(18px,env(safe-area-inset-bottom));right:20px;display:grid;place-items:center;width:32px;height:32px;opacity:.65;z-index:10;}.github:hover{opacity:1;}
+@media(min-width:768px) and (max-height:700px){.form-wrapper{padding-top:16px;padding-bottom:76px;align-items:start;}.container{padding:28px;}.auth-brand{padding-top:30px;}.auth-brand-symbol{width:104px;height:104px;margin-bottom:24px;}.auth-brand h1{font-size:36px;}}
 @media(max-width:767px),(max-width:1024px) and (max-height:500px) and (pointer:coarse){
- .form-wrapper {width:100%;top:var(--app-viewport-top,0px);height:var(--app-viewport-height,100dvh);padding:max(16px,env(safe-area-inset-top)) 12px max(16px,env(safe-area-inset-bottom));overflow-y:auto;overscroll-behavior:contain;align-items:flex-start;}
- .container {margin:auto 0;max-width:420px;width:100%;height:auto;flex-shrink:0;padding:20px 18px;}
- .container .btn {min-height:44px;}
- .container :deep(.el-input__wrapper) {min-height:44px;}
+.auth-header{padding:max(18px,env(safe-area-inset-top)) 20px 12px;}.auth-wordmark{font-size:14px;gap:8px;}.auth-wordmark img{width:26px;height:26px;}.login-language{width:126px;}
+.form-wrapper{grid-template-columns:minmax(0,420px);justify-content:center;align-content:start;gap:0;min-height:0;padding:26px 20px calc(86px + env(safe-area-inset-bottom));}.auth-brand{display:none;}.container{padding:28px 24px;border-radius:20px;}.auth-mobile-symbol{display:block;margin-bottom:22px;}.form-title{font-size:24px;}.form-desc{margin-bottom:24px;}.github{position:absolute;bottom:20px;}
 }
-</style>
-
-<style scoped>
-.registration-verification-error {display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:6px 0 10px;color:var(--el-color-danger);font-size:12px;line-height:1.5;}
-.registration-verification-error .el-button {margin:0;}
+@media(max-width:360px){.auth-header{padding-inline:14px;}.auth-wordmark span{max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}.form-wrapper{padding-inline:12px;}.container{padding:24px 18px;}.container :deep(.el-input-group__append){padding:0 5px;font-size:11px;}}
 </style>

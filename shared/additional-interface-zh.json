@@ -236,5 +236,6 @@
   "previewReasonRestricted": "此链接无法生成公开网页预览",
   "previewReasonRedirect": "网页跳转次数过多",
   "previewReasonPermission": "无法读取这条消息的预览",
-  "previewReasonApi": "预览服务请求失败"
+  "previewReasonApi": "预览服务请求失败",
+  "authConnectionTagline": "连接彼此，消息即达。"
 }

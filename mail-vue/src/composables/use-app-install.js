@@ -25,4 +25,4 @@ async function install(){
   catch{guide.value=true;}
   finally{busy.value=false;}
 }
-export function useAppInstall(){return {platform,installed,guide,busy,install,dismiss:()=>postpone(),canPrompt:computed(()=>!!deferred.value),showCard:computed(()=>ready.value&&!installed.value&&!keyboard.value&&!guide.value&&Date.now()>dismissed.value&&(!!deferred.value||platform.value==='ios'))};}
+export function useAppInstall(){return {platform,installed,keyboard,guide,busy,install,dismiss:()=>postpone(),canPrompt:computed(()=>!!deferred.value),showCard:computed(()=>ready.value&&!installed.value&&!keyboard.value&&!guide.value&&Date.now()>dismissed.value&&(!!deferred.value||platform.value==='ios'))};}
