@@ -81,11 +81,6 @@ http.interceptors.response.use((res) => {
     },
     (error) => {
 
-        if (error.status === 403) {
-            location.reload();
-            return;
-        }
-
         const noMsg = error.config.noMsg;
 
         if (noMsg) {
@@ -106,6 +101,8 @@ http.interceptors.response.use((res) => {
                 grouping: true
             })
             ElMessage.error('')
+        } else if (error.response?.status===403) {
+            ElMessage({message:i18n.global.t('unauthorized'),type:'warning',plain:true,grouping:true});
         } else if (error.response) {
             ElMessage({
                 message: i18n.global.t('serverBusyErrorMsg'),

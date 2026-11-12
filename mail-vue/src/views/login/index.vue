@@ -145,7 +145,7 @@ import {useUiStore} from "@/store/ui.js";
 import {Icon} from "@iconify/vue";
 import {cvtR2Url} from "@/utils/convert.js";
 import {loginUserInfo} from "@/request/my.js";
-import {permsToRouter} from "@/perm/perm.js";
+import {syncPermissionRoutes} from "@/perm/perm.js";
 import {useI18n} from "vue-i18n";
 import {oauthBindUser, oauthLinuxDoLogin, oauthGithubLogin, oauthGoogleLogin} from "@/request/ouath.js";
 
@@ -453,10 +453,7 @@ async function saveToken(token) {
   accountStore.currentAccountId = user.account.accountId;
   accountStore.currentAccount = user.account;
   userStore.user = user;
-  const routers = permsToRouter(user.permKeys);
-  routers.forEach(routerData => {
-    router.addRoute('layout', routerData);
-  });
+  syncPermissionRoutes(router,user.permKeys);
   await router.replace({name: 'layout'})
   uiStore.showNotice()
   oauthLoading.value = false;

@@ -1,3 +1,5 @@
+import {recoverNavigation,clearNavigationRecovery} from '@/utils/navigation-recovery.mjs';
+import i18n from '@/i18n';
 import {finishStartupLoader} from '@/utils/startup-loader.mjs';
 import {createRouter, createWebHistory} from 'vue-router'
 import NProgress from 'nprogress';
@@ -173,10 +175,17 @@ function loadBackground(next) {
 
 }
 
+router.onError((error,to)=>{
+ clearTimeout(timer);NProgress.done();
+ if(recoverNavigation(error,to?.fullPath,{location:window.location,storage:window.sessionStorage,online:navigator.onLine}))return;
+ ElMessage.error(i18n.global.t('navigationLoadFailed'));
+});
+
 router.afterEach((to, from, failure) => {
 
     clearTimeout(timer)
     if (failure) { NProgress.done(); return; }
+    clearNavigationRecovery(to.fullPath,window.sessionStorage);
     if (first) {
         removeLoading()
     } else {

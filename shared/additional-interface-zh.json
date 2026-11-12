@@ -259,5 +259,8 @@
   "officialDescription": "公开的认证说明",
   "officialRequired": "请填写认证主体和认证说明。",
   "officialHistory": "认证操作记录",
-  "identityNamePolicy": "该用户名不符合网站当前的注册规则。"
+  "identityNamePolicy": "该用户名不符合网站当前的注册规则。",
+  "navigationOpening": "正在打开页面…",
+  "navigationUnavailable": "页面不可用或没有访问权限，请刷新后重试。",
+  "navigationLoadFailed": "页面加载失败，请检查网络后重试或刷新页面。"
 }

@@ -2,7 +2,7 @@ import {useUserStore} from "@/store/user.js";
 import {useSettingStore} from "@/store/setting.js";
 import {useAccountStore} from "@/store/account.js";
 import {loginUserInfo} from "@/request/my.js";
-import {permsToRouter} from "@/perm/perm.js";
+import {syncPermissionRoutes} from "@/perm/perm.js";
 import router from "@/router";
 import {websiteConfig} from "@/request/setting.js";
 import i18n, { activateLanguage, chooseLanguage } from "@/i18n/index.js";
@@ -45,10 +45,7 @@ export async function init() {
                 try { await activateLanguage(user.locale); settingStore.lang = user.locale; settingStore.languageManual = true; } catch {}
             }
 
-            const routers = permsToRouter(user.permKeys);
-            routers.forEach(routerData => {
-                router.addRoute('layout', routerData);
-            });
+            syncPermissionRoutes(router,user.permKeys);
         }
 
     } else {

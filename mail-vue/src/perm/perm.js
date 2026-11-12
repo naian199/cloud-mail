@@ -3,7 +3,7 @@ import {useUserStore} from "@/store/user.js";
 export default {
     mounted(el, binding) {
         const userStore = useUserStore();
-        const permKeys = userStore.user.permKeys;
+        const permKeys = userStore.user.permKeys || [];
         const value = binding.value;
 
         if (permKeys.includes('*')) {
@@ -21,7 +21,7 @@ export default {
 }
 
 export function hasPerm(permKey) {
-    const {permKeys} = useUserStore().user;
+    const {permKeys=[]} = useUserStore().user;
     return permKeys.includes('*') || permKeys.includes(permKey);
 }
 
@@ -34,6 +34,16 @@ export function permsToRouter(permKeys) {
         }
     })
     return routerList;
+}
+
+// Match the registered routes to the same permissions used to render navigation.
+export function syncPermissionRoutes(router,permKeys=[]) {
+ const allowed=permsToRouter(permKeys),names=new Set(allowed.map(route=>route.name)),removed=[];
+ for(const route of Object.values(routers).flat()){
+  if(!names.has(route.name)&&router.hasRoute(route.name)){router.removeRoute(route.name);removed.push(route.name);}
+ }
+ for(const route of allowed)if(!router.hasRoute(route.name))router.addRoute('layout',route);
+ return removed;
 }
 
 const routers = {

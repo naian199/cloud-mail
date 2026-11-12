@@ -259,5 +259,8 @@
   "officialDescription": "Public verification description",
   "officialRequired": "Enter the verification subject and description.",
   "officialHistory": "Verification history",
-  "identityNamePolicy": "This username does not meet the website's current registration rules."
+  "identityNamePolicy": "This username does not meet the website's current registration rules.",
+  "navigationOpening": "Opening page…",
+  "navigationUnavailable": "Page unavailable or access denied. Refresh and try again.",
+  "navigationLoadFailed": "Could not load this page. Check your connection and retry or refresh."
 }
