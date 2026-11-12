@@ -1,3 +1,4 @@
+import {officialFields} from './official-service';
 import BizError from '../error/biz-error';
 import userContext from '../security/user-context';
 import { notifyMail } from '../chat/mail-notify';
@@ -9,7 +10,7 @@ export async function profilesFor(c, emails) {
 	const { results } = await c.env.db
 		.prepare(
 			`SELECT a.email, p.display_name AS displayName, h.username,
-    p.bio, p.avatar FROM account a JOIN user u ON u.user_id=a.user_id
+    p.bio, p.avatar, ${officialFields('u')} FROM account a JOIN user u ON u.user_id=a.user_id
     LEFT JOIN mail_user_profile p ON p.user_id=a.user_id
     LEFT JOIN mail_user_handle h ON h.user_id=a.user_id
     WHERE lower(a.email) IN (SELECT value FROM json_each(?))
@@ -35,7 +36,7 @@ export default {
 			(await c.env.db
 				.prepare(
 					`SELECT coalesce(p.display_name,'') AS displayName, coalesce(p.bio,'') AS bio, coalesce(p.avatar,'') AS avatar,
-            coalesce(h.username,'') AS username FROM user u LEFT JOIN mail_user_profile p ON p.user_id=u.user_id
+            coalesce(h.username,'') AS username, ${officialFields('u')} FROM user u LEFT JOIN mail_user_profile p ON p.user_id=u.user_id
             LEFT JOIN mail_user_handle h ON h.user_id=u.user_id WHERE u.user_id=?`
 				)
 				.bind(userContext.getUserId(c))

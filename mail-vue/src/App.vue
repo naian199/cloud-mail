@@ -1,7 +1,8 @@
 <template>
-  <el-config-provider :locale="elementLocale"><router-view /><AppInstall /><LinkBrowser /></el-config-provider>
+  <el-config-provider :locale="elementLocale"><router-view /><AppInstall /><IdentityClaim /><LinkBrowser /></el-config-provider>
 </template>
 <script setup>
+import IdentityClaim from '@/components/identity-claim.vue';
 import { useUserPresence } from '@/composables/use-user-presence';
 import {tabUnread,useTabBadge} from '@/composables/use-tab-badge';
 import {useFerdiumBadge} from '@/composables/use-ferdium-badge';

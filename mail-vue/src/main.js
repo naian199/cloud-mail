@@ -1,3 +1,4 @@
+import OfficialBadge from '@/components/official-badge.vue';
 import {createApp} from 'vue';
 import App from './App.vue';
 import BrandLoading from '@/components/loading/index.vue';
@@ -21,6 +22,7 @@ const pinia = createPinia().use(piniaPersistedState)
 import i18n from "@/i18n/index.js";
 const app = createApp(App).use(pinia)
 app.component('BrandLoading', BrandLoading)
+app.component('OfficialBadge',OfficialBadge)
 await init()
 app.use(router).use(i18n).directive('perm',perm)
 app.config.devtools = true;

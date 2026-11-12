@@ -1,3 +1,4 @@
+import official from '../service/official-service';
 import app from '../hono/hono';
 import userService from '../service/user-service';
 import result from '../model/result';
@@ -55,3 +56,6 @@ app.delete('/user/deleteAccount', async (c) => {
 });
 
 
+
+app.put('/user/official',async c=>c.json(result.ok(await official.save(c,await c.req.json()))));
+app.get('/user/official/history',async c=>c.json(result.ok(await official.history(c,c.req.query()))));

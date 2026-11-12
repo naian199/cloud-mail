@@ -1,3 +1,5 @@
+import identity from './identity-service';
+import {officialFields} from './official-service';
 import BizError from '../error/biz-error';
 import userContext from '../security/user-context';
 import verify from '../utils/verify-utils';
@@ -13,31 +15,19 @@ export function normalizeUsername(value) {
 
 export default {
   async username(c, params) {
-    const username = normalizeUsername(params?.username);
-    const userId = userContext.getUserId(c);
-    try {
-      if (username) {
-        await c.env.db.prepare(`INSERT INTO mail_user_handle(user_id, username) VALUES(?, ?)
-          ON CONFLICT(user_id) DO UPDATE SET username=excluded.username`).bind(userId, username).run();
-      } else {
-        await c.env.db.prepare('DELETE FROM mail_user_handle WHERE user_id=?').bind(userId).run();
-      }
-    } catch (error) {
-      if (/UNIQUE constraint failed: mail_user_handle.username/i.test(error.message)) throw new BizError('contactUsernameTaken', 409);
-      throw error;
-    }
-    return { username };
+    return identity.claim(c,params);
   },
   async search(c, query) {
-    const username = normalizeUsername(query.username);
+    const username = typeof query.username==='string'?query.username.trim().replace(/^@/,'').toLowerCase():'';
+    if(username.length>40)throw new BizError('invalidInput',400);
     if (!username) return [];
-    const { results } = await c.env.db.prepare(`SELECT h.username, p.display_name AS displayName, p.avatar
+    const { results } = await c.env.db.prepare(`SELECT h.username, p.display_name AS displayName, p.avatar, ${officialFields('u')}
       FROM mail_user_handle h JOIN user u ON u.user_id=h.user_id
       LEFT JOIN mail_user_profile p ON p.user_id=h.user_id
       WHERE u.is_del=0 AND u.status=0 AND u.user_id!=?
-      AND substr(h.username,1,length(?))=?
+      AND (substr(h.username,1,length(?))=? OR instr(lower(p.display_name),?)>0)
       ORDER BY (h.username=?) DESC, h.username LIMIT 10`)
-      .bind(userContext.getUserId(c), username, username, username).all();
+      .bind(userContext.getUserId(c), username, username, username, username).all();
     return results;
   },
   async note(c, params) {

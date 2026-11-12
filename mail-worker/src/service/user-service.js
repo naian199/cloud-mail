@@ -185,6 +185,12 @@ const userService = {
 			.from(user)
 			.where(and(...conditions)).get();
 		const userIds = list.map(user => user.userId);
+    if(userIds.length){
+      const {results}=await c.env.db.prepare(`SELECT user_id,active AS officialVerified,subject AS officialSubject,description AS officialDescription FROM mail_official_identity WHERE user_id IN(SELECT value FROM json_each(?))`).bind(JSON.stringify(userIds)).all();
+      const {results:handles}=await c.env.db.prepare('SELECT user_id,username FROM mail_user_handle WHERE user_id IN(SELECT value FROM json_each(?))').bind(JSON.stringify(userIds)).all();
+      for(const item of list){Object.assign(item,results.find(r=>r.user_id===item.userId)||{officialVerified:0});item.identityUsername=handles.find(r=>r.user_id===item.userId)?.username||'';}
+    }
+
 
 		const types = [...new Set(list.map(user => user.type))];
 

@@ -1,3 +1,4 @@
+import {officialFields} from './official-service';
 import storage from './r2-service';
 import {decodeVoice,voiceHash} from '../lib/voice-audio.mjs';
 import BizError from '../error/biz-error';
@@ -15,7 +16,7 @@ const positive = value => {
 };
 const forbidden = () => fail('unauthorized',403);
 const privileged = room => ['owner','admin'].includes(room.role);
-const personFields = `u.user_id AS userId, h.username,
+const personFields = `u.user_id AS userId, h.username, ${officialFields('u')},
   coalesce(nullif(n.remark,''),nullif(p.display_name,''),h.username,'') AS displayName, p.avatar`;
 const personJoins = `LEFT JOIN mail_user_profile p ON p.user_id=u.user_id
   LEFT JOIN mail_user_handle h ON h.user_id=u.user_id
@@ -151,8 +152,16 @@ export default {
       WHERE m.room_id=? ${cursor?`AND m.id ${after?'>':query.around?'<=':'<'} ?`:''} ORDER BY m.id ${after?'ASC':'DESC'} LIMIT 51`)
       .bind(userContext.getUserId(c),id,...(cursor?[cursor]:[])).all();
     const rows=results.slice(0,50), senders={};
-    for (const row of rows) senders[row.senderId]={userId:row.userId,displayName:row.displayName,username:row.username,avatar:row.avatar};
+    for (const row of rows) senders[row.senderId]={userId:row.userId,displayName:row.displayName,username:row.username,avatar:row.avatar,officialVerified:row.officialVerified,officialSubject:row.officialSubject,officialDescription:row.officialDescription};
     const voices=rows.length?(await c.env.db.prepare(`SELECT message_id AS messageId,filename,mime_type AS mimeType,size FROM mail_room_voice WHERE room_id=? AND message_id IN (${rows.map(()=>'?').join(',')})`).bind(id,...rows.map(r=>r.id)).all()).results:[];
+    if(query.people){
+      const people=String(query.people).split(',');
+      if(people.length>200||people.some(id=>!/^\d+$/.test(id)||!Number.isSafeInteger(Number(id))))fail();
+      const {results:current}=await c.env.db.prepare(`SELECT ${personFields} FROM user u ${personJoins}
+        WHERE u.user_id IN(SELECT value FROM json_each(?)) AND EXISTS(SELECT 1 FROM mail_room_message WHERE room_id=? AND sender_id=u.user_id)`)
+        .bind(userContext.getUserId(c),JSON.stringify(people.map(Number)),id).all();
+      for(const person of current)senders[person.userId]={...person};
+    }
     const messages=rows.map(({id:messageId,senderId,body,createdAt})=>{const voice=voices.find(v=>v.messageId===messageId);return {id:messageId,roomId:id,senderId,body:voice&&body==='🎤'?'':body,createdAt,...(voice?{voice}:{})};});
     return {messages:after?messages:messages.reverse(),senders,hasMore:results.length>50};
   },

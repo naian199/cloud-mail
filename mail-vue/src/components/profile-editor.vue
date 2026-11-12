@@ -1,6 +1,6 @@
 <template>
   <form class="profile-editor" @submit.prevent="save">
-    <div class="profile-photo">
+    <div class="profile-photo"><OfficialBadge :profile="user.user.profile" />
       <UserAvatar :profile="form" :email="user.user.email" :size="72" />
       <label class="upload-avatar"
         >{{ t('profileUpload')
@@ -15,10 +15,10 @@
       }}</el-button>
     </div>
     <el-form-item :label="t('contactUsername')">
-      <el-input v-model="username" maxlength="25" :aria-label="t('contactUsername')" placeholder="@username" @keydown.enter.prevent="saveHandle" />
-      <el-button :loading="savingUsername" @click="saveHandle">{{ t('save') }}</el-button>
+      <el-input :disabled="!!user.user.profile?.username" v-model="username" maxlength="25" :aria-label="t('contactUsername')" placeholder="@username" @keydown.enter.prevent="saveHandle" />
+      <el-button v-if="!user.user.profile?.username" :loading="savingUsername" @click="saveHandle">{{ t('save') }}</el-button>
     </el-form-item>
-    <p class="hint">{{ t('contactUsernameHint') }}</p>
+    <p class="hint">{{ t(user.user.profile?.username ? 'identityUsernameLocked' : 'identityClaimHint') }}</p>
     <el-form-item :label="t('profileNickname')"
       ><el-input v-model="form.displayName" maxlength="40" :aria-label="t('profileNickname')"
     /></el-form-item>
@@ -39,6 +39,7 @@
 </template>
 <script setup>
 import { reactive, ref, onMounted } from 'vue';
+import {useMailSync} from '@/composables/use-mail-sync';
 import { useI18n } from 'vue-i18n';
 import { ElMessage } from 'element-plus';
 import PushSettings from '@/components/push-settings.vue';
@@ -56,6 +57,11 @@ const form = reactive({
 const saving = ref(false),
   uploading = ref(false);
 const username = ref(user.user.profile?.username || ''), savingUsername = ref(false);
+useMailSync(async()=>{
+ const id=user.user.userId;if(!id)return;
+ const profile=await myProfile();if(user.user.userId!==id)return;
+ user.user.profile={...user.user.profile,username:profile.username,officialVerified:profile.officialVerified,officialSubject:profile.officialSubject,officialDescription:profile.officialDescription};
+});
 async function saveHandle() {
   if (savingUsername.value) return;
   savingUsername.value = true;
@@ -70,6 +76,7 @@ onMounted(async () => {
   try {
     const profile = await myProfile();
     username.value = profile.username || '';
+    user.user.profile={...user.user.profile,...profile};
     Object.assign(form, profile, { displayName: profile.displayName || user.user.name || '' });
   } catch {}
 });

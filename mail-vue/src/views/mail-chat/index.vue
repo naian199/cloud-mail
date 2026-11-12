@@ -36,7 +36,7 @@
           <span class="contact-summary"
             ><span class="peers" translate="no" :title="c.peers.join(', ')">{{
               c.profile?.remark || c.profile?.displayName || c.peers.join(', ')
-            }}</span
+            }}<OfficialBadge :profile="c.profile" /></span
             ><span class="preview">{{ c.preview || c.subject }}</span></span
           >
           <span class="contact-meta"
@@ -86,7 +86,7 @@
         <div class="thread-title">
           <strong translate="no" :title="selected.peers.join(', ')">{{
             selected.profile?.remark || selected.profile?.displayName || selected.peers.join(', ')
-          }}</strong
+          }}<OfficialBadge :profile="selected.profile" /></strong
           ><span v-if="live.internal || messages.some(message => message.internal)" class="live-status" :class="{ online: live.online }" aria-live="polite">{{
             live.unknown ? t('chatReconnecting') : live.selectingSticker ? t('mailChatSelectingSticker') : live.typing
               ? t('mailChatTyping')
@@ -382,11 +382,11 @@
       </form>
       <p v-if="friendSearched && !friendResults.length">{{ t('contactNotFound') }}</p>
       <div v-for="person in friendResults" :key="person.username" class="friend-row">
-        <div><strong>{{ person.displayName || person.username }}</strong><div translate="no">@{{ person.username }}</div></div>
+        <div><strong>{{ person.displayName || person.username }}<OfficialBadge :profile="person" /></strong><div translate="no">@{{ person.username }}</div></div>
         <el-button :loading="addingFriend === person.username" :disabled="person.requested || !!addingFriend" @click="addUsername(person)">{{ t(person.requested ? 'mailChatPending' : 'mailChatAddFriend') }}</el-button>
       </div>
       <div v-for="friend in friends" :key="friend.id" class="friend-row">
-        <el-button text @click="viewProfile({ displayName: friend.displayName, remark: friend.remark, username: friend.username }, friend.email)">{{ friend.remark || friend.displayName || (friend.username ? '@' + friend.username : friend.email) }}</el-button>
+        <el-button text @click="viewProfile(friend, friend.email)">{{ friend.remark || friend.displayName || (friend.username ? '@' + friend.username : friend.email) }}<OfficialBadge :profile="friend" /></el-button>
         <template v-if="friend.status === 'accepted'"
           ><el-button text @click="openFriend(friend)">{{
             t('mailChatOpenChat')
@@ -468,7 +468,7 @@
     <el-dialog v-model="profileOpen" :title="t('profile')" width="min(380px, calc(100% - 24px))">
       <div class="profile-card">
         <UserAvatar :profile="shownProfile" :email="shownProfile.email" :size="72" />
-        <h3>{{ shownProfile.remark || shownProfile.displayName || shownProfile.email }}</h3>
+        <h3>{{ shownProfile.remark || shownProfile.displayName || shownProfile.email }}<OfficialBadge :profile="shownProfile" /></h3>
         <p translate="no">{{ shownProfile.email }}</p>
         <p v-if="shownProfile.username" translate="no">@{{ shownProfile.username }}</p>
         <p>{{ shownProfile.bio || t('profileNoBio') }}</p>
@@ -1725,6 +1725,7 @@ onBeforeUnmount(() => {
   version++;
   clearTimeout(indexTimer);
 });
+watch(()=>selected.value?.profile,profile=>{if(profileOpen.value&&selected.value?.peers.some(email=>email===shownProfile.value.email))shownProfile.value={...shownProfile.value,...profile};},{deep:true});
 </script>
 
 <style scoped lang="scss">

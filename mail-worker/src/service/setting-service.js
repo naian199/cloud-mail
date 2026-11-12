@@ -195,6 +195,7 @@ const settingService = {
 
 		return {
 			register: settingRow.register,
+      registrationDomain: settingRow.register===0 ? settingRow.domainList[0] : '',
 			title: settingRow.title,
 			manyEmail: settingRow.manyEmail,
 			addEmail: settingRow.addEmail,

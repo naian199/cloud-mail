@@ -1,5 +1,5 @@
 import { roomSchema } from './room-schema.js';
-export const MAIL_CHAT_SCHEMA_MARKER = 'mail_chat_schema_v10';
+export const MAIL_CHAT_SCHEMA_MARKER = 'mail_chat_schema_v11';
 
 export async function migrateMailChat(db) {
 	const { results } = await db.prepare('PRAGMA table_info(email)').all();
@@ -25,8 +25,15 @@ export async function migrateMailChat(db) {
 			}
 		}
 	}
+	const permissionTable=await db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='perm'").first();
 	await db.batch([
 		...roomSchema.map(sql => db.prepare(sql)),
+    db.prepare(`CREATE TABLE IF NOT EXISTS mail_official_identity(user_id INTEGER PRIMARY KEY REFERENCES user(user_id) ON DELETE CASCADE,active INTEGER NOT NULL DEFAULT 0 CHECK(active IN(0,1)),subject TEXT NOT NULL DEFAULT '',description TEXT NOT NULL DEFAULT '',actor_id INTEGER NOT NULL,updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)`),
+    db.prepare(`CREATE TABLE IF NOT EXISTS mail_official_audit(id INTEGER PRIMARY KEY AUTOINCREMENT,user_id INTEGER NOT NULL,active INTEGER NOT NULL,subject TEXT NOT NULL,description TEXT NOT NULL,actor_id INTEGER NOT NULL,created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)`),
+    db.prepare('CREATE INDEX IF NOT EXISTS mail_official_history ON mail_official_audit(user_id,id)'),
+    db.prepare('CREATE TABLE IF NOT EXISTS mail_identity_rate(ip TEXT PRIMARY KEY,window INTEGER NOT NULL,count INTEGER NOT NULL)'),
+    db.prepare(`CREATE TRIGGER IF NOT EXISTS mail_identity_mailbox_unique BEFORE INSERT ON account WHEN EXISTS(SELECT 1 FROM account WHERE email=NEW.email COLLATE NOCASE) BEGIN SELECT RAISE(ABORT,'identity_mailbox_taken'); END`),
+    ...(permissionTable?[db.prepare(`INSERT INTO perm(name,perm_key,pid,type,sort) SELECT '官方认证','user:verify',6,2,8 WHERE NOT EXISTS(SELECT 1 FROM perm WHERE perm_key='user:verify')`)]:[]),
 		db.prepare(`CREATE TABLE IF NOT EXISTS mail_user_handle (
       user_id INTEGER PRIMARY KEY REFERENCES user(user_id) ON DELETE CASCADE,
       username TEXT NOT NULL COLLATE NOCASE UNIQUE

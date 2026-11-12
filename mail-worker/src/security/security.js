@@ -22,6 +22,7 @@ const exclude = [
 ];
 
 const requirePerms = [
+  '/user/official',
   '/setting/translation',
 	'/email/send',
 	'/email/delete',
@@ -64,6 +65,7 @@ const requirePerms = [
 ];
 
 const premKey = {
+  'user:verify':['/user/official'],
 	'email:delete': ['/email/delete'],
 	'email:send': ['/email/send'],
 	'account:add': ['/account/add'],

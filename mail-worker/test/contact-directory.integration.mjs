@@ -16,10 +16,10 @@ async function user() {
 }
 await test('unique usernames support friend discovery and private searchable contact notes',async t=>{
  const [a,b,c]=await Promise.all([user(),user(),user()]);
- const handle='person'+randomBytes(5).toString('hex');
+ const handle=a.email.split('@')[0];
  const claims=await Promise.all([api('my/username',a,'PUT',{username:handle.toUpperCase()}),api('my/username',b,'PUT',{username:'@'+handle})]);
  assert.deepEqual(claims.map(r=>r.code).sort(),[200,409]);
- assert.equal(claims.find(r=>r.code===409).errorKey,'contactUsernameTaken');
+ assert.equal(claims.find(r=>r.code===409).errorKey,'identityUsernameLocked');
  const owner=claims[0].code===200?a:b;
  const peer=owner===a?b:a;
  assert.equal((await api('my/profile',owner)).data.username,handle);
@@ -51,7 +51,7 @@ await test('unique usernames support friend discovery and private searchable con
  assert(!JSON.stringify(opposite).includes('我的好友备注'));
  assert.equal((await api('chat/contacts/note',peer,'PUT',{email:owner.email,remark:''})).code,200);
  assert.equal((await api('chat/friends',peer)).data.find(f=>f.id===request.data.id).remark,null);
- assert.equal((await api('my/username',owner,'PUT',{username:''})).code,200);
- assert.deepEqual((await api('chat/users?username='+handle,c)).data,[]);
- assert.equal((await api('my/username',peer,'PUT',{username:handle})).code,200);
+ assert.equal((await api('my/username',owner,'PUT',{username:''})).code,400);
+ assert.equal((await api('chat/users?username='+handle,c)).data[0].username,handle);
+ assert.equal((await api('my/username',peer,'PUT',{username:handle})).code,409);
 });

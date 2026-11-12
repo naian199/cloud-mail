@@ -14,30 +14,9 @@
         <span class="form-desc" v-if="show === 'login'">{{ $t('loginTitle') }}</span>
         <span class="form-desc" v-else>{{ $t('regTitle') }}</span>
         <div v-show="show === 'login'">
-          <el-input :class="!hideLoginDomain ? 'email-input' : ''" v-model="form.email"
-                    type="text" inputmode="email" autocapitalize="none" :spellcheck="false" :placeholder="$t('emailAccount')" autocomplete="username" @keyup.enter="submit">
-            <template #append v-if="!hideLoginDomain">
-              <div @click.stop="openSelect">
-                <el-select
-                    v-if="show === 'login'"
-                    ref="mySelect"
-                    v-model="suffix"
-                    :placeholder="$t('select')"
-                    class="select"
-                >
-                  <el-option
-                      v-for="item in domainList"
-                      :key="item"
-                      :label="item"
-                      :value="item"
-                  />
-                </el-select>
-                <div style="color: var(--el-text-color-primary)">
-                  <span>{{ suffix }}</span>
-                  <Icon class="setting-icon" icon="mingcute:down-small-fill" width="20" height="20"/>
-                </div>
-              </div>
-            </template>
+          <el-input v-model="form.email"
+                    type="text" inputmode="email" autocapitalize="none" :spellcheck="false" :placeholder="$t('identityLogin')" autocomplete="username" @keyup.enter="submit">
+
           </el-input>
           <el-input v-model="form.password" :placeholder="$t('password')" type="password" show-password autocomplete="current-password" @keyup.enter="submit">
           </el-input>
@@ -52,7 +31,7 @@
           </el-button>
         </div>
         <div v-show="show !== 'login'">
-          <el-input :class="!hideLoginDomain ? 'email-input' : ''" v-model="registerForm.email" type="text" inputmode="email" autocapitalize="none" :spellcheck="false" :placeholder="$t('emailAccount')"
+          <el-input :class="!hideLoginDomain ? 'email-input' : ''" v-model="registerForm.email" type="text" inputmode="email" autocapitalize="none" :spellcheck="false" :placeholder="$t('contactUsername')"
                     autocomplete="username" @keyup.enter="submitRegister">
             <template #append v-if="!hideLoginDomain">
               <div @click.stop="openSelect">
@@ -77,6 +56,8 @@
               </div>
             </template>
           </el-input>
+          <p class="identity-preview" role="status">{{ $t('identityMailboxPreview') }} <strong>{{ identityName.name || 'username' }}{{ registrationDomain }}</strong><br><span :class="{ 'identity-error':availability.error }">{{ availability.checking ? $t('identityChecking') : availability.error ? $t(availability.error) : availability.available ? $t('identityAvailable') : $t('identityUsernameRules') }}</span></p>
+          <el-input v-model="registerForm.nickname" :placeholder="$t('identityNicknameOptional')" maxlength="40" autocomplete="nickname" />
           <el-input v-model="registerForm.password" :placeholder="$t('password')" type="password" show-password autocomplete="new-password" @keyup.enter="submitRegister"/>
           <el-input v-model="registerForm.confirmPassword" :placeholder="$t('confirmPwd')" type="password" show-password
                     autocomplete="new-password" @keyup.enter="submitRegister"/>
@@ -105,8 +86,8 @@
       </div>
     </main>
     <el-dialog class="bind-dialog" v-model="showBindForm"  :title="$t('regBtn')" >
-      <div class="bind-container">
-        <el-input :class="!hideLoginDomain ? 'email-input' : ''" v-model="bindForm.email" type="text" :placeholder="$t('emailAccount')" autocomplete="off" @keyup.enter="bind">
+      <div class="bind-container"><p>{{ $t('identityUsernameRules') }}</p>
+        <el-input :class="!hideLoginDomain ? 'email-input' : ''" v-model="bindForm.email" type="text" :placeholder="$t('contactUsername')" autocomplete="off" @keyup.enter="bind">
           <template #append v-if="!hideLoginDomain">
             <div @click.stop="openSelect">
               <el-select
@@ -145,12 +126,14 @@
 </template>
 
 <script setup>
+import {identityUsername} from '../../../../shared/user-identity.mjs';
+import http from '@/axios';
 import { registrationEmail, registrationPrefix, registrationNeedsChallenge } from '@/utils/registration.mjs';
 import LanguageSelect from '@/components/language-select.vue';
 import { projectInfo } from '../../../../shared/project-info.mjs';
 import router from "@/router";
 import {useRoute} from "vue-router";
-import {computed, nextTick, reactive, ref, onBeforeUnmount} from "vue";
+import {computed, watch, nextTick, reactive, ref, onBeforeUnmount} from "vue";
 import {login} from "@/request/login.js";
 import {register} from "@/request/login.js";
 import {websiteConfig} from "@/request/setting.js";
@@ -213,8 +196,25 @@ const registerForm = reactive({
   email: '',
   password: '',
   confirmPassword: '',
+  nickname: '',
   code: null
 })
+const registrationDomain=computed(()=>settingStore.settings.loginDomain===1 && registerForm.email.includes('@') ? '@'+registerForm.email.split('@').at(-1).trim().toLowerCase() : suffix.value||settingStore.settings.registrationDomain||'');
+const identityName=computed(()=>identityUsername(registrationPrefix(registerForm.email)));
+const availability=reactive({checking:false,available:false,error:''});
+let availabilityTimer,availabilityRevision=0;
+watch(()=>[registerForm.email,registrationDomain.value],()=>{
+ const mine=++availabilityRevision;clearTimeout(availabilityTimer);availability.available=false;availability.error='';availability.checking=false;
+ if(!registerForm.email)return;
+ if(identityName.value.error){availability.error=identityName.value.error;return;}
+ availability.checking=true;
+ availabilityTimer=setTimeout(async()=>{
+  try{const result=await http.get('/register/availability',{params:{username:identityName.value.name,domain:registrationDomain.value},noMsg:true});if(mine===availabilityRevision){availability.available=result.available;availability.error=result.reason||'';}}
+  catch{if(mine===availabilityRevision)availability.error='identityCheckFailed';}
+  finally{if(mine===availabilityRevision)availability.checking=false;}
+ },450);
+});
+onBeforeUnmount(()=>{clearTimeout(availabilityTimer);availabilityRevision++;});
 const domainList = settingStore.domainList;
 const registerLoading = ref(false)
 suffix.value = domainList[0]
@@ -427,16 +427,7 @@ const submit = () => {
     return
   }
 
-  let email = getFullEmail(form.email);
-
-  if (!isEmail(email)) {
-    ElMessage({
-      message: t('notEmailMsg'),
-      type: 'error',
-      plain: true,
-    })
-    return
-  }
+  const email=form.email.trim();
 
   if (!form.password) {
     ElMessage({
@@ -509,7 +500,8 @@ function submitRegister() {
     return
   }
 
-  const email = getFullEmail(registerForm.email);
+  if(identityName.value.error){ElMessage.error(t(identityName.value.error));return;}
+  const email=identityName.value.name+registrationDomain.value;
 
   if (!isEmail(email)) {
     ElMessage({
@@ -572,6 +564,9 @@ function submitRegister() {
 
   const form = {
     email,
+    username:identityName.value.name,
+    domain:registrationDomain.value,
+    nickname:registerForm.nickname,
     password: registerForm.password,
     token: verifyToken,
     code: registerForm.code
@@ -624,6 +619,8 @@ function submitRegister() {
 </style>
 
 <style scoped>
+.identity-preview{font-size:12px;line-height:1.7;color:var(--auth-muted);margin:-4px 0 16px;overflow-wrap:anywhere;}.identity-preview strong{color:var(--auth-ink);font-weight:500;}.identity-error{color:var(--el-color-danger);}
+
 #login-box{--auth-bg:#f5f8fd;--auth-card:#fff;--auth-ink:#172b46;--auth-muted:#6b7b90;--auth-line:#e2e9f3;position:relative;isolation:isolate;min-height:var(--app-viewport-height,100dvh);background:radial-gradient(ellipse at 12% 20%,#dcecff 0,transparent 52%),radial-gradient(ellipse at 85% 85%,#fff0e9 0,transparent 42%),var(--auth-bg);color:var(--auth-ink);overflow-x:clip;}
 #login-box.auth-dark{--auth-bg:#0d1724;--auth-card:#152234;--auth-ink:#edf4ff;--auth-muted:#a7b5c8;--auth-line:#2a3b51;background:radial-gradient(ellipse at 12% 20%,#142e4a 0,transparent 55%),var(--auth-bg);}
 .auth-background{position:absolute;inset:0;z-index:-2;opacity:.13;pointer-events:none;}

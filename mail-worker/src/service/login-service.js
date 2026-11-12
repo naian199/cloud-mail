@@ -1,3 +1,5 @@
+import {identityRegistrationStatements} from '../lib/identity-registration.mjs';
+import {requiredUsername,identityConflict} from './identity-service';
 import BizError from '../error/biz-error';
 import userService from './user-service';
 import emailUtils from '../utils/email-utils';
@@ -24,7 +26,16 @@ const loginService = {
 
 	async register(c, params, oauth = false) {
 
-		const { email, password, token, code } = params;
+		let { email, password, token, code } = params;
+    const username=requiredUsername(params.username ?? (typeof email==='string'?email.split('@')[0]:''));
+    if(typeof email==='string')email=email.trim().toLowerCase();
+    if(params.username){
+      const domains=typeof c.env.domain==='string'?JSON.parse(c.env.domain):c.env.domain;
+      const domain=typeof params.domain==='string'?params.domain.replace(/^@/,''):email?.split('@')[1]||domains[0];
+      email=username+'@'+domain;
+    }
+    const nickname=typeof params.nickname==='string'?params.nickname.trim():username;
+    if(nickname.length>40||typeof password!=='string')throw new BizError('invalidInput',400);
 
 		let { regKey, register, registerVerify, regVerifyCount, minEmailPrefix, emailPrefixFilter } = await settingService.query(c)
 
@@ -80,6 +91,7 @@ const loginService = {
 			regKeyId = result?.regKeyId
 		}
 
+    if(await userService.selectByEmailIncludeDel(c,email))throw new BizError(t('isRegAccount'));
 		const accountRow = await accountService.selectByEmailIncludeDel(c, email);
 
 		if (accountRow && accountRow.isDel === isDel.DELETE) {
@@ -128,9 +140,12 @@ const loginService = {
 
 		const { salt, hash } = await saltHashUtils.hashPassword(password);
 
-		const userId = await userService.insert(c, { email, regKeyId,password: hash, salt, type: type || defType });
-
-		await accountService.insert(c, { userId: userId, email, name: emailUtils.getName(email) });
+    let userId;
+    try {
+      // D1 batch is transactional: a handle/mailbox conflict rolls back the user too.
+      await c.env.db.batch(identityRegistrationStatements(c.env.db,{email,username,nickname,password:hash,salt,type:type||defType,regKeyId}));
+      userId=(await c.env.db.prepare('SELECT user_id FROM mail_user_handle WHERE username=?').bind(username).first()).user_id;
+    } catch(error){identityConflict(error);}
 
 		await userService.updateUserInfo(c, userId, true);
 
@@ -207,7 +222,15 @@ const loginService = {
 			throw new BizError(t('emailAndPwdEmpty'));
 		}
 
-		const userRow = await userService.selectByEmailIncludeDel(c, email);
+		let lookup=typeof email==='string'?email.trim():'';
+    let userRow;
+    if(!lookup.includes('@')){
+      const handle=await c.env.db.prepare('SELECT user_id FROM mail_user_handle WHERE username=? COLLATE NOCASE').bind(lookup.replace(/^@/, '')).first();
+      if(handle)userRow=await userService.selectByIdIncludeDel(c,handle.user_id);
+      else {const domains=typeof c.env.domain==='string'?JSON.parse(c.env.domain):c.env.domain;lookup=lookup+'@'+domains[0];}
+    }
+    if(!userRow)userRow=await userService.selectByEmailIncludeDel(c,lookup);
+    if(!userRow){const alias=await accountService.selectByEmailIncludeDel(c,lookup);if(alias&&alias.isDel===0&&alias.status===0)userRow=await userService.selectByIdIncludeDel(c,alias.userId);}
 
 		if (!userRow) {
 			throw new BizError(t('notExistUser'));

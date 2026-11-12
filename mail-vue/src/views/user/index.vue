@@ -41,6 +41,7 @@
             @cell-contextmenu="handleContextmenu"
             :cell-class-name="cellClassName"
         >
+          <el-table-column :label="$t('officialVerified')" min-width="150"><template #default="{row}"><OfficialBadge :profile="row" /><el-button v-perm="'user:verify'" text @click="openOfficial(row)">{{ $t(row.officialVerified ? 'officialManage' : 'officialGrant') }}</el-button><small v-if="row.identityUsername">@{{ row.identityUsername }}</small></template></el-table-column>
           <el-table-column :width="expandWidth" type="selection" :selectable="row => row.type !== 0" />
           <el-table-column show-overflow-tooltip :tooltip-formatter="tableRowFormatter" :label="$t('tabEmailAddress')"
                            :min-width="emailWidth">
@@ -301,6 +302,7 @@
         </div>
       </div>
     </el-dialog>
+    <el-dialog v-model="officialOpen" :title="$t('officialManage')" width="min(440px,94vw)"><p>{{ officialTarget?.email }}</p><el-input v-model="officialForm.subject" :placeholder="$t('officialSubject')" maxlength="80" /><el-input v-model="officialForm.description" type="textarea" :placeholder="$t('officialDescription')" maxlength="240" style="margin-top:12px" /><p>{{ $t('officialExplanation') }}</p><el-button type="primary" :loading="officialBusy" @click="saveOfficial(true)">{{ $t('officialGrant') }}</el-button><el-button v-if="officialTarget?.officialVerified" type="danger" :loading="officialBusy" @click="saveOfficial(false)">{{ $t('officialRevoke') }}</el-button><h4>{{ $t('officialHistory') }}</h4><p v-for="(entry,index) in officialHistory" :key="index">{{ entry.createdAt }} · {{ $t(entry.active?'officialGrant':'officialRevoke') }} · {{ entry.subject }} · ID {{ entry.actorId }}</p></el-dialog>
     <el-dropdown
         :show-timeout="0"
         :hide-timeout="0"
@@ -377,6 +379,11 @@
 </template>
 
 <script setup>
+import identityHttp from '@/axios';
+const officialOpen=ref(false),officialBusy=ref(false),officialTarget=ref(null),officialHistory=ref([]),officialForm=reactive({subject:'',description:''});
+async function openOfficial(row){officialTarget.value=row;officialForm.subject=row.officialSubject||'';officialForm.description=row.officialDescription||'';officialHistory.value=[];officialOpen.value=true;try{officialHistory.value=await identityHttp.get('/user/official/history',{params:{userId:row.userId}});}catch{}}
+async function saveOfficial(active){if(officialBusy.value)return;if(active&&(!officialForm.subject.trim()||!officialForm.description.trim())){ElMessage.error(t('officialRequired'));return;}officialBusy.value=true;try{const result=await identityHttp.put('/user/official',{userId:officialTarget.value.userId,active,...officialForm});Object.assign(officialTarget.value,result);officialOpen.value=false;ElMessage.success(t('saveSuccessMsg'));}catch{}finally{officialBusy.value=false;}}
+
 import {defineOptions, h, reactive, ref, watch} from 'vue'
 import {
   userList,

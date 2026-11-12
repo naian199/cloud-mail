@@ -1,3 +1,4 @@
+import {officialFields} from './official-service';
 import BizError from '../error/biz-error';
 import userContext from '../security/user-context';
 import { normalizeUsername } from './contact-service';
@@ -39,7 +40,7 @@ const chatService = {
   async list(c) {
     const user = await this.user(c);
     const { results } = await c.env.db.prepare(`SELECT f.id, f.status, f.requester_id AS requesterId,
-      peer.user_id AS userId, peer.email,
+      peer.user_id AS userId, peer.email, ${officialFields('peer')},
       (SELECT remark FROM mail_contact_note WHERE user_id=? AND email=peer.email COLLATE NOCASE) AS remark,
       (SELECT username FROM mail_user_handle WHERE user_id=peer.user_id) AS username,
       (SELECT display_name FROM mail_user_profile WHERE user_id=peer.user_id) AS displayName,

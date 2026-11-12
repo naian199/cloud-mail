@@ -41,7 +41,7 @@
           <p v-if="!index || roomDate(message.createdAt) !== roomDate(messages[index - 1].createdAt)" class="room-date">{{ roomDate(message.createdAt) }}</p>
           <article class="room-message" :class="{ mine: message.senderId === userId, 'room-search-match': messageSearch.trim() && matches.includes(message), 'room-search-current': messageSearch.trim() && matches[resultIndex]?.id === message.id }" :data-message-id="message.id">
             <UserAvatar :profile="senders[message.senderId]" :email="senders[message.senderId]?.username || ''" :size="30" />
-            <div class="room-bubble"><small>{{ senderName(message.senderId) }}</small><AudioAttachment v-if="message.voice" :file="message.voice" :load="options=>roomVoice(message.roomId,message.id,options)" :source="{roomId:message.roomId,messageId:message.id}" /><p v-if="message.body"><LinkifiedText :text="message.body" /></p><LinkPreview v-for="url in chatLinks(message.body).slice(0,1)" :key="url" :url="url" :source="{roomId:message.roomId,messageId:message.id}" @resize="atBottom && !historyTarget && bottom()" /><MessageTranslation :text="message.body" :incoming="message.senderId !== userId" chat-style :translate-remote="(target, signal) => translateRoomMessage(message.roomId, message.id, target, signal)" /><time>{{ time(message.createdAt) }}</time></div>
+            <div class="room-bubble"><small>{{ senderName(message.senderId) }}<OfficialBadge :profile="senders[message.senderId]" /></small><AudioAttachment v-if="message.voice" :file="message.voice" :load="options=>roomVoice(message.roomId,message.id,options)" :source="{roomId:message.roomId,messageId:message.id}" /><p v-if="message.body"><LinkifiedText :text="message.body" /></p><LinkPreview v-for="url in chatLinks(message.body).slice(0,1)" :key="url" :url="url" :source="{roomId:message.roomId,messageId:message.id}" @resize="atBottom && !historyTarget && bottom()" /><MessageTranslation :text="message.body" :incoming="message.senderId !== userId" chat-style :translate-remote="(target, signal) => translateRoomMessage(message.roomId, message.id, target, signal)" /><time>{{ time(message.createdAt) }}</time></div>
           </article>
           </template>
         </div>
@@ -70,7 +70,7 @@
         <form v-if="canManage" class="room-form room-invite-form" @submit.prevent="invite"><el-input v-model="inviteName" :aria-label="t('contactUsername')" placeholder="@username" maxlength="25" /><el-button native-type="submit" :loading="acting" :disabled="!inviteName.trim()">{{ t('roomInvite') }}</el-button></form>
         <p v-if="canManage">{{ t('roomInviteHint') }}</p>
         <el-input v-model="memberSearch" clearable :placeholder="t('mailChatContacts')" :aria-label="t('mailChatContacts')" />
-        <div class="member-list"><div v-for="member in filteredMembers" :key="member.userId" class="member-row"><UserAvatar :profile="member" :email="member.username || ''" :size="30" /><div class="member-name"><strong>{{ member.displayName || member.username || t('roomMember') + ' ' + member.userId }}</strong><small>{{ member.username ? '@' + member.username + ' · ' : '' }}{{ t(member.status === 'invited' ? 'roomInvited' : member.role === 'owner' ? 'roomOwner' : member.role === 'admin' ? 'roomAdmin' : 'roomMember') }}</small></div><el-button v-if="active.role === 'owner' && member.role !== 'owner' && member.status === 'joined'" text :disabled="acting" @click="role(member)">{{ t(member.role === 'admin' ? 'roomMember' : 'roomAdmin') }}</el-button><el-button v-if="member.role !== 'owner' && (active.role === 'owner' || active.role === 'admin' && member.role === 'member')" text type="danger" :disabled="acting" @click="kick(member)">{{ t('delete') }}</el-button></div></div>
+        <div class="member-list"><div v-for="member in filteredMembers" :key="member.userId" class="member-row"><UserAvatar :profile="member" :email="member.username || ''" :size="30" /><div class="member-name"><strong>{{ member.displayName || member.username || t('roomMember') + ' ' + member.userId }}<OfficialBadge :profile="member" /></strong><small>{{ member.username ? '@' + member.username + ' · ' : '' }}{{ t(member.status === 'invited' ? 'roomInvited' : member.role === 'owner' ? 'roomOwner' : member.role === 'admin' ? 'roomAdmin' : 'roomMember') }}</small></div><el-button v-if="active.role === 'owner' && member.role !== 'owner' && member.status === 'joined'" text :disabled="acting" @click="role(member)">{{ t(member.role === 'admin' ? 'roomMember' : 'roomAdmin') }}</el-button><el-button v-if="member.role !== 'owner' && (active.role === 'owner' || active.role === 'admin' && member.role === 'member')" text type="danger" :disabled="acting" @click="kick(member)">{{ t('delete') }}</el-button></div></div>
         <el-button v-if="active.role !== 'owner'" type="danger" :loading="acting" @click="leave">{{ t('roomLeave') }}</el-button><el-button v-else type="danger" :loading="acting" @click="remove">{{ t('delete') }}</el-button>
       </template>
     </el-dialog>
@@ -172,12 +172,12 @@ async function refresh() {
       if(id!==activeId.value||mine!==version){dirty=true;continue;}
       if(id&&!active.value){reset();await choose(null);continue;}
       if(active.value?.status==='joined') {
-        if(historyTarget.value && messages.value.length){if(membersOpen.value)members.value=await roomMembers(id);continue;}
+        if(historyTarget.value && messages.value.length){const data=await roomMessages(id,{after:messages.value.at(-1).id,people:Object.keys(senders).slice(0,200).join(',')});if(id===activeId.value&&mine===version)Object.assign(senders,data.senders);if(membersOpen.value)members.value=await roomMembers(id);continue;}
         if(Number.isSafeInteger(target)&&target>0)historyTarget.value=target;
         let more;
         do {
           const after=messages.value.at(-1)?.id;
-          const data=await roomMessages(id,after?{after}:Number.isSafeInteger(target)&&target>0?{around:target}:{});
+          const data=await roomMessages(id,{...(after?{after}:Number.isSafeInteger(target)&&target>0?{around:target}:{}),people:Object.keys(senders).slice(0,200).join(',')});
           if(stopped||mine!==version||id!==activeId.value)break;
           merge(data);if(!after)hasOlder.value=data.hasMore;more=!!after&&data.hasMore;
         } while(more);

@@ -1,3 +1,4 @@
+import identity from '../service/identity-service';
 import app from '../hono/hono';
 import loginService from '../service/login-service';
 import result from '../model/result';
@@ -18,3 +19,5 @@ app.delete('/logout', async (c) => {
 	return c.json(result.ok());
 });
 
+
+app.get('/register/availability',async c=>c.json(result.ok(await identity.availability(c,c.req.query()))));

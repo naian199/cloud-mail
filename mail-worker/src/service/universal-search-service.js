@@ -33,7 +33,7 @@ export default {
     }
     if (section === 'all') {
       const [friends, memberships, directory] = await Promise.all([
-        chat.list(c), rooms.list(c), /^[a-z][a-z0-9_]{2,23}$/.test(handle) ? contacts.search(c,{username:handle}) : []
+        chat.list(c), rooms.list(c), handle.length<=40 ? contacts.search(c,{username:handle}) : []
       ]);
       data.friends = friends.filter(person => [person.email,person.remark,person.displayName,person.username].some(value=>includes(value,lower)) || includes(person.username,handle)).slice(0,20);
       const known = new Set(friends.map(person=>person.username).filter(Boolean));

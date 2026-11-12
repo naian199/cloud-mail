@@ -7,6 +7,7 @@ import role from '../entity/role';
 import { permConst } from '../const/entity-const';
 import { t } from '../i18n/i18n'
 const labels = {
+  '官方认证':'officialVerified',
   '邮件':'message','邮件发送':'sendEmail','邮件删除':'delete','邮箱侧栏':'userAccount',
   '邮箱查看':'tabMailboxes','邮箱添加':'addAccount','邮箱删除':'delAccount','个人设置':'settings',
   '用户注销':'deleteUser','分析页':'analytics','数据查看':'analytics','用户信息':'allUsers',
