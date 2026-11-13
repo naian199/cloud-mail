@@ -634,7 +634,15 @@ const {
   draftKey: () => draftKey.value,
   canAccept: () => active.value && canSend.value && !sending.value,
   selecting: () => selecting.value,
-  isStopped: () => stopped
+  isStopped: () => stopped,
+  // Files at or above the large-attachment minimum go to CostAction storage when it is offered here.
+  // Only for the open conversation's draft: the new-message dialog keeps the ordinary path.
+  takeLarge: (picked, current) => {
+    if (!largeAllowed.value || current !== draftKey.value) return picked;
+    const big = picked.filter(f => f.size >= large.config.value.minSize);
+    if (big.length) large.choose({ target: { files: big } });
+    return picked.filter(f => !big.includes(f));
+  }
 });
 const listLoading = ref(true),
   messageLoading = ref(false),

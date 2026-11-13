@@ -11,7 +11,9 @@ const MAX_BYTES = 10 * 1024 * 1024;
 //   canAccept(): whether the open thread can take files right now (open, may send, not sending).
 //   selecting(): whether message selection mode is on (paste is ignored then).
 //   isStopped(): whether the view has been torn down.
-export function useChatAttachments({ t, draftKey, canAccept, selecting, isStopped }) {
+//   takeLarge(files, draft): optional; hands files big enough for large-attachment storage over to it
+//     and returns the rest, so a big file picked with the ordinary button still goes through.
+export function useChatAttachments({ t, draftKey, canAccept, selecting, isStopped, takeLarge = files => files }) {
   // files[draft] holds encoded attachments; fileReads[draft] counts files still being read.
   const files = reactive({});
   const fileReads = reactive({});
@@ -51,8 +53,9 @@ export function useChatAttachments({ t, draftKey, canAccept, selecting, isStoppe
   }
 
   async function chooseFiles(event, current = draftKey()) {
-    const chosen = [...(event.target?.files || [])];
+    const picked = [...(event.target?.files || [])];
     if (event.target) event.target.value = '';
+    const chosen = takeLarge(picked, current);
     if (!chosen.length) return;
     const existing = files[current] || [], pending = fileReads[current] || { count: 0, size: 0 };
     const size = chosen.reduce((n, f) => n + f.size, 0);
