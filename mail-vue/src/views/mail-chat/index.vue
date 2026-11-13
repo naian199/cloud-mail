@@ -371,36 +371,7 @@
         }}</el-button>
       </form>
     </el-dialog>
-    <el-drawer v-model="friendsOpen" :title="t('mailChatContacts')" size="min(420px, 100%)">
-      <form class="friend-request" @submit.prevent="addFriend">
-        <el-input v-model="friendEmail" :placeholder="t('contactSearchHint')" :aria-label="t('contactSearchHint')" /><el-button
-          native-type="submit"
-          type="primary"
-          :loading="searchingFriends"
-          >{{ t('contactSearch') }}</el-button
-        >
-      </form>
-      <p v-if="friendSearched && !friendResults.length">{{ t('contactNotFound') }}</p>
-      <div v-for="person in friendResults" :key="person.username" class="friend-row">
-        <div><strong>{{ person.displayName || person.username }}<OfficialBadge :profile="person" /></strong><div translate="no">@{{ person.username }}</div></div>
-        <el-button :loading="addingFriend === person.username" :disabled="person.requested || !!addingFriend" @click="addUsername(person)">{{ t(person.requested ? 'mailChatPending' : 'mailChatAddFriend') }}</el-button>
-      </div>
-      <div v-for="friend in friends" :key="friend.id" class="friend-row">
-        <el-button text @click="viewProfile(friend, friend.email)">{{ friend.remark || friend.displayName || (friend.username ? '@' + friend.username : friend.email) }}<OfficialBadge :profile="friend" /></el-button>
-        <template v-if="friend.status === 'accepted'"
-          ><el-button text @click="openFriend(friend)">{{
-            t('mailChatOpenChat')
-          }}</el-button></template
-        >
-        <template v-else-if="friend.requesterId !== user.user.userId"
-          ><el-button text @click="answerFriend(friend, true)">{{ t('mailChatAccept') }}</el-button
-          ><el-button text @click="answerFriend(friend, false)">{{
-            t('mailChatDecline')
-          }}</el-button></template
-        >
-        <span v-else>{{ t('mailChatPending') }}</span>
-      </div>
-    </el-drawer>
+    <ContactsDrawer ref="contactsDrawer" @view-profile="viewProfile" @open-friend="openFriend" />
     <Teleport to="body">
       <div v-if="conversationMenu" class="mail-menu-backdrop" @pointerdown="closeMenu" @contextmenu.prevent="closeMenu">
         <div ref="conversationMenuPanel" class="mail-message-menu conversation-menu" role="menu" :aria-label="t('conversationActions')" :style="{left:conversationMenu.x+'px',top:conversationMenu.y+'px',maxHeight:conversationMenu.maxHeight+'px',maxWidth:conversationMenu.maxWidth+'px'}" @pointerdown.stop @contextmenu.prevent @keydown="conversationMenuKey">
@@ -465,20 +436,7 @@
       </div>
     </Teleport>
     <MediaViewer :items="mediaItems" :active-id="mediaId" @close="mediaId = ''" @navigate="mediaId = $event" @download="downloadMedia" />
-    <el-dialog v-model="profileOpen" :title="t('profile')" width="min(380px, calc(100% - 24px))">
-      <div class="profile-card">
-        <UserAvatar :profile="shownProfile" :email="shownProfile.email" :size="72" />
-        <h3>{{ shownProfile.remark || shownProfile.displayName || shownProfile.email }}<OfficialBadge :profile="shownProfile" /></h3>
-        <p translate="no">{{ shownProfile.email }}</p>
-        <p v-if="shownProfile.username" translate="no">@{{ shownProfile.username }}</p>
-        <p>{{ shownProfile.bio || t('profileNoBio') }}</p>
-        <form v-if="shownProfile.email && shownProfile.email !== user.user.email" @submit.prevent="saveRemark">
-          <el-input v-model="contactRemark" maxlength="50" :aria-label="t('contactRemark')" :placeholder="t('contactRemark')" />
-          <small>{{ t('contactRemarkHint') }}</small>
-          <el-button native-type="submit" :loading="savingRemark">{{ t('save') }}</el-button>
-        </form>
-      </div>
-    </el-dialog>
+    <ProfileDialog ref="profileDialog" :on-remark-saved="remarkSaved" />
   </section>
 </template>
 
@@ -490,7 +448,7 @@ import ConversationSidebarTools from '@/components/conversation-sidebar-tools.vu
 import ConversationResize from '@/components/conversation-resize.vue';
 import {pushSettings,mutePush} from '@/composables/use-push-notifications';
 import {mediaCacheKey,cachedMediaBlob} from '@/utils/media-cache.mjs';
-import {sortConversations,moveConversation} from '@/utils/conversation-order.mjs';
+import {sortConversations} from '@/utils/conversation-order.mjs';
 import { randomUUID } from '@/utils/uuid';
 
 import { computed, nextTick, onMounted, onBeforeUnmount, reactive, ref, watch } from 'vue';
@@ -506,6 +464,11 @@ import { chatLinks } from '@/utils/chat-links.mjs';
 import { shouldSendOnEnter } from '@/utils/chat-keyboard.mjs';
 import { hasChatOverlay } from '@/utils/chat-escape.mjs';
 import UserAvatar from '@/components/user-avatar.vue';
+import ContactsDrawer from './contacts-drawer.vue';
+import ProfileDialog from './profile-dialog.vue';
+import { useConversationOrder } from './composables/use-conversation-order.js';
+import { useMessagePress } from './composables/use-message-press.js';
+import { useChatAttachments } from './composables/use-chat-attachments.js';
 import { useMediaQuery, useResizeObserver } from '@vueuse/core';
 import { useUiStore } from '@/store/ui';
 import ConversationExplorer from '@/components/conversation-explorer.vue';
@@ -539,34 +502,24 @@ import {
   mailInstant
 } from '@/request/mail-chat';
 import { useMailLive } from '@/composables/use-mail-live';
-import { listFriends, requestFriend, respondFriend, searchUsers, requestFriendByUsername, saveContactNote } from '@/request/chat';
 import { useMailSync } from '@/composables/use-mail-sync';
-import { fileToBase64, formatBytes } from '@/utils/file-utils';
+import { formatBytes } from '@/utils/file-utils';
 import { mailDate, showChatTime, chatTimeLabel, conversationSubject } from '@/utils/mail-chat-display';
 
 const { t, locale } = useI18n();
 const route = useRoute(),
   router = useRouter();
-const profileOpen = ref(false),
-  shownProfile = ref({});
-const contactRemark = ref(''), savingRemark = ref(false);
+const profileDialog = ref(), contactsDrawer = ref();
+const friendsOpen = computed(() => !!contactsDrawer.value?.isOpen);
 function viewProfile(profile, email) {
-  shownProfile.value = { ...profile, email };
-  contactRemark.value = profile?.remark || '';
-  profileOpen.value = true;
+  profileDialog.value?.view(profile, email);
 }
-async function saveRemark() {
-  if (savingRemark.value) return;
-  const email = shownProfile.value.email;
-  savingRemark.value = true;
-  try {
-    const result = await saveContactNote(email, contactRemark.value);
-    if (shownProfile.value.email === email) { shownProfile.value.remark = result.remark; contactRemark.value = result.remark; }
-    for (const c of [...conversations.value, ...(selected.value ? [selected.value] : [])]) {
-      if (c.peers.length === 1 && c.peers[0].toLowerCase() === email.toLowerCase()) c.profile = { ...c.profile, remark: result.remark };
-    }
-    if (friendsOpen.value) await loadFriends();
-  } catch {} finally { savingRemark.value = false; }
+// A new remark renames that contact everywhere it is listed.
+async function remarkSaved(email, remark) {
+  for (const c of [...conversations.value, ...(selected.value ? [selected.value] : [])]) {
+    if (c.peers.length === 1 && c.peers[0].toLowerCase() === email.toLowerCase()) c.profile = { ...c.profile, remark };
+  }
+  await contactsDrawer.value?.refresh();
 }
 const user = useUserStore(),
   accountStore = useAccountStore();
@@ -623,47 +576,11 @@ const orderScope=computed(()=>`${user.user.userId}:${accountId.value}:${category
 const customOrder=computed(()=>ui.conversationOrders[orderScope.value] || []);
 const sortedConversations=computed(()=>sortConversations(conversations.value,customOrder.value));
 const conversationMenu=ref(null),conversationMenuPanel=ref(null),conversationBusy=ref(false);
-const draggingKey=ref(''),dropTarget=ref(null);
-let contactPress,contactPressStart,suppressContactUntil=0,menuOrigin;
-function saveOrder(keys){
-  const entries=Object.entries(ui.conversationOrders).filter(([key])=>key!==orderScope.value).slice(-19);
-  const merged=keys.length?[...keys,...customOrder.value.filter(key=>!keys.includes(key))]:[];
-  ui.conversationOrders=Object.fromEntries([...entries,[orderScope.value,merged.slice(0,1000)]]);
-}
-function contactClick(event,c){if(Date.now()<suppressContactUntil){event.preventDefault();return;}select(c);}
-function cancelContactPress(){clearTimeout(contactPress);contactPressStart=null;}
-function startContactPress(event,c){
-  if(event.pointerType!=='touch')return;
-  cancelContactPress();contactPressStart={x:event.clientX,y:event.clientY};
-  const point={clientX:event.clientX,clientY:event.clientY,currentTarget:event.currentTarget,preventDefault(){}};
-  contactPress=setTimeout(()=>{suppressContactUntil=Date.now()+800;openConversationMenu(point,c);},500);
-}
-function moveContactPress(event){if(contactPressStart&&Math.hypot(event.clientX-contactPressStart.x,event.clientY-contactPressStart.y)>10)cancelContactPress();}
-function startConversationDrag(event,c){
-  closeMenu();cancelContactPress();draggingKey.value=c.key;
-  event.dataTransfer.effectAllowed='move';event.dataTransfer.setData('application/x-cloud-mail-conversation',c.key);
-}
-function overConversation(event,c){
-  if(!draggingKey.value||draggingKey.value===c.key)return;
-  const source=conversations.value.find(row=>row.key===draggingKey.value);
-  if(!source||!!source.pinned!==!!c.pinned){dropTarget.value=null;event.dataTransfer.dropEffect='none';return;}
-  event.preventDefault();event.dataTransfer.dropEffect='move';
-  const box=event.currentTarget.getBoundingClientRect();dropTarget.value={key:c.key,after:event.clientY>box.top+box.height/2};
-}
-function leaveConversation(event){if(!event.currentTarget.contains(event.relatedTarget))dropTarget.value=null;}
-function dropConversation(event,c){
-  if(!draggingKey.value)return;
-  event.preventDefault();event.stopPropagation();
-  if(dropTarget.value?.key===c.key){const keys=moveConversation(sortedConversations.value,draggingKey.value,c.key,dropTarget.value.after);if(keys)saveOrder(keys);}
-  endConversationDrag();
-}
-function endConversationDrag(){if(draggingKey.value)suppressContactUntil=Date.now()+250;draggingKey.value='';dropTarget.value=null;}
-function neighbor(c,delta){const rows=sortedConversations.value,index=rows.findIndex(row=>row.key===c.key),target=rows[index+delta];return target&&!!target.pinned===!!c.pinned?target:null;}
-function moveContact(c,delta){const target=neighbor(c,delta);if(!target)return;const keys=moveConversation(sortedConversations.value,c.key,target.key,delta>0);if(keys)saveOrder(keys);}
-function contactKey(event,c){
-  if(event.key==='ContextMenu'||(event.shiftKey&&event.key==='F10')){event.preventDefault();openConversationMenu(event,c);}
-  else if(event.altKey&&['ArrowUp','ArrowDown'].includes(event.key)){event.preventDefault();moveContact(c,event.key==='ArrowUp'?-1:1);}
-}
+let menuOrigin;
+const {
+  draggingKey, dropTarget, saveOrder, contactClick, cancelContactPress, startContactPress, moveContactPress,
+  startConversationDrag, overConversation, leaveConversation, dropConversation, endConversationDrag, neighbor, moveContact, contactKey
+} = useConversationOrder({ conversations, sortedConversations, customOrder, orderScope, ui, select, openConversationMenu, closeMenu });
 async function openConversationMenu(event,c){
   event.preventDefault();closeMenu();cancelContactPress();menuOrigin=event.currentTarget;
   const box=event.currentTarget?.getBoundingClientRect(),viewport=window.visualViewport;
@@ -698,9 +615,16 @@ async function conversationAction(action){
 watch([accountId,universalActive],()=>{closeMenu();endConversationDrag();cancelContactPress();});
 const draftKey = computed(() => `${accountId.value}:${selected.value?.key || ''}`);
 const drafts = reactive({}),
-  fileReads = reactive({}),
-  files = reactive({}),
   expanded = reactive({});
+const {
+  files, fileReads, dragDepth, addSticker, dragEnter, dragOver, dragLeave, pasteFiles, dropFiles, chooseFiles
+} = useChatAttachments({
+  t,
+  draftKey: () => draftKey.value,
+  canAccept: () => active.value && canSend.value && !sending.value,
+  selecting: () => selecting.value,
+  isStopped: () => stopped
+});
 const listLoading = ref(true),
   messageLoading = ref(false),
   olderLoading = ref(false),
@@ -738,50 +662,14 @@ function setTranslationRef(id, element) {
   if (element) translationRefs.set(id, element);
   else translationRefs.delete(id);
 }
-let pressTimer,
-  pressStart,
-  suppressUntil = 0;
+const { cancelPress, startPress, startTouch, moveTouch, endTouch, movePress, suppressAfterPress } = useMessagePress({
+  headerMenuAllowed: () => live.value.internal || messages.value.some(row => row.internal),
+  openMessageMenu,
+  menuOpen: () => !!messageMenu.value
+});
 function closeMenu() {
   conversationMenu.value = null;
   messageMenu.value = null;
-}
-function cancelPress() {
-  clearTimeout(pressTimer);
-  pressStart = null;
-}
-function startPress(event, message) {
-  if ((!message && !(live.value.internal || messages.value.some(row => row.internal))) || event.pointerType !== 'touch') return;
-  if (event.target?.closest('button, a, input, textarea, select, .message-translation')) return;
-  cancelPress();
-  pressStart = { x: event.clientX, y: event.clientY };
-  pressTimer = setTimeout(() => {
-    suppressUntil = Date.now() + 800;
-    openMessageMenu(event, message);
-  }, 450);
-}
-function startTouch(event, message) {
-  if (event.touches.length !== 1) { cancelPress(); return; }
-  const touch = event.touches[0];
-  startPress({ pointerType: 'touch', target: event.target, currentTarget: event.currentTarget,
-    clientX: touch.clientX, clientY: touch.clientY, preventDefault() {} }, message);
-}
-function moveTouch(event) {
-  if (event.touches.length !== 1) { cancelPress(); return; }
-  movePress(event.touches[0]);
-}
-function endTouch(event) {
-  cancelPress();
-  if (messageMenu.value && Date.now() < suppressUntil && event.cancelable) event.preventDefault();
-}
-function movePress(event) {
-  if (pressStart && Math.hypot(event.clientX - pressStart.x, event.clientY - pressStart.y) > 10)
-    cancelPress();
-}
-function suppressAfterPress(event) {
-  if (Date.now() < suppressUntil) {
-    event.preventDefault();
-    event.stopPropagation();
-  }
 }
 async function openMessageMenu(event, message) {
   if (!message && !(live.value.internal || messages.value.some(row => row.internal))) return;
@@ -942,10 +830,6 @@ useResizeObserver(scroll, () => {
 });
 const { live, refreshLive, liveInput, stopTyping, selectSticker } = useMailLive(accountId, selected, connected);
 const canSend = computed(() => hasPerm('email:send') || live.value.internal || selected.value?.internal || messages.value.some(message => message.internal));
-const friendsOpen = ref(false),
-  friends = ref([]),
-  friendEmail = ref('');
-const friendResults = ref([]), friendSearched = ref(false), searchingFriends = ref(false), addingFriend = ref('');
 const revisions = new Map();
 async function applyMessages(data, complete = false, extendHistory = false) {
   const a = accountId.value, k = selected.value?.key, mine = version;
@@ -1007,47 +891,11 @@ async function applyMessages(data, complete = false, extendHistory = false) {
   }
   return { applied: true, reconciled: true, hasMore: snapshot.hasMore };
 }
-async function loadFriends() {
-  try {
-    friends.value = await listFriends();
-  } catch {}
-}
-async function addFriend() {
-  if (searchingFriends.value) return;
-  const query = friendEmail.value.trim();
-  if (!query) return;
-  searchingFriends.value = true;
-  try {
-    if (query.includes('@') && !query.startsWith('@')) {
-      await requestFriend(query);
-      friendEmail.value = '';
-      await loadFriends();
-    } else {
-      const results = await searchUsers(query);
-      if (friendEmail.value.trim() === query) { friendResults.value = results; friendSearched.value = true; }
-    }
-  } catch {} finally { searchingFriends.value = false; }
-}
-async function addUsername(person) {
-  if (addingFriend.value) return;
-  addingFriend.value = person.username;
-  try {
-    await requestFriendByUsername(person.username);
-    person.requested = true;
-    await loadFriends();
-  } catch {} finally { addingFriend.value = ''; }
-}
-async function answerFriend(friend, accept) {
-  try {
-    await respondFriend(friend.id, accept);
-    await loadFriends();
-  } catch {}
-}
 async function openFriend(friend) {
   try {
     const c = await mailOpen({ accountId: accountId.value, email: friend.email });
     if (!conversations.value.some((r) => r.key === c.key)) conversations.value.push(c);
-    friendsOpen.value = false;
+    contactsDrawer.value?.close();
     await select({ ...c, category: 'internal' });
   } catch {}
 }
@@ -1293,7 +1141,7 @@ async function sync() {
         selected.value && list.conversations.find((c) => c.key === selected.value.key);
       if (matching) Object.assign(selected.value, matching);
       await refreshLive();
-      if (friendsOpen.value) await loadFriends();
+      await contactsDrawer.value?.refresh();
       if (selected.value && !messageLoading.value) {
         const mine = version,
           k = selected.value.key,
@@ -1441,64 +1289,7 @@ function insertEmoji(value, focus = true) {
   liveInput(drafts[current]);
   nextTick(() => { if (focus && !pickerOpen.value) input?.focus({preventScroll:true}); input?.setSelectionRange(start + value.length, start + value.length); });
 }
-function addSticker(file) {
-  const current = draftKey.value, existing = files[current] || [];
-  const pending = fileReads[current] || { count: 0, size: 0 };
-  if (existing.length + pending.count >= 10 || existing.reduce((n,f)=>n+f.size,0)+pending.size+file.size > 10*1024*1024) { ElMessage.error(t('mailChatFileLimit')); return; }
-  files[current] = [...existing, file];
-}
-const dragDepth = ref(0);
-const draggedFiles = event => [...(event.dataTransfer?.types || [])].includes('Files');
-function dragEnter(event) {
-  if (!draggedFiles(event)) return;
-  event.preventDefault();
-  if (active.value && canSend.value && !sending.value) dragDepth.value++;
-}
-function dragOver(event) {
-  if (!draggedFiles(event)) return;
-  event.preventDefault();
-  if (event.dataTransfer) event.dataTransfer.dropEffect = active.value && canSend.value && !sending.value ? 'copy' : 'none';
-}
-function dragLeave(event) { if (draggedFiles(event) || dragDepth.value) dragDepth.value = Math.max(0, dragDepth.value - 1); }
-function pasteFiles(event) {
-  const pasted = [...(event.clipboardData?.files || [])];
-  if (!pasted.length || !active.value || !canSend.value || sending.value || selecting.value) return;
-  event.preventDefault();
-  chooseFiles({ target: { files: pasted, value: '' } }, draftKey.value);
-}
-function dropFiles(event) {
-  if (!draggedFiles(event)) return;
-  event.preventDefault(); dragDepth.value = 0;
-  if (!active.value || !canSend.value || sending.value) { ElMessage.info(t('mailChatChoose')); return; }
-  if ([...(event.dataTransfer.items || [])].some(item => item.webkitGetAsEntry?.()?.isDirectory)) { ElMessage.error(t('mailChatFileError')); return; }
-  chooseFiles({ target: { files: event.dataTransfer.files, value: '' } }, draftKey.value);
-}
 watch(draftKey, () => { dragDepth.value = 0; });
-async function chooseFiles(event, current = draftKey.value) {
-  const chosen = [...(event.target?.files || [])];
-  if (event.target) event.target.value = '';
-  if (!chosen.length) return;
-  const existing = files[current] || [], pending = fileReads[current] || { count: 0, size: 0 };
-  const size = chosen.reduce((n, f) => n + f.size, 0);
-  if (existing.length + pending.count + chosen.length > 10 ||
-      existing.reduce((n, f) => n + f.size, 0) + pending.size + size > 10 * 1024 * 1024) {
-    ElMessage.error(t('mailChatFileLimit')); return;
-  }
-  fileReads[current] = { count: pending.count + chosen.length, size: pending.size + size };
-  try {
-    const added = await Promise.all(chosen.map(async f => ({ filename: f.name, size: f.size,
-      contentType: /\.tgs$/i.test(f.name) ? 'application/x-tgsticker' : f.type || 'application/octet-stream',
-      content: await fileToBase64(f) })));
-    if (!stopped) files[current] = [...(files[current] || []), ...added];
-  } catch { ElMessage.error(t('mailChatFileError')); }
-  finally {
-    const remaining = fileReads[current];
-    if (remaining) {
-      remaining.count -= chosen.length; remaining.size -= size;
-      if (!remaining.count) delete fileReads[current];
-    }
-  }
-}
 function keyDown(e) {
   if (shouldSendOnEnter(e, compactChat.value && touchKeyboard.value)) {
     e.preventDefault();
@@ -1639,7 +1430,8 @@ async function sendNew() {
 }
 function searchAction({id,email}) {
   if(id==='mail') { newMail.to=email || '';newOpen.value=true; }
-  else if(id==='contacts') { friendsOpen.value=true;loadFriends(); }
+  // ?contacts=1 is handled during setup, before the drawer component has mounted.
+  else if(id==='contacts') { if (contactsDrawer.value) contactsDrawer.value.open(); else nextTick(() => contactsDrawer.value?.open()); }
 }
 watch([()=>route.query.compose,()=>route.query.contacts],()=>{
   if(route.query.compose!=='1' && route.query.contacts!=='1')return;
@@ -1726,7 +1518,7 @@ onBeforeUnmount(() => {
   version++;
   clearTimeout(indexTimer);
 });
-watch(()=>selected.value?.profile,profile=>{if(profileOpen.value&&selected.value?.peers.some(email=>email===shownProfile.value.email))shownProfile.value={...shownProfile.value,...profile};},{deep:true});
+watch(()=>selected.value?.profile,profile=>profileDialog.value?.merge(selected.value?.peers,profile),{deep:true});
 </script>
 
 <style scoped lang="scss">
@@ -1919,16 +1711,6 @@ watch(()=>selected.value?.profile,profile=>{if(profileOpen.value&&selected.value
   left: auto;
   right: 0;
 }
-.profile-card {
-  text-align: center;
-  overflow-wrap: anywhere;
-}
-.profile-card p {
-  margin-top: 12px;
-  white-space: pre-wrap;
-}
-.profile-card form { display: grid; gap: 8px; margin-top: 14px; text-align: start; }
-.profile-card form small { color: var(--el-text-color-secondary); font-size: 12px; }
 .bubble {
   max-width: min(72%, 640px);
   padding: 12px 14px;
@@ -2026,19 +1808,6 @@ pre {
 }
 .live-status.online {
   color: #20a162;
-}
-.friend-request {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 16px;
-}
-.friend-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-  margin: 12px 0;
-  overflow-wrap: anywhere;
 }
 .quote-action {
   opacity: 0;
