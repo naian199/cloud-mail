@@ -283,5 +283,10 @@
   "settingsNoticeHint": "管理用户看到的公告与提示。",
   "settingsAiHint": "配置邮件分析与验证码识别。",
   "settingsOauthHint": "配置第三方账号登录。",
-  "settingsAboutHint": "查看版本、文档与项目信息。"
+  "settingsAboutHint": "查看版本、文档与项目信息。",
+  "navigationBrandHint": "邮件与聊天",
+  "navigationMessages": "消息",
+  "navigationAccountMenu": "账户与偏好设置",
+  "navigationLightMode": "切换浅色模式",
+  "navigationDarkMode": "切换深色模式"
 }
