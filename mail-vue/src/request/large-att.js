@@ -10,27 +10,20 @@ export const largeAttLink = (attId) => http.get(`/large-att/${attId}/link`);
 export const largeAttRemove = (attId) => http.delete(`/large-att/${attId}`);
 export const costactionTest = (token) => http.post('/setting/costactionTest', token ? { token } : {});
 
-// Posts the file to the one-time upload URL as multipart/form-data (field "file") and
-// reports progress. Resolves with the remote file ID. No credentials are sent.
-export function uploadToStorage(url, file, { onProgress, signal } = {}) {
-  return new Promise((resolve, reject) => {
-    // Cancelled before the upload began: the abort listener below would never fire.
-    if (signal?.aborted) { reject(new Error('upload-aborted')); return; }
-    const xhr = new XMLHttpRequest();
-    xhr.open('POST', url);
-    xhr.withCredentials = false;
-    xhr.upload.onprogress = (event) => { if (event.lengthComputable) onProgress?.(event.loaded / event.total); };
-    xhr.onload = () => {
-      let data = null;
-      try { data = JSON.parse(xhr.responseText); } catch {}
-      if (xhr.status >= 200 && xhr.status < 300 && data?.status === 'success' && typeof data.id === 'string') resolve(data.id);
-      else reject(new Error('upload-failed'));
-    };
-    xhr.onerror = () => reject(new Error('upload-network'));
-    xhr.onabort = () => reject(new Error('upload-aborted'));
-    signal?.addEventListener('abort', () => xhr.abort(), { once: true });
-    const form = new FormData();
-    form.append('file', file, file.name);
-    xhr.send(form);
+// Posts the file to this site's Worker as multipart/form-data (field "file"), which relays it
+// to Turbobit and verifies it. Turbobit's upload hosts reject browser CORS preflights, so the
+// browser never posts to them directly. Resolves with { attId, status: 'ready' }.
+export function uploadToStorage(attId, file, { onProgress, signal } = {}) {
+  // Cancelled before the upload began.
+  if (signal?.aborted) return Promise.reject(new Error('upload-aborted'));
+  const form = new FormData();
+  form.append('file', file, file.name);
+  return http.post(`/large-att/${attId}/upload`, form, {
+    noMsg: true,
+    timeout: 0,
+    signal,
+    onUploadProgress: (event) => { if (event.total) onProgress?.(event.loaded / event.total); }
+  }).catch((error) => {
+    throw new Error(signal?.aborted ? 'upload-aborted' : 'upload-failed', { cause: error });
   });
 }
