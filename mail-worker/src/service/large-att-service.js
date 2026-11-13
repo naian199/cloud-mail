@@ -9,10 +9,10 @@ const rateWindow = [];
 
 // Large attachments kept with CostAction/Turbobit (apptype fd1).
 //
-// The browser asks for a one-time upload URL here, posts the file straight to it, then
-// reports the remote file ID, which is checked against the API before the attachment
-// counts as ready. The API token stays on the server; the browser only ever sees the
-// one-time upload URL and, later, a Turbobit download page.
+// The browser registers a file here (begin), then posts it to this Worker, which streams it
+// to a one-time Turbobit upload URL and checks the result against the API before the
+// attachment counts as ready. The API token and upload URLs stay on the server; the browser
+// only ever sees a Turbobit download page.
 //
 // Rows use attachments.storage = 'costaction'. Everything else keeps storage = '' and
 // the deployment's existing R2/S3/KV path.
@@ -82,12 +82,6 @@ const largeAtt = {
 		if (existing?.status === 'ready') return { attId: existing.attId, status: 'ready' };
 		if (existing && !['uploading', 'failed'].includes(existing.status)) fail('Attachment unavailable / 附件不可用', 409);
 
-		let upload;
-		try {
-			upload = await client(c, setting).requestUploadUrl();
-		} catch (error) {
-			unavailable(error);
-		}
 		let attId = existing?.attId;
 		if (attId) {
 			await c.env.db.prepare("UPDATE attachments SET remote_status = 'uploading' WHERE att_id = ? AND user_id = ?").bind(attId, userId).run();
@@ -101,10 +95,49 @@ const largeAtt = {
 				.first();
 			attId = row.attId;
 		}
-		return { attId, status: 'uploading', uploadUrl: upload.url, expire: upload.expire };
+		return { attId, status: 'uploading' };
 	},
 
-	// Called after the browser's upload; trusts nothing it sends until the API confirms the file.
+	// Relays the browser's multipart upload to a fresh Turbobit upload URL, then verifies it.
+	// Turbobit's upload hosts answer the CORS preflight without allow headers, so browsers
+	// cannot post to them directly; the request body is streamed through, never buffered.
+	async upload(c, rawId) {
+		const { setting, userId, enabled, allowed } = await policy(c);
+		if (!enabled) fail('Large attachments are disabled / 大附件未启用', 403);
+		if (!allowed) fail('Unauthorized / 无权使用大附件', 403);
+		const attId = positiveId(rawId);
+		const row = await c.env.db
+			.prepare(`SELECT size, remote_status AS status FROM attachments WHERE att_id = ? AND user_id = ? AND storage = ? AND email_id = 0`)
+			.bind(attId, userId, STORAGE)
+			.first();
+		if (!row) fail('Attachment unavailable / 附件不可用', 404);
+		if (row.status === 'ready') return { attId, status: 'ready' };
+		if (row.status !== 'uploading') fail('Attachment unavailable / 附件不可用', 409);
+		const type = c.req.header('content-type') || '';
+		const length = Number(c.req.header('content-length'));
+		// The multipart envelope adds a little to the file itself.
+		if (!/^multipart\/form-data;\s*boundary=/i.test(type) || !Number.isSafeInteger(length) || length < row.size || length > row.size + 64 * 1024 || !c.req.raw.body)
+			fail('Invalid upload / 上传请求无效');
+		let upload;
+		try {
+			upload = await client(c, setting).requestUploadUrl();
+		} catch (error) {
+			unavailable(error);
+		}
+		const { readable, writable } = new FixedLengthStream(length);
+		const piping = c.req.raw.body.pipeTo(writable).catch(() => {});
+		let remoteId = '';
+		try {
+			const response = await fetch(upload.url, { method: 'POST', headers: { 'Content-Type': type }, body: readable });
+			const data = await response.json().catch(() => ({}));
+			if (response.ok && data.status === 'success' && typeof data.id === 'string') remoteId = data.id;
+		} catch {}
+		await piping;
+		if (!remoteId) fail('Upload to the storage service failed / 上传到存储服务失败', 502);
+		return largeAtt.complete(c, { attId, remoteId });
+	},
+
+	// Called after the upload; trusts nothing it sends until the API confirms the file.
 	async complete(c, params) {
 		const { setting, userId } = await policy(c);
 		const attId = positiveId(params?.attId);

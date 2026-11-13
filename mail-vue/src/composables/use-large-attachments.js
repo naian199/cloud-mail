@@ -1,7 +1,7 @@
 import { reactive, ref } from 'vue';
 import { ElMessage } from 'element-plus';
 import { randomUUID } from '@/utils/uuid';
-import { largeAttBegin, largeAttComplete, largeAttConfig, largeAttFailed, largeAttRemove, uploadToStorage } from '@/request/large-att';
+import { largeAttBegin, largeAttConfig, largeAttFailed, largeAttRemove, uploadToStorage } from '@/request/large-att';
 
 // Large attachments chosen in the chat composer, per draft. Each file gets its own request ID,
 // so a retry reuses the same server record instead of creating another.
@@ -28,8 +28,7 @@ export function useLargeAttachments({ t, accountId, draftKey }) {
       // Removed while the upload URL was being requested: do not transfer the file.
       if (item.status === 'removed') { largeAttFailed(begun.attId).catch(() => {}); return; }
       if (begun.status !== 'ready') {
-        const remoteId = await uploadToStorage(begun.uploadUrl, item.file, { signal: item.controller.signal, onProgress: (p) => { item.progress = p; } });
-        await largeAttComplete({ attId: begun.attId, remoteId });
+        await uploadToStorage(begun.attId, item.file, { signal: item.controller.signal, onProgress: (p) => { item.progress = p; } });
       }
       item.status = 'ready';
       item.progress = 1;

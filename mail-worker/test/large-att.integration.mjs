@@ -68,10 +68,11 @@ async function call(pathname, token, method = 'GET', body) {
 }
 const ok = async (...args) => { const r = await call(...args); assert.equal(r.data.code, 200, `${args[0]}: ${r.text}`); return r.data.data; };
 const login = async (email) => (await ok('/login', null, 'POST', { email, password: PASSWORD })).token;
-const uploadToMock = async (url, name, size) => {
+// The browser posts the file to the Worker, which relays it to the storage service.
+const relay = async (token, attId, name, size) => {
 	const form = new FormData();
 	form.append('file', new Blob([new Uint8Array(size)]), name);
-	return (await fetch(url, { method: 'POST', body: form })).json();
+	return (await fetch(`${API}/large-att/${attId}/upload`, { method: 'POST', headers: { Authorization: token }, body: form })).json();
 };
 let admin, peer, adminAccount, peerAccount;
 
@@ -139,17 +140,23 @@ let sentAtt, remoteId;
 test('upload: one row per request ID, the file is verified before it is ready', async () => {
 	const id = clientId(), size = 2 * MB;
 	const first = await ok('/large-att/begin', admin, 'POST', { accountId: adminAccount, filename: 'archive.zip', size, clientId: id });
-	assert.match(first.uploadUrl, /^http:\/\/127\.0\.0\.1:8790\/upload\//);
+	assert.equal(first.uploadUrl, undefined, 'upload URLs stay on the server');
 	const retry = await ok('/large-att/begin', admin, 'POST', { accountId: adminAccount, filename: 'archive.zip', size, clientId: id });
 	assert.equal(retry.attId, first.attId);
 	const conflict = await call('/large-att/begin', admin, 'POST', { accountId: adminAccount, filename: 'other.zip', size, clientId: id });
 	assert.equal(conflict.data.code, 409);
 
-	const uploaded = await uploadToMock(retry.uploadUrl, 'archive.zip', size);
-	assert.equal(seen.uploadAuth.at(-1), '', 'the browser-side upload carries no token');
 	assert.equal((await call('/large-att/complete', admin, 'POST', { attId: first.attId, remoteId: 'mockfile999' })).data.code, 404);
-	const done = await ok('/large-att/complete', admin, 'POST', { attId: first.attId, remoteId: uploaded.id });
-	assert.equal(done.status, 'ready');
+	// Another user cannot upload into this record.
+	assert.notEqual((await relay(peer, first.attId, 'archive.zip', size)).code, 200);
+	// A body that does not match the registered size is refused before anything is relayed.
+	assert.equal((await relay(admin, first.attId, 'archive.zip', MB)).code, 400);
+	const done = await relay(admin, first.attId, 'archive.zip', size);
+	assert.equal(done.code, 200, JSON.stringify(done));
+	assert.equal(done.data.status, 'ready');
+	assert.equal(seen.uploadAuth.at(-1), '', 'the relayed upload carries no token');
+	const uploaded = { id: [...files.keys()].at(-1) };
+	assert.equal(files.get(uploaded.id).size, size);
 	// Once ready, the same request ID does not start another upload.
 	const calls = seen.uploadUrlCalls;
 	assert.equal((await ok('/large-att/begin', admin, 'POST', { accountId: adminAccount, filename: 'archive.zip', size, clientId: id })).status, 'ready');
@@ -160,7 +167,7 @@ test('upload: one row per request ID, the file is verified before it is ready', 
 test('a 429 from the API is retried after retry-after', async () => {
 	rateLimitNext = 1;
 	const r = await ok('/large-att/begin', admin, 'POST', { accountId: adminAccount, filename: 'b.zip', size: 2 * MB, clientId: clientId() });
-	assert.ok(r.uploadUrl);
+	assert.equal((await relay(admin, r.attId, 'b.zip', 2 * MB)).data.status, 'ready');
 	assert.equal(rateLimitNext, 0);
 });
 
@@ -188,8 +195,7 @@ test('send in an internal chat; the recipient sees the file and gets a download 
 test('retrying a committed send returns the same message', async () => {
 	const id = clientId(), size = 2 * MB;
 	const begun = await ok('/large-att/begin', admin, 'POST', { accountId: adminAccount, filename: 'retry.zip', size, clientId: clientId() });
-	const uploaded = await uploadToMock(begun.uploadUrl, 'retry.zip', size);
-	await ok('/large-att/complete', admin, 'POST', { attId: begun.attId, remoteId: uploaded.id });
+	assert.equal((await relay(admin, begun.attId, 'retry.zip', size)).data.status, 'ready');
 	const payload = { accountId: adminAccount, recipients: [PEER], subject: 'Chat', text: 'retry', attachments: [], largeAttIds: [begun.attId], clientId: id };
 	const first = await ok('/mail-chat/send', admin, 'POST', payload);
 	// The reply was lost; the composer resends the same request.
