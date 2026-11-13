@@ -50,7 +50,7 @@
                       :is-mobile="isMobile"
                       :is-select-max="isSelectMax"
                       @open="jumpDetails"
-                      @contextmenu="handleContextmenu"
+                      @contextmenu="(event, item) => contextMenu?.open(event, item)"
                       @star="starChange"
                       @copy-code="copyCode">
               <!-- Forward the pages' name/subject slots; the fallbacks match the row's own defaults. -->
@@ -87,95 +87,13 @@
         <el-empty :image-size="isMobile ? 120 : null" :description="$t('noMessagesFound')"/>
       </div>
     </div>
-    <el-dropdown
-        ref="dropdownRef"
-        @visible-change="visibleChange"
-        :virtual-ref="triggerRef"
-        :show-arrow="false"
-        :popper-options="{
-      modifiers: [{ name: 'offset', options: { offset: [0, 0] } }],
-    }"
-        virtual-triggering
-        trigger="contextmenu"
-        placement="bottom-start"
-    >
-      <template #dropdown>
-        <el-dropdown-menu>
-          <el-dropdown-item v-if="rightClickEmail.code" @click="copyCode(rightClickEmail.code)" >
-            <template #default>
-              <div class="right-dropdown-item">
-                <Icon icon="fluent-color:clipboard-24" width="20" height="20" />
-                <span>{{t('copyCode')}}</span>
-              </div>
-            </template>
-          </el-dropdown-item>
-          <el-dropdown-item v-if="['email'].includes(props.type)" @click="emailRead(rightClickEmail.emailId)" >
-            <template #default>
-              <div class="right-dropdown-item">
-                <Icon icon="fluent:mail-read-20-regular" width="20" height="20" />
-                <span>{{t('markAsRead')}}</span>
-              </div>
-            </template>
-          </el-dropdown-item>
-          <el-dropdown-item v-if="['email','star'].includes(props.type)" @click="openReply(rightClickEmail)">
-            <template #default>
-              <div class="right-dropdown-item">
-                <Icon icon="la:reply" width="20" height="20"  />
-                <span>{{t('reply')}}</span>
-              </div>
-            </template>
-          </el-dropdown-item>
-          <el-dropdown-item v-if="['email','send', 'star'].includes(props.type)" @click="openForward(rightClickEmail)">
-            <template #default>
-              <div class="right-dropdown-item">
-                <Icon icon="iconoir:arrow-up-right" width="19" height="19"  />
-                <span>{{t('forward')}}</span>
-              </div>
-            </template>
-          </el-dropdown-item>
-          <el-dropdown-item v-if="['email','send', 'star'].includes(props.type)" @click="starChange(rightClickEmail)">
-            <template #default>
-              <div class="right-dropdown-item">
-                <Icon icon="solar:star-line-duotone" width="19" height="19"/>
-                <span>{{t('star')}}</span>
-              </div>
-            </template>
-          </el-dropdown-item>
-          <el-dropdown-item v-if="props.type === 'all-email'" @click="handleSearch('user', rightClickEmail.userEmail)">
-            <template #default>
-              <div class="right-dropdown-item">
-                <Icon icon="iconoir:search" width="20" height="20" />
-                <span>{{t('searchUser')}}</span>
-              </div>
-            </template>
-          </el-dropdown-item>
-          <el-dropdown-item v-if="props.type === 'all-email' " @click="handleSearch('account', rightClickEmail.toEmail)">
-            <template #default>
-              <div class="right-dropdown-item">
-                <Icon icon="iconoir:search" width="20" height="20" />
-                <span>{{t('searchEmail')}}</span>
-              </div>
-            </template>
-          </el-dropdown-item>
-          <el-dropdown-item v-if="props.type === 'all-email' " @click="handleSearch('name', rightClickEmail.name)">
-            <template #default>
-              <div class="right-dropdown-item">
-                <Icon icon="iconoir:search" width="20" height="20" />
-                <span>{{t('searchSender')}}</span>
-              </div>
-            </template>
-          </el-dropdown-item>
-          <el-dropdown-item @click="rightDelete(rightClickEmail.emailId)">
-            <template #default>
-              <div class="right-dropdown-item">
-                <Icon icon="uiw:delete" width="16" height="20" style="margin-left: 1px;margin-right: 3px" />
-                <span>{{t('delete')}}</span>
-              </div>
-            </template>
-          </el-dropdown-item>
-        </el-dropdown-menu>
-      </template>
-    </el-dropdown>
+    <EmailContextMenu ref="contextMenu"
+                      :type="props.type"
+                      @copy-code="copyCode"
+                      @read="emailRead"
+                      @star="starChange"
+                      @search="handleSearch"
+                      @delete="rightDelete" />
   </div>
 </template>
 
@@ -183,6 +101,7 @@
 import {Icon} from "@iconify/vue";
 import skeletonBlock from "@/components/email-scroll/skeleton/index.vue"
 import EmailRow from "@/components/email-scroll/email-row.vue"
+import EmailContextMenu from "@/components/email-scroll/email-context-menu.vue"
 import {computed, onActivated, reactive, ref, watch, nextTick, onMounted, onUnmounted } from "vue";
 import {useEmailStore} from "@/store/email.js";
 import {useUiStore} from "@/store/ui.js";
@@ -192,7 +111,7 @@ import {fromNow} from "@/utils/day.js";
 import {useI18n} from "vue-i18n";
 import {EmailUnreadEnum} from "@/enums/email-enum.js";
 import { UseVirtualList } from '@vueuse/components'
-import { useEventListener, useScroll } from '@vueuse/core'
+import { useScroll } from '@vueuse/core'
 import { useBreakpoint } from '@/composables/use-breakpoint.js'
 
 const props = defineProps({
@@ -269,26 +188,11 @@ const { isLaptop: isMobile } = useBreakpoint()
 let skeletonRows = 0
 const timePaddingRight = ref('');
 const keyCount = ref(0);
-const dropdownRef = ref(null);
-const dropdownCloseLock = ref(false);
-const dropdownShow = ref(false);
-const rightClickEmail = ref({});
+const contextMenu = ref(null);
 const MAX_SELECT_COUNT = 95;
 const checkedEmailCount = ref(0);
 const isSelectMax = computed(() => checkedEmailCount.value >= MAX_SELECT_COUNT);
 let timer = null
-const position = ref(
-    DOMRect.fromRect({
-      x: 0,
-      y: 0,
-    })
-)
-
-const triggerRef = ref({
-  getBoundingClientRect() {
-    return position.value;
-  }
-})
 
 const queryParam = reactive({
   size: 50
@@ -427,54 +331,6 @@ watch(() => emailStore.addStarEmailId, () => {
     }
   })
 })
-
-useEventListener(window, 'wheel', () => {
-  if (dropdownShow.value) {
-    dropdownRef.value?.handleClose();
-  }
-}, { passive: true })
-
-function openReply(email) {
-  uiStore.writerRef.openReply(email)
-}
-
-function openForward(email) {
-  uiStore.writerRef.openForward(email)
-}
-
-function visibleChange(e) {
-  dropdownShow.value = e;
-  dropdownCloseLock.value = true;
-  setTimeout(() => {
-    dropdownCloseLock.value = false;
-  },1500)
-
-  if (!e && rightClickEmail.value.rightChecked) {
-    rightClickEmail.value.rightChecked = false
-  }
-}
-
-const handleContextmenu = (event, email) => {
-
-  if (props.type === 'draft') {
-    return
-  }
-
-  if (rightClickEmail.value.rightChecked) {
-    rightClickEmail.value.rightChecked = false
-  }
-
-  const { clientX, clientY } = event
-  position.value = DOMRect.fromRect({
-    x: clientX,
-    y: clientY,
-  })
-  event.preventDefault();
-  dropdownRef.value?.handleOpen();
-
-  rightClickEmail.value = email;
-  rightClickEmail.value.rightChecked = true
-}
 
 function updateHasScrollbar() {
   nextTick(() => {
@@ -721,12 +577,12 @@ function updateCheckStatus() {
 
 function jumpDetails(email) {
 
-  if (dropdownShow.value) {
-    dropdownRef.value.handleClose();
+  if (contextMenu.value?.isOpen) {
+    contextMenu.value.close();
     return;
   }
 
-  if (!dropdownCloseLock.value) {
+  if (!contextMenu.value?.closeLocked) {
     const sel = window.getSelection();
     if (sel.toString().trim()) {
       return
@@ -1302,29 +1158,7 @@ function loadData() {
   padding-right: v-bind(timePaddingRight);
 }
 
-.right-dropdown-item {
-  display: flex;
-  gap: 10px;
-}
-
-:deep(.el-dropdown-menu__item:last-child) {
-  padding-bottom: 10px;
-}
-
-:deep(.el-dropdown-menu__item:first-child) {
-  padding-top: 10px;
-}
-
-:deep(.el-dropdown-menu__item) {
-  padding-right: 14px;
-  padding-left: 14px;
-}
 
 
-ul {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
 
 </style>
