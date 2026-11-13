@@ -21,6 +21,8 @@ const zh = {
     mailChatImage: "图片",
     mailChatImageError: "图片加载失败",
     mailChatImageRetry: "重新加载图片",
+    mailRemoteImagesBlocked: "为保护隐私，已隐藏远程图片。",
+    mailRemoteImagesShow: "显示图片",
     mailChatImageLoading: "图片加载中…",
     mailChatQuoteReply: "引用回复",
     mailChatCancelQuote: "取消引用",

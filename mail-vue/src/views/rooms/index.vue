@@ -79,6 +79,7 @@
 </template>
 <script setup>
 import { useMediaQuery, useResizeObserver } from '@vueuse/core';
+import { useBreakpoint } from '@/composables/use-breakpoint';
 import { shouldSendOnEnter } from '@/utils/chat-keyboard.mjs';
 import LinkifiedText from '@/components/linkified-text.vue';
 import LinkPreview from '@/components/link-preview.vue';
@@ -209,7 +210,7 @@ async function older() {
   olderLoading.value=true;const id=activeId.value,mine=version,element=scroll.value,height=element.scrollHeight,top=element.scrollTop;
   try {const data=await roomMessages(id,{before:messages.value[0].id});if(mine!==version||stopped)return;merge(data);hasOlder.value=data.hasMore;await nextTick();element.scrollTop=top+element.scrollHeight-height;}catch{}finally{olderLoading.value=false;}
 }
-const touchKeyboard=useMediaQuery('(any-pointer: coarse)'), compactRoom=useMediaQuery('(max-width:767px), (max-width:1024px) and (max-height:500px) and (pointer:coarse)');
+const touchKeyboard=useMediaQuery('(any-pointer: coarse)'), compactRoom=useBreakpoint().isPhone;
 useResizeObserver(scroll,()=>{if(scroll.value&&atBottom.value&&!historyTarget.value&&!messageLoading.value)scroll.value.scrollTop=scroll.value.scrollHeight;});
 const mobileTranslationOpen=ref(false);
 function mobileRoomAction(command){if(command==='translate')mobileTranslationOpen.value=true;else if(command==='mute')muteRoom();else if(command==='members')openMembers();}
@@ -279,7 +280,7 @@ onBeforeUnmount(()=>{document.removeEventListener('keydown',roomEscape);stopped=
 :global(html.dark .rooms) { --room-canvas:#101c28; --room-incoming:#20303f; --room-outgoing:#234864; }
 .room-thread { background:var(--room-canvas); }.room-bubble { background:var(--room-incoming); border-radius:14px 14px 14px 5px; box-shadow:0 1px 2px #0001; }.mine .room-bubble { background:var(--room-outgoing); border-radius:14px 14px 5px 14px; }
 .room-heading-name small { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }.room-date { width:max-content; margin:12px auto; padding:4px 10px; border-radius:14px; font-size:11px; background:var(--el-fill-color); color:var(--el-text-color-secondary); }
-.room-controls { flex-shrink:0; padding-top:10px; }.room-controls>.el-input { margin:0 12px 10px 52px; width:calc(100% - 64px); }.room-create { padding:0 4px; height:24px; font-size:22px; }
+.room-controls { flex-shrink:0; padding-top:10px; }.room-controls>.el-input { margin:0 12px 10px var(--nav-toggle-space,52px); width:calc(100% - 12px - var(--nav-toggle-space,52px)); }.room-create { padding:0 4px; height:24px; font-size:22px; }
 </style>
 
 <style scoped>

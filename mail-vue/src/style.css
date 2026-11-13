@@ -315,3 +315,10 @@ html {
  .el-drawer__close-btn {min-width:44px;min-height:44px;}
  .navigation-drawer .navigation-close {top:calc(env(safe-area-inset-top) + 4px);width:44px;height:44px;}
 }
+
+/* Touch: enlarge the hit area of small controls without changing their layout. */
+@media(any-pointer:coarse){
+ .el-table__column-filter-trigger {position:relative;}
+ .el-checkbox__input::after {content:"";position:absolute;inset:-12px;}
+ .el-table__column-filter-trigger::after {content:"";position:absolute;inset:-12px -6px;}
+}

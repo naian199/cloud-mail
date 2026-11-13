@@ -822,5 +822,7 @@
   "navigationMessages": "Messages",
   "navigationAccountMenu": "Account and preferences",
   "navigationLightMode": "Switch to light mode",
-  "navigationDarkMode": "Switch to dark mode"
+  "navigationDarkMode": "Switch to dark mode",
+  "mailRemoteImagesBlocked": "Зовнішні зображення приховано для захисту вашої конфіденційності.",
+  "mailRemoteImagesShow": "Показати зображення"
 }

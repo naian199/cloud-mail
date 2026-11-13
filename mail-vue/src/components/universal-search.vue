@@ -101,7 +101,7 @@ onMounted(()=>document.addEventListener('pointerdown',outside,true));
 onBeforeUnmount(()=>{disposed=true;sequence++;clearTimeout(timer);clearTimeout(indexTimer);controller?.abort();document.removeEventListener('pointerdown',outside,true);});
 </script>
 <style scoped>
-.universal-search>.search { margin:0 12px 10px 52px; width:calc(100% - 64px); }
+.universal-search>.search { margin:0 12px 10px var(--nav-toggle-space,52px); width:calc(100% - 12px - var(--nav-toggle-space,52px)); }
 .search-back { display:grid; place-items:center; border:0; width:24px; height:28px; padding:0; background:none; color:var(--el-text-color-regular); cursor:pointer; }
 .omni-results { position:absolute; inset:52px 0 0; z-index:25; overflow:auto; background:var(--el-bg-color); padding:4px 8px 12px; overscroll-behavior:contain; }
 .omni-scope,.omni-hint,.omni-loading,.omni-error { margin:8px 6px; font-size:12px; color:var(--el-text-color-secondary); overflow-wrap:anywhere; }.omni-error{color:var(--el-color-danger);}

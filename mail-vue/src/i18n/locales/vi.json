@@ -822,5 +822,7 @@
   "navigationMessages": "Messages",
   "navigationAccountMenu": "Account and preferences",
   "navigationLightMode": "Switch to light mode",
-  "navigationDarkMode": "Switch to dark mode"
+  "navigationDarkMode": "Switch to dark mode",
+  "mailRemoteImagesBlocked": "Hình ảnh từ xa đã bị ẩn để bảo vệ quyền riêng tư của bạn.",
+  "mailRemoteImagesShow": "Hiển thị hình ảnh"
 }

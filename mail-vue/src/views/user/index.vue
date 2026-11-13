@@ -41,7 +41,6 @@
             @cell-contextmenu="handleContextmenu"
             :cell-class-name="cellClassName"
         >
-          <el-table-column :label="$t('officialVerified')" min-width="150"><template #default="{row}"><OfficialBadge :profile="row" /><el-button v-perm="'user:verify'" text @click="openOfficial(row)">{{ $t(row.officialVerified ? 'officialManage' : 'officialGrant') }}</el-button><small v-if="row.identityUsername">@{{ row.identityUsername }}</small></template></el-table-column>
           <el-table-column :width="expandWidth" type="selection" :selectable="row => row.type !== 0" />
           <el-table-column show-overflow-tooltip :tooltip-formatter="tableRowFormatter" :label="$t('tabEmailAddress')"
                            :min-width="emailWidth">
@@ -92,7 +91,9 @@
               </div>
             </template>
           </el-table-column>
-          <el-table-column :label="$t('tabSetting')" :width="settingWidth">
+          <!-- Narrow screens keep the address visible; official status moves into the Action menu. -->
+          <el-table-column v-if="officialShow" :label="$t('officialVerified')" min-width="150"><template #default="{row}"><OfficialBadge :profile="row" /><el-button v-perm="'user:verify'" text @click="openOfficial(row)">{{ $t(row.officialVerified ? 'officialManage' : 'officialGrant') }}</el-button><small v-if="row.identityUsername">@{{ row.identityUsername }}</small></template></el-table-column>
+          <el-table-column :label="$t('tabSetting')" :width="settingWidth" fixed="right">
             <template #default="props">
               <el-button size="small" type="primary" v-if="(props.row.type === 0 && userStore.user.type !== 0)" >{{ $t('action') }}</el-button>
               <el-dropdown v-else >
@@ -109,6 +110,7 @@
                     </template>
                     <el-dropdown-item @click="openAccountList(props.row.userId)" >{{ $t('account') }}</el-dropdown-item>
                     <el-dropdown-item @click="openDetails(props.row)" >{{ $t('details') }}</el-dropdown-item>
+                    <el-dropdown-item v-if="!officialShow" v-perm="'user:verify'" @click="openOfficial(props.row)">{{ $t(props.row.officialVerified ? 'officialManage' : 'officialGrant') }}</el-dropdown-item>
                   </el-dropdown-menu>
                 </template>
               </el-dropdown>
@@ -406,6 +408,8 @@ import {isEmail} from "@/utils/verify-utils.js";
 import {useRoleStore} from "@/store/role.js";
 import {useUserStore} from "@/store/user.js";
 import {useI18n} from 'vue-i18n';
+import {useEventListener} from '@vueuse/core';
+import {useBreakpoint} from '@/composables/use-breakpoint.js';
 
 defineOptions({
   name: 'user'
@@ -438,6 +442,7 @@ const sendNumShow = ref(true)
 const accountNumShow = ref(true)
 const createTimeShow = ref(true)
 const statusShow = ref(true)
+const officialShow = ref(true)
 const typeShow = ref(true)
 const receiveWidth = ref(null)
 const phonePageShow = ref(false)
@@ -546,11 +551,11 @@ const filterItem = reactive({
   receive: ['normal', 'del']
 })
 
-window.addEventListener('wheel', (event) => {
+useEventListener(window, 'wheel', () => {
   if (dropdownShow.value) {
-    dropdownRef.value.handleClose();
+    dropdownRef.value?.handleClose();
   }
-})
+}, { passive: true })
 
 function visibleChange(e) {
   dropdownShow.value = e;
@@ -1050,15 +1055,13 @@ function getUserList(loading = true) {
   })
 }
 
-window.onresize = () => {
-  adjustWidth()
-};
-
-adjustWidth()
+const {width: viewportWidth} = useBreakpoint()
+watch(viewportWidth, adjustWidth, {immediate: true})
 
 function adjustWidth() {
-  const width = window.innerWidth
+  const width = viewportWidth.value
   statusShow.value = width > 1090
+  officialShow.value = width > 1090
   createTimeShow.value = width > 1367
   accountNumShow.value = width > 650
   sendNumShow.value = width > 685

@@ -31,7 +31,7 @@
             </div>
           </template>
         </el-table-column>
-        <el-table-column :label="$t('tabSetting')" :width="settingWidth">
+        <el-table-column :label="$t('tabSetting')" :width="settingWidth" fixed="right">
           <template #default="props">
             <el-dropdown trigger="click">
               <el-button size="small" type="primary">{{ $t('action') }}</el-button>
@@ -144,7 +144,7 @@
 </template>
 <script setup>
 import {Icon} from "@iconify/vue";
-import {defineOptions, nextTick, reactive, ref} from "vue";
+import {defineOptions, nextTick, reactive, ref, watch} from "vue";
 import {roleAdd, roleDelete, rolePermTree, roleRoleList, roleSet, roleSetDef} from "@/request/role.js";
 import loading from '@/components/loading/index.vue';
 import {useRoleStore} from "@/store/role.js";
@@ -152,6 +152,7 @@ import {useUserStore} from "@/store/user.js";
 import {useSettingStore} from "@/store/setting.js";
 import {isEmail, isDomain} from "@/utils/verify-utils.js";
 import {useI18n} from "vue-i18n";
+import {useBreakpoint, BREAKPOINTS} from "@/composables/use-breakpoint.js";
 
 defineOptions({
   name: 'role'
@@ -399,18 +400,17 @@ function getRoleList() {
   })
 }
 
+const {width: viewportWidth} = useBreakpoint()
+
 function adjustWidth() {
-  desShow.value = window.innerWidth > 767
-  settingWidth.value = window.innerWidth < 480 ? (locale.value === 'en' ? 85 : 75) : null
-  sortWidth.value = window.innerWidth < 480 ? 75 : null
-  roleWidth.value = window.innerWidth < 480 ? 180 : 200
+  const width = viewportWidth.value
+  desShow.value = width > BREAKPOINTS.phone
+  settingWidth.value = width < 480 ? (locale.value === 'en' ? 85 : 75) : null
+  sortWidth.value = width < 480 ? 60 : null
+  roleWidth.value = width < 480 ? 120 : 200
 }
 
-adjustWidth()
-
-window.onresize = () => {
-  adjustWidth()
-};
+watch([viewportWidth, locale], adjustWidth, {immediate: true})
 
 
 </script>

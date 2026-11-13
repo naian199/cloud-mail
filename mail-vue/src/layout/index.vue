@@ -1,5 +1,12 @@
 <template>
-  <el-container class="layout" :class="{ 'navigation-open': uiStore.asideShow, 'mobile-chat-focused': uiStore.mobileChatFocused, 'sidebar-collapsible': !compactSidebar && chatRoute, 'conversation-sidebar-collapsed': sidebarCollapsed && chatRoute }" :style="{ '--chat-viewport-height': 'var(--app-viewport-height, 100dvh)', '--chat-viewport-top': 'var(--app-viewport-top, 0px)', '--conversation-width': conversationWidth + 'px' }">
+  <el-container class="layout" :class="{ 'persistent-nav': persistentNav, 'navigation-open': uiStore.asideShow, 'mobile-chat-focused': uiStore.mobileChatFocused, 'sidebar-collapsible': !compactSidebar && chatRoute, 'conversation-sidebar-collapsed': sidebarCollapsed && chatRoute }" :style="{ '--chat-viewport-height': 'var(--app-viewport-height, 100dvh)', '--chat-viewport-top': 'var(--app-viewport-top, 0px)', '--conversation-width': conversationWidth + 'px' }">
+    <!-- Shares the drawer's navigation-drawer class so the menu keeps its --nav-* palette. -->
+    <el-aside v-if="persistentNav" width="260px" class="persistent-aside navigation-drawer">
+      <div class="navigation-brand persistent-brand"><img src="/mail-brand.svg" alt="" width="36" height="36"><div><strong>{{ settingStore.settings.title }}</strong><span>{{ $t('navigationBrandHint') }}</span></div></div>
+      <nav id="main-navigation" :aria-label="$t('navigationMenu')"><Aside /></nav>
+      <div class="persistent-aside-footer"><Header compact drawer /></div>
+    </el-aside>
+    <template v-else>
     <button type="button" class="global-navigation-toggle" :aria-label="$t('navigationMenu')" :title="$t('navigationMenu')" :aria-expanded="uiStore.asideShow" aria-controls="main-navigation" aria-haspopup="dialog" @click="uiStore.asideShow = !uiStore.asideShow">
       <Icon icon="cloud-mail:menu" width="20" height="20" />
     </button>
@@ -8,6 +15,7 @@
       <nav id="main-navigation" :aria-label="$t('navigationMenu')"><Aside /></nav>
       <template #footer><Header compact drawer /></template>
     </el-drawer>
+    </template>
     <el-container class="main-container">
       <el-main>
         <el-header v-if="!chatRoute"><Header :toolbar="false" /></el-header>
@@ -30,6 +38,7 @@ import {useUiStore} from "@/store/ui.js";
 import {useSettingStore} from '@/store/setting';
 import writer from '@/layout/write/index.vue'
 import { useMessageAlerts } from '@/composables/use-message-alerts';
+import { useBreakpoint, BREAKPOINTS } from '@/composables/use-breakpoint.js';
 
 useMessageAlerts();
 
@@ -41,6 +50,10 @@ const {collapsed:sidebarCollapsed,compact:compactSidebar}=useConversationSidebar
 const conversationWidth = computed(() => sidebarCollapsed.value ? 64 : Math.min(420, Math.max(260, Number(uiStore.conversationWidth) || 300)));
 uiStore.asideShow = false;
 watch(() => route.fullPath, () => { uiStore.asideShow = false; });
+// Wide desktops keep navigation visible; narrower screens use the drawer.
+const { width: viewportWidth } = useBreakpoint();
+const persistentNav = computed(() => viewportWidth.value > BREAKPOINTS.laptop);
+watch(persistentNav, (wide) => { if (wide) uiStore.asideShow = false; });
 const writerRef = ref({})
 onMounted(() => {
   uiStore.writerRef = writerRef
@@ -99,8 +112,14 @@ onMounted(() => {
 .global-navigation-toggle { position: fixed; top: calc(env(safe-area-inset-top, 0px) + 4px); left: calc(env(safe-area-inset-left, 0px) + 4px); width: 40px; height: 40px; display: grid; place-items: center; border: 0; border-radius: 6px; background: var(--el-bg-color); color: var(--el-text-color-primary); z-index: 102; cursor: pointer; }
 .global-navigation-toggle:hover { background: var(--el-fill-color); }
 .global-navigation-toggle:focus-visible { outline: 2px solid var(--el-color-primary); outline-offset: -2px; }
-.layout :deep(.header-btn) { padding-inline-start: 52px; }
-.layout :deep(.mail-chat .contact-controls .search) { margin-inline-start: 52px; width: calc(100% - 64px); }
+.layout { --nav-toggle-space: 52px; }
+.layout.persistent-nav { --nav-toggle-space: 12px; }
+.layout :deep(.header-btn) { padding-inline-start: var(--nav-toggle-space); }
+.layout :deep(.mail-chat .contact-controls .search) { margin-inline-start: var(--nav-toggle-space); width: calc(100% - 12px - var(--nav-toggle-space)); }
+.persistent-aside { display: flex; flex-direction: column; min-height: 0; }
+.persistent-brand { box-sizing: border-box; flex-shrink: 0; padding: 22px 18px 18px; border-bottom: 1px solid var(--nav-line); }
+.persistent-aside #main-navigation { flex: 1; min-height: 0; }
+.persistent-aside-footer { flex-shrink: 0; padding: 12px; border-top: 1px solid var(--nav-line); background: var(--nav-bg); }
 @media (max-width: 767px), (max-width: 1024px) and (max-height: 500px) and (pointer: coarse) {
   .layout.mobile-chat-focused .global-navigation-toggle { display:none; }
   .layout.mobile-chat-focused :deep(.mail-chat .thread-header), .layout.mobile-chat-focused :deep(.rooms .room-heading) { padding-inline-start: 4px; }
@@ -118,6 +137,6 @@ html.dark .navigation-drawer{--nav-bg:#191f2b;--nav-ink:#e3e9f4;--nav-muted:#909
 </style>
 
 <style scoped>
-.layout.sidebar-collapsible :deep(.contact-controls .search),.layout.sidebar-collapsible :deep(.room-controls .search) {width:calc(100% - 100px);margin-inline-end:48px;}
+.layout.sidebar-collapsible :deep(.contact-controls .search),.layout.sidebar-collapsible :deep(.room-controls .search) {width:calc(100% - 48px - var(--nav-toggle-space));margin-inline-end:48px;}
 .layout.conversation-sidebar-collapsed .global-navigation-toggle {width:32px;inset-inline-start:0;}
 </style>

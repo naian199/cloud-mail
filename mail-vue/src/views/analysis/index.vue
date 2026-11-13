@@ -130,6 +130,7 @@ import {debounce} from "lodash-es";
 import loading from "@/components/loading/index.vue";
 import {useRoute} from "vue-router";
 import {useI18n} from 'vue-i18n';
+import {useBreakpoint, BREAKPOINTS} from "@/composables/use-breakpoint.js";
 
 defineOptions({
   name: 'analysis'
@@ -204,7 +205,8 @@ let emailColumn = null
 let sendGauge = null
 let first = true
 let boxKey = ref(0)
-let senderPieLeft = window.innerWidth < 500 ? `${window.innerWidth - 110}` : '72%'
+const {width: viewportWidth, isTablet} = useBreakpoint()
+let senderPieLeft = viewportWidth.value < 500 ? `${viewportWidth.value - 110}` : '72%'
 let analysisDark = uiStore.dark
 
 onMounted(() => {
@@ -251,14 +253,14 @@ const widthChange = debounce(initPicture, 500, {
 
 
 watch(() => uiStore.asideShow, () => {
-  if (window.innerWidth > 1024) {
+  if (!isTablet.value) {
     widthChange()
   }
 })
 
 onActivated(() => {
   if (first) return
-  if (window.innerWidth !== leaveWidth && leaveWidth !== 0) {
+  if (viewportWidth.value !== leaveWidth && leaveWidth !== 0) {
     widthChange()
   } else if (!senderPie) {
     widthChange()
@@ -269,13 +271,15 @@ onActivated(() => {
 })
 
 onDeactivated(() => {
-  leaveWidth = window.innerWidth
+  leaveWidth = viewportWidth.value
 })
 
-window.onresize = () => {
+// Charts in a keep-alive cache only redraw while this page is the active route.
+watch(viewportWidth, () => {
+  if (route.name !== 'analysis') return
   setStyle()
   widthChange()
-}
+})
 
 watch(() => uiStore.dark, () => {
   if (route.name !== 'analysis') return
@@ -295,8 +299,8 @@ function initPicture() {
 }
 
 function setStyle() {
-  senderPieLeft = window.innerWidth < 500 ? `${window.innerWidth - 110}` : '72%'
-  emailColumnData.barWidth = window.innerWidth > 767 ? '40%' : '60%'
+  senderPieLeft = viewportWidth.value < 500 ? `${viewportWidth.value - 110}` : '72%'
+  emailColumnData.barWidth = viewportWidth.value > BREAKPOINTS.phone ? '40%' : '60%'
 }
 
 const measureCtx = document.createElement('canvas').getContext('2d');

@@ -1,3 +1,4 @@
+import { BREAKPOINTS } from '@/composables/use-breakpoint.js';
 import {recoverNavigation,clearNavigationRecovery} from '@/utils/navigation-recovery.mjs';
 import i18n from '@/i18n';
 import {finishStartupLoader} from '@/utils/startup-loader.mjs';
@@ -195,7 +196,7 @@ router.afterEach((to, from, failure) => {
     const uiStore = useUiStore()
     if (to.meta.menu) {
         if (['content', 'email', 'send'].includes(to.meta.name)) {
-            uiStore.accountShow = window.innerWidth > 767;
+            uiStore.accountShow = window.innerWidth > BREAKPOINTS.phone;
         } else {
             uiStore.accountShow = false
         }

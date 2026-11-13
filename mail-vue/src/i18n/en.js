@@ -21,6 +21,8 @@ const en = {
     mailChatImage: "Image",
     mailChatImageError: "Image could not load",
     mailChatImageRetry: "Retry image",
+    mailRemoteImagesBlocked: "Remote images are hidden to protect your privacy.",
+    mailRemoteImagesShow: "Show images",
     mailChatImageLoading: "Loading image…",
     mailChatQuoteReply: "Quote reply",
     mailChatCancelQuote: "Cancel quote",

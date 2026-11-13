@@ -35,7 +35,8 @@
             <el-alert v-if="email.status === 5" :closable="false" :title="$t('delayed')" class="email-msg" type="warning" show-icon />
           </div>
           <el-scrollbar class="htm-scrollbar" :class="!email.attList?.length ? 'bottom-distance' : ''">
-            <ShadowHtml class="shadow-html" :html="formatImage(email.content)" v-if="email.content" />
+            <!-- Untrusted mail HTML renders only inside the sandboxed, CSP-locked frame. -->
+            <MailBody class="mail-content" :html="formatImage(email.content)" :title="email.subject || 'Email'" :trusted-image-origins="attachmentOrigins" v-if="email.content" />
             <pre v-else class="email-text" >{{email.text}}</pre>
           </el-scrollbar>
           <div class="att" v-if="email.attList?.length > 0">
@@ -74,7 +75,7 @@
   </div>
 </template>
 <script setup>
-import ShadowHtml from '@/components/shadow-html/index.vue'
+import MailBody from '@/components/mail-body.vue'
 import {computed, reactive, ref, watch, onMounted, onUnmounted} from "vue";
 import {useRouter} from 'vue-router'
 import {ElMessage, ElMessageBox} from 'element-plus'
@@ -179,6 +180,12 @@ function openForward() {
 function toMessage(message) {
   return  message ? JSON.parse(message).message : '';
 }
+
+// Inline attachments are served from the deployment's own storage, so they load without a prompt.
+const attachmentOrigins = computed(() => {
+  const domain = toOssDomain(settingStore.settings.r2Domain);
+  return domain ? [domain] : [];
+});
 
 function formatImage(content) {
   content = content || '';
@@ -459,7 +466,11 @@ const handleDelete = () => {
   }
 }
 
-.shadow-html::after  {
+.mail-content {
+  position: relative;
+}
+
+.mail-content::after {
   content: "";
   position: absolute;
   top: 0;

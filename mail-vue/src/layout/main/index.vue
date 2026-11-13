@@ -1,5 +1,5 @@
 <template>
-  <div :class="accountShow && hasPerm('account:query') ? 'main-box-show' : 'main-box-hide'">
+  <div :class="[accountShow && hasPerm('account:query') ? 'main-box-show' : 'main-box-hide', { 'content-capped': cappedContent }]">
     <div :class="accountShow && hasPerm('account:query') ? 'block-show' : 'block-hide'" @click="uiStore.accountShow = false"></div>
     <account  :class="accountShow && hasPerm('account:query') ? 'show' : 'hide'" />
     <router-view class="main-view" v-slot="{ Component,route }">
@@ -13,16 +13,22 @@
 import account from '@/layout/account/index.vue'
 import {useUiStore} from "@/store/ui.js";
 import {useSettingStore} from "@/store/setting.js";
-import {computed, onBeforeUnmount, onMounted, watch} from "vue";
+import {computed, onMounted, watch} from "vue";
+import { useBreakpoint, BREAKPOINTS } from '@/composables/use-breakpoint.js'
 import { useRoute } from 'vue-router'
 import { hasPerm } from "@/perm/perm.js"
+import DOMPurify from 'dompurify'
 
 const settingStore = useSettingStore()
 const uiStore = useUiStore();
 const route = useRoute()
-let isMobile = window.innerWidth < 768
+const { width: viewportWidth } = useBreakpoint()
+const isMobile = computed(() => viewportWidth.value <= BREAKPOINTS.phone)
+// Lists, tables and settings stop stretching on ultra-wide screens; chats keep the full width.
+const cappedContent = computed(() => !['mail-chat', 'external-mail', 'rooms'].includes(route.name))
 
 let elNotification = null
+let noticeStyle = null
 
 const accountShow = computed(() => {
   return uiStore.accountShow && settingStore.settings.manyEmail === 0
@@ -60,18 +66,17 @@ function showNotice(data) {
     elNotification.close()
   }
 
-  const style = document.createElement('style');
-  style.innerHTML = `
-  .custom-notice.el-notification {
-    --el-notification-width: min(${data.noticeWidth}px,calc(100% - 30px)) !important;
-  }
-  `;
-
-  document.head.appendChild(style);
+  // One reusable style element; the width is coerced to a number so it cannot inject CSS.
+  noticeStyle ||= document.head.appendChild(document.createElement('style'));
+  const width = Number(data.noticeWidth);
+  noticeStyle.textContent = width > 0
+    ? `.custom-notice.el-notification { --el-notification-width: min(${width}px, calc(100% - 30px)) !important; }`
+    : '';
 
   elNotification = ElNotification({
     title: data.noticeTitle,
-    message: `<div style="width: 100%;height: 100%;">${data.noticeContent}</div>`,
+    // Admin-written rich text is shown to every visitor, so strip scripts and event handlers.
+    message: `<div style="width: 100%;height: 100%;">${DOMPurify.sanitize(data.noticeContent || '', { ADD_ATTR: ['target'] })}</div>`,
     type: data.noticeType === 'none' ? '' : data.noticeType,
     duration: data.noticeDuration,
     position: data.noticePosition,
@@ -82,22 +87,12 @@ function showNotice(data) {
 }
 
 onMounted(() => {
-  if (isMobile) uiStore.accountShow = false
-  window.addEventListener('resize', handleResize)
-  handleResize()
+  if (isMobile.value) uiStore.accountShow = false
 })
 
-onBeforeUnmount(() => {
-  window.removeEventListener('resize', handleResize)
+watch(isMobile, (mobile) => {
+  uiStore.accountShow = !mobile && ['content', 'email', 'send'].includes(route.meta.name)
 })
-
-const handleResize = () => {
-  const mobile = window.innerWidth < 768
-  if (mobile !== isMobile) {
-    isMobile = mobile
-    uiStore.accountShow = !mobile && ['content', 'email', 'send'].includes(route.meta.name)
-  }
-}
 
 </script>
 <style lang="scss" scoped>
@@ -141,6 +136,9 @@ const handleResize = () => {
   position: fixed;
   transform: translateX(-100%);
   opacity: 0;
+  /* Off-screen but still laid out: it must not catch clicks meant for the docked navigation. */
+  visibility: hidden;
+  pointer-events: none;
   @media (max-width: 1024px) {
     width: 260px;
     z-index: 100;
@@ -169,6 +167,15 @@ const handleResize = () => {
   min-width: 0;
   overflow: hidden;
   grid-template-rows: minmax(0, 1fr);
+}
+
+.content-capped {
+  width: 100%;
+  max-width: 1680px;
+  margin-inline: auto;
+  @media (min-width: 1941px) {
+    border-inline: 1px solid var(--el-border-color);
+  }
 }
 
 .main-view {

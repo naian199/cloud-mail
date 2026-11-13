@@ -495,6 +495,7 @@ import { randomUUID } from '@/utils/uuid';
 
 import { computed, nextTick, onMounted, onBeforeUnmount, reactive, ref, watch } from 'vue';
 import MailBody from '@/components/mail-body.vue';
+import { useBreakpoint } from '@/composables/use-breakpoint';
 import VideoAttachment from '@/components/video-attachment.vue';
 import MediaViewer from '@/components/media-viewer.vue';
 import { collectSnapshot, compareMessages, messageRows } from '@/utils/chat-refresh.mjs';
@@ -606,7 +607,7 @@ function mobileHeaderAction(command) {
   else if (command === 'pin') togglePin();
   else if (command === 'profile') viewProfile(selected.value.profile, selected.value.peers.join(', '));
 }
-const compactChat = useMediaQuery('(max-width: 767px), (max-width: 1024px) and (max-height: 500px) and (pointer: coarse)');
+const compactChat = useBreakpoint().isPhone;
 const ui = useUiStore();
 const contactScroll = ref(null), universalActive = ref(false), universalSearch = ref(null);
 function restoreContactControls() {

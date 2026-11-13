@@ -126,6 +126,7 @@
   </div>
 </template>
 <script setup>
+import { useBreakpoint, BREAKPOINTS } from '@/composables/use-breakpoint.js';
 import {Icon} from "@iconify/vue";
 import {computed, nextTick, reactive, ref, watch} from "vue";
 import {
@@ -345,7 +346,7 @@ function refresh() {
 function changeAccount(account) {
   accountStore.currentAccountId = account.accountId
   accountStore.currentAccount = account
-  if (window.innerWidth < 768) uiStore.accountShow = false
+  if (useBreakpoint().width.value <= BREAKPOINTS.phone) uiStore.accountShow = false
 }
 
 function add() {
