@@ -1,9 +1,10 @@
 <template>
-  <div class="header" :class="{ 'compact-toolbar': compact }">
+  <div class="header" :class="{ 'compact-toolbar': compact, 'drawer-account':drawer }">
     <div v-if="!compact" class="header-btn">
       <span class="breadcrumb-item">{{ $t(route.meta.title) }}</span>
     </div>
     <div v-if="toolbar" class="toolbar">
+      <template v-if="!drawer">
       <el-button v-if="!appInstalled" text :aria-label="t('appInstallTitle')" :title="t('appInstallTitle')" @click="openAppInstall"><Icon icon="cloud-mail:install" width="21" /></el-button>
       <div v-if="uiStore.dark" class="sun-icon icon-item" @click="openDark($event)">
         <Icon icon="mingcute:sun-fill"/>
@@ -14,20 +15,22 @@
       <div class="notice icon-item" @click="openNotice">
         <Icon icon="streamline-plump:announcement-megaphone"/>
       </div>
-      <el-dropdown ref="userinfoRef" @visible-change="e => userInfoShow = e" :teleported="drawer" :placement="drawer ? 'top-end' : 'bottom-end'" popper-class="detail-dropdown">
-        <div class="avatar" @click="userInfoHide" >
+      </template>
+      <el-dropdown trigger="click" ref="userinfoRef" @visible-change="e => userInfoShow = e" :teleported="drawer" :placement="drawer ? 'top-end' : 'bottom-end'" popper-class="detail-dropdown">
+        <button v-if="drawer" class="navigation-account-trigger" type="button" :aria-label="t('navigationAccountMenu')" :aria-expanded="userInfoShow"><UserAvatar :profile="userStore.user.profile" :email="userStore.user.email" :size="36" /><span class="navigation-account-copy"><strong><span>{{ userStore.user.profile?.displayName || userStore.user.name }}</span><OfficialBadge :profile="userStore.user.profile" /></strong><small>{{ userStore.user.profile?.username ? '@'+userStore.user.profile.username : userStore.user.email }}</small></span><Icon icon="cloud-mail:more" width="20" /></button>
+        <div v-else class="avatar">
           <div class="avatar-text">
             <UserAvatar :profile="userStore.user.profile" :email="userStore.user.email" :size="32" />
           </div>
           <Icon class="setting-icon" icon="mingcute:down-small-fill" width="24" height="24"/>
         </div>
         <template #dropdown>
-          <div class="user-details">
+          <div class="user-details" :class="{'drawer-details':drawer}">
             <div class="details-avatar">
-              {{ formatName(userStore.user.email) }}
+              <UserAvatar :profile="userStore.user.profile" :email="userStore.user.email" :size="44" />
             </div>
             <div class="user-name">
-              {{ userStore.user.profile?.displayName || userStore.user.name }}
+              <span class="account-display-name">{{ userStore.user.profile?.displayName || userStore.user.name }}</span><OfficialBadge :profile="userStore.user.profile" />
             </div>
             <div class="detail-email" @click="copyEmail(userStore.user.email)">
               {{ userStore.user.email }}
@@ -35,6 +38,7 @@
             <div class="detail-user-type">
               <el-tag>{{ userStore.user.role.name }}</el-tag>
             </div>
+            <div v-if="drawer" class="navigation-account-actions"><button type="button" @click="openProfile"><Icon icon="cloud-mail:settings" width="18" /><span>{{ t('settings') }}</span></button><button type="button" @click="openDark($event)"><Icon :icon="uiStore.dark ? 'cloud-mail:sun' : 'cloud-mail:moon'" width="18" /><span>{{ t(uiStore.dark ? 'navigationLightMode' : 'navigationDarkMode') }}</span></button><button type="button" @click="drawerNotice"><Icon icon="cloud-mail:notice" width="18" /><span>{{ t('noticeTitle') }}</span></button><button v-if="!appInstalled" type="button" @click="openAppInstall"><Icon icon="cloud-mail:install" width="18" /><span>{{ t('appInstallTitle') }}</span></button></div>
             <div class="language-control" @click.stop><LanguageSelect /></div>
             <div class="action-info">
               <div>
@@ -91,6 +95,8 @@ const settingStore = useSettingStore();
 const userStore = useUserStore();
 const uiStore = useUiStore();
 function openAppInstall(){uiStore.asideShow=false;installApp();}
+async function openProfile(){try{await router.push({name:'setting'});uiStore.asideShow=false;userinfoRef.value?.handleClose?.();}catch{}}
+function drawerNotice(){userinfoRef.value?.handleClose?.();uiStore.asideShow=false;openNotice();}
 const logoutLoading = ref(false)
 const userInfoShow = ref(false)
 const userinfoRef = ref({})
@@ -157,14 +163,6 @@ const sendCount = computed(() => {
   return userStore.user.sendCount + '/' + userStore.user.role.sendCount
 })
 
-function userInfoHide(e) {
-    if (userInfoShow.value) {
-        userinfoRef.value.handleClose()
-    } else {
-        userinfoRef.value.handleOpen()
-    }
-}
-
 async function copyEmail(email) {
   try {
     await navigator.clipboard.writeText(email);
@@ -192,7 +190,7 @@ function openDark(e) {
   const nextIsDark = !uiStore.dark
   const root = document.documentElement
 
-  if (!document.startViewTransition) {
+  if (!document.startViewTransition || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
     switchDark(nextIsDark, root);
     return
   }
@@ -465,4 +463,8 @@ function formatName(email) {
 <style scoped>
 .header.compact-toolbar { display: flex; justify-content: center; height: 40px; }
 .compact-toolbar .toolbar { gap: 12px; }
+</style>
+
+<style scoped>
+.user-details .user-name{display:flex;align-items:center;justify-content:center;}.account-display-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}.header.drawer-account{height:auto;display:block;text-align:start;}.drawer-account .toolbar{display:block;}.drawer-account :deep(.el-dropdown){display:block;width:100%;color:var(--nav-ink);}.navigation-account-trigger{display:flex;align-items:center;gap:11px;box-sizing:border-box;width:100%;min-height:64px;padding:10px;border:0;border-radius:12px;background:none;color:var(--nav-ink);font:inherit;cursor:pointer;text-align:start;}.navigation-account-trigger:hover,.navigation-account-trigger[aria-expanded=true]{background:var(--nav-hover);}.navigation-account-trigger:focus-visible{outline:2px solid var(--nav-accent);outline-offset:-2px;}.navigation-account-trigger>svg{flex-shrink:0;color:var(--nav-muted);}.navigation-account-copy{display:flex;flex-direction:column;gap:5px;min-width:0;flex:1;}.navigation-account-copy strong{display:flex;align-items:center;min-width:0;font-size:13px;line-height:1.4;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}.navigation-account-copy strong>span:first-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}.navigation-account-copy small{font-size:11px;line-height:1.4;color:var(--nav-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}.drawer-details{max-height:min(620px,calc(var(--app-viewport-height,100dvh) - 140px));overflow-y:auto;overscroll-behavior:contain;box-sizing:border-box;width:min(280px,calc(100vw - 40px));padding:4px 16px 12px;font-size:13px;}.drawer-details .details-avatar{border:0;background:none;margin-top:14px;}.drawer-details .user-name{margin-top:12px;font-size:14px;}.drawer-details .detail-email{width:100%;box-sizing:border-box;font-size:12px;padding:4px 0;}.drawer-details .language-control{width:100%;margin-top:14px;}.drawer-details .language-control :deep(.el-select__wrapper){border-radius:9px;}.drawer-details .action-info{font-size:11px;padding-top:14px;margin-top:14px;border-top:1px solid var(--el-border-color-lighter);color:var(--el-text-color-secondary);}.drawer-details .logout{box-sizing:border-box;padding:0;margin-top:16px;}.drawer-details .logout .el-button{min-height:36px;border-radius:9px;background:var(--el-fill-color-light);color:var(--el-color-danger);border-color:var(--el-border-color-light);font-size:12px;}.navigation-account-actions{display:flex;flex-direction:column;width:100%;padding-top:14px;margin-top:14px;border-top:1px solid var(--el-border-color-lighter);gap:3px;}.navigation-account-actions button{display:flex;align-items:center;gap:11px;min-height:40px;border:0;border-radius:9px;padding:8px 10px;background:none;color:var(--el-text-color-regular);font:inherit;font-size:12px;cursor:pointer;text-align:start;}.navigation-account-actions button:hover{background:var(--el-fill-color-light);color:var(--el-color-primary);}.navigation-account-actions button:focus-visible{outline:2px solid var(--el-color-primary);outline-offset:-2px;}
 </style>

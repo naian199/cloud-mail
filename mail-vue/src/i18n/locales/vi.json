@@ -818,6 +818,11 @@
   "settingsAiHint": "Message analysis and code recognition.",
   "settingsOauthHint": "Manage third-party sign-in providers.",
   "settingsAboutHint": "Version, documentation and project information.",
+  "navigationBrandHint": "Mail & conversations",
+  "navigationMessages": "Messages",
+  "navigationAccountMenu": "Account and preferences",
+  "navigationLightMode": "Switch to light mode",
+  "navigationDarkMode": "Switch to dark mode",
   "mailRemoteImagesBlocked": "Hình ảnh từ xa đã bị ẩn để bảo vệ quyền riêng tư của bạn.",
   "mailRemoteImagesShow": "Hiển thị hình ảnh"
 }

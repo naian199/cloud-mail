@@ -818,6 +818,11 @@
   "settingsAiHint": "Message analysis and code recognition.",
   "settingsOauthHint": "Manage third-party sign-in providers.",
   "settingsAboutHint": "Version, documentation and project information.",
+  "navigationBrandHint": "Mail & conversations",
+  "navigationMessages": "Messages",
+  "navigationAccountMenu": "Account and preferences",
+  "navigationLightMode": "Switch to light mode",
+  "navigationDarkMode": "Switch to dark mode",
   "mailRemoteImagesBlocked": "आपकी गोपनीयता की सुरक्षा के लिए दूरस्थ चित्र छिपाए गए हैं।",
   "mailRemoteImagesShow": "चित्र दिखाएँ"
 }
