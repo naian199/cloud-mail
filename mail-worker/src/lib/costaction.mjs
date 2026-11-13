@@ -5,6 +5,10 @@
 //   - The upload-URL route is /v1/file/upload_url. The documented /file/upload_url
 //     answers 404 "route could not be found".
 //   - Limit: 60 requests per minute per account; 429 carries `retry-after` seconds.
+//   - Upload URLs are on s*.turbobit.net. A browser multipart POST is a CORS "simple
+//     request" (no preflight); the response carries Access-Control-Allow-Origin: *.
+//   - A new free-account file reported days_left 29. Download links are trbt.cc pages,
+//     not direct files, so no inline preview is offered.
 //
 // The token is used only for requests to api.costaction.com. It never appears in
 // errors, return values or logs.
