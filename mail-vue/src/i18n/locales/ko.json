@@ -818,6 +818,11 @@
   "settingsAiHint": "Message analysis and code recognition.",
   "settingsOauthHint": "Manage third-party sign-in providers.",
   "settingsAboutHint": "Version, documentation and project information.",
+  "navigationBrandHint": "Mail & conversations",
+  "navigationMessages": "Messages",
+  "navigationAccountMenu": "Account and preferences",
+  "navigationLightMode": "Switch to light mode",
+  "navigationDarkMode": "Switch to dark mode",
   "mailRemoteImagesBlocked": "개인정보 보호를 위해 외부 이미지를 숨겼습니다.",
   "mailRemoteImagesShow": "이미지 표시"
 }
