@@ -85,7 +85,7 @@
                   <span>{{ $t('emailPrefix') }}</span>
                 </div>
                 <div class="forward">
-                  <el-button class="opt-button" :aria-label="$t('emailPrefix')" size="small" type="primary" @click="openEmailPrefix">
+                  <el-button class="opt-button" :aria-label="$t('emailPrefix')" size="small" type="primary" @click="generalDialogs.openEmailPrefix()">
                     <Icon icon="cloud-mail:settings" width="18" height="18"/>
                   </el-button>
                 </div>
@@ -101,7 +101,7 @@
                 <div class="title-item"><span>{{ $t('websiteTitle') }}</span></div>
                 <div class="email-title">
                   <span>{{ setting.title }}</span>
-                  <el-button class="opt-button" :aria-label="$t('websiteTitle')" size="small" type="primary" @click="editTitleShow = true">
+                  <el-button class="opt-button" :aria-label="$t('websiteTitle')" size="small" type="primary" @click="generalDialogs.openTitle()">
                     <Icon icon="cloud-mail:settings" width="16" height="16"/>
                   </el-button>
                 </div>
@@ -130,7 +130,7 @@
                     </template>
                   </el-image>
                   <div class="background-btn">
-                    <el-button class="opt-button" :aria-label="$t('loginBackground')" size="small" type="primary" @click="openSetBackground">
+                    <el-button class="opt-button" :aria-label="$t('loginBackground')" size="small" type="primary" @click="generalDialogs.openBackground()">
                       <Icon icon="cloud-mail:settings" width="16" height="16"/>
                     </el-button>
                     <el-button class="opt-button" :aria-label="$t('delete')" size="small" type="primary" @click="delBackground">
@@ -201,11 +201,11 @@
                   <span>{{ $t('enabled') }}</span>
                 </div>
                 <div v-else>
-                  <el-button class="opt-button" :aria-label="$t('resendToken')" style="margin-top: 0" @click="openResendList" size="small"
+                  <el-button class="opt-button" :aria-label="$t('resendToken')" style="margin-top: 0" @click="mailDialogs.openResendList()" size="small"
                              type="primary">
                     <Icon icon="ic:round-list" width="18" height="18"/>
                   </el-button>
-                  <el-button class="opt-button" :aria-label="$t('add')" style="margin-top: 0" @click="openResendForm" size="small"
+                  <el-button class="opt-button" :aria-label="$t('add')" style="margin-top: 0" @click="mailDialogs.openResendForm()" size="small"
                              type="primary">
                     <Icon icon="material-symbols:add-rounded" width="16" height="16"/>
                   </el-button>
@@ -214,7 +214,7 @@
               <div class="setting-item">
                 <div><span>{{ $t('blackList') }}</span></div>
                 <div>
-                  <el-button class="opt-button" :aria-label="$t('blackList')" style="margin-top: 0" @click="openBlackListForm" size="small"
+                  <el-button class="opt-button" :aria-label="$t('blackList')" style="margin-top: 0" @click="mailDialogs.openBlackList()" size="small"
                              type="primary">
                     <Icon icon="cloud-mail:settings" width="16" height="16"/>
                   </el-button>
@@ -229,7 +229,7 @@
                 </div>
                 <div class="forward">
                   <span>{{ setting.autoCleanDays > 0 ? $t('autoCleanRetain', { days: setting.autoCleanDays }) : $t('disabled') }}</span>
-                  <el-button class="opt-button" :aria-label="$t('autoClean')" style="margin-top: 0" @click="openAutoClean" size="small"
+                  <el-button class="opt-button" :aria-label="$t('autoClean')" style="margin-top: 0" @click="mailDialogs.openAutoClean()" size="small"
                              type="primary">
                     <Icon icon="cloud-mail:settings" width="16" height="16"/>
                   </el-button>
@@ -245,7 +245,7 @@
                 <div><span>{{ $t('tgBot') }}</span></div>
                 <div class="forward">
                   <span>{{ setting.tgBotStatus === 0 ? $t('enabled') : $t('disabled') }}</span>
-                  <el-button class="opt-button" :aria-label="$t('tgBot')" size="small" type="primary" @click="openTgSetting">
+                  <el-button class="opt-button" :aria-label="$t('tgBot')" size="small" type="primary" @click="deliveryDialogs.openTgSetting()">
                     <Icon icon="cloud-mail:settings" width="18" height="18"/>
                   </el-button>
                 </div>
@@ -254,7 +254,7 @@
                 <div><span>{{ $t('otherEmail') }}</span></div>
                 <div class="forward">
                   <span>{{ setting.forwardStatus === 0 ? $t('enabled') : $t('disabled') }}</span>
-                  <el-button class="opt-button" :aria-label="$t('otherEmail')" size="small" type="primary" @click="openThirdEmailSetting">
+                  <el-button class="opt-button" :aria-label="$t('otherEmail')" size="small" type="primary" @click="deliveryDialogs.openThirdEmailSetting()">
                     <Icon icon="cloud-mail:settings" width="18" height="18"/>
                   </el-button>
                 </div>
@@ -263,7 +263,7 @@
                 <div><span>{{ $t('webhook') }}</span></div>
                 <div class="forward">
                   <span>{{ setting.webhookStatus === 0 ? $t('enabled') : $t('disabled') }}</span>
-                  <el-button class="opt-button" :aria-label="$t('webhook')" size="small" type="primary" @click="openWebhookSetting">
+                  <el-button class="opt-button" :aria-label="$t('webhook')" size="small" type="primary" @click="deliveryDialogs.openWebhookSetting()">
                     <Icon icon="cloud-mail:settings" width="18" height="18"/>
                   </el-button>
                 </div>
@@ -272,7 +272,7 @@
                 <div><span>{{ $t('forwardingRules') }}</span></div>
                 <div class="forward">
                   <span>{{ setting.ruleType === 0 ? $t('forwardAll') : $t('rules') }}</span>
-                  <el-button class="opt-button" :aria-label="$t('forwardingRules')" size="small" type="primary" @click="openForwardRules">
+                  <el-button class="opt-button" :aria-label="$t('forwardingRules')" size="small" type="primary" @click="deliveryDialogs.openForwardRules()">
                     <Icon icon="cloud-mail:settings" width="18" height="18"/>
                   </el-button>
                 </div>
@@ -293,7 +293,7 @@
                 </div>
                 <div class="r2domain">
                   <span>{{ setting.r2Domain || '' }}</span>
-                  <el-button class="opt-button" :aria-label="$t('osDomain')" size="small" type="primary" @click="r2DomainShow = true">
+                  <el-button class="opt-button" :aria-label="$t('osDomain')" size="small" type="primary" @click="storageDialogs.openR2Domain()">
                     <Icon icon="cloud-mail:settings" width="16" height="16"/>
                   </el-button>
                 </div>
@@ -303,7 +303,7 @@
                   <span>{{ $t('s3Configuration') }}</span>
                 </div>
                 <div class="r2domain">
-                  <el-button class="opt-button" :aria-label="$t('s3Configuration')" size="small" type="primary" @click="addS3Show = true">
+                  <el-button class="opt-button" :aria-label="$t('s3Configuration')" size="small" type="primary" @click="storageDialogs.openS3()">
                     <Icon icon="cloud-mail:settings" width="16" height="16"/>
                   </el-button>
                 </div>
@@ -328,7 +328,7 @@
                 <div class="forward">
                   <span>{{ t(setting.costactionTokenSet ? 'largeAttTokenSet' : 'largeAttTokenMissing') }}</span>
                   <el-switch @change="change" :before-change="beforeChange" :active-value="0" :inactive-value="1" :aria-label="t('largeAttTitle')" v-model="setting.costactionStatus"/>
-                  <el-button class="opt-button" :aria-label="t('largeAttTitle')" size="small" type="primary" @click="openCostaction">
+                  <el-button class="opt-button" :aria-label="t('largeAttTitle')" size="small" type="primary" @click="storageDialogs.openCostaction()">
                     <Icon icon="cloud-mail:settings" width="16" height="16"/>
                   </el-button>
                 </div>
@@ -343,7 +343,7 @@
               <div class="setting-item">
                 <div><span>{{ $t('signUpVerification') }}</span></div>
                 <div>
-                  <el-button class="opt-button" :aria-label="$t('signUpVerification')" size="small" type="primary" @click="openRegVerifyCount">
+                  <el-button class="opt-button" :aria-label="$t('signUpVerification')" size="small" type="primary" @click="securityDialogs.openRegVerifyCount()">
                     <Icon icon="cloud-mail:settings" width="18" height="18"/>
                   </el-button>
                   <el-select
@@ -362,7 +362,7 @@
               <div class="setting-item">
                 <div><span>{{ $t('addEmailVerification') }}</span></div>
                 <div>
-                  <el-button class="opt-button" :aria-label="$t('addEmailVerification')" size="small" type="primary" @click="openAddVerifyCount">
+                  <el-button class="opt-button" :aria-label="$t('addEmailVerification')" size="small" type="primary" @click="securityDialogs.openAddVerifyCount()">
                     <Icon icon="cloud-mail:settings" width="18" height="18"/>
                   </el-button>
                   <el-select
@@ -382,7 +382,7 @@
                 <div><span>Site Key</span></div>
                 <div class="bot-verify">
                   <span>{{ setting.siteKey }}</span>
-                  <el-button class="opt-button" :aria-label="'Site Key'" size="small" type="primary" @click="turnstileShow = true">
+                  <el-button class="opt-button" :aria-label="'Site Key'" size="small" type="primary" @click="securityDialogs.openTurnstile()">
                     <Icon icon="cloud-mail:settings" width="16" height="16"/>
                   </el-button>
                 </div>
@@ -391,7 +391,7 @@
                 <div><span>Secret Key</span></div>
                 <div class="bot-verify">
                   <span> {{ setting.secretKey }} </span>
-                  <el-button class="opt-button" :aria-label="'Secret Key'" size="small" type="primary" @click="turnstileShow = true">
+                  <el-button class="opt-button" :aria-label="'Secret Key'" size="small" type="primary" @click="securityDialogs.openTurnstile()">
                     <Icon icon="cloud-mail:settings" width="16" height="16"/>
                   </el-button>
                 </div>
@@ -406,7 +406,7 @@
                 <div><span>{{ $t('noticePopup') }}</span></div>
                 <div class="forward">
                   <span>{{ setting.notice === 0 ? $t('enabled') : $t('disabled') }}</span>
-                  <el-button class="opt-button" :aria-label="$t('noticePopup')" size="small" type="primary" @click="openNoticePopupSetting">
+                  <el-button class="opt-button" :aria-label="$t('noticePopup')" size="small" type="primary" @click="noticeDialog.open()">
                     <Icon icon="cloud-mail:settings" width="18" height="18"/>
                   </el-button>
                 </div>
@@ -414,7 +414,7 @@
               <div class="setting-item">
                 <div><span>{{ $t('popUp') }}</span></div>
                 <div class="forward">
-                  <el-button class="opt-button" :aria-label="$t('preview')" size="small" type="primary" @click="openNoticePopup">
+                  <el-button class="opt-button" :aria-label="$t('preview')" size="small" type="primary" @click="uiStore.showNotice()">
                     <Icon icon="mynaui:click-solid" width="18" height="18"/>
                   </el-button>
                 </div>
@@ -435,7 +435,7 @@
               <div class="setting-item">
                 <div><span>{{ $t('codeRecognitionRules') }}</span></div>
                 <div class="forward">
-                  <el-button class="opt-button" :aria-label="$t('codeRecognitionRules')" size="small" type="primary" @click="openAiCodeFilter">
+                  <el-button class="opt-button" :aria-label="$t('codeRecognitionRules')" size="small" type="primary" @click="aiCodeDialog.open()">
                     <Icon icon="cloud-mail:settings" width="18" height="18"/>
                   </el-button>
                 </div>
@@ -455,7 +455,7 @@
                 </div>
                 <div class="forward">
                   <span>{{ setting[p.key + 'Switch'] === 0 ? $t('enabled') : $t('disabled') }}</span>
-                  <el-button class="opt-button" :aria-label="p.label" size="small" type="primary" @click="openOauthSetting(p)">
+                  <el-button class="opt-button" :aria-label="p.label" size="small" type="primary" @click="securityDialogs.openOauthSetting(p)">
                     <Icon icon="cloud-mail:settings" width="18" height="18"/>
                   </el-button>
                 </div>
@@ -489,483 +489,37 @@
         </div></section></div>
       </div>
 
-      <!-- Dialogs remain the same -->
-      <el-dialog v-model="editTitleShow" :title="$t('changeTitle')" width="340" @closed="editTitle = setting.title">
-        <form @submit.prevent>
-          <el-input type="text" :placeholder="$t('websiteTitle')" v-model="editTitle" @keyup.enter="saveTitle"/>
-          <el-button type="primary" :loading="settingLoading" @click="saveTitle">{{ $t('save') }}</el-button>
-        </form>
-      </el-dialog>
-      <el-dialog v-model="resendTokenFormShow" :title="$t('resendToken')" width="340" @closed="cleanResendTokenForm">
-        <form @submit.prevent>
-          <el-select style="margin-bottom: 15px" v-model="resendTokenForm.domain" placeholder="Select">
-            <el-option
-                v-for="item in settingStore.domainList"
-                :key="item"
-                :label="item"
-                :value="item"
-            />
-          </el-select>
-          <el-input show-password autocomplete="new-password" type="password" :placeholder="$t('addResendTokenDesc')" v-model="resendTokenForm.token" @keyup.enter="saveResendToken"/>
-          <el-button type="primary" :loading="settingLoading" @click="saveResendToken">{{ $t('save') }}</el-button>
-        </form>
-      </el-dialog>
-      <el-dialog v-model="r2DomainShow" :title="$t('addOsDomain')" width="340"
-                 @closed="r2DomainInput = setting.r2Domain">
-        <form @submit.prevent>
-          <el-input type="text" :placeholder="$t('domainDesc')" v-model="r2DomainInput" @keyup.enter="saveR2domain"/>
-          <el-button type="primary" :loading="settingLoading" @click="saveR2domain">{{ $t('save') }}</el-button>
-        </form>
-      </el-dialog>
-      <el-dialog v-model="turnstileShow" :title="$t('addTurnstileSecret')" width="340"
-                 @closed="turnstileForm.secretKey = '';turnstileForm.siteKey = ''">
-        <form @submit.prevent>
-          <el-input type="text" placeholder="Site Key" v-model="turnstileForm.siteKey" @keyup.enter="saveTurnstileKey"/>
-          <el-input show-password autocomplete="new-password" type="password" style="margin-top: 15px" placeholder="Secret Key" v-model="turnstileForm.secretKey" @keyup.enter="saveTurnstileKey"/>
-          <el-button type="primary" :loading="settingLoading" @click="saveTurnstileKey">{{ $t('save') }}</el-button>
-        </form>
-      </el-dialog>
-      <el-dialog v-model="oauthSettingShow" :title="$t('oauthSetting') + ' - ' + oauthForm.label" width="340"
-                 @closed="oauthForm.clientId = ''; oauthForm.clientSecret = ''; oauthForm.switch = 1">
-        <div class="dialog-content">
-          <el-input type="text" :placeholder="$t('clientId')" v-model="oauthForm.clientId"/>
-          <el-input show-password autocomplete="new-password" type="password" style="margin-top: 15px" :placeholder="$t('clientSecret')" v-model="oauthForm.clientSecret"/>
-        </div>
-        <template #footer>
-          <div class="dialog-footer">
-            <el-switch v-model="oauthForm.switch" :active-value="0" :inactive-value="1" :active-text="$t('enable')"
-                       :inactive-text="$t('disable')"/>
-            <el-button type="primary" :loading="settingLoading" @click="saveOauth">{{ $t('save') }}</el-button>
-          </div>
-        </template>
-      </el-dialog>
-      <el-dialog
-          v-model="showSetBackground"
-          class="cut-dialog"
-          @closed="closedSetBackground"
-      >
-        <template #header>
-          <span style="font-size: 18px">
-            {{ $t('backgroundTitle') }}
-            <el-tooltip>
-              <template #content>
-                <span>{{ $t('backgroundWarning') }}</span>
-              </template>
-              <Icon class="title-icon  warning" icon="fe:warning" width="18" height="18"/>
-            </el-tooltip>
-          </span>
-        </template>
-        <el-input :placeholder="$t('backgroundUrlDesc')" v-model="backgroundUrl" v-if="!localUpShow"
-                  class="background-url" @keyup.enter="saveBackground"/>
-        <el-image
-            v-if="localUpShow"
-            :preview-src-list="[backgroundImage]"
-            show-progress
-            class="cropper"
-            fit="cover"
-            :src="backgroundImage"
-        ></el-image>
-        <div class="cut-button">
-          <el-button type="primary" link @click="openCut" v-if="!localUpShow">
-            {{ $t('localUpload') }}
-          </el-button>
-          <el-button type="primary" link @click="localUpShow = false" v-if="localUpShow">
-            {{ $t('imageLink') }}
-          </el-button>
-          <el-button type="primary" :loading="settingLoading" @click="saveBackground">{{ $t('save') }}</el-button>
-        </div>
-      </el-dialog>
-      <el-dialog
-          v-model="tgSettingShow"
-          class="forward-dialog"
-      >
-        <template #header>
-          <div class="forward-head">
-            <span class="forward-set-title">{{ $t('tgBot') }}</span>
-            <el-tooltip effect="dark" :content="$t('tgBotDesc')">
-              <Icon class="warning" icon="fe:warning" width="18" height="18"/>
-            </el-tooltip>
-          </div>
-        </template>
-        <div class="forward-set-body">
-          <el-input show-password autocomplete="new-password" type="password" :placeholder="setting.tgBotToken || $t('tgBotToken')" v-model="tgBotToken" @keyup.enter="tgBotSave"></el-input>
-          <el-input-tag tag-type="warning" :placeholder="$t('toBotTokenDesc')" v-model="tgChatId"
-                        @add-tag="addChatTag"></el-input-tag>
-          <el-input tag-type="warning" :placeholder="$t('customDomainDesc')" v-model="customDomain" @keyup.enter="tgBotSave"></el-input>
-          <div class="tg-msg-label">
-            <span>{{t('from')}}</span>
-            <el-select  v-model="tgMsgFrom" >
-              <el-option
-                  v-for="item in tgMsgFromOption"
-                  :key="item.value"
-                  :label="item.label"
-                  :value="item.value"
-              />
-            </el-select>
-          </div>
-          <div class="tg-msg-label">
-            <span>{{t('recipient')}}</span>
-            <el-select  v-model="tgMsgTo" >
-              <el-option
-                  v-for="item in tgMsgToOption"
-                  :key="item.value"
-                  :label="item.label"
-                  :value="item.value"
-              />
-            </el-select>
-          </div>
-          <div class="tg-msg-label">
-            <span>{{t('emailText')}}</span>
-            <el-select  v-model="tgMsgText" >
-              <el-option
-                  v-for="item in tgMsgTextOption"
-                  :key="item.value"
-                  :label="item.label"
-                  :value="item.value"
-              />
-            </el-select>
-          </div>
-        </div>
-        <template #footer>
-          <div class="dialog-footer">
-            <el-switch v-model="tgBotStatus" :active-value="0" :inactive-value="1" :active-text="$t('enable')"
-                       :inactive-text="$t('disable')"/>
-            <el-button :loading="settingLoading" type="primary" @click="tgBotSave">
-              {{ $t('save') }}
-            </el-button>
-          </div>
-        </template>
-      </el-dialog>
-      <el-dialog
-          v-model="thirdEmailShow"
-          class="forward-dialog"
-      >
-        <template #header>
-          <div class="forward-head">
-            <span class="forward-set-title">{{ $t('otherEmail') }}</span>
-            <el-tooltip effect="dark" :content="$t('otherEmailDesc')">
-              <Icon class="warning" icon="fe:warning" width="18" height="18"/>
-            </el-tooltip>
-          </div>
-        </template>
-        <div class="forward-set-body">
-          <el-input-tag tag-type="warning" :placeholder="$t('otherEmailInputDesc')" v-model="forwardEmail"
-                        @add-tag="emailAddTag"></el-input-tag>
-        </div>
-        <template #footer>
-          <div class="dialog-footer">
-            <el-switch v-model="forwardStatus" :active-value="0" :inactive-value="1" :active-text="$t('enable')"
-                       :inactive-text="$t('disable')"/>
-            <el-button :loading="settingLoading" type="primary" @click="forwardEmailSave">
-              {{ $t('save') }}
-            </el-button>
-          </div>
-        </template>
-      </el-dialog>
-      <el-dialog
-          v-model="webhookShow"
-          class="forward-dialog"
-          @closed="webhookFormatShow = false"
-      >
-        <template #header>
-          <div class="forward-head">
-            <span class="forward-set-title">{{ $t('webhook') }}</span>
-            <el-tooltip effect="dark" :content="$t('webhookDesc')">
-              <Icon class="warning" icon="fe:warning" width="18" height="18"/>
-            </el-tooltip>
-          </div>
-        </template>
-        <div class="forward-set-body">
-          <el-input :placeholder="$t('webhookUrl')" v-model="webhookUrl" @keyup.enter="webhookSave"></el-input>
-          <el-input show-password autocomplete="new-password" type="password" :placeholder="$t('webhookSecret')" v-model="webhookSecret" @keyup.enter="webhookSave"></el-input>
-          <div class="tg-msg-label">
-            <span>{{ t('webhookRetry') }}</span>
-            <el-input-number v-model="webhookRetry" :min="0" :max="5" controls-position="right"/>
-          </div>
-          <div v-show="webhookFormatShow" class="webhook-format">
-            <pre>Content-Type: application/json
-Authorization: &lt;secret&gt;</pre>
-            <pre>{{ webhookPayloadExample }}</pre>
-          </div>
-        </div>
-        <template #footer>
-          <div class="dialog-footer">
-            <el-switch v-model="webhookStatus" :active-value="0" :inactive-value="1" :active-text="$t('enable')"
-                       :inactive-text="$t('disable')"/>
-            <div class="webhook-footer-right">
-              <div class="webhook-format-title" @click="webhookFormatShow = !webhookFormatShow">
-                <span>{{ $t('webhookFormat') }}</span>
-                <Icon class="webhook-format-icon" :class="{ open: webhookFormatShow }" icon="mingcute:down-small-fill" width="18" height="18"/>
-              </div>
-              <el-button :loading="settingLoading" type="primary" @click="webhookSave">
-                {{ $t('save') }}
-              </el-button>
-            </div>
-          </div>
-        </template>
-      </el-dialog>
-      <el-dialog
-          v-model="forwardRulesShow"
-          class="forward-dialog"
-      >
-        <template #header>
-          <div class="forward-head">
-            <span class="forward-set-title">{{ $t('forwardingRules') }}</span>
-            <el-tooltip effect="dark" :content="$t('forwardingRulesDesc')">
-              <Icon class="warning" icon="fe:warning" width="18" height="18"/>
-            </el-tooltip>
-          </div>
-        </template>
-        <div class="forward-set-body">
-          <el-input-tag :placeholder="$t('ruleEmailsInputDesc')" tag-type="success" v-model="ruleEmail"
-                        @add-tag="ruleEmailAddTag"/>
-        </div>
-        <template #footer>
-          <div class="dialog-footer">
-            <el-radio-group v-model="ruleType">
-              <el-radio :value="0">{{ $t('forwardAll') }}</el-radio>
-              <el-radio :value="1">{{ $t('rules') }}</el-radio>
-            </el-radio-group>
-            <el-button :loading="settingLoading" type="primary" @click="ruleEmailSave">
-              {{ $t('save') }}
-            </el-button>
-          </div>
-        </template>
-      </el-dialog>
-      <el-dialog class="resend-table" v-model="showResendList" :title="$t('resendTokenList')">
-        <el-table :data="resendList">
-          <el-table-column :min-width="emailColumnWidth" property="key" :label="$t('domain')"
-                           :show-overflow-tooltip="true"/>
-          <el-table-column :width="tokenColumnWidth" property="value" label="Token" fixed="right"
-                           :show-overflow-tooltip="true"/>
-        </el-table>
-      </el-dialog>
-      <el-dialog v-model="regVerifyCountShow" :title="$t('rulesVerifyTitle',{count: regVerifyCount})"
-                 @closed="regVerifyCount = setting.regVerifyCount">
-        <form @submit.prevent>
-          <el-input-number type="text" v-model="regVerifyCount" :min="1" @keyup.enter="saveRegVerifyCount">
-          </el-input-number>
-          <el-button type="primary" :loading="settingLoading" @click="saveRegVerifyCount">{{ $t('save') }}</el-button>
-        </form>
-      </el-dialog>
-      <el-dialog v-model="addVerifyCountShow" :title="$t('rulesVerifyTitle',{count: addVerifyCount})"
-                 @closed="addVerifyCount = setting.addVerifyCount">
-        <form @submit.prevent>
-          <el-input-number type="text" v-model="addVerifyCount" :min="1" @keyup.enter="saveAddVerifyCount"/>
-          <el-button type="primary" :loading="settingLoading" @click="saveAddVerifyCount">{{ $t('save') }}</el-button>
-        </form>
-      </el-dialog>
-      <el-dialog top="5vh" v-model="noticePopupShow" :title="$t('noticePopup')" class="notice-popup"
-                 @closed="resetNoticeForm">
-        <form @submit.prevent>
-          <el-input v-model="noticeForm.noticeTitle" :placeholder="t('titleDesc')" @keyup.enter="saveNoticePopup"/>
-          <div class="notice-line-item">
-            <el-select v-model="noticeForm.noticeType">
-              <template #prefix>
-                <span style="margin-right: 10px">{{ $t('icon') }}</span>
-              </template>
-              <el-option key="none" label="None" value="none"/>
-              <el-option key="primary" label="Primary" value="primary"/>
-              <el-option key="success" label="Success" value="success"/>
-              <el-option key="warning" label="Warning" value="warning"/>
-              <el-option key="info" label="Info" value="info"/>
-            </el-select>
-            <el-select v-model="noticeForm.noticePosition">
-              <template #prefix>
-                <span style="margin-right: 10px">{{ $t('position') }}</span>
-              </template>
-              <el-option key="top-left" :label="t('topLeft')" value="top-left"/>
-              <el-option key="top-right" :label="t('topRight')" value="top-right"/>
-              <el-option key="bottom-left" :label="t('bottomLeft')" value="bottom-left"/>
-              <el-option key="bottom-right" :label="t('bottomRight')" value="bottom-right"/>
-            </el-select>
-            <el-input-number v-model="noticeForm.noticeWidth">
-              <template #prefix>
-                {{ $t('width') }}
-              </template>
-              <template #suffix>
-                px
-              </template>
-            </el-input-number>
-            <el-input-number v-model="noticeForm.noticeOffset">
-              <template #prefix>
-                {{ $t('offset') }}
-              </template>
-              <template #suffix>
-                px
-              </template>
-            </el-input-number>
-            <el-input-number v-model="noticeForm.noticeDuration">
-              <template #prefix>
-                {{ $t('duration') }}
-              </template>
-              <template #suffix>
-                ms
-              </template>
-            </el-input-number>
-          </div>
-          <div class="notice-popup-item">
-            <el-input
-                v-model="noticeForm.noticeContent"
-                :autosize="{ minRows: 15, maxRows: 25 }"
-                type="textarea"
-                :placeholder="t('noticeContentDesc')"
-            />
-          </div>
-        </form>
-        <template #footer>
-          <div class="dialog-footer">
-            <el-switch v-model="noticeForm.notice" :active-value="0" :inactive-value="1" :active-text="$t('enable')"
-                       :inactive-text="$t('disable')"/>
-            <div>
-              <el-button @click="previewNoticePopup">
-                {{ $t('preview') }}
-              </el-button>
-              <el-button :loading="settingLoading" type="primary" @click="saveNoticePopup">
-                {{ $t('save') }}
-              </el-button>
-            </div>
-          </div>
-        </template>
-      </el-dialog>
-      <el-dialog v-model="addS3Show" :title="t('s3Configuration')" width="340" @closed="resetAddS3Form">
-        <form @submit.prevent>
-          <el-input class="dialog-input" type="text" placeholder="Bucket" v-model="s3.bucket" @keyup.enter="saveS3"/>
-          <el-input class="dialog-input" type="text" placeholder="Endpoint" v-model="s3.endpoint" @keyup.enter="saveS3"/>
-          <el-input class="dialog-input" type="text" placeholder="Region" v-model="s3.region" @keyup.enter="saveS3"/>
-          <el-input class="dialog-input" type="text" :placeholder="setting.s3AccessKey || 'Access Key'"
-                    v-model="s3.s3AccessKey" @keyup.enter="saveS3"/>
-          <el-input show-password autocomplete="new-password" style="margin-bottom: 10px" type="password" :placeholder="setting.s3SecretKey || 'Secret Key'" v-model="s3.s3SecretKey" @keyup.enter="saveS3"/>
-          <div class="force-path-style">
-            <div class="force-path-style-left">
-              <span>ForcePathStyle</span>
-              <el-tooltip effect="dark" :content="$t('forcePathStyleDesc')">
-                <Icon class="warning" icon="fe:warning" width="18" height="18"/>
-              </el-tooltip>
-            </div>
-            <el-switch :before-change="beforeChange" :active-value="0" :inactive-value="1"
-                       v-model="s3.forcePathStyle"/>
-          </div>
-          <div class="s3-button">
-            <el-button :loading="clearS3Loading" @click="clearS3">{{ t('clear') }}</el-button>
-            <el-button type="primary" :loading="settingLoading && !clearS3Loading" @click="saveS3">{{ t('save') }}</el-button>
-          </div>
-        </form>
-      </el-dialog>
-      <el-dialog v-model="emailPrefixShow" :title="t('emailPrefix')"  @closed="resetEmailPrefix"  >
-        <div class="email-prefix">
-          <div>{{ t('atLeast') }}</div>
-          <el-input-number v-model="minEmailPrefix" :min="1" :max="20" style="width: 150px" @keyup.enter="saveEmailPrefix" >
-            <template #suffix>
-              <span>{{ t('character') }}</span>
-            </template>
-          </el-input-number>
-        </div>
-        <div class="prefix-filter">
-          <div style="margin-bottom: 10px;">{{ t('mustNotContain') }}</div>
-          <el-input-tag style="margin-bottom: 10px;" v-model="emailPrefixFilter"  />
-        </div>
-        <el-button type="primary" style="width: 100%;" :loading="settingLoading" @click="saveEmailPrefix">{{ $t('save') }}</el-button>
-      </el-dialog>
-      <el-dialog v-model="blackFormShow" class="forward-dialog" @closed="resetBlackList">
-        <template #header>
-          <div class="forward-head">
-            <span class="forward-set-title">{{ $t('blackList') }}</span>
-            <el-tooltip effect="dark" :content="$t('blackListDesc')">
-              <Icon class="warning" icon="fe:warning" width="18" height="18"/>
-            </el-tooltip>
-          </div>
-        </template>
-        <el-form>
-          <el-form-item :label="t('blackFromDesc')" label-position="top">
-            <el-input-tag v-model="blackListForm.blackFrom" @add-tag="banEmailAddTag"  />
-          </el-form-item>
-          <el-form-item :label="t('blackSubjectDesc')" label-position="top">
-            <el-input-tag v-model="blackListForm.blackSubject"/>
-          </el-form-item>
-          <el-form-item :label="t('blackContentDesc')" label-position="top">
-            <el-input-tag v-model="blackListForm.blackContent"/>
-          </el-form-item>
-        </el-form>
-        <el-button type="primary" style="width: 100%;" :loading="settingLoading" @click="saveBlackList">{{ $t('save') }}</el-button>
-      </el-dialog>
-      <el-dialog v-model="autoCleanShow" :title="t('autoClean')" class="forward-dialog" @closed="resetAutoClean">
-        <el-form>
-          <el-form-item :label="t('autoCleanDays')" label-position="top">
-            <el-input-number v-model="autoCleanDays" :min="0" :max="3650" style="width: 100%"/>
-          </el-form-item>
-          <el-form-item :label="t('autoCleanExclude')" label-position="top">
-            <el-input-tag
-                tag-type="warning"
-                :placeholder="$t('autoCleanExcludeDesc')"
-                v-model="autoCleanExclude"
-                @add-tag="autoCleanExcludeAddTag"
-            />
-          </el-form-item>
-        </el-form>
-        <el-button type="primary" style="width: 100%;" :loading="settingLoading" @click="saveAutoClean">{{ $t('save') }}</el-button>
-      </el-dialog>
-      <el-dialog v-model="costactionShow" :title="t('largeAttTitle')" class="forward-dialog" @closed="costactionForm.token = ''; costactionResult = ''">
-        <form class="costaction-form" @submit.prevent="saveCostaction">
-          <p class="costaction-note">{{ t('largeAttNote') }}</p>
-          <el-input v-model="costactionForm.token" show-password autocomplete="new-password" type="password"
-                    :placeholder="t(setting.costactionTokenSet ? 'largeAttTokenKeep' : 'largeAttTokenPlaceholder')" :aria-label="t('largeAttToken')"/>
-          <div class="costaction-actions">
-            <el-button :loading="costactionTesting" @click="testCostaction">{{ t('largeAttTest') }}</el-button>
-            <el-button v-if="setting.costactionTokenSet" text type="danger" @click="clearCostactionToken">{{ t('largeAttTokenClear') }}</el-button>
-            <span v-if="costactionResult" role="status" :class="costactionResult">{{ t(costactionResult === 'ok' ? 'largeAttTestOk' : 'largeAttTestFailed') }}</span>
-          </div>
-          <label class="costaction-field"><span>{{ t('largeAttMinSize') }}</span><el-input-number v-model="costactionForm.minMb" :min="1" :max="10240"><template #suffix>MB</template></el-input-number></label>
-          <label class="costaction-field"><span>{{ t('largeAttMaxSize') }}</span><el-input-number v-model="costactionForm.maxMb" :min="1" :max="10240"><template #suffix>MB</template></el-input-number></label>
-          <label class="costaction-field"><span>{{ t('largeAttRoles') }}</span>
-            <el-select v-model="costactionForm.roles" multiple :placeholder="t('largeAttRolesAdmin')">
-              <el-option v-for="role in costactionRoles" :key="role.roleId" :label="role.name" :value="role.roleId"/>
-            </el-select>
-          </label>
-          <el-button type="primary" native-type="submit" :loading="settingLoading">{{ $t('save') }}</el-button>
-        </form>
-      </el-dialog>
-      <el-dialog v-model="aiCodeFilterShow" class="forward-dialog" @closed="resetAiCodeFilter">
-        <template #header>
-          <div class="forward-head">
-            <span class="forward-set-title">{{ $t('codeRecognitionRules') }}</span>
-            <el-tooltip effect="dark" :content="$t('codeRecognitionRulesDesc')">
-              <Icon class="warning" icon="fe:warning" width="18" height="18"/>
-            </el-tooltip>
-          </div>
-        </template>
-        <el-form>
-          <el-form-item :label="t('senderRules')" label-position="top">
-            <el-input-tag v-model="aiCodeFilter" @add-tag="aiCodeFilterAddTag"/>
-          </el-form-item>
-        </el-form>
-        <el-button type="primary" style="width: 100%;" :loading="settingLoading" @click="saveAiCodeFilter">{{ $t('save') }}</el-button>
-      </el-dialog>
+      <GeneralDialogs ref="generalDialogs" />
+      <MailDialogs ref="mailDialogs" />
+      <DeliveryDialogs ref="deliveryDialogs" />
+      <StorageDialogs ref="storageDialogs" />
+      <SecurityDialogs ref="securityDialogs" />
+      <NoticeDialog ref="noticeDialog" />
+      <AiCodeDialog ref="aiCodeDialog" />
     </el-scrollbar>
   </div>
 </template>
 
 <script setup>
-import {computed, defineOptions, nextTick, reactive, ref} from "vue";
-import {deleteBackground, setBackground, setBlackList, settingQuery, settingSet} from "@/request/setting.js";
-import {costactionTest} from "@/request/large-att.js";
-import {roleSelectUse} from "@/request/role.js";
-import {useSettingStore} from "@/store/setting.js";
+import {computed, defineOptions, ref} from "vue";
+import {deleteBackground} from "@/request/setting.js";
 import {useUiStore} from "@/store/ui.js";
-import {useUserStore} from "@/store/user.js";
-import {useAccountStore} from "@/store/account.js";
 import {Icon} from "@iconify/vue";
-import {cvtR2Url, toOssDomain} from "@/utils/convert.js";
-import {storeToRefs} from "pinia";
+import {cvtR2Url} from "@/utils/convert.js";
 import {debounce} from 'lodash-es'
-import {isDomain, isEmail, isIpUrl} from "@/utils/verify-utils.js";
 import loading from "@/components/loading/index.vue";
 import TranslationSettings from '@/components/translation-settings.vue';
 import { hasPerm } from '@/perm/perm';
-import {getTextWidth} from "@/utils/text.js";
-import {fileToBase64} from "@/utils/file-utils.js"
 import {useI18n} from 'vue-i18n';
 import { projectInfo } from '../../../../shared/project-info.mjs';
+import { provideSysSetting } from './use-sys-setting.js';
+import GeneralDialogs from './dialogs/general-dialogs.vue';
+import MailDialogs from './dialogs/mail-dialogs.vue';
+import DeliveryDialogs from './dialogs/delivery-dialogs.vue';
+import StorageDialogs from './dialogs/storage-dialogs.vue';
+import SecurityDialogs from './dialogs/security-dialogs.vue';
+import NoticeDialog from './dialogs/notice-dialog.vue';
+import AiCodeDialog from './dialogs/ai-code-dialog.vue';
 
 defineOptions({
   name: 'sys-setting'
@@ -996,107 +550,31 @@ const visibleSettingsSections=computed(()=>{
 function categoryCount(id){return availableSettingsSections.value.filter(section=>id==='all'||section.category===id).length;}
 function chooseSettingsCategory(id){activeCategory.value=id;settingsSearch.value='';settingsScroll.value?.setScrollTop(0);}
 
-const settingsLoadError=ref(false)
-const firstLoading = ref(true)
-const settingReady = ref(false)
-const backgroundImage = ref('')
-const localUpShow = ref(false)
-const accountStore = useAccountStore();
-const userStore = useUserStore();
-const editTitleShow = ref(false)
-const resendTokenFormShow = ref(false)
-const blackFormShow = ref(false)
-const autoCleanShow = ref(false)
-const aiCodeFilterShow = ref(false)
-const r2DomainShow = ref(false)
-const turnstileShow = ref(false)
-const tgSettingShow = ref(false)
-const noticePopupShow = ref(false)
-const thirdEmailShow = ref(false)
-const webhookShow = ref(false)
-const forwardRulesShow = ref(false)
-const emailPrefixShow = ref(false)
-const showResendList = ref(false)
-const settingStore = useSettingStore();
 const uiStore = useUiStore();
-const {settings: setting} = storeToRefs(settingStore);
-const editTitle = ref('')
-const settingLoading = ref(false)
-const clearS3Loading = ref(false)
-const r2DomainInput = ref('')
+const {
+  setting, settingLoading, settingReady, firstLoading, settingsLoadError,
+  getSettings, editSetting, beforeChange, onSettingsLoaded, onSaveFailed
+} = provideSysSetting();
+
+// Each settings section's dialogs live in their own component; the cards open them through these refs.
+const generalDialogs = ref(), mailDialogs = ref(), deliveryDialogs = ref(), storageDialogs = ref();
+const securityDialogs = ref(), noticeDialog = ref(), aiCodeDialog = ref();
+
 const loginOpacity = ref(0)
-const minEmailPrefix = ref(0)
-const emailPrefixFilter = ref([])
-const autoCleanDays = ref(0)
-const autoCleanExclude = ref([])
-const backgroundUrl = ref('')
-let backgroundFile = {}
-const showSetBackground = ref(false)
-let regVerifyCount = ref(1)
-let addVerifyCount = ref(1)
-let backup = '{}'
-const addS3Show = ref(false)
-const addVerifyCountShow = ref(false)
-const regVerifyCountShow = ref(false)
-const resendTokenForm = reactive({
-  domain: '',
-  token: '',
-})
-const turnstileForm = reactive({
-  siteKey: '',
-  secretKey: ''
-})
+onSettingsLoaded(() => { loginOpacity.value = setting.value.loginOpacity })
+onSaveFailed(() => { loginOpacity.value = setting.value.loginOpacity })
 
 const oauthPlatforms = [
   { key: 'google', label: 'Google', icon: 'devicon:google', iconType: 'iconify' },
   { key: 'github', label: 'GitHub', icon: 'codicon:github-inverted', iconType: 'iconify' },
   { key: 'linuxdo', label: 'LinuxDo', icon: '/image/linuxdo.webp', iconType: 'image' },
 ]
-const oauthSettingShow = ref(false)
-// Large attachments (CostAction/Turbobit). The token is write-only: the page only learns whether one is saved.
-const MB = 1024 * 1024
-const costactionShow = ref(false), costactionTesting = ref(false), costactionResult = ref(''), costactionRoles = ref([])
-const costactionForm = reactive({ token: '', minMb: 10, maxMb: 100, roles: [] })
-const oauthForm = reactive({
-  key: '',
-  label: '',
-  clientId: '',
-  clientSecret: '',
-  switch: 1,
-})
-
-const s3 = reactive({
-  bucket: '',
-  endpoint: '',
-  region: '',
-  s3AccessKey: '',
-  s3SecretKey: '',
-  forcePathStyle: 1
-})
-
-const noticeForm = reactive({
-  noticeTitle: '',
-  noticeContent: '',
-  noticeType: '',
-  noticeDuration: '',
-  noticePosition: '',
-  noticeOffset: 0,
-  notice: 0,
-  noticeWidth: 0
-})
 
 const regKeyOptions = computed(() => [
   {label: t('enable'), value: 0},
   {label: t('disable'), value: 1},
   {label: t('optional'), value: 2},
 ])
-
-const blackListForm = ref({
-  blackSubject: [],
-  blackContent: [],
-  blackFrom: []
-})
-const aiCodeFilter = ref([])
 
 const authRefreshOptions = computed(() => [
   {label: t('disable'), value: 0},
@@ -1107,476 +585,17 @@ const authRefreshOptions = computed(() => [
   {label: '20s', value: 20},
 ])
 
-const tgChatId = ref([])
-const customDomain = ref('')
-const tgBotStatus = ref(0)
-const tgBotToken = ref('')
-const forwardEmail = ref([])
-const forwardStatus = ref(0)
-const webhookUrl = ref('')
-const webhookStatus = ref(1)
-const webhookRetry = ref(0)
-const webhookSecret = ref('')
-const webhookFormatShow = ref(false)
-const webhookPayloadExample = `{
-  "emailId": 1,
-  "sendEmail": "hello@example.com",
-  "sendName": "hello",
-  "toEmail": "admin@example.com",
-  "toName": "admin",
-  "subject": "Hello",
-  "text": "Hello",
-  "content": "<div>Hello</div>",
-  "code": "123456",
-  "createTime": "2099-12-30 23:59:59"
-}`
-const emailColumnWidth = ref(0)
-const tokenColumnWidth = ref(0)
-const ruleType = ref(0)
-const ruleEmail = ref([])
-const tgMsgFrom = ref('')
-const tgMsgTo = ref('')
-const tgMsgText = ref('')
-
-const tgMsgFromOption = [{label: t('show'), value: 'show'}, {label: t('hide'), value: 'hide'}, {label: t('onlyName'), value:'only-name'}]
-const tgMsgToOption = [{label: t('show'), value: 'show'}, {label: t('hide'), value: 'hide'}]
-const tgMsgTextOption = [{label: t('show'), value: 'show'}, {label: t('hide'), value: 'hide'}]
-const tgMsgLabelWidth = computed(() => locale.value === 'en' ? '120px' : '100px');
-
 getSettings()
-
-function getSettings() {
-  if(settingsLoadError.value)firstLoading.value=true
-  settingsLoadError.value=false
-  settingReady.value = false
-  settingQuery().then(settingData => {
-    setting.value = settingData
-    settingStore.domainList = settingData.domainList;
-    resendTokenForm.domain = setting.value.domainList[0]
-    loginOpacity.value = setting.value.loginOpacity
-    minEmailPrefix.value = setting.value.minEmailPrefix
-    firstLoading.value = false
-    backgroundUrl.value = setting.value.background?.startsWith('http') ? setting.value.background : ''
-    editTitle.value = setting.value.title
-    r2DomainInput.value = setting.value.r2Domain
-    addVerifyCount.value = setting.value.addVerifyCount
-    regVerifyCount.value = setting.value.regVerifyCount
-    resetNoticeForm()
-    resetAddS3Form()
-    resetEmailPrefix()
-    resetBlackList()
-    resetAiCodeFilter()
-    nextTick(() => {
-      settingReady.value = true
-    })
-  }).catch(()=>{
-    firstLoading.value=false
-    settingsLoadError.value=true
-  })
-}
-
-
-function openNoticePopup() {
-  uiStore.showNotice()
-}
-
-function openAddVerifyCount() {
-  if (settingLoading.value) return
-  addVerifyCountShow.value = true
-}
-
-function openRegVerifyCount() {
-  if (settingLoading.value) return
-  regVerifyCountShow.value = true
-}
-
-function resetAddS3Form() {
-  s3.bucket = setting.value.bucket
-  s3.endpoint = setting.value.endpoint
-  s3.region = setting.value.region
-  s3.s3AccessKey = ''
-  s3.s3SecretKey = ''
-  s3.forcePathStyle = setting.value.forcePathStyle
-}
-
-const resendList = computed(() => {
-
-  let list = Object.keys(setting.value.resendTokens).map(key => {
-    return {
-      key: key,
-      value: setting.value.resendTokens[key]
-    };
-  })
-
-  if (list.length > 0) {
-
-    const key = list.reduce((a, b) => compareByLengthAndUpperCase(a, b, 'key')).key;
-    emailColumnWidth.value = getTextWidth(key) + 30;
-
-    const value = list.reduce((a, b) => compareByLengthAndUpperCase(a, b, 'value')).value;
-    tokenColumnWidth.value = getTextWidth(value) + 30;
-
-  }
-
-  return list;
-});
-
-function saveAddVerifyCount() {
-  if (!addVerifyCount.value) {
-    addVerifyCount.value = 1
-  }
-  editSetting({addVerifyCount: addVerifyCount.value})
-}
-
-function saveRegVerifyCount() {
-  if (!regVerifyCount.value) {
-    regVerifyCount.value = 1
-  }
-  editSetting({regVerifyCount: regVerifyCount.value})
-}
-
-const compareByLengthAndUpperCase = (a, b, key) => {
-  const getUpperCaseCount = (str) => (str.match(/[A-Z]/g) || []).length;
-  if (a[key].length === b[key].length) {
-    return getUpperCaseCount(a[key]) > getUpperCaseCount(b[key]) ? a : b;
-  }
-  return a[key].length > b[key].length ? a : b;
-};
-
-
-function closedSetBackground() {
-  backgroundImage.value = ''
-  localUpShow.value = false
-  backgroundUrl.value = setting.value.background?.startsWith('http') ? setting.value.background : ''
-}
-
-function openTgSetting() {
-  tgBotStatus.value = setting.value.tgBotStatus
-  tgBotToken.value = ''
-  customDomain.value = setting.value.customDomain
-  tgMsgFrom.value = setting.value.tgMsgFrom
-  tgMsgText.value = setting.value.tgMsgText
-  tgMsgTo.value = setting.value.tgMsgTo
-  tgChatId.value = []
-  if (setting.value.tgChatId) {
-    const list = setting.value.tgChatId.split(',')
-    tgChatId.value.push(...list)
-  }
-  tgSettingShow.value = true
-}
-
-function openNoticePopupSetting() {
-  noticePopupShow.value = true
-}
-
-function openResendList() {
-  showResendList.value = true
-}
-
-function resetNoticeForm() {
-  noticeForm.notice = setting.value.notice
-  noticeForm.noticeContent = setting.value.noticeContent
-  noticeForm.noticeDuration = setting.value.noticeDuration
-  noticeForm.noticeTitle = setting.value.noticeTitle
-  noticeForm.noticePosition = setting.value.noticePosition
-  noticeForm.noticeType = setting.value.noticeType
-  noticeForm.noticeOffset = setting.value.noticeOffset
-  noticeForm.noticeWidth = setting.value.noticeWidth
-}
-
-function saveNoticePopup() {
-  noticeForm.noticeOffset = noticeForm.noticeOffset || 0
-  noticeForm.noticeWidth = noticeForm.noticeWidth || 0
-  noticeForm.noticeDuration = noticeForm.noticeDuration || 0
-  editSetting({...noticeForm})
-}
-
-function previewNoticePopup() {
-  uiStore.previewNotice({...noticeForm})
-}
-
-function openThirdEmailSetting() {
-  forwardEmail.value = []
-  forwardStatus.value = setting.value.forwardStatus
-  if (setting.value.forwardEmail) {
-    const list = setting.value.forwardEmail.split(',')
-    forwardEmail.value.push(...list)
-  }
-  thirdEmailShow.value = true
-}
-
-function openWebhookSetting() {
-  webhookStatus.value = setting.value.webhookStatus
-  webhookUrl.value = setting.value.webhookUrl || ''
-  webhookRetry.value = setting.value.webhookRetry ?? 0
-  webhookSecret.value = setting.value.webhookSecret || ''
-  webhookShow.value = true
-}
-
-function openEmailPrefix() {
-  emailPrefixShow.value = true
-}
-
-function openAutoClean() {
-  autoCleanDays.value = setting.value.autoCleanDays ?? 0
-  autoCleanExclude.value = setting.value.autoCleanExclude
-      ? setting.value.autoCleanExclude.split(',').filter(Boolean)
-      : []
-  autoCleanShow.value = true
-}
-
-function openForwardRules() {
-  ruleType.value = setting.value.ruleType
-  ruleEmail.value = []
-  if (setting.value.ruleEmail) {
-    const list = setting.value.ruleEmail.split(',')
-    ruleEmail.value.push(...list)
-  }
-  forwardRulesShow.value = true
-}
-
-function emailAddTag(val) {
-  const emails = Array.from(new Set(
-      val.split(/[,，]/).map(item => item.trim()).filter(item => item)
-  ));
-
-  forwardEmail.value.splice(forwardEmail.value.length - 1, 1)
-
-  emails.forEach(email => {
-    if (isEmail(email) && !forwardEmail.value.includes(email)) {
-      forwardEmail.value.push(email)
-    }
-  })
-}
-
-function ruleEmailAddTag(val) {
-  const emails = Array.from(new Set(
-      val.split(/[,，]/).map(item => item.trim()).filter(item => item)
-  ));
-
-  ruleEmail.value.splice(ruleEmail.value.length - 1, 1)
-
-  emails.forEach(email => {
-    if (isEmail(email) && !ruleEmail.value.includes(email)) {
-      ruleEmail.value.push(email)
-    }
-  })
-}
-
-function addChatTag(val) {
-
-  const chatIds = Array.from(new Set(
-      val.split(/[,，]/).map(item => item.trim()).filter(item => item)
-  ));
-
-  tgChatId.value.splice(tgChatId.value.length - 1, 1)
-
-  chatIds.forEach(id => {
-    if (!isNaN(Number(id))) {
-      tgChatId.value.push(id)
-    }
-  })
-}
-
-function clearS3() {
-
-  const form = {
-    bucket: '',
-    endpoint: '',
-    region: '',
-    s3AccessKey: '',
-    s3SecretKey: '',
-    forcePathStyle: 1
-  }
-  clearS3Loading.value = true
-  editSetting(form)
-}
-
-function saveS3() {
-
-  const form = {
-    bucket: s3.bucket,
-    endpoint: s3.endpoint,
-    region: s3.region,
-    forcePathStyle: s3.forcePathStyle
-  }
-
-  if (s3.s3AccessKey) form.s3AccessKey = s3.s3AccessKey
-  if (s3.s3SecretKey) form.s3SecretKey = s3.s3SecretKey
-
-  editSetting(form)
-}
-
-function tgBotSave() {
-  const form = {
-    customDomain: customDomain.value,
-    tgBotStatus: tgBotStatus.value,
-    tgChatId: tgChatId.value + '',
-    tgMsgFrom: tgMsgFrom.value,
-    tgMsgText: tgMsgText.value,
-    tgMsgTo: tgMsgTo.value
-  }
-  if (tgBotToken.value) form.tgBotToken = tgBotToken.value
-  editSetting(form)
-}
-
-function forwardEmailSave() {
-  const form = {
-    forwardStatus: forwardStatus.value,
-    forwardEmail: forwardEmail.value + ''
-  }
-  editSetting(form)
-}
-
-function webhookSave() {
-  let retry = Number(webhookRetry.value)
-  if (isNaN(retry) || retry < 0) {
-    retry = 0
-  }
-  const url = toOssDomain(webhookUrl.value.trim())
-  if (isIpUrl(url)) {
-    ElMessage({
-      message: t('webhookIpNotSupported'),
-      type: 'warning',
-      plain: true
-    })
-    return
-  }
-  const form = {
-    webhookStatus: webhookStatus.value,
-    webhookUrl: url,
-    webhookRetry: retry,
-    webhookSecret: webhookSecret.value.trim()
-  }
-  editSetting(form)
-}
-
-
-function ruleEmailSave() {
-  const form = {
-    ruleEmail: ruleEmail.value + '',
-    ruleType: ruleType.value
-  }
-  editSetting(form)
-}
 
 function doOpacityChange() {
   if (!settingReady.value) return
-  const form = {}
-  form.loginOpacity = loginOpacity.value
-  editSetting(form, true)
-}
-
-function resetEmailPrefix() {
-  minEmailPrefix.value = setting.value.minEmailPrefix
-  emailPrefixFilter.value = setting.value.emailPrefixFilter
-}
-
-function resetBlackList() {
-  blackListForm.value.blackFrom = setting.value.blackFrom ? setting.value.blackFrom.split(',') : []
-  blackListForm.value.blackContent = setting.value.blackContent ? setting.value.blackContent.split(',') : []
-  blackListForm.value.blackSubject = setting.value.blackSubject ? setting.value.blackSubject.split(',') : []
-}
-
-function resetAutoClean() {
-  autoCleanDays.value = setting.value.autoCleanDays ?? 0
-  autoCleanExclude.value = setting.value.autoCleanExclude
-      ? setting.value.autoCleanExclude.split(',').filter(Boolean)
-      : []
-}
-
-function resetAiCodeFilter() {
-  aiCodeFilter.value = setting.value.aiCodeFilter ? setting.value.aiCodeFilter.split(',') : []
-}
-
-function saveEmailPrefix() {
-  const form = {}
-  form.minEmailPrefix = minEmailPrefix.value
-  form.emailPrefixFilter = emailPrefixFilter.value
-  editSetting(form, true)
-}
-
-function saveAutoClean() {
-  editSetting({
-    autoCleanDays: autoCleanDays.value,
-    autoCleanExclude: autoCleanExclude.value.join(',')
-  }, true)
-}
-
-function saveAiCodeFilter() {
-  editSetting({aiCodeFilter: aiCodeFilter.value + ''})
+  editSetting({loginOpacity: loginOpacity.value}, true)
 }
 
 const opacityChange = debounce(doOpacityChange, 1000, {
   leading: false,
   trailing: true
 })
-
-function saveBlackList() {
-
-  let form = {
-    blackContent: blackListForm.value.blackContent + '',
-    blackSubject: blackListForm.value.blackSubject + '',
-    blackFrom: blackListForm.value.blackFrom + ''
-  }
-
-  settingLoading.value = true
-
-  setBlackList(form).then(() => {
-    getSettings()
-    ElMessage({
-      message: t('setSuccess'),
-      type: "success",
-      plain: true
-    })
-    blackFormShow.value = false;
-  }).finally(() => {
-    settingLoading.value = false;
-  })
-}
-
-function banEmailAddTag(val) {
-  const emails = Array.from(new Set(
-      val.split(/[,，]/).map(item => item.trim()).filter(item => item)
-  ));
-
-  blackListForm.value.blackFrom.splice(blackListForm.value.blackFrom.length - 1, 1)
-
-  emails.forEach(email => {
-    if ((isEmail(email) || isDomain(email)) && !blackListForm.value.blackFrom.includes(email)) {
-      blackListForm.value.blackFrom.push(email)
-    }
-  })
-}
-
-function autoCleanExcludeAddTag(val) {
-  const emails = Array.from(new Set(
-      val.split(/[,，]/).map(item => item.trim()).filter(item => item)
-  ));
-
-  autoCleanExclude.value.splice(autoCleanExclude.value.length - 1, 1)
-
-  emails.forEach(email => {
-    if (isEmail(email) && !autoCleanExclude.value.includes(email)) {
-      autoCleanExclude.value.push(email)
-    }
-  })
-}
-
-function aiCodeFilterAddTag(val) {
-  const emails = Array.from(new Set(
-      val.split(/[,，]/).map(item => item.trim()).filter(item => item)
-  ));
-
-  aiCodeFilter.value.splice(aiCodeFilter.value.length - 1, 1)
-
-  emails.forEach(email => {
-    if ((isEmail(email) || isDomain(email)) && !aiCodeFilter.value.includes(email)) {
-      aiCodeFilter.value.push(email)
-    }
-  })
-}
-
 
 function delBackground() {
   ElMessageBox.confirm(t('delBackgroundConfirm'), {
@@ -1585,7 +604,7 @@ function delBackground() {
     type: 'warning'
   }).then(() => {
     deleteBackground().then(() => {
-      backgroundUrl.value = ''
+      generalDialogs.value?.clearBackgroundUrl()
       setting.value.background = null
       ElMessage({
         message: t('delSuccessMsg'),
@@ -1596,170 +615,8 @@ function delBackground() {
   })
 }
 
-function openCostaction() {
-  costactionForm.token = ''
-  costactionForm.minMb = Math.round((setting.value.costactionMinSize || 10 * MB) / MB)
-  costactionForm.maxMb = Math.round((setting.value.costactionMaxSize || 100 * MB) / MB)
-  costactionForm.roles = String(setting.value.costactionRoles || '').split(',').filter(Boolean).map(Number)
-  costactionResult.value = ''
-  roleSelectUse().then(list => { costactionRoles.value = list }).catch(() => {})
-  costactionShow.value = true
-}
-
-async function testCostaction() {
-  costactionTesting.value = true
-  try {
-    costactionResult.value = (await costactionTest(costactionForm.token.trim())).ok ? 'ok' : 'failed'
-  } catch {
-    costactionResult.value = 'failed'
-  } finally {
-    costactionTesting.value = false
-  }
-}
-
-function saveCostaction() {
-  if (costactionForm.minMb > costactionForm.maxMb) {
-    ElMessage({ message: t('largeAttSizeOrder'), type: 'warning', plain: true })
-    return
-  }
-  editSetting({
-    costactionToken: costactionForm.token.trim(),
-    costactionMinSize: costactionForm.minMb * MB,
-    costactionMaxSize: costactionForm.maxMb * MB,
-    costactionRoles: costactionForm.roles.join(',')
-  })
-}
-
-function clearCostactionToken() {
-  ElMessageBox.confirm(t('largeAttTokenClearConfirm'), {
-    confirmButtonText: t('confirm'),
-    cancelButtonText: t('cancel'),
-    type: 'warning'
-  }).then(() => editSetting({ costactionTokenClear: true, costactionStatus: 1 }))
-}
-
-function openOauthSetting(p) {
-  oauthForm.key = p.key
-  oauthForm.label = p.label
-  oauthForm.clientId = setting.value[p.key + 'ClientId'] || ''
-  oauthForm.clientSecret = setting.value[p.key + 'ClientSecret'] || ''
-  oauthForm.switch = setting.value[p.key + 'Switch'] ?? 1
-  oauthSettingShow.value = true
-}
-
-function saveOauth() {
-  const form = {}
-  form[oauthForm.key + 'ClientId'] = oauthForm.clientId
-  form[oauthForm.key + 'ClientSecret'] = oauthForm.clientSecret
-  form[oauthForm.key + 'Switch'] = oauthForm.switch
-  editSetting(form)
-}
-
-function saveTurnstileKey() {
-  const settingForm = {}
-  settingForm.siteKey = turnstileForm.siteKey
-  settingForm.secretKey = turnstileForm.secretKey
-  editSetting(settingForm)
-}
-
-async function saveBackground() {
-
-  if (settingLoading.value) return
-
-  let image = ''
-
-  if (localUpShow.value) {
-    image = await fileToBase64(backgroundFile, true);
-  } else {
-    if (backgroundUrl.value && !backgroundUrl.value.startsWith('http')) {
-      ElMessage({
-        message: t('imageLinkErrorMsg'),
-        type: "error",
-        plain: true
-      })
-      return
-    }
-    image = backgroundUrl.value
-  }
-  settingLoading.value = true
-
-  setBackground(image).then(key => {
-    setting.value.background = key
-    showSetBackground.value = false
-    ElMessage({
-      message: t('saveSuccessMsg'),
-      type: "success",
-      plain: true
-    })
-    localUpShow.value = false
-    backgroundImage.value = ''
-  }).finally(() => {
-    settingLoading.value = false
-  })
-
-}
-
-function openSetBackground() {
-  showSetBackground.value = true
-}
-
-function openCut() {
-  const doc = document.createElement('input')
-  doc.setAttribute('type', 'file')
-  doc.setAttribute('accept', 'image/*')
-  doc.click()
-  doc.onchange = async (e) => {
-    backgroundFile = e.target.files[0]
-    backgroundImage.value = URL.createObjectURL(e.target.files[0])
-    localUpShow.value = true
-  }
-}
-
-function saveR2domain() {
-  const settingForm = {r2Domain: r2DomainInput.value}
-  editSetting(settingForm)
-}
-
-function openResendForm() {
-  resendTokenFormShow.value = true
-}
-
-function openBlackListForm() {
-  blackFormShow.value = true
-}
-
-function openAiCodeFilter() {
-  aiCodeFilterShow.value = true
-}
-
-function saveResendToken() {
-  const settingForm = {
-    resendTokens: {}
-  }
-  const domain = resendTokenForm.domain.slice(1)
-  settingForm.resendTokens[domain] = resendTokenForm.token
-  editSetting(settingForm)
-}
-
-function backupSetting() {
-  const settingForm = {...setting.value}
-  delete settingForm.resendTokens
-  delete settingForm.siteKey
-  delete settingForm.secretKey
-  backup = JSON.stringify(setting.value)
-}
-
-function cleanResendTokenForm() {
-  resendTokenForm.token = ''
-}
-
-function beforeChange() {
-  if (!settingReady.value || settingLoading.value) return false
-  backupSetting()
-  return true
-}
-
-function change(e) {
+// Switches save the whole visible settings object, without secrets the page never holds.
+function change() {
   if (!settingReady.value) return
   const settingForm = {...setting.value}
   delete settingForm.siteKey
@@ -1775,53 +632,6 @@ function changeField(key, value) {
   if (!settingReady.value) return
   setting.value[key] = value
   editSetting({[key]: value}, false)
-}
-
-function saveTitle() {
-  editSetting({title: editTitle.value})
-}
-
-function editSetting(settingForm, refreshStatus = true) {
-  if (settingLoading.value) return
-  settingLoading.value = true
-
-  settingSet(settingForm).then(() => {
-    settingLoading.value = false
-    ElMessage({
-      message: t('saveSuccessMsg'),
-      type: "success",
-      plain: true
-    })
-    if (setting.value.manyEmail === 1) {
-      accountStore.currentAccountId = userStore.user.account.accountId;
-    }
-    if (refreshStatus) {
-      getSettings()
-    }
-    editTitleShow.value = false
-    r2DomainShow.value = false
-    resendTokenFormShow.value = false
-    turnstileShow.value = false
-    tgSettingShow.value = false
-    thirdEmailShow.value = false
-    webhookShow.value = false
-    forwardRulesShow.value = false
-    addVerifyCountShow.value = false
-    regVerifyCountShow.value = false
-    noticePopupShow.value = false
-    addS3Show.value = false
-    emailPrefixShow.value = false
-    aiCodeFilterShow.value = false
-    autoCleanShow.value = false
-    oauthSettingShow.value = false
-    costactionShow.value = false
-  }).catch((e) => {
-    loginOpacity.value = setting.value.loginOpacity
-    setting.value = {...setting.value, ...JSON.parse(backup)}
-  }).finally(() => {
-    settingLoading.value = false
-    clearS3Loading.value = false
-  })
 }
 </script>
 
@@ -1973,150 +783,10 @@ function editSetting(settingForm, refreshStatus = true) {
   }
 }
 
-.title-icon.warning {
-  position: relative;
-  top: 2px;
-  cursor: pointer;
-  margin-left: 2px;
-}
-
 .warning {
   margin-left: 2px;
   color: grey;
   cursor: pointer;
-}
-
-.cropper {
-  border-radius: 4px;
-  border: 1px solid #D4D7DE;
-  height: 397px;
-  width: 705px;
-  @media (max-width: 767px) {
-    width: calc(100vw - 60px);
-    height: calc((100vw - 60px) * 9 / 16);
-  }
-}
-
-.dialog-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.webhook-footer-right {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.webhook-format-title {
-  display: inline-flex;
-  align-items: center;
-  cursor: pointer;
-  user-select: none;
-  color: var(--el-color-primary);
-  font-size: 13px;
-}
-
-.webhook-format-icon {
-  transition: transform 0.2s;
-  &.open {
-    transform: rotate(180deg);
-  }
-}
-
-.notice-popup-item {
-  margin-top: 15px;
-}
-
-.notice-line-item {
-  margin-top: 15px;
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 15px;
-
-  > * {
-    width: 100%;
-  }
-
-  @media (max-width: 840px) {
-    grid-template-columns: 1fr 1fr;
-  }
-  @media (max-width: 580px) {
-    grid-template-columns: 1fr;
-  }
-}
-
-.background-url {
-  width: min(calc(100vw - 70px), 500px);
-}
-
-
-:deep(.el-dialog) {
-  width: 400px !important;
-  @media (max-width: 440px) {
-    width: calc(100% - 40px) !important;
-    margin-right: 20px !important;
-    margin-left: 20px !important;
-  }
-}
-
-:deep(.resend-table.el-dialog) {
-  min-height: 300px;
-  width: 500px !important;
-  @media (max-width: 540px) {
-    width: calc(100% - 40px) !important;
-    margin-right: 20px !important;
-    margin-left: 20px !important;
-  }
-}
-
-:deep(.notice-popup.el-dialog) {
-  min-height: 300px;
-  width: 820px !important;
-  @media (max-width: 860px) {
-    width: calc(100% - 40px) !important;
-    margin-right: 20px !important;
-    margin-left: 20px !important;
-  }
-}
-
-:deep(.resend-table .el-dialog__header) {
-  padding-bottom: 5px;
-}
-
-:deep(.el-table__inner-wrapper:before) {
-  background: var(--el-bg-color);
-}
-
-:deep(.cut-dialog.el-dialog) {
-  width: fit-content !important;
-  height: fit-content !important;
-}
-
-
-:deep(.forward-dialog.el-dialog) {
-  width: 500px !important;
-  @media (max-width: 540px) {
-    width: calc(100% - 40px) !important;
-    margin-right: 20px !important;
-    margin-left: 20px !important;
-  }
-}
-
-.forward-dialog {
-  .forward-head {
-    display: flex;
-    align-items: center;
-
-    .forward-set-title {
-      top: 1px;
-      padding-right: 5px;
-      position: relative;
-      font-size: 16px;
-      font-weight: bold;;
-    }
-  }
 }
 
 .error-image {
@@ -2126,17 +796,6 @@ function editSetting(settingForm, refreshStatus = true) {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-}
-
-.cut-button {
-  padding-top: 15px;
-  width: 100%;
-  display: flex;
-  justify-content: space-between;
-
-  .el-button {
-    width: fit-content;
-  }
 }
 
 .bot-verify {
@@ -2161,42 +820,6 @@ function editSetting(settingForm, refreshStatus = true) {
   }
 }
 
-.forward-set-body {
-  display: flex;
-  flex-direction: column;
-
-  .el-switch {
-    align-self: end;
-  }
-
-  > *:nth-child(-n+2) {
-    margin-bottom: 15px;
-  }
-
-  .tg-msg-label {
-    margin-top: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    .el-select {
-      width: v-bind(tgMsgLabelWidth);
-    }
-    .el-input-number {
-      width: 120px;
-    }
-  }
-
-  .webhook-format pre {
-    margin: 8px 0 0;
-    padding: 10px;
-    font-size: 12px;
-    line-height: 1.5;
-    overflow-x: auto;
-    border-radius: 4px;
-    background: var(--el-fill-color-light);
-  }
-}
-
 .forward {
   span {
     display: flex;
@@ -2211,26 +834,6 @@ function editSetting(settingForm, refreshStatus = true) {
 
 .opt-button {
   width: fit-content !important;
-}
-
-.email-prefix {
-  display: flex;
-  justify-content: space-between;
-}
-
-.prefix-filter {
-  display: flex;
-  flex-direction: column;
-}
-
-.s3-button {
-  display: grid;
-  grid-template-columns: 80px 1fr;
-  gap: 15px;
-
-  .el-button {
-    margin-left: 0;
-  }
 }
 
 .r2domain {
@@ -2265,24 +868,6 @@ function editSetting(settingForm, refreshStatus = true) {
       margin-left: 10px;
       margin-top: 0;
     }
-  }
-}
-
-.dialog-input {
-  margin-bottom: 15px;
-}
-
-.force-path-style {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  .force-path-style-left {
-    padding-left: 2px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 5px;
   }
 }
 
@@ -2332,11 +917,6 @@ function editSetting(settingForm, refreshStatus = true) {
   }
 }
 
-form .el-button {
-  margin-top: 10px;
-  width: 100%;
-}
-
 .el-switch {
   height: 28px;
 }
@@ -2352,18 +932,6 @@ form .el-button {
   min-height: 28px;
 }
 
-</style>
-
-<style scoped>
-.costaction-form { display: grid; gap: 12px; }
-.costaction-note { margin: 0; font-size: 12px; line-height: 1.6; color: var(--el-text-color-secondary); }
-.costaction-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-.costaction-actions .ok { color: var(--el-color-success); }
-.costaction-actions .failed { color: var(--el-color-danger); }
-.costaction-field { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 13px; }
-.costaction-field .el-select { width: 220px; }
-.costaction-form .el-button { width: auto; margin-top: 0; }
-.costaction-form > .el-button--primary { width: 100%; }
 </style>
 
 <style>

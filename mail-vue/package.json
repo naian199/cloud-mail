@@ -8,7 +8,8 @@
     "remote": "vite --mode remote",
     "build": "vite build --mode release",
     "eo": "vite build --mode eo",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test:e2e": "playwright test -c e2e/playwright.config.mjs"
   },
   "dependencies": {
     "@emoji-mart/data": "^1.2.1",
@@ -37,6 +38,7 @@
     "vue-router": "^4.5.0"
   },
   "devDependencies": {
+    "@playwright/test": "1.63.0",
     "@vitejs/plugin-vue": "^5.2.1",
     "less": "^4.2.2",
     "sass": "^1.82.0",

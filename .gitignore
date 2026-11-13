@@ -27,3 +27,8 @@ mail-vue/dist
 .venv
 git-tools.js
 wrangler-large-att-test.toml
+
+# end-to-end test backend
+mail-worker/wrangler-e2e.toml
+test-results/
+playwright-report/
