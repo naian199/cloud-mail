@@ -13,14 +13,22 @@
   <title>Cloud Mail</title>
   <link rel="icon" href="/mail-brand.png" type="image/png">
   <script>
-    const uiStoreStr =  localStorage.getItem('ui')
     let isDark = false
-    if (uiStoreStr) {
-      const uiStore =  JSON.parse(uiStoreStr)
-      isDark = uiStore.dark
-      const root = document.documentElement
-      root.setAttribute('class', isDark ? 'dark' : '');
-    }
+    const root = document.documentElement
+    // Corrupt or blocked storage must not stop the page from loading.
+    try {
+      const uiStore = JSON.parse(localStorage.getItem('ui') || 'null')
+      if (uiStore) {
+        isDark = !!uiStore.dark
+        root.setAttribute('class', isDark ? 'dark' : '');
+      }
+    } catch {}
+    // Apply the saved language before the app loads; i18n refines it once initialised.
+    try {
+      const saved = JSON.parse(localStorage.getItem('setting') || 'null')?.lang
+      const lang = saved ? (saved === 'zh' ? 'zh-CN' : saved) : navigator.language
+      if (lang) root.lang = lang
+    } catch {}
     const metaTag = document.getElementById('theme-color-meta');
     const isMobile =  !window.matchMedia("(pointer: fine) and (hover: hover)").matches;
     metaTag.setAttribute('content', isDark ? (isMobile ? '#141414' : '#000000') : (isMobile ? '#191A23' : '#F1F1F1'));

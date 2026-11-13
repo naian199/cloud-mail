@@ -17,6 +17,7 @@ import {computed, onMounted, watch} from "vue";
 import { useBreakpoint, BREAKPOINTS } from '@/composables/use-breakpoint.js'
 import { useRoute } from 'vue-router'
 import { hasPerm } from "@/perm/perm.js"
+import DOMPurify from 'dompurify'
 
 const settingStore = useSettingStore()
 const uiStore = useUiStore();
@@ -27,6 +28,7 @@ const isMobile = computed(() => viewportWidth.value <= BREAKPOINTS.phone)
 const cappedContent = computed(() => !['mail-chat', 'external-mail', 'rooms'].includes(route.name))
 
 let elNotification = null
+let noticeStyle = null
 
 const accountShow = computed(() => {
   return uiStore.accountShow && settingStore.settings.manyEmail === 0
@@ -64,18 +66,17 @@ function showNotice(data) {
     elNotification.close()
   }
 
-  const style = document.createElement('style');
-  style.innerHTML = `
-  .custom-notice.el-notification {
-    --el-notification-width: min(${data.noticeWidth}px,calc(100% - 30px)) !important;
-  }
-  `;
-
-  document.head.appendChild(style);
+  // One reusable style element; the width is coerced to a number so it cannot inject CSS.
+  noticeStyle ||= document.head.appendChild(document.createElement('style'));
+  const width = Number(data.noticeWidth);
+  noticeStyle.textContent = width > 0
+    ? `.custom-notice.el-notification { --el-notification-width: min(${width}px, calc(100% - 30px)) !important; }`
+    : '';
 
   elNotification = ElNotification({
     title: data.noticeTitle,
-    message: `<div style="width: 100%;height: 100%;">${data.noticeContent}</div>`,
+    // Admin-written rich text is shown to every visitor, so strip scripts and event handlers.
+    message: `<div style="width: 100%;height: 100%;">${DOMPurify.sanitize(data.noticeContent || '', { ADD_ATTR: ['target'] })}</div>`,
     type: data.noticeType === 'none' ? '' : data.noticeType,
     duration: data.noticeDuration,
     position: data.noticePosition,
