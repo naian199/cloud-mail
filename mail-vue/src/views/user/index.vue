@@ -146,165 +146,11 @@
         </div>
       </div>
     </el-scrollbar>
-    <el-dialog class="dialog" v-model="setPwdShow" :title="$t('changePassword')" @closed="resetUserForm">
-      <div class="dialog-box">
-        <el-input v-model="userForm.password" type="password" :placeholder="$t('newPassword')" autocomplete="off" @keyup.enter="updatePwd">
-        </el-input>
-        <el-button class="btn" type="primary" :loading="settingLoading" @click="updatePwd"
-        >{{ $t('save') }}
-        </el-button>
-      </div>
-    </el-dialog>
-    <el-dialog class="dialog" v-model="setTypeShow" :title="$t('changePerm')" @closed="resetUserForm">
-      <div class="dialog-box">
-        <el-input disabled :model-value="$t('admin')" v-if="userForm.type === 0"/>
-        <el-select v-else v-model="userForm.type" placeholder="Select">
-          <el-option v-for="item in roleList" :label="item.name" :value="item.roleId" :key="item.roleId"/>
-        </el-select>
-        <el-button :disabled="userForm.type === 0" class="btn" :loading="settingLoading" type="primary" @click="setType"
-        >{{ $t('save') }}
-        </el-button>
-      </div>
-    </el-dialog>
-    <el-dialog v-model="showAdd" :title="$t('addUser')" @closed="resetAddForm">
-      <div class="container">
-        <el-input v-model="addForm.email" type="text" :placeholder="$t('emailAccount')" autocomplete="off" @keyup.enter="submit">
-          <template #append>
-            <div @click.stop="openSelect">
-              <div inert>
-                <el-select
-                    ref="mySelect"
-                    v-model="addForm.suffix"
-                    :placeholder="$t('select')"
-                    class="select"
-                >
-                  <el-option
-                      v-for="item in domainList"
-                      :key="item"
-                      :label="item"
-                      :value="item"
-                  />
-                </el-select>
-              </div>
-              <div>
-                <span>{{ addForm.suffix }}</span>
-                <Icon class="setting-icon" icon="mingcute:down-small-fill" width="20" height="20"/>
-              </div>
-            </div>
-          </template>
-        </el-input>
-        <el-input type="password" v-model="addForm.password" :placeholder="$t('password')" @keyup.enter="submit"/>
-        <el-select v-model="addForm.type" :placeholder="$t('perm')">
-          <el-option v-for="item in roleList" :label="item.name" :value="item.roleId" :key="item.roleId"/>
-        </el-select>
-        <el-button class="btn" type="primary" @click="submit" :loading="addLoading"
-        >{{ $t('add') }}
-        </el-button>
-      </div>
-    </el-dialog>
-    <el-dialog class="account-dialog" v-model="accountShow" :title="t('userAccount')" @closed="resetAccountList" >
-      <el-table :data="accountList" style="height: 480px" v-loading="accountLoading" element-loading-background="transparent" :empty-text="accountLoading ? '' : null">
-        <el-table-column property="email" :label="t('emailAccount')" >
-          <template #default="props">
-            <div class="email-row">{{ props.row.email }}</div>
-          </template>
-        </el-table-column>
-        <el-table-column property="address" :label="t('tabStatus')"  :width="locale === 'en' ? 75 : 65" >
-          <template #default="props">
-            <el-tag type="primary" disable-transitions v-if="props.row.isDel === 0">{{$t('active')}}</el-tag>
-            <el-tag type="info" disable-transitions v-if="props.row.isDel === 1">{{$t('deleted')}}</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column :label="t('action')" :width="locale === 'en' ? 75 : 65" >
-          <template #default="props">
-            <el-dropdown trigger="click">
-              <el-button type="primary" size="small">{{t('action')}}</el-button>
-              <template #dropdown>
-                <el-dropdown-menu>
-                  <el-dropdown-item @click="deleteAccount(props.row)">{{ $t('delete') }}</el-dropdown-item>
-                </el-dropdown-menu>
-              </template>
-            </el-dropdown>
-          </template>
-        </el-table-column>
-      </el-table>
-      <div class="account-pagination">
-        <el-pagination
-            :disabled="accountLoading"
-            background
-
-            layout="prev, pager, next"
-            :pager-count="3"
-            :total="accountParams.total"
-            @current-change="accountCurChange"
-        />
-      </div>
-    </el-dialog>
-    <el-dialog class="account-dialog" v-model="detailsShow" :title="t('userDetails')"  >
-      <div class="details">
-        <div v-if="userDetails.platform || userDetails.username" class="oauth-details">
-          <el-avatar :src="userDetails.avatar" :size="30" class="oauth-avatar"/>
-          <span>{{ $t('username') }}：{{ userDetails.username }}</span>
-          <span v-if="userDetails.trustLevel != null">
-            {{ $t('trustLevel') }}：<el-tag type="success">{{ userDetails.trustLevel }}</el-tag>
-          </span>
-        </div>
-        <div v-if="!sendNumShow"><span
-            class="details-item-title">{{ $t('tabSent') }}:</span>{{ $n(userDetails.sendEmailCount || 0) }}
-        </div>
-        <div v-if="!accountNumShow"><span class="details-item-title">{{ $t('tabMailboxes') }}:</span>{{
-            userDetails.accountCount
-          }}
-        </div>
-        <div v-if="!createTimeShow"><span class="details-item-title">{{ $t('tabRegisteredAt') }}:</span>{{
-            tzDayjs(userDetails.createTime).format('YYYY-MM-DD HH:mm')
-          }}
-        </div>
-        <div v-if="!typeShow"><span class="details-item-title">{{ $t('perm') }}:</span>
-          {{ toRoleName(userDetails.type) }}
-        </div>
-        <div v-if="!statusShow">
-          <span class="details-item-title">{{ $t('tabStatus') }}:</span>
-          <el-tag disable-transitions v-if="userDetails.isDel === 1" type="info">{{ $t('deleted') }}</el-tag>
-          <el-tag disable-transitions v-else-if="userDetails.status === 0" type="primary">{{ $t('active') }}
-          </el-tag>
-          <el-tag disable-transitions v-else-if="userDetails.status === 1" type="danger">{{ $t('banned') }}
-          </el-tag>
-        </div>
-        <div><span class="details-item-title">{{ $t('registrationIp') }}:</span>{{
-            userDetails.createIp || $t('unknown')
-          }}
-        </div>
-        <div><span class="details-item-title">{{ $t('recentIP') }}:</span>{{
-            userDetails.activeIp || $t('unknown')
-          }}
-        </div>
-        <div><span class="details-item-title">{{ $t('recentActivity') }}:</span>{{
-            userDetails.activeTime ? tzDayjs(userDetails.activeTime).format('YYYY-MM-DD') : $t('unknown')
-          }}
-        </div>
-        <div><span
-            class="details-item-title">{{ $t('loginDevice') }}:</span>{{ userDetails.device || $t('unknown') }}
-        </div>
-        <div><span class="details-item-title">{{ $t('loginSystem') }}:</span>{{ userDetails.os || $t('unknown') }}
-        </div>
-        <div><span
-            class="details-item-title">{{ $t('browserLogin') }}:</span>{{ userDetails.browser || $t('unknown') }}
-        </div>
-        <div>
-          <span class="details-item-title">{{ $t('sendEmail') }}:</span>
-          <span>{{ formatSendCount(userDetails) }}</span>
-          <el-tag style="margin-left: 10px" v-if="userDetails.sendAction.hasPerm">
-            {{ formatSendType(userDetails) }}
-          </el-tag>
-          <el-button size="small" style="margin-left: 10px"
-                     v-if="userDetails.sendAction.hasPerm && userDetails.sendAction.sendCount"
-                     @click="resetSendCount(userDetails)" type="primary">{{ $t('reset') }}
-          </el-button>
-        </div>
-      </div>
-    </el-dialog>
-    <el-dialog v-model="officialOpen" :title="$t('officialManage')" width="min(440px,94vw)"><p>{{ officialTarget?.email }}</p><el-input v-model="officialForm.subject" :placeholder="$t('officialSubject')" maxlength="80" /><el-input v-model="officialForm.description" type="textarea" :placeholder="$t('officialDescription')" maxlength="240" style="margin-top:12px" /><p>{{ $t('officialExplanation') }}</p><el-button type="primary" :loading="officialBusy" @click="saveOfficial(true)">{{ $t('officialGrant') }}</el-button><el-button v-if="officialTarget?.officialVerified" type="danger" :loading="officialBusy" @click="saveOfficial(false)">{{ $t('officialRevoke') }}</el-button><h4>{{ $t('officialHistory') }}</h4><p v-for="(entry,index) in officialHistory" :key="index">{{ entry.createdAt }} · {{ $t(entry.active?'officialGrant':'officialRevoke') }} · {{ entry.subject }} · ID {{ entry.actorId }}</p></el-dialog>
+    <PasswordRoleDialogs ref="pwdRoleDialogs" :role-list="roleList" />
+    <AddUserDialog ref="addDialog" :role-list="roleList" @added="getUserList(false)" />
+    <AccountsDialog ref="accountsDialog" />
+    <DetailsDialog ref="detailsDialog" :role-name="toRoleName" :columns="{ sendNumShow, accountNumShow, createTimeShow, typeShow, statusShow }" />
+    <OfficialDialog ref="officialDialog" />
     <el-dropdown
         :show-timeout="0"
         :hide-timeout="0"
@@ -381,39 +227,37 @@
 </template>
 
 <script setup>
-import identityHttp from '@/axios';
-const officialOpen=ref(false),officialBusy=ref(false),officialTarget=ref(null),officialHistory=ref([]),officialForm=reactive({subject:'',description:''});
-async function openOfficial(row){officialTarget.value=row;officialForm.subject=row.officialSubject||'';officialForm.description=row.officialDescription||'';officialHistory.value=[];officialOpen.value=true;try{officialHistory.value=await identityHttp.get('/user/official/history',{params:{userId:row.userId}});}catch{}}
-async function saveOfficial(active){if(officialBusy.value)return;if(active&&(!officialForm.subject.trim()||!officialForm.description.trim())){ElMessage.error(t('officialRequired'));return;}officialBusy.value=true;try{const result=await identityHttp.put('/user/official',{userId:officialTarget.value.userId,active,...officialForm});Object.assign(officialTarget.value,result);officialOpen.value=false;ElMessage.success(t('saveSuccessMsg'));}catch{}finally{officialBusy.value=false;}}
 
 import {defineOptions, h, reactive, ref, watch} from 'vue'
-import {
-  userList,
-  userDelete,
-  userSetPwd,
-  userSetStatus,
-  userSetType,
-  userAdd,
-  userRestSendCount,
-  userRestore,
-  userDeleteAccount,
-  userAllAccount
-} from '@/request/user.js'
+import {userList, userDelete, userSetStatus, userRestore} from '@/request/user.js'
 import {roleSelectUse} from "@/request/role.js";
 import {Icon} from "@iconify/vue";
 import loading from "@/components/loading/index.vue";
 import {tzDayjs} from "@/utils/day.js";
 import {useSettingStore} from "@/store/setting.js";
-import {isEmail} from "@/utils/verify-utils.js";
 import {useRoleStore} from "@/store/role.js";
 import {useUserStore} from "@/store/user.js";
 import {useI18n} from 'vue-i18n';
 import {useEventListener} from '@vueuse/core';
 import {useBreakpoint} from '@/composables/use-breakpoint.js';
+import PasswordRoleDialogs from './dialogs/password-role-dialogs.vue';
+import AddUserDialog from './dialogs/add-user-dialog.vue';
+import AccountsDialog from './dialogs/accounts-dialog.vue';
+import DetailsDialog from './dialogs/details-dialog.vue';
+import OfficialDialog from './dialogs/official-dialog.vue';
 
 defineOptions({
   name: 'user'
 })
+
+// The dialogs live in ./dialogs; the table, its Action menu and the context menu open them.
+const pwdRoleDialogs = ref(), addDialog = ref(), accountsDialog = ref(), detailsDialog = ref(), officialDialog = ref()
+const openSetPwd = (user) => pwdRoleDialogs.value.openSetPwd(user)
+const openSetType = (user) => pwdRoleDialogs.value.openSetType(user)
+const openAdd = () => addDialog.value.open()
+const openAccountList = (userId) => accountsDialog.value.open(userId)
+const openDetails = (user) => detailsDialog.value.open(user)
+const openOfficial = (row) => officialDialog.value.open(row)
 
 const {t, locale} = useI18n();
 const roleStore = useRoleStore()
@@ -446,16 +290,13 @@ const officialShow = ref(true)
 const typeShow = ref(true)
 const receiveWidth = ref(null)
 const phonePageShow = ref(false)
-const detailsShow = ref(false);
 const layout = ref('prev, pager, next,  sizes, total')
 const pageSize = ref('')
 const users = ref([])
 const tableRef = ref({})
-const userDetails = ref({})
 const total = ref(0)
 const first = ref(true)
 const scrollbarRef = ref(null)
-const accountLoading = ref(false)
 const dropdownRef = ref(null);
 const dropdownShow = ref(false);
 const rightClickUser = ref({});
@@ -471,14 +312,6 @@ const triggerRef = ref({
     return position.value;
   }
 })
-const domainList = settingStore.domainList
-
-const addForm = reactive({
-  email: '',
-  suffix: settingStore.domainList[0],
-  password: '',
-  type: null,
-})
 
 const params = reactive({
   email: '',
@@ -487,31 +320,9 @@ const params = reactive({
   timeSort: 0,
   status: -1
 })
-let chooseUser = {}
-const userForm = reactive({
-  password: null,
-  type: -1,
-  userId: 0,
-})
-
-const showAdd = ref(false)
-const accountShow = ref(false)
-const addLoading = ref(false);
-const setTypeShow = ref(false)
-const setPwdShow = ref(false)
 const pagerCount = ref(10)
-const settingLoading = ref(false)
 const tableLoading = ref(true)
 const roleList = reactive([])
-const mySelect = ref({})
-const accountList = reactive([])
-const accountParams = reactive({
-  size: 10,
-  num: 0,
-  total: 0,
-  userId: 0,
-})
-
 roleSelectUse().then(list => {
   roleList.length = 0
   roleList.push(...list)
@@ -586,55 +397,6 @@ const handleContextmenu = (row, column, cell, event) => {
 
   row.checkedClass = 'checked-row';
   rightClickUser.value = row;
-}
-
-function deleteAccount(account) {
-  ElMessageBox.confirm(t('delConfirm', {msg: account.email}), {
-    confirmButtonText: t('confirm'),
-    cancelButtonText: t('cancel'),
-    type: 'warning'
-  }).then(() => {
-    userDeleteAccount(account.accountId).then(() => {
-      getAccountList()
-      ElMessage({
-        message: t('delSuccessMsg'),
-        type: "success",
-        plain: true
-      })
-    })
-  });
-}
-function accountCurChange(e) {
-  accountParams.num = e
-  getAccountList()
-}
-
-function resetAccountList() {
-  accountList.length = 0
-  accountParams.num = 0
-  accountParams.size = 10
-  accountParams.total = 0
-}
-
-function openAccountList(userId) {
-  accountParams.userId = userId
-  getAccountList(true)
-  accountShow.value = true
-}
-
-function openDetails(user) {
-  userDetails.value = user;
-  detailsShow.value = true;
-}
-
-function getAccountList(loading = false) {
-  accountLoading.value = loading
-  userAllAccount(accountParams.userId,accountParams.num, accountParams.size).then(({list,total}) => {
-    accountList.length = 0
-    accountList.push(...list)
-    accountParams.total = total
-    accountLoading.value = false
-  })
 }
 
 function tableFilter(e) {
@@ -713,108 +475,6 @@ const tableRowFormatter = (data) => {
   return data.row.email
 }
 
-const openSelect = () => {
-  mySelect.value.toggleMenu()
-}
-
-function resetAddForm() {
-  addForm.email = ''
-  addForm.password = ''
-}
-
-function openAdd() {
-  showAdd.value = true
-}
-
-function submit() {
-
-  if (addLoading.value) return
-
-  if (!addForm.email) {
-    ElMessage({
-      message: t('emptyEmailMsg'),
-      type: "error",
-      plain: true
-    })
-    return
-  }
-
-  if (!isEmail(addForm.email + addForm.suffix)) {
-    ElMessage({
-      message: t('notEmailMsg'),
-      type: "error",
-      plain: true
-    })
-    return
-  }
-
-  if (!addForm.password) {
-    ElMessage({
-      message: t('emptyPwdMsg'),
-      type: "error",
-      plain: true
-    })
-    return
-  }
-
-  if (addForm.password.length < 6) {
-    ElMessage({
-      message: t('pwdLengthMsg'),
-      type: "error",
-      plain: true
-    })
-    return
-  }
-
-  if (!addForm.type) {
-    ElMessage({
-      message: t('emptyRole'),
-      type: "error",
-      plain: true
-    })
-    return
-  }
-
-  addLoading.value = true
-  const form = {...addForm}
-  form.email = form.email + form.suffix
-  userAdd(form).then(() => {
-    addLoading.value = false
-    showAdd.value = false
-    ElMessage({
-      message: t('addSuccessMsg'),
-      type: "success",
-      plain: true
-    })
-    getUserList(false)
-  }).finally(res => {
-    addLoading.value = false
-  })
-}
-
-
-function formatSendType(user) {
-  if (user.sendAction.sendType === 'day') return t('daily')
-  if (user.sendAction.sendType === 'count') return t('total')
-  if (user.sendAction.sendType === 'ban') return t('sendBanned')
-  if (user.sendAction.sendType === 'internal') return t('sendInternal')
-}
-
-function formatSendCount(user) {
-
-  if (!user.sendAction.hasPerm) {
-    return t('unauthorized')
-  }
-
-  if (!user.sendAction.sendCount) {
-    return t('unlimited');
-  }
-
-  let count = user.sendCount + '/' + user.sendAction.sendCount
-
-  return count
-}
-
 function toRoleName(type) {
 
   if (type === 0) {
@@ -826,24 +486,6 @@ function toRoleName(type) {
     return roleList[index].name
   }
   return ""
-}
-
-function resetSendCount(user) {
-
-  ElMessageBox.confirm(t('reSendConfirm', {msg: user.email}), {
-    confirmButtonText: t('confirm'),
-    cancelButtonText: t('cancel'),
-    type: 'warning'
-  }).then(() => {
-    userRestSendCount(user.userId).then(() => {
-      ElMessage({
-        message: t('reSuccessMsg'),
-        type: "success",
-        plain: true
-      })
-      user.sendCount = 0
-    })
-  });
 }
 
 function delUser(user) {
@@ -931,79 +573,9 @@ function httpSetStatus(user) {
   })
 }
 
-function setType() {
-  if (settingLoading.value) return
-  settingLoading.value = true
-  userSetType({type: userForm.type, userId: userForm.userId}).then(() => {
-    chooseUser.type = userForm.type
-    setTypeShow.value = false
-    ElMessage({
-      message: t('saveSuccessMsg'),
-      type: "success",
-      plain: true
-    })
-
-  }).finally(() => {
-    settingLoading.value = false
-  })
-}
-
-
-function resetUserForm() {
-  userForm.password = null
-  userForm.userId = 0
-}
-
 function search() {
   params.num = 1
   getUserList()
-}
-
-function updatePwd() {
-
-  if (settingLoading.value) return
-
-  if (!userForm.password) {
-    ElMessage({
-      message: t('emptyPwdMsg'),
-      type: 'error',
-      plain: true,
-    })
-    return
-  }
-
-  if (userForm.password.length < 6) {
-    ElMessage({
-      message: t('pwdLengthMsg'),
-      type: 'error',
-      plain: true,
-    })
-    return
-  }
-
-  settingLoading.value = true
-  userSetPwd({password: userForm.password, userId: userForm.userId}).then(() => {
-    setPwdShow.value = false
-    ElMessage({
-      message: t('saveSuccessMsg'),
-      type: "success",
-      plain: true
-    })
-  }).finally(() => {
-    settingLoading.value = false
-  })
-}
-
-function openSetType(user) {
-  chooseUser = user
-  userForm.userId = user.userId
-  userForm.type = user.type
-  setTypeShow.value = true
-}
-
-function openSetPwd(user) {
-  userForm.userId = user.userId
-  setPwdShow.value = true
 }
 
 function refresh() {
@@ -1148,12 +720,6 @@ function adjustWidth() {
   }
 }
 
-.container {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 15px;
-}
-
 .type {
   white-space: nowrap;
   overflow: hidden;
@@ -1173,37 +739,12 @@ function adjustWidth() {
   }
 }
 
-.details {
-  padding: 0 10px 10px 10px;
-  display: grid;
-  gap: 10px;
-  .details-item-title {
-    white-space: pre;
-    color: #909399;
-    font-weight: bold;
-    padding-right: 10px;
-  }
-}
-
-.oauth-details {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
 :deep(.oauth-avatar) {
   flex-shrink: 0;
 }
 
 :deep(.oauth-platform-icon) {
   flex-shrink: 0;
-}
-
-.account-pagination {
-  display: flex;
-  justify-content: end;
-  width: 100%;
 }
 
 .pagination {
@@ -1237,23 +778,6 @@ function adjustWidth() {
   }
 }
 
-.dialog {
-  .dialog-box {
-    .el-button {
-      width: 100%;
-      margin-top: 15px;
-    }
-  }
-}
-
-.select {
-  position: absolute;
-  right: 30px;
-  width: 100px;
-  opacity: 0;
-  pointer-events: none;
-}
-
 .loading {
   position: absolute;
   display: flex;
@@ -1278,18 +802,9 @@ function adjustWidth() {
   opacity: 0;
 }
 
-.setting-icon {
-  position: relative;
-  top: 6px;
-}
-
 .right-dropdown-item {
   display: flex;
   gap: 10px;
-}
-
-.btn {
-  width: 100%;
 }
 
 :deep(.el-pagination .el-select) {
