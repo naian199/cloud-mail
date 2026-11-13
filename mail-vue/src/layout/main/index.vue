@@ -1,5 +1,5 @@
 <template>
-  <div :class="accountShow && hasPerm('account:query') ? 'main-box-show' : 'main-box-hide'">
+  <div :class="[accountShow && hasPerm('account:query') ? 'main-box-show' : 'main-box-hide', { 'content-capped': cappedContent }]">
     <div :class="accountShow && hasPerm('account:query') ? 'block-show' : 'block-hide'" @click="uiStore.accountShow = false"></div>
     <account  :class="accountShow && hasPerm('account:query') ? 'show' : 'hide'" />
     <router-view class="main-view" v-slot="{ Component,route }">
@@ -23,6 +23,8 @@ const uiStore = useUiStore();
 const route = useRoute()
 const { width: viewportWidth } = useBreakpoint()
 const isMobile = computed(() => viewportWidth.value <= BREAKPOINTS.phone)
+// Lists, tables and settings stop stretching on ultra-wide screens; chats keep the full width.
+const cappedContent = computed(() => !['mail-chat', 'external-mail', 'rooms'].includes(route.name))
 
 let elNotification = null
 
@@ -161,6 +163,15 @@ watch(isMobile, (mobile) => {
   min-width: 0;
   overflow: hidden;
   grid-template-rows: minmax(0, 1fr);
+}
+
+.content-capped {
+  width: 100%;
+  max-width: 1680px;
+  margin-inline: auto;
+  @media (min-width: 1941px) {
+    border-inline: 1px solid var(--el-border-color);
+  }
 }
 
 .main-view {
