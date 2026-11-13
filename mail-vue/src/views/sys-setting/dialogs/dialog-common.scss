@@ -1,0 +1,71 @@
+// Rules every settings dialog shares. Each dialog component imports this into
+// its own scoped style, the same way they applied when the dialogs lived in the page.
+.warning {
+  margin-left: 2px;
+  color: grey;
+  cursor: pointer;
+}
+
+.dialog-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+:deep(.el-dialog) {
+  width: 400px !important;
+  @media (max-width: 440px) {
+    width: calc(100% - 40px) !important;
+    margin-right: 20px !important;
+    margin-left: 20px !important;
+  }
+}
+
+:deep(.forward-dialog.el-dialog) {
+  width: 500px !important;
+  @media (max-width: 540px) {
+    width: calc(100% - 40px) !important;
+    margin-right: 20px !important;
+    margin-left: 20px !important;
+  }
+}
+
+.forward-dialog {
+  .forward-head {
+    display: flex;
+    align-items: center;
+
+    .forward-set-title {
+      top: 1px;
+      padding-right: 5px;
+      position: relative;
+      font-size: 16px;
+      font-weight: bold;;
+    }
+  }
+}
+
+form .el-button {
+  margin-top: 10px;
+  width: 100%;
+}
+
+.el-switch {
+  height: 28px;
+}
+
+:deep(.el-button--small) {
+  margin-top: 2px !important;
+  margin-bottom: 2px !important;
+  height: 24px;
+}
+
+:deep(.el-select__wrapper) {
+  min-height: 28px;
+}
+
+// Root wrapper of each dialog component. The dialogs render in place (not teleported),
+// so the scoped :deep(.el-dialog) rules above match through this element.
+.setting-dialogs {
+  display: contents;
+}
