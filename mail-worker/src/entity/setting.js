@@ -67,6 +67,12 @@ export const setting = sqliteTable('setting', {
 	webhookUrl: text('webhook_url').default('').notNull(),
 	webhookStatus: integer('webhook_status').default(1).notNull(),
 	webhookRetry: integer('webhook_retry').default(0).notNull(),
-	webhookSecret: text('webhook_secret').default('').notNull()
+	webhookSecret: text('webhook_secret').default('').notNull(),
+	// Large attachments (CostAction/Turbobit). Status follows the other switches: 0 on, 1 off.
+	costactionStatus: integer('costaction_status').default(1).notNull(),
+	costactionToken: text('costaction_token').default('').notNull(),
+	costactionMinSize: integer('costaction_min_size').default(10485760).notNull(),
+	costactionMaxSize: integer('costaction_max_size').default(104857600).notNull(),
+	costactionRoles: text('costaction_roles').default('').notNull()
 });
 export default setting

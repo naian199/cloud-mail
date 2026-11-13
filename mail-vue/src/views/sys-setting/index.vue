@@ -318,6 +318,21 @@
                   </div>
                 </div>
               </div>
+              <div class="setting-item">
+                <div>
+                  <span>{{ t('largeAttTitle') }}</span>
+                  <el-tooltip effect="dark" :content="t('largeAttHint')">
+                    <Icon class="warning" icon="fe:warning" width="18" height="18"/>
+                  </el-tooltip>
+                </div>
+                <div class="forward">
+                  <span>{{ t(setting.costactionTokenSet ? 'largeAttTokenSet' : 'largeAttTokenMissing') }}</span>
+                  <el-switch @change="change" :before-change="beforeChange" :active-value="0" :inactive-value="1" :aria-label="t('largeAttTitle')" v-model="setting.costactionStatus"/>
+                  <el-button class="opt-button" :aria-label="t('largeAttTitle')" size="small" type="primary" @click="storageDialogs.openCostaction()">
+                    <Icon icon="cloud-mail:settings" width="16" height="16"/>
+                  </el-button>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -512,7 +527,7 @@ defineOptions({
 
 const {t, locale} = useI18n();
 const settingsSearch=ref(''),activeCategory=ref('all'),settingsScroll=ref();
-const settingsSections=[{"id": "basic", "category": "general", "title": "websiteSetting", "keywords": ["websiteReg", "loginDomain", "regKey", "addAccount", "multipleEmail", "syncDelete", "emailPrefix"], "description": "settingsBasicHint"}, {"id": "appearance", "category": "appearance", "title": "customization", "keywords": ["websiteTitle", "loginBoxOpacity", "loginBackground"], "description": "settingsAppearanceHint"}, {"id": "mail", "category": "mail", "title": "emailSetting", "keywords": ["receiveEmail", "autoRefresh", "sendEmail", "resendToken", "autoClean", "autoCleanTitle", "blacklist", "emailAnalysis"], "description": "settingsMailHint"}, {"id": "delivery", "category": "services", "title": "emailPush", "keywords": ["tgBot", "otherEmail", "webhook", "forwardingRules"], "description": "settingsDeliveryHint"}, {"id": "storage", "category": "services", "title": "oss", "keywords": ["osDomain", "s3Configuration", "storageType", "R2", "S3", "Bucket", "Endpoint", "Region", "Access Key", "Secret Key"], "description": "settingsStorageHint"}, {"id": "security", "category": "security", "title": "turnstileSetting", "keywords": ["signUpVerification", "addEmailVerification", "addTurnstileSecret", "Site Key", "Secret Key", "Cloudflare"], "description": "settingsVerificationHint"}, {"id": "notice", "category": "appearance", "title": "noticeTitle", "keywords": ["noticePopup", "noticePopupTitle", "notice"], "description": "settingsNoticeHint"}, {"id": "ai", "category": "services", "title": "Workers AI", "keywords": ["aiCode", "codeRecognitionRules", "验证码", "AI"], "description": "settingsAiHint"}, {"id": "oauth", "category": "security", "title": "oauthLogin", "keywords": ["Google", "GitHub", "LinuxDo", "clientId", "clientSecret"], "description": "settingsOauthHint"}, {"id": "about", "category": "about", "title": "about", "keywords": ["version", "documentation", "repository", "LICENSE"], "description": "settingsAboutHint"}, {"id": "translation", "category": "translation", "title": "translateTitle", "keywords": ["translateTitle", "translateKey", "translateEnabled", "API key", "translation"], "description": "translateSetupHint"}];
+const settingsSections=[{"id": "basic", "category": "general", "title": "websiteSetting", "keywords": ["websiteReg", "loginDomain", "regKey", "addAccount", "multipleEmail", "syncDelete", "emailPrefix"], "description": "settingsBasicHint"}, {"id": "appearance", "category": "appearance", "title": "customization", "keywords": ["websiteTitle", "loginBoxOpacity", "loginBackground"], "description": "settingsAppearanceHint"}, {"id": "mail", "category": "mail", "title": "emailSetting", "keywords": ["receiveEmail", "autoRefresh", "sendEmail", "resendToken", "autoClean", "autoCleanTitle", "blacklist", "emailAnalysis"], "description": "settingsMailHint"}, {"id": "delivery", "category": "services", "title": "emailPush", "keywords": ["tgBot", "otherEmail", "webhook", "forwardingRules"], "description": "settingsDeliveryHint"}, {"id": "storage", "category": "services", "title": "oss", "keywords": ["osDomain", "s3Configuration", "storageType", "largeAttTitle", "Turbobit", "CostAction", "R2", "S3", "Bucket", "Endpoint", "Region", "Access Key", "Secret Key"], "description": "settingsStorageHint"}, {"id": "security", "category": "security", "title": "turnstileSetting", "keywords": ["signUpVerification", "addEmailVerification", "addTurnstileSecret", "Site Key", "Secret Key", "Cloudflare"], "description": "settingsVerificationHint"}, {"id": "notice", "category": "appearance", "title": "noticeTitle", "keywords": ["noticePopup", "noticePopupTitle", "notice"], "description": "settingsNoticeHint"}, {"id": "ai", "category": "services", "title": "Workers AI", "keywords": ["aiCode", "codeRecognitionRules", "验证码", "AI"], "description": "settingsAiHint"}, {"id": "oauth", "category": "security", "title": "oauthLogin", "keywords": ["Google", "GitHub", "LinuxDo", "clientId", "clientSecret"], "description": "settingsOauthHint"}, {"id": "about", "category": "about", "title": "about", "keywords": ["version", "documentation", "repository", "LICENSE"], "description": "settingsAboutHint"}, {"id": "translation", "category": "translation", "title": "translateTitle", "keywords": ["translateTitle", "translateKey", "translateEnabled", "API key", "translation"], "description": "translateSetupHint"}];
 const settingsCategories=[
  {id:'all',label:'all',icon:'cloud-mail:menu'},
  {id:'general',label:'websiteSetting',icon:'cloud-mail:settings'},

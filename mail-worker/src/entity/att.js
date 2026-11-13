@@ -17,5 +17,12 @@ export const  att = sqliteTable('attachments', {
 	contentId: text('content_id'),
 	encoding: text('encoding'),
 	createTime: text('create_time').default(sql`CURRENT_TIMESTAMP`).notNull(),
+	// '' = the deployment's own storage (R2/S3/KV); 'costaction' = Turbobit via CostAction.
+	storage: text('storage').default('').notNull(),
+	remoteId: text('remote_id').default('').notNull(),
+	// uploading | ready | failed | expired | deleted
+	remoteStatus: text('remote_status').default('').notNull(),
+	remoteDeleteId: text('remote_delete_id').default('').notNull(),
+	clientKey: text('client_key').default('').notNull(),
 });
 

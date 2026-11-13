@@ -19,6 +19,7 @@ import {
 } from '../lib/mail-conversations';
 import verify from '../utils/verify-utils';
 import { notifyMail } from '../chat/mail-notify';
+import largeAtt from './large-att-service';
 
 const fail = (message, code = 400) => {
 	throw new BizError(message, code);
@@ -237,18 +238,23 @@ const mailChat = {
 			row.text = row.text || plainMail(row.htmlPreview || '');
 			row.hasHtml = !!row.htmlPreview;
 			row.attachments = [];
+			row.largeFiles = [];
 		}
 		if (messages.length) {
 			const { results: atts } = await c.env.db
 				.prepare(
-					`SELECT att_id AS attId, email_id AS emailId, filename, size, mime_type AS mimeType, content_id AS contentId, type, key FROM attachments
+					`SELECT att_id AS attId, email_id AS emailId, filename, size, mime_type AS mimeType, content_id AS contentId, type, key, storage, remote_status AS remoteStatus FROM attachments
         WHERE user_id = ? AND account_id = ? AND type IN (0,1)
         AND email_id IN (${messages.map(() => '?').join(',')})`
 				)
 				.bind(account.user_id, account.account_id, ...messages.map((m) => m.emailId))
 				.all();
-			for (const att of atts)
-				messages.find((m) => m.emailId === att.emailId)?.attachments.push(att);
+			for (const att of atts) {
+				const message = messages.find((m) => m.emailId === att.emailId);
+				// Large attachments live with CostAction: never treat them as images or media.
+				if (att.storage === 'costaction') message?.largeFiles.push({ attId: att.attId, filename: att.filename, size: att.size, status: att.remoteStatus });
+				else message?.attachments.push(att);
+			}
 		}
 		await redactRemovedQuotes(c, messages, 'htmlPreview');
 		const peer = await live.resolve(c, account, conversationKey);
@@ -287,7 +293,7 @@ const mailChat = {
 						((!att.contentId && att.type === 0) || isVideoFile(att) || isAudioFile(att)) &&
 						!row.images.some((image) => image.attId === att.attId)
 				)
-				.map(({ key, ...att }) => att);
+				.map(({ key, storage, remoteStatus, ...att }) => att);
 		}
 		if (peer) {
 			const ids = messages.filter((m) => m.type === 1 && m.messageId).map((m) => m.messageId);
@@ -374,7 +380,7 @@ const mailChat = {
 		const row = await c.env.db
 			.prepare(
 				`SELECT a.key, a.account_id AS accountId FROM attachments a JOIN email e ON e.email_id = a.email_id
-      WHERE a.att_id = ? AND a.user_id = ? AND e.user_id = ? AND a.account_id = e.account_id AND e.is_del = 0 AND a.type IN (0,1)`
+      WHERE a.att_id = ? AND a.user_id = ? AND e.user_id = ? AND a.account_id = e.account_id AND e.is_del = 0 AND a.type IN (0,1) AND a.storage = ''`
 			)
 			.bind(id(rawId), userId, userId)
 			.first();
@@ -445,7 +451,7 @@ const mailChat = {
 		const body = typeof params.text === 'string' ? params.text.trim() : '';
 		const subject = typeof params.subject === 'string' ? params.subject.trim() : '';
 		if (
-			(!body && !params.attachments?.length) ||
+			(!body && !params.attachments?.length && !params.largeAttIds?.length) ||
 			body.length > 20000 ||
 			!subject ||
 			subject.length > 300 ||
@@ -506,6 +512,8 @@ const mailChat = {
 			if (recipients.some((a) => !allowed.has(a.toLowerCase())))
 				fail('Reply recipients changed / 请使用新会话发送给其他收件人');
 		}
+		const largeAtts = await largeAtt.forSend(c, account, params.largeAttIds, await digest(`${account.user_id}:${params.clientId}`));
+		if (largeAtts.length && !instant) fail('Large attachments are available in internal chats only / 大附件仅支持站内聊天', 400);
 		const attachments = params.attachments || [];
 		if (!Array.isArray(attachments) || attachments.length > 10)
 			fail('Too many attachments / 最多 10 个附件');
@@ -533,7 +541,8 @@ const mailChat = {
 				replyId: params.replyId || null,
 				...(params.quote === true ? { quote: true } : {}),
 				...(instant ? { instant: true } : {}),
-				attachments
+				attachments,
+				...(largeAtts.length ? { largeAttIds: largeAtts.map((att) => att.attId) } : {})
 			})
 		);
 		const attempt = await c.env.db
@@ -591,7 +600,8 @@ const mailChat = {
 						attachments,
 						() => {
 							started = true;
-						}
+						},
+						largeAtts
 					)
 				: await emailService.send(
 						c,

@@ -15,6 +15,7 @@ import '../api/my-api';
 import '../api/chat-api';
 import '../api/room-api';
 import '../api/mail-chat-api';
+import '../api/large-att-api';
 import '../api/role-api'
 import '../api/all-email-api'
 import '../api/init-api'

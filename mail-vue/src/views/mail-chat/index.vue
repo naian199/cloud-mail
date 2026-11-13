@@ -126,7 +126,8 @@
               m.images?.length ||
               m.attachments?.length ||
               m.message ||
-              m.richHtml
+              m.richHtml ||
+              m.largeFiles?.length
             "
             class="mail-message"
             :class="{ mine: m.type === 1, external: !isChat(m), 'message-selected': selectedIds.has(m.emailId), 'selecting-message': selecting }"
@@ -248,6 +249,7 @@
                 </el-button
                 >
               </div>
+              <LargeFileCard v-for="file in m.largeFiles || []" :key="file.attId" :file="file" />
               <MessageTranslation :ref="el => setTranslationRef(m.emailId, el)" v-if="(m.replyText ?? m.text)?.trim()" :email-id="m.emailId" :text="m.replyText ?? m.text" :chat-style="true" :incoming="m.type !== 1" />
             </div>
             <span
@@ -291,6 +293,7 @@
         <div v-if="selected.peers.length > 1" class="reply-heading">
           <el-checkbox v-model="replyAll">{{ t('mailChatReplyAll') }}</el-checkbox>
         </div>
+        <LargeUploadList :items="large.uploads[draftKey] || []" @retry="large.retry" @remove="item => large.remove(item)" />
         <div v-if="files[draftKey]?.length" class="chosen-files">
           <div v-for="(file, i) in files[draftKey] || []" :key="i" class="chosen-file">
             <span>{{ file.filename }}</span
@@ -314,6 +317,8 @@
         <div class="composer-footer">
           <StickerPicker ref="stickerPicker" :compact="compactChat" :dock="stickerDock" :context="draftKey" :disabled="sending" @visibility="stickerVisibility" @emoji="insertEmoji" @attachment="addSticker" @upload="chooseFiles" />
           <VoiceTools :context="draftKey" :disabled="sending || messageLoading" @text="text => insertEmoji(text, false)" @attachment="file=>chooseFiles({target:{files:[file]}})" />
+          <label v-if="largeAllowed" class="attach-label large-attach-label" :aria-label="t('largeAttChoose')" :title="t('largeAttChoose')" tabindex="0" @keydown.enter.prevent="$event.currentTarget.querySelector('input').click()" @keydown.space.prevent="$event.currentTarget.querySelector('input').click()">
+            <Icon class="attach-icon" icon="cloud-mail:file" width="22" aria-hidden="true" /><input type="file" multiple :disabled="sending" @change="large.choose" /></label>
           <label class="attach-label" :aria-label="t('mailChatAttach')" :title="t('mailChatAttach')" tabindex="0" @keydown.enter.prevent="$event.currentTarget.querySelector('input').click()" @keydown.space.prevent="$event.currentTarget.querySelector('input').click()">
             <Icon class="attach-icon" icon="cloud-mail:attach" width="22" aria-hidden="true" /><span>{{ t('mailChatAttach') }}</span><input type="file" multiple :disabled="sending" @change="chooseFiles" /></label
           ><span>{{ t('chatEnterHint') }}</span
@@ -323,7 +328,7 @@
             :aria-label="t('mailChatSend')"
             :title="t('mailChatSend')"
             :loading="sending"
-            :disabled="(!drafts[draftKey]?.trim() && !files[draftKey]?.length) || messageLoading || !!fileReads[draftKey]?.count"
+            :disabled="(!drafts[draftKey]?.trim() && !files[draftKey]?.length && !large.readyIds(draftKey).length) || messageLoading || !!fileReads[draftKey]?.count || large.busy(draftKey)"
             ><Icon icon="cloud-mail:send" width="19" aria-hidden="true" /><span>{{ t('mailChatSend') }}</span></el-button
           >
         </div>
@@ -454,6 +459,9 @@ import { randomUUID } from '@/utils/uuid';
 import { computed, nextTick, onMounted, onBeforeUnmount, reactive, ref, watch } from 'vue';
 import MailBody from '@/components/mail-body.vue';
 import { useBreakpoint } from '@/composables/use-breakpoint';
+import LargeFileCard from '@/components/large-file-card.vue';
+import LargeUploadList from '@/components/large-upload-list.vue';
+import { useLargeAttachments } from '@/composables/use-large-attachments';
 import VideoAttachment from '@/components/video-attachment.vue';
 import MediaViewer from '@/components/media-viewer.vue';
 import { collectSnapshot, compareMessages, messageRows } from '@/utils/chat-refresh.mjs';
@@ -614,6 +622,9 @@ async function conversationAction(action){
 }
 watch([accountId,universalActive],()=>{closeMenu();endConversationDrag();cancelContactPress();});
 const draftKey = computed(() => `${accountId.value}:${selected.value?.key || ''}`);
+// Large attachments (CostAction/Turbobit): only offered in internal chats when enabled for this user.
+const large = useLargeAttachments({ t, accountId: () => accountId.value, draftKey: () => draftKey.value });
+const largeAllowed = computed(() => large.config.value.enabled && !!(live.value.internal || selected.value?.internal || messages.value.some(message => message.internal)));
 const drafts = reactive({}),
   expanded = reactive({});
 const {
@@ -1347,8 +1358,9 @@ async function send() {
   if (fileReads[draftKey.value]?.count) return;
   if (
     sending.value ||
-    (!drafts[draftKey.value]?.trim() && !files[draftKey.value]?.length) ||
-    !target.value
+    (!drafts[draftKey.value]?.trim() && !files[draftKey.value]?.length && !large.readyIds().length) ||
+    !target.value ||
+    large.busy()
   )
     return;
   const account = accounts.value.find((a) => a.accountId === accountId.value),
@@ -1368,10 +1380,12 @@ async function send() {
       )
     : peer;
   const text = drafts[current] || '';
+  const largeAttIds = large.readyIds(current);
   sending.value = true;
   const intent = JSON.stringify({
     text,
     attachments: files[current] || [],
+    largeAttIds,
     replyAll: replyAll.value,
     quoteId: quoteTarget.value?.emailId || null,
     instant: !!(live.value.internal || selected.value?.internal || messages.value.some(message => message.internal))
@@ -1388,13 +1402,15 @@ async function send() {
           ? m.subject
           : `Re: ${m.subject || t('mailChatDefaultSubject')}`,
         text,
-        attachments: files[current] || []
+        attachments: files[current] || [],
+        ...(largeAttIds.length ? { largeAttIds } : {})
       },
       current,
       intent
     );
     if (drafts[current] === text) drafts[current] = '';
     files[current] = [];
+    large.clear(current);
     if (version === selectionVersion) quoteTarget.value = null;
     stickerPicker.value?.close();
     stopTyping();

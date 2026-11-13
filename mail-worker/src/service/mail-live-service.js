@@ -365,7 +365,7 @@ export default {
 			pinned: 0
 		};
 	},
-	async deliver(c, account, peer, requestKey, body, html, parent, attachments, onCommit) {
+	async deliver(c, account, peer, requestKey, body, html, parent, attachments, onCommit, largeAtts = []) {
 		const mid = `<${crypto.randomUUID()}@cloud-mail.internal>`;
 		const ownKey = await digest(peer.email.toLowerCase()),
 			peerKey = await digest(account.email.toLowerCase());
@@ -441,6 +441,22 @@ export default {
 							uid
 						)
 				);
+		// Large attachments: the sender's staged upload joins this message, and the recipient
+		// gets a row pointing at the same remote file. Both happen in this batch or not at all.
+		for (const att of largeAtts) {
+			statements.push(
+				c.env.db
+					.prepare(
+						`UPDATE attachments SET email_id=(SELECT email_id FROM email WHERE send_key=? AND user_id=?) WHERE att_id=? AND user_id=? AND email_id=0 AND storage='costaction' AND remote_status='ready'`
+					)
+					.bind(requestKey, account.user_id, att.attId, account.user_id),
+				c.env.db
+					.prepare(
+						`INSERT INTO attachments(user_id,account_id,email_id,key,filename,size,mime_type,type,storage,remote_id,remote_status) SELECT ?,?,email_id,?,?,?,'application/octet-stream',0,'costaction',?,'ready' FROM email WHERE ingest_key=? AND user_id=?`
+					)
+					.bind(peer.user_id, peer.account_id, `costaction:${att.remoteId}`, att.filename, att.size, att.remoteId, `instant:${requestKey}`, peer.user_id)
+			);
+		}
 		statements.push(
 			c.env.db
 				.prepare(
