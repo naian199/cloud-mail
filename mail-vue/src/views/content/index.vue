@@ -36,7 +36,7 @@
           </div>
           <el-scrollbar class="htm-scrollbar" :class="!email.attList?.length ? 'bottom-distance' : ''">
             <!-- Untrusted mail HTML renders only inside the sandboxed, CSP-locked frame. -->
-            <MailBody class="mail-content" :html="formatImage(email.content)" :title="email.subject || 'Email'" v-if="email.content" />
+            <MailBody class="mail-content" :html="formatImage(email.content)" :title="email.subject || 'Email'" :trusted-image-origins="attachmentOrigins" v-if="email.content" />
             <pre v-else class="email-text" >{{email.text}}</pre>
           </el-scrollbar>
           <div class="att" v-if="email.attList?.length > 0">
@@ -180,6 +180,12 @@ function openForward() {
 function toMessage(message) {
   return  message ? JSON.parse(message).message : '';
 }
+
+// Inline attachments are served from the deployment's own storage, so they load without a prompt.
+const attachmentOrigins = computed(() => {
+  const domain = toOssDomain(settingStore.settings.r2Domain);
+  return domain ? [domain] : [];
+});
 
 function formatImage(content) {
   content = content || '';

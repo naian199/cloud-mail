@@ -817,5 +817,7 @@
   "settingsNoticeHint": "Announcements your users see on the website.",
   "settingsAiHint": "Message analysis and code recognition.",
   "settingsOauthHint": "Manage third-party sign-in providers.",
-  "settingsAboutHint": "Version, documentation and project information."
+  "settingsAboutHint": "Version, documentation and project information.",
+  "mailRemoteImagesBlocked": "Hình ảnh từ xa đã bị ẩn để bảo vệ quyền riêng tư của bạn.",
+  "mailRemoteImagesShow": "Hiển thị hình ảnh"
 }
