@@ -2,7 +2,10 @@ import BizError from '../error/biz-error';
 import userContext from '../security/user-context';
 import settingService from './setting-service';
 import mailChat from './mail-chat-service';
-import { createCostAction, kvRateLimiter, CostActionError } from '../lib/costaction.mjs';
+import { createCostAction, memoryRateLimiter, CostActionError } from '../lib/costaction.mjs';
+
+// One window per isolate, shared by every request it serves.
+const rateWindow = [];
 
 // Large attachments kept with CostAction/Turbobit (apptype fd1).
 //
@@ -34,7 +37,7 @@ function client(c, setting) {
 		// Both unset in production; the integration test points them at a local mock.
 		baseUrl: c.env.costaction_api_base || undefined,
 		extraUploadOrigin: c.env.costaction_upload_origin || '',
-		acquire: kvRateLimiter(c.env.kv, { sleep: (ms) => new Promise((r) => setTimeout(r, ms)) })
+		acquire: memoryRateLimiter({ window: rateWindow })
 	});
 }
 
@@ -205,8 +208,9 @@ const largeAtt = {
 		return client(c, { costactionToken: token }).testConnection();
 	},
 
-	// Validates large attachments named by a chat send: the sender's own, uploaded and not yet sent.
-	async forSend(c, account, rawIds) {
+	// Validates large attachments named by a chat send: the sender's own and uploaded, either not
+	// yet sent or already on the message this same request committed (a retry after a lost reply).
+	async forSend(c, account, rawIds, requestKey) {
 		if (rawIds === undefined) return [];
 		if (!Array.isArray(rawIds) || rawIds.length > 5) fail('Too many large attachments / 最多 5 个大附件');
 		const ids = [...new Set(rawIds.map(positiveId))];
@@ -214,10 +218,11 @@ const largeAtt = {
 		const { results } = await c.env.db
 			.prepare(
 				`SELECT att_id AS attId, filename, size, remote_id AS remoteId FROM attachments
-        WHERE user_id = ? AND account_id = ? AND storage = ? AND remote_status = 'ready' AND email_id = 0
+        WHERE user_id = ? AND account_id = ? AND storage = ? AND remote_status = 'ready'
+        AND (email_id = 0 OR email_id = (SELECT email_id FROM email WHERE send_key = ? AND user_id = ?))
         AND att_id IN (${ids.map(() => '?').join(',')})`
 			)
-			.bind(account.user_id, account.account_id, STORAGE, ...ids)
+			.bind(account.user_id, account.account_id, STORAGE, requestKey, account.user_id, ...ids)
 			.all();
 		if (results.length !== ids.length) fail('Large attachment unavailable / 大附件不可用', 409);
 		return results;

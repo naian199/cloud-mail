@@ -852,5 +852,6 @@
   "largeAttSizeLimit": "Grote bijlagen moeten tussen {min} MB en {max} MB zijn.",
   "largeAttStoredRemotely": "Opgeslagen op Turbobit",
   "largeAttUnavailable": "Niet meer beschikbaar",
-  "largeAttDownload": "Downloaden"
+  "largeAttDownload": "Downloaden",
+  "largeAttCountLimit": "Maximaal {count} grote bijlagen per bericht."
 }

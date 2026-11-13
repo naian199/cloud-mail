@@ -5,6 +5,9 @@ import { largeAttBegin, largeAttComplete, largeAttConfig, largeAttFailed, largeA
 
 // Large attachments chosen in the chat composer, per draft. Each file gets its own request ID,
 // so a retry reuses the same server record instead of creating another.
+// The server accepts at most this many large attachments per message.
+const MAX_PER_MESSAGE = 5;
+
 export function useLargeAttachments({ t, accountId, draftKey }) {
   const config = ref({ enabled: false, minSize: 0, maxSize: 0 });
   largeAttConfig().then((value) => { config.value = value; }).catch(() => {});
@@ -22,6 +25,8 @@ export function useLargeAttachments({ t, accountId, draftKey }) {
     try {
       const begun = await largeAttBegin({ accountId: accountId(), filename: item.name, size: item.size, clientId: item.clientId });
       item.attId = begun.attId;
+      // Removed while the upload URL was being requested: do not transfer the file.
+      if (item.status === 'removed') { largeAttFailed(begun.attId).catch(() => {}); return; }
       if (begun.status !== 'ready') {
         const remoteId = await uploadToStorage(begun.uploadUrl, item.file, { signal: item.controller.signal, onProgress: (p) => { item.progress = p; } });
         await largeAttComplete({ attId: begun.attId, remoteId });
@@ -41,6 +46,10 @@ export function useLargeAttachments({ t, accountId, draftKey }) {
     if (event.target) event.target.value = '';
     const { minSize, maxSize } = config.value;
     for (const file of chosen) {
+      if (list().length >= MAX_PER_MESSAGE) {
+        ElMessage.error(t('largeAttCountLimit', { count: MAX_PER_MESSAGE }));
+        break;
+      }
       if (file.size < minSize || file.size > maxSize) {
         ElMessage.error(t('largeAttSizeLimit', { min: Math.round(minSize / 1048576), max: Math.round(maxSize / 1048576) }));
         continue;

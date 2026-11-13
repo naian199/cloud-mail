@@ -852,5 +852,6 @@
   "largeAttSizeLimit": "大容量添付は {min} MB から {max} MB の間である必要があります。",
   "largeAttStoredRemotely": "Turbobit に保存",
   "largeAttUnavailable": "利用できません",
-  "largeAttDownload": "ダウンロード"
+  "largeAttDownload": "ダウンロード",
+  "largeAttCountLimit": "1 通のメッセージにつき大容量添付は {count} 件までです。"
 }

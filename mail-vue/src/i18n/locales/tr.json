@@ -852,5 +852,6 @@
   "largeAttSizeLimit": "Büyük ekler {min} MB ile {max} MB arasında olmalıdır.",
   "largeAttStoredRemotely": "Turbobit'te saklanıyor",
   "largeAttUnavailable": "Artık kullanılamıyor",
-  "largeAttDownload": "İndir"
+  "largeAttDownload": "İndir",
+  "largeAttCountLimit": "Mesaj başına en fazla {count} büyük ek."
 }

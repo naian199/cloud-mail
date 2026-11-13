@@ -46,6 +46,7 @@ const en = {
     largeAttRetry: "Retry",
     largeAttUploadFailed: "The large attachment could not be uploaded.",
     largeAttSizeLimit: "Large attachments must be between {min} MB and {max} MB.",
+    largeAttCountLimit: "Up to {count} large attachments per message.",
     largeAttStoredRemotely: "Stored on Turbobit",
     largeAttUnavailable: "No longer available",
     largeAttDownload: "Download",

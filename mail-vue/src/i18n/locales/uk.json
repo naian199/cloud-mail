@@ -852,5 +852,6 @@
   "largeAttSizeLimit": "Великі вкладення мають бути від {min} МБ до {max} МБ.",
   "largeAttStoredRemotely": "Зберігається на Turbobit",
   "largeAttUnavailable": "Більше недоступно",
-  "largeAttDownload": "Завантажити"
+  "largeAttDownload": "Завантажити",
+  "largeAttCountLimit": "Не більше {count} великих вкладень у повідомленні."
 }

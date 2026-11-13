@@ -852,5 +852,6 @@
   "largeAttSizeLimit": "बड़े अटैचमेंट {min} MB से {max} MB के बीच होने चाहिए।",
   "largeAttStoredRemotely": "Turbobit पर संग्रहीत",
   "largeAttUnavailable": "अब उपलब्ध नहीं",
-  "largeAttDownload": "डाउनलोड"
+  "largeAttDownload": "डाउनलोड",
+  "largeAttCountLimit": "प्रति संदेश अधिकतम {count} बड़े अटैचमेंट।"
 }

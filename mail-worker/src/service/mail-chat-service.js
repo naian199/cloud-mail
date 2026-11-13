@@ -512,7 +512,7 @@ const mailChat = {
 			if (recipients.some((a) => !allowed.has(a.toLowerCase())))
 				fail('Reply recipients changed / 请使用新会话发送给其他收件人');
 		}
-		const largeAtts = await largeAtt.forSend(c, account, params.largeAttIds);
+		const largeAtts = await largeAtt.forSend(c, account, params.largeAttIds, await digest(`${account.user_id}:${params.clientId}`));
 		if (largeAtts.length && !instant) fail('Large attachments are available in internal chats only / 大附件仅支持站内聊天', 400);
 		const attachments = params.attachments || [];
 		if (!Array.isArray(attachments) || attachments.length > 10)

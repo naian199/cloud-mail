@@ -22,20 +22,17 @@ export class CostActionError extends Error {
 	}
 }
 
-// Keeps requests under the account limit across Worker isolates, using a KV counter
-// per minute. KV is eventually consistent, so this is approximate; 429 answers are
-// still honoured by retrying after `retry-after`.
-export function kvRateLimiter(kv, { perMinute = 50, now = () => Date.now(), sleep } = {}) {
+// Keeps requests under the account limit (60/min) with a sliding window kept in memory.
+// Workers KV allows one write per key per second, so a shared KV counter cannot take a write
+// per request. This window is per isolate, so it is approximate across isolates; the API's
+// 429 answers are still honoured by retrying after `retry-after`.
+export function memoryRateLimiter({ perMinute = 50, now = () => Date.now(), sleep = (ms) => new Promise((r) => setTimeout(r, ms)), window = [] } = {}) {
 	return async function acquire() {
 		for (let attempt = 0; attempt < 3; attempt++) {
-			const minute = Math.floor(now() / 60000);
-			const key = `costaction:rate:${minute}`;
-			const used = Number((await kv.get(key)) || 0);
-			if (used < perMinute) {
-				await kv.put(key, String(used + 1), { expirationTtl: 120 });
-				return;
-			}
-			await sleep(60000 - (now() % 60000) + 50);
+			const t = now();
+			while (window.length && t - window[0] >= 60000) window.shift();
+			if (window.length < perMinute) { window.push(t); return; }
+			await sleep(60000 - (t - window[0]) + 50);
 		}
 		throw new CostActionError('Large attachment service is busy, try again shortly', { status: 429, retryable: true });
 	};

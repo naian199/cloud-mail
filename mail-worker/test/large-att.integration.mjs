@@ -185,6 +185,18 @@ test('send in an internal chat; the recipient sees the file and gets a download 
 	assert.equal((await call(`/large-att/${sentAtt}/link`, peer)).data.code, 404);
 });
 
+test('retrying a committed send returns the same message', async () => {
+	const id = clientId(), size = 2 * MB;
+	const begun = await ok('/large-att/begin', admin, 'POST', { accountId: adminAccount, filename: 'retry.zip', size, clientId: clientId() });
+	const uploaded = await uploadToMock(begun.uploadUrl, 'retry.zip', size);
+	await ok('/large-att/complete', admin, 'POST', { attId: begun.attId, remoteId: uploaded.id });
+	const payload = { accountId: adminAccount, recipients: [PEER], subject: 'Chat', text: 'retry', attachments: [], largeAttIds: [begun.attId], clientId: id };
+	const first = await ok('/mail-chat/send', admin, 'POST', payload);
+	// The reply was lost; the composer resends the same request.
+	const second = await ok('/mail-chat/send', admin, 'POST', payload);
+	assert.equal(second.emailId, first.emailId);
+});
+
 test('existing small attachments keep working', async () => {
 	const content = Buffer.from('hello attachment').toString('base64');
 	await ok('/mail-chat/send', admin, 'POST', { accountId: adminAccount, recipients: [PEER], subject: 'Chat', text: 'small', attachments: [{ filename: 'note.txt', contentType: 'text/plain', content }], clientId: clientId() });

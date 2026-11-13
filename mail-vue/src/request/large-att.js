@@ -14,6 +14,8 @@ export const costactionTest = (token) => http.post('/setting/costactionTest', to
 // reports progress. Resolves with the remote file ID. No credentials are sent.
 export function uploadToStorage(url, file, { onProgress, signal } = {}) {
   return new Promise((resolve, reject) => {
+    // Cancelled before the upload began: the abort listener below would never fire.
+    if (signal?.aborted) { reject(new Error('upload-aborted')); return; }
     const xhr = new XMLHttpRequest();
     xhr.open('POST', url);
     xhr.withCredentials = false;

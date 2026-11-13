@@ -852,5 +852,6 @@
   "largeAttSizeLimit": "Les pièces jointes volumineuses doivent faire entre {min} Mo et {max} Mo.",
   "largeAttStoredRemotely": "Stocké sur Turbobit",
   "largeAttUnavailable": "Plus disponible",
-  "largeAttDownload": "Télécharger"
+  "largeAttDownload": "Télécharger",
+  "largeAttCountLimit": "Jusqu'à {count} pièces jointes volumineuses par message."
 }

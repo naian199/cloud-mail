@@ -852,5 +852,6 @@
   "largeAttSizeLimit": "Lampiran besar harus antara {min} MB dan {max} MB.",
   "largeAttStoredRemotely": "Disimpan di Turbobit",
   "largeAttUnavailable": "Tidak tersedia lagi",
-  "largeAttDownload": "Unduh"
+  "largeAttDownload": "Unduh",
+  "largeAttCountLimit": "Maksimal {count} lampiran besar per pesan."
 }

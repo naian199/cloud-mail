@@ -852,5 +852,6 @@
   "largeAttSizeLimit": "Große Anhänge müssen zwischen {min} MB und {max} MB groß sein.",
   "largeAttStoredRemotely": "Auf Turbobit gespeichert",
   "largeAttUnavailable": "Nicht mehr verfügbar",
-  "largeAttDownload": "Herunterladen"
+  "largeAttDownload": "Herunterladen",
+  "largeAttCountLimit": "Bis zu {count} große Anhänge pro Nachricht."
 }

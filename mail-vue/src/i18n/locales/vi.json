@@ -852,5 +852,6 @@
   "largeAttSizeLimit": "Tệp đính kèm lớn phải từ {min} MB đến {max} MB.",
   "largeAttStoredRemotely": "Lưu trên Turbobit",
   "largeAttUnavailable": "Không còn khả dụng",
-  "largeAttDownload": "Tải xuống"
+  "largeAttDownload": "Tải xuống",
+  "largeAttCountLimit": "Tối đa {count} tệp đính kèm lớn mỗi tin nhắn."
 }

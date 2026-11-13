@@ -852,5 +852,6 @@
   "largeAttSizeLimit": "大型附件大小需介於 {min} MB 到 {max} MB。",
   "largeAttStoredRemotely": "儲存在 Turbobit",
   "largeAttUnavailable": "已失效",
-  "largeAttDownload": "下載"
+  "largeAttDownload": "下載",
+  "largeAttCountLimit": "每則訊息最多 {count} 個大型附件。"
 }

@@ -852,5 +852,6 @@
   "largeAttSizeLimit": "대용량 첨부는 {min} MB에서 {max} MB 사이여야 합니다.",
   "largeAttStoredRemotely": "Turbobit에 저장됨",
   "largeAttUnavailable": "더 이상 사용할 수 없음",
-  "largeAttDownload": "다운로드"
+  "largeAttDownload": "다운로드",
+  "largeAttCountLimit": "메시지당 대용량 첨부는 최대 {count}개입니다."
 }

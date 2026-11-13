@@ -852,5 +852,6 @@
   "largeAttSizeLimit": "يجب أن يكون حجم المرفقات الكبيرة بين {min} و{max} ميغابايت.",
   "largeAttStoredRemotely": "مخزّن على Turbobit",
   "largeAttUnavailable": "لم يعد متاحًا",
-  "largeAttDownload": "تنزيل"
+  "largeAttDownload": "تنزيل",
+  "largeAttCountLimit": "حتى {count} مرفقات كبيرة لكل رسالة."
 }

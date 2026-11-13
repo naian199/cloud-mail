@@ -852,5 +852,6 @@
   "largeAttSizeLimit": "Gli allegati grandi devono essere tra {min} MB e {max} MB.",
   "largeAttStoredRemotely": "Salvato su Turbobit",
   "largeAttUnavailable": "Non più disponibile",
-  "largeAttDownload": "Scarica"
+  "largeAttDownload": "Scarica",
+  "largeAttCountLimit": "Fino a {count} allegati grandi per messaggio."
 }

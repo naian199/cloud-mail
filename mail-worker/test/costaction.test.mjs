@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createCostAction, kvRateLimiter, CostActionError } from '../src/lib/costaction.mjs';
+import { createCostAction, memoryRateLimiter, CostActionError } from '../src/lib/costaction.mjs';
 
 const TOKEN = 'secret-token-value-123';
 const json = (status, body, headers = {}) => new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json', ...headers } });
@@ -96,12 +96,17 @@ test('refuses to run without a token', () => {
 	assert.throws(() => createCostAction({ token: '' }), (e) => e.status === 503);
 });
 
-test('rate limiter waits for the next minute once the budget is spent', async () => {
-	const store = new Map(), slept = [];
-	let clock = 60_000 * 1000 + 59_000;
-	const kv = { get: async (k) => store.get(k) ?? null, put: async (k, v) => { store.set(k, v); } };
-	const acquire = kvRateLimiter(kv, { perMinute: 2, now: () => clock, sleep: async (ms) => { slept.push(ms); clock += ms; } });
-	await acquire(); await acquire(); await acquire();
+test('rate limiter waits once the per-minute budget is spent, without storage writes', async () => {
+	const slept = [];
+	let clock = 1_000_000;
+	const acquire = memoryRateLimiter({ perMinute: 2, now: () => clock, sleep: async (ms) => { slept.push(ms); clock += ms; } });
+	await acquire(); clock += 100; await acquire(); clock += 100; await acquire();
 	assert.equal(slept.length, 1);
-	assert.ok(slept[0] > 0 && slept[0] <= 1050);
+	// The oldest request leaves the window 60 s after it was made.
+	assert.equal(slept[0], 60000 - 200 + 50);
+});
+
+test('two calls in the same second both go through', async () => {
+	const acquire = memoryRateLimiter({ perMinute: 50, now: () => 5000 });
+	await acquire(); await acquire();
 });

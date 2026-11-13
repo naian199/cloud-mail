@@ -852,5 +852,6 @@
   "largeAttSizeLimit": "Anexos grandes devem ter entre {min} MB e {max} MB.",
   "largeAttStoredRemotely": "Armazenado no Turbobit",
   "largeAttUnavailable": "Não está mais disponível",
-  "largeAttDownload": "Baixar"
+  "largeAttDownload": "Baixar",
+  "largeAttCountLimit": "Até {count} anexos grandes por mensagem."
 }

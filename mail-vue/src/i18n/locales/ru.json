@@ -852,5 +852,6 @@
   "largeAttSizeLimit": "Большие вложения должны быть от {min} МБ до {max} МБ.",
   "largeAttStoredRemotely": "Хранится на Turbobit",
   "largeAttUnavailable": "Больше недоступно",
-  "largeAttDownload": "Скачать"
+  "largeAttDownload": "Скачать",
+  "largeAttCountLimit": "Не более {count} больших вложений в сообщении."
 }

@@ -852,5 +852,6 @@
   "largeAttSizeLimit": "ไฟล์แนบขนาดใหญ่ต้องมีขนาดระหว่าง {min} MB ถึง {max} MB",
   "largeAttStoredRemotely": "เก็บบน Turbobit",
   "largeAttUnavailable": "ไม่พร้อมใช้งานแล้ว",
-  "largeAttDownload": "ดาวน์โหลด"
+  "largeAttDownload": "ดาวน์โหลด",
+  "largeAttCountLimit": "ไฟล์แนบขนาดใหญ่ได้สูงสุด {count} ไฟล์ต่อข้อความ"
 }

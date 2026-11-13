@@ -46,6 +46,7 @@ const zh = {
     largeAttRetry: "重试",
     largeAttUploadFailed: "大附件上传失败。",
     largeAttSizeLimit: "大附件大小需在 {min} MB 到 {max} MB 之间。",
+    largeAttCountLimit: "每条消息最多 {count} 个大附件。",
     largeAttStoredRemotely: "存储在 Turbobit",
     largeAttUnavailable: "已失效",
     largeAttDownload: "下载",
