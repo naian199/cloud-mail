@@ -318,6 +318,21 @@
                   </div>
                 </div>
               </div>
+              <div class="setting-item">
+                <div>
+                  <span>{{ t('largeAttTitle') }}</span>
+                  <el-tooltip effect="dark" :content="t('largeAttHint')">
+                    <Icon class="warning" icon="fe:warning" width="18" height="18"/>
+                  </el-tooltip>
+                </div>
+                <div class="forward">
+                  <span>{{ t(setting.costactionTokenSet ? 'largeAttTokenSet' : 'largeAttTokenMissing') }}</span>
+                  <el-switch @change="change" :before-change="beforeChange" :active-value="0" :inactive-value="1" :aria-label="t('largeAttTitle')" v-model="setting.costactionStatus"/>
+                  <el-button class="opt-button" :aria-label="t('largeAttTitle')" size="small" type="primary" @click="openCostaction">
+                    <Icon icon="cloud-mail:settings" width="16" height="16"/>
+                  </el-button>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -890,6 +905,26 @@ Authorization: &lt;secret&gt;</pre>
         </el-form>
         <el-button type="primary" style="width: 100%;" :loading="settingLoading" @click="saveAutoClean">{{ $t('save') }}</el-button>
       </el-dialog>
+      <el-dialog v-model="costactionShow" :title="t('largeAttTitle')" class="forward-dialog" @closed="costactionForm.token = ''; costactionResult = ''">
+        <form class="costaction-form" @submit.prevent="saveCostaction">
+          <p class="costaction-note">{{ t('largeAttNote') }}</p>
+          <el-input v-model="costactionForm.token" show-password autocomplete="new-password" type="password"
+                    :placeholder="t(setting.costactionTokenSet ? 'largeAttTokenKeep' : 'largeAttTokenPlaceholder')" :aria-label="t('largeAttToken')"/>
+          <div class="costaction-actions">
+            <el-button :loading="costactionTesting" @click="testCostaction">{{ t('largeAttTest') }}</el-button>
+            <el-button v-if="setting.costactionTokenSet" text type="danger" @click="clearCostactionToken">{{ t('largeAttTokenClear') }}</el-button>
+            <span v-if="costactionResult" role="status" :class="costactionResult">{{ t(costactionResult === 'ok' ? 'largeAttTestOk' : 'largeAttTestFailed') }}</span>
+          </div>
+          <label class="costaction-field"><span>{{ t('largeAttMinSize') }}</span><el-input-number v-model="costactionForm.minMb" :min="1" :max="10240"><template #suffix>MB</template></el-input-number></label>
+          <label class="costaction-field"><span>{{ t('largeAttMaxSize') }}</span><el-input-number v-model="costactionForm.maxMb" :min="1" :max="10240"><template #suffix>MB</template></el-input-number></label>
+          <label class="costaction-field"><span>{{ t('largeAttRoles') }}</span>
+            <el-select v-model="costactionForm.roles" multiple :placeholder="t('largeAttRolesAdmin')">
+              <el-option v-for="role in costactionRoles" :key="role.roleId" :label="role.name" :value="role.roleId"/>
+            </el-select>
+          </label>
+          <el-button type="primary" native-type="submit" :loading="settingLoading">{{ $t('save') }}</el-button>
+        </form>
+      </el-dialog>
       <el-dialog v-model="aiCodeFilterShow" class="forward-dialog" @closed="resetAiCodeFilter">
         <template #header>
           <div class="forward-head">
@@ -913,6 +948,8 @@ Authorization: &lt;secret&gt;</pre>
 <script setup>
 import {computed, defineOptions, nextTick, reactive, ref} from "vue";
 import {deleteBackground, setBackground, setBlackList, settingQuery, settingSet} from "@/request/setting.js";
+import {costactionTest} from "@/request/large-att.js";
+import {roleSelectUse} from "@/request/role.js";
 import {useSettingStore} from "@/store/setting.js";
 import {useUiStore} from "@/store/ui.js";
 import {useUserStore} from "@/store/user.js";
@@ -936,7 +973,7 @@ defineOptions({
 
 const {t, locale} = useI18n();
 const settingsSearch=ref(''),activeCategory=ref('all'),settingsScroll=ref();
-const settingsSections=[{"id": "basic", "category": "general", "title": "websiteSetting", "keywords": ["websiteReg", "loginDomain", "regKey", "addAccount", "multipleEmail", "syncDelete", "emailPrefix"], "description": "settingsBasicHint"}, {"id": "appearance", "category": "appearance", "title": "customization", "keywords": ["websiteTitle", "loginBoxOpacity", "loginBackground"], "description": "settingsAppearanceHint"}, {"id": "mail", "category": "mail", "title": "emailSetting", "keywords": ["receiveEmail", "autoRefresh", "sendEmail", "resendToken", "autoClean", "autoCleanTitle", "blacklist", "emailAnalysis"], "description": "settingsMailHint"}, {"id": "delivery", "category": "services", "title": "emailPush", "keywords": ["tgBot", "otherEmail", "webhook", "forwardingRules"], "description": "settingsDeliveryHint"}, {"id": "storage", "category": "services", "title": "oss", "keywords": ["osDomain", "s3Configuration", "storageType", "R2", "S3", "Bucket", "Endpoint", "Region", "Access Key", "Secret Key"], "description": "settingsStorageHint"}, {"id": "security", "category": "security", "title": "turnstileSetting", "keywords": ["signUpVerification", "addEmailVerification", "addTurnstileSecret", "Site Key", "Secret Key", "Cloudflare"], "description": "settingsVerificationHint"}, {"id": "notice", "category": "appearance", "title": "noticeTitle", "keywords": ["noticePopup", "noticePopupTitle", "notice"], "description": "settingsNoticeHint"}, {"id": "ai", "category": "services", "title": "Workers AI", "keywords": ["aiCode", "codeRecognitionRules", "验证码", "AI"], "description": "settingsAiHint"}, {"id": "oauth", "category": "security", "title": "oauthLogin", "keywords": ["Google", "GitHub", "LinuxDo", "clientId", "clientSecret"], "description": "settingsOauthHint"}, {"id": "about", "category": "about", "title": "about", "keywords": ["version", "documentation", "repository", "LICENSE"], "description": "settingsAboutHint"}, {"id": "translation", "category": "translation", "title": "translateTitle", "keywords": ["translateTitle", "translateKey", "translateEnabled", "API key", "translation"], "description": "translateSetupHint"}];
+const settingsSections=[{"id": "basic", "category": "general", "title": "websiteSetting", "keywords": ["websiteReg", "loginDomain", "regKey", "addAccount", "multipleEmail", "syncDelete", "emailPrefix"], "description": "settingsBasicHint"}, {"id": "appearance", "category": "appearance", "title": "customization", "keywords": ["websiteTitle", "loginBoxOpacity", "loginBackground"], "description": "settingsAppearanceHint"}, {"id": "mail", "category": "mail", "title": "emailSetting", "keywords": ["receiveEmail", "autoRefresh", "sendEmail", "resendToken", "autoClean", "autoCleanTitle", "blacklist", "emailAnalysis"], "description": "settingsMailHint"}, {"id": "delivery", "category": "services", "title": "emailPush", "keywords": ["tgBot", "otherEmail", "webhook", "forwardingRules"], "description": "settingsDeliveryHint"}, {"id": "storage", "category": "services", "title": "oss", "keywords": ["osDomain", "s3Configuration", "storageType", "largeAttTitle", "Turbobit", "CostAction", "R2", "S3", "Bucket", "Endpoint", "Region", "Access Key", "Secret Key"], "description": "settingsStorageHint"}, {"id": "security", "category": "security", "title": "turnstileSetting", "keywords": ["signUpVerification", "addEmailVerification", "addTurnstileSecret", "Site Key", "Secret Key", "Cloudflare"], "description": "settingsVerificationHint"}, {"id": "notice", "category": "appearance", "title": "noticeTitle", "keywords": ["noticePopup", "noticePopupTitle", "notice"], "description": "settingsNoticeHint"}, {"id": "ai", "category": "services", "title": "Workers AI", "keywords": ["aiCode", "codeRecognitionRules", "验证码", "AI"], "description": "settingsAiHint"}, {"id": "oauth", "category": "security", "title": "oauthLogin", "keywords": ["Google", "GitHub", "LinuxDo", "clientId", "clientSecret"], "description": "settingsOauthHint"}, {"id": "about", "category": "about", "title": "about", "keywords": ["version", "documentation", "repository", "LICENSE"], "description": "settingsAboutHint"}, {"id": "translation", "category": "translation", "title": "translateTitle", "keywords": ["translateTitle", "translateKey", "translateEnabled", "API key", "translation"], "description": "translateSetupHint"}];
 const settingsCategories=[
  {id:'all',label:'all',icon:'cloud-mail:menu'},
  {id:'general',label:'websiteSetting',icon:'cloud-mail:settings'},
@@ -1016,6 +1053,10 @@ const oauthPlatforms = [
   { key: 'linuxdo', label: 'LinuxDo', icon: '/image/linuxdo.webp', iconType: 'image' },
 ]
 const oauthSettingShow = ref(false)
+// Large attachments (CostAction/Turbobit). The token is write-only: the page only learns whether one is saved.
+const MB = 1024 * 1024
+const costactionShow = ref(false), costactionTesting = ref(false), costactionResult = ref(''), costactionRoles = ref([])
+const costactionForm = reactive({ token: '', minMb: 10, maxMb: 100, roles: [] })
 const oauthForm = reactive({
   key: '',
   label: '',
@@ -1555,6 +1596,48 @@ function delBackground() {
   })
 }
 
+function openCostaction() {
+  costactionForm.token = ''
+  costactionForm.minMb = Math.round((setting.value.costactionMinSize || 10 * MB) / MB)
+  costactionForm.maxMb = Math.round((setting.value.costactionMaxSize || 100 * MB) / MB)
+  costactionForm.roles = String(setting.value.costactionRoles || '').split(',').filter(Boolean).map(Number)
+  costactionResult.value = ''
+  roleSelectUse().then(list => { costactionRoles.value = list }).catch(() => {})
+  costactionShow.value = true
+}
+
+async function testCostaction() {
+  costactionTesting.value = true
+  try {
+    costactionResult.value = (await costactionTest(costactionForm.token.trim())).ok ? 'ok' : 'failed'
+  } catch {
+    costactionResult.value = 'failed'
+  } finally {
+    costactionTesting.value = false
+  }
+}
+
+function saveCostaction() {
+  if (costactionForm.minMb > costactionForm.maxMb) {
+    ElMessage({ message: t('largeAttSizeOrder'), type: 'warning', plain: true })
+    return
+  }
+  editSetting({
+    costactionToken: costactionForm.token.trim(),
+    costactionMinSize: costactionForm.minMb * MB,
+    costactionMaxSize: costactionForm.maxMb * MB,
+    costactionRoles: costactionForm.roles.join(',')
+  })
+}
+
+function clearCostactionToken() {
+  ElMessageBox.confirm(t('largeAttTokenClearConfirm'), {
+    confirmButtonText: t('confirm'),
+    cancelButtonText: t('cancel'),
+    type: 'warning'
+  }).then(() => editSetting({ costactionTokenClear: true, costactionStatus: 1 }))
+}
+
 function openOauthSetting(p) {
   oauthForm.key = p.key
   oauthForm.label = p.label
@@ -1731,6 +1814,7 @@ function editSetting(settingForm, refreshStatus = true) {
     aiCodeFilterShow.value = false
     autoCleanShow.value = false
     oauthSettingShow.value = false
+    costactionShow.value = false
   }).catch((e) => {
     loginOpacity.value = setting.value.loginOpacity
     setting.value = {...setting.value, ...JSON.parse(backup)}
@@ -2268,6 +2352,18 @@ form .el-button {
   min-height: 28px;
 }
 
+</style>
+
+<style scoped>
+.costaction-form { display: grid; gap: 12px; }
+.costaction-note { margin: 0; font-size: 12px; line-height: 1.6; color: var(--el-text-color-secondary); }
+.costaction-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.costaction-actions .ok { color: var(--el-color-success); }
+.costaction-actions .failed { color: var(--el-color-danger); }
+.costaction-field { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 13px; }
+.costaction-field .el-select { width: 220px; }
+.costaction-form .el-button { width: auto; margin-top: 0; }
+.costaction-form > .el-button--primary { width: 100%; }
 </style>
 
 <style>

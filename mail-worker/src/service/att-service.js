@@ -208,7 +208,9 @@ const attService = {
 		return orm(c).select().from(att).where(
 			and(
 				inArray(att.emailId, emailIds),
-				eq(att.type, attConst.type.ATT)
+				eq(att.type, attConst.type.ATT),
+				// Large attachments have no file in this deployment's storage to link to.
+				eq(att.storage, '')
 			))
 			.all();
 	},
@@ -229,7 +231,7 @@ const attService = {
 									 GROUP BY key
 									 HAVING COUNT (*) = 1) t
 									ON a.key = t.key
-						WHERE a.${fieldName} = ?;`
+						WHERE a.${fieldName} = ? AND a.storage = '';`
 					).bind(value)
 			)
 

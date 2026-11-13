@@ -87,6 +87,9 @@ const settingService = {
 		settingRow.s3AccessKey = settingRow.s3AccessKey ? `${settingRow.s3AccessKey.slice(0, 12)}******` : null;
 		settingRow.s3SecretKey = settingRow.s3SecretKey ? `${settingRow.s3SecretKey.slice(0, 12)}******` : null;
 		settingRow.tgBotToken = settingRow.tgBotToken ? `${settingRow.tgBotToken.slice(0, 20)}******` : null;
+		// The CostAction token never leaves the server, not even masked.
+		settingRow.costactionTokenSet = !!settingRow.costactionToken;
+		delete settingRow.costactionToken;
 		settingRow.hasR2 = !!c.env.r2
 		settingRow.hasCfEmail = !!c.env.email
 
@@ -130,6 +133,28 @@ const settingService = {
 		}
 
 		params.resendTokens = JSON.stringify(resendTokens);
+
+		// Write-only secret: an empty or absent value keeps the saved token. It is written
+		// with a raw statement so the SQL logger (orm_log) never sees it.
+		const costactionToken = typeof params.costactionToken === 'string' ? params.costactionToken.trim() : '';
+		const clearCostactionToken = params.costactionTokenClear === true;
+		delete params.costactionToken;
+		delete params.costactionTokenClear;
+		delete params.costactionTokenSet;
+		if (costactionToken.length > 512) throw new BizError('Invalid token', 400);
+		for (const field of ['costactionMinSize', 'costactionMaxSize']) {
+			if (params[field] === undefined) continue;
+			const value = Number(params[field]);
+			if (!Number.isSafeInteger(value) || value < 1024 * 1024 || value > 10 * 1024 * 1024 * 1024) throw new BizError('Invalid size', 400);
+			params[field] = value;
+		}
+		if (params.costactionRoles !== undefined) {
+			params.costactionRoles = (Array.isArray(params.costactionRoles) ? params.costactionRoles : String(params.costactionRoles).split(','))
+				.map(Number).filter(Number.isSafeInteger).join(',');
+		}
+		if (costactionToken || clearCostactionToken) {
+			await c.env.db.prepare('UPDATE setting SET costaction_token = ?').bind(clearCostactionToken ? '' : costactionToken).run();
+		}
 
 		await orm(c).update(setting).set({ ...params }).returning().get();
 		await this.refresh(c);

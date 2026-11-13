@@ -34,10 +34,37 @@ const dbInit = {
 		await this.v3_1DB(c);
 		await this.v3_2DB(c);
 		await this.v3_3DB(c);
+		await this.v3_4DB(c);
 		await c.env.db.batch(chatSchema.map(sql => c.env.db.prepare(sql)));
 		await migrateMailChat(c.env.db);
 		await settingService.refresh(c);
 		return c.text('success');
+	},
+
+	// Large attachments stored with CostAction/Turbobit. Each column is added on its own so a
+	// re-run skips existing ones; empty `storage` keeps every existing attachment on its old path.
+	async v3_4DB(c) {
+		const statements = [
+			"ALTER TABLE attachments ADD COLUMN storage TEXT NOT NULL DEFAULT ''",
+			"ALTER TABLE attachments ADD COLUMN remote_id TEXT NOT NULL DEFAULT ''",
+			"ALTER TABLE attachments ADD COLUMN remote_status TEXT NOT NULL DEFAULT ''",
+			"ALTER TABLE attachments ADD COLUMN remote_delete_id TEXT NOT NULL DEFAULT ''",
+			"ALTER TABLE attachments ADD COLUMN client_key TEXT NOT NULL DEFAULT ''",
+			"CREATE UNIQUE INDEX IF NOT EXISTS idx_attachments_client_key ON attachments(user_id, client_key) WHERE client_key != ''",
+			"CREATE INDEX IF NOT EXISTS idx_attachments_remote_id ON attachments(remote_id) WHERE remote_id != ''",
+			"ALTER TABLE setting ADD COLUMN costaction_status INTEGER NOT NULL DEFAULT 1",
+			"ALTER TABLE setting ADD COLUMN costaction_token TEXT NOT NULL DEFAULT ''",
+			"ALTER TABLE setting ADD COLUMN costaction_min_size INTEGER NOT NULL DEFAULT 10485760",
+			"ALTER TABLE setting ADD COLUMN costaction_max_size INTEGER NOT NULL DEFAULT 104857600",
+			"ALTER TABLE setting ADD COLUMN costaction_roles TEXT NOT NULL DEFAULT ''"
+		];
+		for (const statement of statements) {
+			try {
+				await c.env.db.prepare(statement).run();
+			} catch (e) {
+				console.warn(`跳过字段：${e.message}`);
+			}
+		}
 	},
 
 	async v3_3DB(c) {

@@ -36,7 +36,7 @@ export async function removedMail(c, id) {
 	if (!row) throw new BizError('Record unavailable', 404);
 	const { results: atts } = await c.env.db
 		.prepare(
-			'SELECT att_id AS attId,key,filename,size,mime_type AS mimeType,content_id AS contentId,type FROM attachments WHERE email_id=?'
+			'SELECT att_id AS attId,key,filename,size,mime_type AS mimeType,content_id AS contentId,type FROM attachments WHERE email_id=? AND storage=\'\''
 		)
 		.bind(row.emailId)
 		.all();
@@ -59,7 +59,7 @@ export async function removedAttachment(c, id, attId) {
 	await requireMailAdmin(c);
 	const row = await c.env.db
 		.prepare(
-			'SELECT a.key FROM attachments a JOIN mail_removed_message m ON m.email_id=a.email_id WHERE a.email_id=? AND a.att_id=?'
+			'SELECT a.key FROM attachments a JOIN mail_removed_message m ON m.email_id=a.email_id WHERE a.email_id=? AND a.att_id=? AND a.storage=\'\''
 		)
 		.bind(Number(id), Number(attId))
 		.first();
