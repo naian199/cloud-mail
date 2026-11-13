@@ -246,7 +246,8 @@ import {fromNow} from "@/utils/day.js";
 import {useI18n} from "vue-i18n";
 import {EmailUnreadEnum} from "@/enums/email-enum.js";
 import { UseVirtualList } from '@vueuse/components'
-import { useScroll } from '@vueuse/core'
+import { useEventListener, useScroll } from '@vueuse/core'
+import { useBreakpoint } from '@/composables/use-breakpoint.js'
 
 const props = defineProps({
   getEmailList: Function,
@@ -317,7 +318,8 @@ let scrollTop = 0
 const latestEmail = ref(null)
 const scrollbarRef = ref(null)
 let reqLock = false
-let isMobile = ref(innerWidth < 1367)
+// Matches this component's CSS, which switches row layout at ≤1366px.
+const { isLaptop: isMobile } = useBreakpoint()
 let skeletonRows = 0
 const timePaddingRight = ref('');
 const keyCount = ref(0);
@@ -379,9 +381,6 @@ onUnmounted(() => {
 
 getEmailList()
 
-window.onresize = () => {
-  isMobile.value = innerWidth < 1367
-}
 
 function onScroll(e) {
   scrollTop = e.target.scrollTop;
@@ -483,11 +482,11 @@ watch(() => emailStore.addStarEmailId, () => {
   })
 })
 
-window.addEventListener('wheel', (event) => {
+useEventListener(window, 'wheel', () => {
   if (dropdownShow.value) {
-    dropdownRef.value.handleClose();
+    dropdownRef.value?.handleClose();
   }
-})
+}, { passive: true })
 
 function openReply(email) {
   uiStore.writerRef.openReply(email)

@@ -79,6 +79,7 @@
 </template>
 <script setup>
 import { useMediaQuery, useResizeObserver } from '@vueuse/core';
+import { useBreakpoint } from '@/composables/use-breakpoint';
 import { shouldSendOnEnter } from '@/utils/chat-keyboard.mjs';
 import LinkifiedText from '@/components/linkified-text.vue';
 import LinkPreview from '@/components/link-preview.vue';
@@ -209,7 +210,7 @@ async function older() {
   olderLoading.value=true;const id=activeId.value,mine=version,element=scroll.value,height=element.scrollHeight,top=element.scrollTop;
   try {const data=await roomMessages(id,{before:messages.value[0].id});if(mine!==version||stopped)return;merge(data);hasOlder.value=data.hasMore;await nextTick();element.scrollTop=top+element.scrollHeight-height;}catch{}finally{olderLoading.value=false;}
 }
-const touchKeyboard=useMediaQuery('(any-pointer: coarse)'), compactRoom=useMediaQuery('(max-width:767px), (max-width:1024px) and (max-height:500px) and (pointer:coarse)');
+const touchKeyboard=useMediaQuery('(any-pointer: coarse)'), compactRoom=useBreakpoint().isPhone;
 useResizeObserver(scroll,()=>{if(scroll.value&&atBottom.value&&!historyTarget.value&&!messageLoading.value)scroll.value.scrollTop=scroll.value.scrollHeight;});
 const mobileTranslationOpen=ref(false);
 function mobileRoomAction(command){if(command==='translate')mobileTranslationOpen.value=true;else if(command==='mute')muteRoom();else if(command==='members')openMembers();}

@@ -13,14 +13,16 @@
 import account from '@/layout/account/index.vue'
 import {useUiStore} from "@/store/ui.js";
 import {useSettingStore} from "@/store/setting.js";
-import {computed, onBeforeUnmount, onMounted, watch} from "vue";
+import {computed, onMounted, watch} from "vue";
+import { useBreakpoint, BREAKPOINTS } from '@/composables/use-breakpoint.js'
 import { useRoute } from 'vue-router'
 import { hasPerm } from "@/perm/perm.js"
 
 const settingStore = useSettingStore()
 const uiStore = useUiStore();
 const route = useRoute()
-let isMobile = window.innerWidth < 768
+const { width: viewportWidth } = useBreakpoint()
+const isMobile = computed(() => viewportWidth.value <= BREAKPOINTS.phone)
 
 let elNotification = null
 
@@ -82,22 +84,12 @@ function showNotice(data) {
 }
 
 onMounted(() => {
-  if (isMobile) uiStore.accountShow = false
-  window.addEventListener('resize', handleResize)
-  handleResize()
+  if (isMobile.value) uiStore.accountShow = false
 })
 
-onBeforeUnmount(() => {
-  window.removeEventListener('resize', handleResize)
+watch(isMobile, (mobile) => {
+  uiStore.accountShow = !mobile && ['content', 'email', 'send'].includes(route.meta.name)
 })
-
-const handleResize = () => {
-  const mobile = window.innerWidth < 768
-  if (mobile !== isMobile) {
-    isMobile = mobile
-    uiStore.accountShow = !mobile && ['content', 'email', 'send'].includes(route.meta.name)
-  }
-}
 
 </script>
 <style lang="scss" scoped>

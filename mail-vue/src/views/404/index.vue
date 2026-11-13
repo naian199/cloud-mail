@@ -8,8 +8,9 @@
 
 <script lang="js" setup>
 import router from "@/router/index.js";
+import {useBreakpoint} from "@/composables/use-breakpoint.js";
 
-let isPhone = window.innerWidth < 1025
+const {isTablet: isPhone} = useBreakpoint()
 </script>
 
 <style scoped lang="scss">

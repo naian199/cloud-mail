@@ -107,6 +107,7 @@ import {getTextWidth} from "@/utils/text.js";
 import dayjs from "dayjs";
 import {formatCalendarDate, tzDayjs} from "@/utils/day.js";
 import {useI18n} from "vue-i18n";
+import {useBreakpoint} from "@/composables/use-breakpoint.js";
 
 defineOptions({
   name: 'reg-key'
@@ -129,7 +130,7 @@ const historyList = reactive([])
 const emailColumnWidth = ref(0)
 const createTimeColumnWidth = ref(0)
 const historyLoading = ref(false)
-const isMobile = window.innerWidth < 1025
+const {isTablet: isMobile} = useBreakpoint()
 
 const addForm = reactive({
   code: '',
