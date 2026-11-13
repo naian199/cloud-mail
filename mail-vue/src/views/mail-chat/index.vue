@@ -448,7 +448,7 @@ import ConversationSidebarTools from '@/components/conversation-sidebar-tools.vu
 import ConversationResize from '@/components/conversation-resize.vue';
 import {pushSettings,mutePush} from '@/composables/use-push-notifications';
 import {mediaCacheKey,cachedMediaBlob} from '@/utils/media-cache.mjs';
-import {sortConversations,moveConversation} from '@/utils/conversation-order.mjs';
+import {sortConversations} from '@/utils/conversation-order.mjs';
 import { randomUUID } from '@/utils/uuid';
 
 import { computed, nextTick, onMounted, onBeforeUnmount, reactive, ref, watch } from 'vue';
@@ -466,6 +466,9 @@ import { hasChatOverlay } from '@/utils/chat-escape.mjs';
 import UserAvatar from '@/components/user-avatar.vue';
 import ContactsDrawer from './contacts-drawer.vue';
 import ProfileDialog from './profile-dialog.vue';
+import { useConversationOrder } from './composables/use-conversation-order.js';
+import { useMessagePress } from './composables/use-message-press.js';
+import { useChatAttachments } from './composables/use-chat-attachments.js';
 import { useMediaQuery, useResizeObserver } from '@vueuse/core';
 import { useUiStore } from '@/store/ui';
 import ConversationExplorer from '@/components/conversation-explorer.vue';
@@ -500,7 +503,7 @@ import {
 } from '@/request/mail-chat';
 import { useMailLive } from '@/composables/use-mail-live';
 import { useMailSync } from '@/composables/use-mail-sync';
-import { fileToBase64, formatBytes } from '@/utils/file-utils';
+import { formatBytes } from '@/utils/file-utils';
 import { mailDate, showChatTime, chatTimeLabel, conversationSubject } from '@/utils/mail-chat-display';
 
 const { t, locale } = useI18n();
@@ -573,47 +576,11 @@ const orderScope=computed(()=>`${user.user.userId}:${accountId.value}:${category
 const customOrder=computed(()=>ui.conversationOrders[orderScope.value] || []);
 const sortedConversations=computed(()=>sortConversations(conversations.value,customOrder.value));
 const conversationMenu=ref(null),conversationMenuPanel=ref(null),conversationBusy=ref(false);
-const draggingKey=ref(''),dropTarget=ref(null);
-let contactPress,contactPressStart,suppressContactUntil=0,menuOrigin;
-function saveOrder(keys){
-  const entries=Object.entries(ui.conversationOrders).filter(([key])=>key!==orderScope.value).slice(-19);
-  const merged=keys.length?[...keys,...customOrder.value.filter(key=>!keys.includes(key))]:[];
-  ui.conversationOrders=Object.fromEntries([...entries,[orderScope.value,merged.slice(0,1000)]]);
-}
-function contactClick(event,c){if(Date.now()<suppressContactUntil){event.preventDefault();return;}select(c);}
-function cancelContactPress(){clearTimeout(contactPress);contactPressStart=null;}
-function startContactPress(event,c){
-  if(event.pointerType!=='touch')return;
-  cancelContactPress();contactPressStart={x:event.clientX,y:event.clientY};
-  const point={clientX:event.clientX,clientY:event.clientY,currentTarget:event.currentTarget,preventDefault(){}};
-  contactPress=setTimeout(()=>{suppressContactUntil=Date.now()+800;openConversationMenu(point,c);},500);
-}
-function moveContactPress(event){if(contactPressStart&&Math.hypot(event.clientX-contactPressStart.x,event.clientY-contactPressStart.y)>10)cancelContactPress();}
-function startConversationDrag(event,c){
-  closeMenu();cancelContactPress();draggingKey.value=c.key;
-  event.dataTransfer.effectAllowed='move';event.dataTransfer.setData('application/x-cloud-mail-conversation',c.key);
-}
-function overConversation(event,c){
-  if(!draggingKey.value||draggingKey.value===c.key)return;
-  const source=conversations.value.find(row=>row.key===draggingKey.value);
-  if(!source||!!source.pinned!==!!c.pinned){dropTarget.value=null;event.dataTransfer.dropEffect='none';return;}
-  event.preventDefault();event.dataTransfer.dropEffect='move';
-  const box=event.currentTarget.getBoundingClientRect();dropTarget.value={key:c.key,after:event.clientY>box.top+box.height/2};
-}
-function leaveConversation(event){if(!event.currentTarget.contains(event.relatedTarget))dropTarget.value=null;}
-function dropConversation(event,c){
-  if(!draggingKey.value)return;
-  event.preventDefault();event.stopPropagation();
-  if(dropTarget.value?.key===c.key){const keys=moveConversation(sortedConversations.value,draggingKey.value,c.key,dropTarget.value.after);if(keys)saveOrder(keys);}
-  endConversationDrag();
-}
-function endConversationDrag(){if(draggingKey.value)suppressContactUntil=Date.now()+250;draggingKey.value='';dropTarget.value=null;}
-function neighbor(c,delta){const rows=sortedConversations.value,index=rows.findIndex(row=>row.key===c.key),target=rows[index+delta];return target&&!!target.pinned===!!c.pinned?target:null;}
-function moveContact(c,delta){const target=neighbor(c,delta);if(!target)return;const keys=moveConversation(sortedConversations.value,c.key,target.key,delta>0);if(keys)saveOrder(keys);}
-function contactKey(event,c){
-  if(event.key==='ContextMenu'||(event.shiftKey&&event.key==='F10')){event.preventDefault();openConversationMenu(event,c);}
-  else if(event.altKey&&['ArrowUp','ArrowDown'].includes(event.key)){event.preventDefault();moveContact(c,event.key==='ArrowUp'?-1:1);}
-}
+let menuOrigin;
+const {
+  draggingKey, dropTarget, saveOrder, contactClick, cancelContactPress, startContactPress, moveContactPress,
+  startConversationDrag, overConversation, leaveConversation, dropConversation, endConversationDrag, neighbor, moveContact, contactKey
+} = useConversationOrder({ conversations, sortedConversations, customOrder, orderScope, ui, select, openConversationMenu, closeMenu });
 async function openConversationMenu(event,c){
   event.preventDefault();closeMenu();cancelContactPress();menuOrigin=event.currentTarget;
   const box=event.currentTarget?.getBoundingClientRect(),viewport=window.visualViewport;
@@ -648,9 +615,16 @@ async function conversationAction(action){
 watch([accountId,universalActive],()=>{closeMenu();endConversationDrag();cancelContactPress();});
 const draftKey = computed(() => `${accountId.value}:${selected.value?.key || ''}`);
 const drafts = reactive({}),
-  fileReads = reactive({}),
-  files = reactive({}),
   expanded = reactive({});
+const {
+  files, fileReads, dragDepth, addSticker, dragEnter, dragOver, dragLeave, pasteFiles, dropFiles, chooseFiles
+} = useChatAttachments({
+  t,
+  draftKey: () => draftKey.value,
+  canAccept: () => active.value && canSend.value && !sending.value,
+  selecting: () => selecting.value,
+  isStopped: () => stopped
+});
 const listLoading = ref(true),
   messageLoading = ref(false),
   olderLoading = ref(false),
@@ -688,50 +662,14 @@ function setTranslationRef(id, element) {
   if (element) translationRefs.set(id, element);
   else translationRefs.delete(id);
 }
-let pressTimer,
-  pressStart,
-  suppressUntil = 0;
+const { cancelPress, startPress, startTouch, moveTouch, endTouch, movePress, suppressAfterPress } = useMessagePress({
+  headerMenuAllowed: () => live.value.internal || messages.value.some(row => row.internal),
+  openMessageMenu,
+  menuOpen: () => !!messageMenu.value
+});
 function closeMenu() {
   conversationMenu.value = null;
   messageMenu.value = null;
-}
-function cancelPress() {
-  clearTimeout(pressTimer);
-  pressStart = null;
-}
-function startPress(event, message) {
-  if ((!message && !(live.value.internal || messages.value.some(row => row.internal))) || event.pointerType !== 'touch') return;
-  if (event.target?.closest('button, a, input, textarea, select, .message-translation')) return;
-  cancelPress();
-  pressStart = { x: event.clientX, y: event.clientY };
-  pressTimer = setTimeout(() => {
-    suppressUntil = Date.now() + 800;
-    openMessageMenu(event, message);
-  }, 450);
-}
-function startTouch(event, message) {
-  if (event.touches.length !== 1) { cancelPress(); return; }
-  const touch = event.touches[0];
-  startPress({ pointerType: 'touch', target: event.target, currentTarget: event.currentTarget,
-    clientX: touch.clientX, clientY: touch.clientY, preventDefault() {} }, message);
-}
-function moveTouch(event) {
-  if (event.touches.length !== 1) { cancelPress(); return; }
-  movePress(event.touches[0]);
-}
-function endTouch(event) {
-  cancelPress();
-  if (messageMenu.value && Date.now() < suppressUntil && event.cancelable) event.preventDefault();
-}
-function movePress(event) {
-  if (pressStart && Math.hypot(event.clientX - pressStart.x, event.clientY - pressStart.y) > 10)
-    cancelPress();
-}
-function suppressAfterPress(event) {
-  if (Date.now() < suppressUntil) {
-    event.preventDefault();
-    event.stopPropagation();
-  }
 }
 async function openMessageMenu(event, message) {
   if (!message && !(live.value.internal || messages.value.some(row => row.internal))) return;
@@ -1351,64 +1289,7 @@ function insertEmoji(value, focus = true) {
   liveInput(drafts[current]);
   nextTick(() => { if (focus && !pickerOpen.value) input?.focus({preventScroll:true}); input?.setSelectionRange(start + value.length, start + value.length); });
 }
-function addSticker(file) {
-  const current = draftKey.value, existing = files[current] || [];
-  const pending = fileReads[current] || { count: 0, size: 0 };
-  if (existing.length + pending.count >= 10 || existing.reduce((n,f)=>n+f.size,0)+pending.size+file.size > 10*1024*1024) { ElMessage.error(t('mailChatFileLimit')); return; }
-  files[current] = [...existing, file];
-}
-const dragDepth = ref(0);
-const draggedFiles = event => [...(event.dataTransfer?.types || [])].includes('Files');
-function dragEnter(event) {
-  if (!draggedFiles(event)) return;
-  event.preventDefault();
-  if (active.value && canSend.value && !sending.value) dragDepth.value++;
-}
-function dragOver(event) {
-  if (!draggedFiles(event)) return;
-  event.preventDefault();
-  if (event.dataTransfer) event.dataTransfer.dropEffect = active.value && canSend.value && !sending.value ? 'copy' : 'none';
-}
-function dragLeave(event) { if (draggedFiles(event) || dragDepth.value) dragDepth.value = Math.max(0, dragDepth.value - 1); }
-function pasteFiles(event) {
-  const pasted = [...(event.clipboardData?.files || [])];
-  if (!pasted.length || !active.value || !canSend.value || sending.value || selecting.value) return;
-  event.preventDefault();
-  chooseFiles({ target: { files: pasted, value: '' } }, draftKey.value);
-}
-function dropFiles(event) {
-  if (!draggedFiles(event)) return;
-  event.preventDefault(); dragDepth.value = 0;
-  if (!active.value || !canSend.value || sending.value) { ElMessage.info(t('mailChatChoose')); return; }
-  if ([...(event.dataTransfer.items || [])].some(item => item.webkitGetAsEntry?.()?.isDirectory)) { ElMessage.error(t('mailChatFileError')); return; }
-  chooseFiles({ target: { files: event.dataTransfer.files, value: '' } }, draftKey.value);
-}
 watch(draftKey, () => { dragDepth.value = 0; });
-async function chooseFiles(event, current = draftKey.value) {
-  const chosen = [...(event.target?.files || [])];
-  if (event.target) event.target.value = '';
-  if (!chosen.length) return;
-  const existing = files[current] || [], pending = fileReads[current] || { count: 0, size: 0 };
-  const size = chosen.reduce((n, f) => n + f.size, 0);
-  if (existing.length + pending.count + chosen.length > 10 ||
-      existing.reduce((n, f) => n + f.size, 0) + pending.size + size > 10 * 1024 * 1024) {
-    ElMessage.error(t('mailChatFileLimit')); return;
-  }
-  fileReads[current] = { count: pending.count + chosen.length, size: pending.size + size };
-  try {
-    const added = await Promise.all(chosen.map(async f => ({ filename: f.name, size: f.size,
-      contentType: /\.tgs$/i.test(f.name) ? 'application/x-tgsticker' : f.type || 'application/octet-stream',
-      content: await fileToBase64(f) })));
-    if (!stopped) files[current] = [...(files[current] || []), ...added];
-  } catch { ElMessage.error(t('mailChatFileError')); }
-  finally {
-    const remaining = fileReads[current];
-    if (remaining) {
-      remaining.count -= chosen.length; remaining.size -= size;
-      if (!remaining.count) delete fileReads[current];
-    }
-  }
-}
 function keyDown(e) {
   if (shouldSendOnEnter(e, compactChat.value && touchKeyboard.value)) {
     e.preventDefault();
