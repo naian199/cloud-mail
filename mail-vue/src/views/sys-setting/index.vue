@@ -85,7 +85,7 @@
                   <span>{{ $t('emailPrefix') }}</span>
                 </div>
                 <div class="forward">
-                  <el-button class="opt-button" size="small" type="primary" @click="openEmailPrefix">
+                  <el-button class="opt-button" :aria-label="$t('emailPrefix')" size="small" type="primary" @click="openEmailPrefix">
                     <Icon icon="cloud-mail:settings" width="18" height="18"/>
                   </el-button>
                 </div>
@@ -101,7 +101,7 @@
                 <div class="title-item"><span>{{ $t('websiteTitle') }}</span></div>
                 <div class="email-title">
                   <span>{{ setting.title }}</span>
-                  <el-button class="opt-button" size="small" type="primary" @click="editTitleShow = true">
+                  <el-button class="opt-button" :aria-label="$t('websiteTitle')" size="small" type="primary" @click="editTitleShow = true">
                     <Icon icon="cloud-mail:settings" width="16" height="16"/>
                   </el-button>
                 </div>
@@ -130,10 +130,10 @@
                     </template>
                   </el-image>
                   <div class="background-btn">
-                    <el-button class="opt-button" size="small" type="primary" @click="openSetBackground">
+                    <el-button class="opt-button" :aria-label="$t('loginBackground')" size="small" type="primary" @click="openSetBackground">
                       <Icon icon="cloud-mail:settings" width="16" height="16"/>
                     </el-button>
-                    <el-button class="opt-button" size="small" type="primary" @click="delBackground">
+                    <el-button class="opt-button" :aria-label="$t('delete')" size="small" type="primary" @click="delBackground">
                       <Icon icon="material-symbols:delete-outline-rounded" width="16" height="16"/>
                     </el-button>
                   </div>
@@ -201,11 +201,11 @@
                   <span>{{ $t('enabled') }}</span>
                 </div>
                 <div v-else>
-                  <el-button class="opt-button" style="margin-top: 0" @click="openResendList" size="small"
+                  <el-button class="opt-button" :aria-label="$t('resendToken')" style="margin-top: 0" @click="openResendList" size="small"
                              type="primary">
                     <Icon icon="ic:round-list" width="18" height="18"/>
                   </el-button>
-                  <el-button class="opt-button" style="margin-top: 0" @click="openResendForm" size="small"
+                  <el-button class="opt-button" :aria-label="$t('add')" style="margin-top: 0" @click="openResendForm" size="small"
                              type="primary">
                     <Icon icon="material-symbols:add-rounded" width="16" height="16"/>
                   </el-button>
@@ -214,7 +214,7 @@
               <div class="setting-item">
                 <div><span>{{ $t('blackList') }}</span></div>
                 <div>
-                  <el-button class="opt-button" style="margin-top: 0" @click="openBlackListForm" size="small"
+                  <el-button class="opt-button" :aria-label="$t('blackList')" style="margin-top: 0" @click="openBlackListForm" size="small"
                              type="primary">
                     <Icon icon="cloud-mail:settings" width="16" height="16"/>
                   </el-button>
@@ -229,7 +229,7 @@
                 </div>
                 <div class="forward">
                   <span>{{ setting.autoCleanDays > 0 ? $t('autoCleanRetain', { days: setting.autoCleanDays }) : $t('disabled') }}</span>
-                  <el-button class="opt-button" style="margin-top: 0" @click="openAutoClean" size="small"
+                  <el-button class="opt-button" :aria-label="$t('autoClean')" style="margin-top: 0" @click="openAutoClean" size="small"
                              type="primary">
                     <Icon icon="cloud-mail:settings" width="16" height="16"/>
                   </el-button>
@@ -245,7 +245,7 @@
                 <div><span>{{ $t('tgBot') }}</span></div>
                 <div class="forward">
                   <span>{{ setting.tgBotStatus === 0 ? $t('enabled') : $t('disabled') }}</span>
-                  <el-button class="opt-button" size="small" type="primary" @click="openTgSetting">
+                  <el-button class="opt-button" :aria-label="$t('tgBot')" size="small" type="primary" @click="openTgSetting">
                     <Icon icon="cloud-mail:settings" width="18" height="18"/>
                   </el-button>
                 </div>
@@ -254,7 +254,7 @@
                 <div><span>{{ $t('otherEmail') }}</span></div>
                 <div class="forward">
                   <span>{{ setting.forwardStatus === 0 ? $t('enabled') : $t('disabled') }}</span>
-                  <el-button class="opt-button" size="small" type="primary" @click="openThirdEmailSetting">
+                  <el-button class="opt-button" :aria-label="$t('otherEmail')" size="small" type="primary" @click="openThirdEmailSetting">
                     <Icon icon="cloud-mail:settings" width="18" height="18"/>
                   </el-button>
                 </div>
@@ -263,7 +263,7 @@
                 <div><span>{{ $t('webhook') }}</span></div>
                 <div class="forward">
                   <span>{{ setting.webhookStatus === 0 ? $t('enabled') : $t('disabled') }}</span>
-                  <el-button class="opt-button" size="small" type="primary" @click="openWebhookSetting">
+                  <el-button class="opt-button" :aria-label="$t('webhook')" size="small" type="primary" @click="openWebhookSetting">
                     <Icon icon="cloud-mail:settings" width="18" height="18"/>
                   </el-button>
                 </div>
@@ -272,7 +272,7 @@
                 <div><span>{{ $t('forwardingRules') }}</span></div>
                 <div class="forward">
                   <span>{{ setting.ruleType === 0 ? $t('forwardAll') : $t('rules') }}</span>
-                  <el-button class="opt-button" size="small" type="primary" @click="openForwardRules">
+                  <el-button class="opt-button" :aria-label="$t('forwardingRules')" size="small" type="primary" @click="openForwardRules">
                     <Icon icon="cloud-mail:settings" width="18" height="18"/>
                   </el-button>
                 </div>
@@ -293,7 +293,7 @@
                 </div>
                 <div class="r2domain">
                   <span>{{ setting.r2Domain || '' }}</span>
-                  <el-button class="opt-button" size="small" type="primary" @click="r2DomainShow = true">
+                  <el-button class="opt-button" :aria-label="$t('osDomain')" size="small" type="primary" @click="r2DomainShow = true">
                     <Icon icon="cloud-mail:settings" width="16" height="16"/>
                   </el-button>
                 </div>
@@ -303,7 +303,7 @@
                   <span>{{ $t('s3Configuration') }}</span>
                 </div>
                 <div class="r2domain">
-                  <el-button class="opt-button" size="small" type="primary" @click="addS3Show = true">
+                  <el-button class="opt-button" :aria-label="$t('s3Configuration')" size="small" type="primary" @click="addS3Show = true">
                     <Icon icon="cloud-mail:settings" width="16" height="16"/>
                   </el-button>
                 </div>
@@ -328,7 +328,7 @@
               <div class="setting-item">
                 <div><span>{{ $t('signUpVerification') }}</span></div>
                 <div>
-                  <el-button class="opt-button" size="small" type="primary" @click="openRegVerifyCount">
+                  <el-button class="opt-button" :aria-label="$t('signUpVerification')" size="small" type="primary" @click="openRegVerifyCount">
                     <Icon icon="cloud-mail:settings" width="18" height="18"/>
                   </el-button>
                   <el-select
@@ -347,7 +347,7 @@
               <div class="setting-item">
                 <div><span>{{ $t('addEmailVerification') }}</span></div>
                 <div>
-                  <el-button class="opt-button" size="small" type="primary" @click="openAddVerifyCount">
+                  <el-button class="opt-button" :aria-label="$t('addEmailVerification')" size="small" type="primary" @click="openAddVerifyCount">
                     <Icon icon="cloud-mail:settings" width="18" height="18"/>
                   </el-button>
                   <el-select
@@ -367,7 +367,7 @@
                 <div><span>Site Key</span></div>
                 <div class="bot-verify">
                   <span>{{ setting.siteKey }}</span>
-                  <el-button class="opt-button" size="small" type="primary" @click="turnstileShow = true">
+                  <el-button class="opt-button" :aria-label="'Site Key'" size="small" type="primary" @click="turnstileShow = true">
                     <Icon icon="cloud-mail:settings" width="16" height="16"/>
                   </el-button>
                 </div>
@@ -376,7 +376,7 @@
                 <div><span>Secret Key</span></div>
                 <div class="bot-verify">
                   <span> {{ setting.secretKey }} </span>
-                  <el-button class="opt-button" size="small" type="primary" @click="turnstileShow = true">
+                  <el-button class="opt-button" :aria-label="'Secret Key'" size="small" type="primary" @click="turnstileShow = true">
                     <Icon icon="cloud-mail:settings" width="16" height="16"/>
                   </el-button>
                 </div>
@@ -391,7 +391,7 @@
                 <div><span>{{ $t('noticePopup') }}</span></div>
                 <div class="forward">
                   <span>{{ setting.notice === 0 ? $t('enabled') : $t('disabled') }}</span>
-                  <el-button class="opt-button" size="small" type="primary" @click="openNoticePopupSetting">
+                  <el-button class="opt-button" :aria-label="$t('noticePopup')" size="small" type="primary" @click="openNoticePopupSetting">
                     <Icon icon="cloud-mail:settings" width="18" height="18"/>
                   </el-button>
                 </div>
@@ -399,7 +399,7 @@
               <div class="setting-item">
                 <div><span>{{ $t('popUp') }}</span></div>
                 <div class="forward">
-                  <el-button class="opt-button" size="small" type="primary" @click="openNoticePopup">
+                  <el-button class="opt-button" :aria-label="$t('preview')" size="small" type="primary" @click="openNoticePopup">
                     <Icon icon="mynaui:click-solid" width="18" height="18"/>
                   </el-button>
                 </div>
@@ -420,7 +420,7 @@
               <div class="setting-item">
                 <div><span>{{ $t('codeRecognitionRules') }}</span></div>
                 <div class="forward">
-                  <el-button class="opt-button" size="small" type="primary" @click="openAiCodeFilter">
+                  <el-button class="opt-button" :aria-label="$t('codeRecognitionRules')" size="small" type="primary" @click="openAiCodeFilter">
                     <Icon icon="cloud-mail:settings" width="18" height="18"/>
                   </el-button>
                 </div>
@@ -440,7 +440,7 @@
                 </div>
                 <div class="forward">
                   <span>{{ setting[p.key + 'Switch'] === 0 ? $t('enabled') : $t('disabled') }}</span>
-                  <el-button class="opt-button" size="small" type="primary" @click="openOauthSetting(p)">
+                  <el-button class="opt-button" :aria-label="p.label" size="small" type="primary" @click="openOauthSetting(p)">
                     <Icon icon="cloud-mail:settings" width="18" height="18"/>
                   </el-button>
                 </div>
