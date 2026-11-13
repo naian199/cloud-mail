@@ -45,10 +45,25 @@ const trustedOrigins = computed(() => {
   }
   return [...origins];
 });
+const SRCSET = /\bsrcset\s*=\s*(["'])([\s\S]*?)\1/gi;
+function remoteImageUrls(html) {
+  const urls = [...html.matchAll(REMOTE_URL)].map((match) => match[1]);
+  // A browser may pick any srcset candidate (e.g. the 2x one), so check each of them.
+  for (const [, , list] of html.matchAll(SRCSET)) {
+    for (const candidate of list.split(',')) {
+      const url = candidate.trim().split(/\s+/)[0];
+      if (url) urls.push(url);
+    }
+  }
+  return urls;
+}
 const blockedRemote = computed(() => {
   if (showRemote.value) return false;
-  for (const [, url] of props.html.matchAll(REMOTE_URL)) {
-    try { if (!trustedOrigins.value.includes(new URL(url, location.origin).origin)) return true; } catch {}
+  for (const url of remoteImageUrls(props.html)) {
+    try {
+      const parsed = new URL(url, location.origin);
+      if (/^https?:$/.test(parsed.protocol) && !trustedOrigins.value.includes(parsed.origin)) return true;
+    } catch {}
   }
   return false;
 });

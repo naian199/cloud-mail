@@ -135,6 +135,9 @@ watch(isMobile, (mobile) => {
   position: fixed;
   transform: translateX(-100%);
   opacity: 0;
+  /* Off-screen but still laid out: it must not catch clicks meant for the docked navigation. */
+  visibility: hidden;
+  pointer-events: none;
   @media (max-width: 1024px) {
     width: 260px;
     z-index: 100;
