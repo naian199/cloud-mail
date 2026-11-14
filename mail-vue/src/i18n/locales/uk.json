@@ -982,5 +982,8 @@
   "appShareSend": "Надіслати",
   "appShareSent": "Надіслано: {name}",
   "appFileGone": "файл більше недоступний",
-  "chatAllEmpty": "Поки немає чатів."
+  "chatAllEmpty": "Поки немає чатів.",
+  "allMailConversationView": "Листування",
+  "allMailListView": "Список листів",
+  "allMailChooseConversation": "Виберіть листування, щоб прочитати листи."
 }
