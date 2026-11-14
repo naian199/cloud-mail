@@ -1,4 +1,5 @@
 import {identityRegistrationStatements} from '../lib/identity-registration.mjs';
+import {registrationDomains} from '../lib/registration-domains.mjs';
 import {requiredUsername,identityConflict} from './identity-service';
 import BizError from '../error/biz-error';
 import userService from './user-service';
@@ -27,10 +28,10 @@ const loginService = {
 	async register(c, params, oauth = false) {
 
 		let { email, password, token, code } = params;
+		const domains = registrationDomains(c.env);
     const username=requiredUsername(params.username ?? (typeof email==='string'?email.split('@')[0]:''));
     if(typeof email==='string')email=email.trim().toLowerCase();
     if(params.username){
-      const domains=typeof c.env.domain==='string'?JSON.parse(c.env.domain):c.env.domain;
       const domain=typeof params.domain==='string'?params.domain.replace(/^@/,''):email?.split('@')[1]||domains[0];
       email=username+'@'+domain;
     }
@@ -72,7 +73,7 @@ const loginService = {
 			throw new BizError(t('pwdMinLength'));
 		}
 
-		if (!c.env.domain.includes(emailUtils.getDomain(email))) {
+		if (!domains.includes(emailUtils.getDomain(email))) {
 			throw new BizError(t('notEmailDomain'));
 		}
 

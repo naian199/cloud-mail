@@ -2,6 +2,7 @@ import settingService from './setting-service';
 import BizError from '../error/biz-error';
 import userContext from '../security/user-context';
 import {identityUsername} from '../../../shared/user-identity.mjs';
+import {registrationDomains} from '../lib/registration-domains.mjs';
 export function requiredUsername(value){const result=identityUsername(value);if(result.error)throw new BizError(result.error,400);return result.name;}
 export function identityConflict(error){
  const text=String(error?.message||'')+' '+String(error?.cause?.message||'');
@@ -20,8 +21,7 @@ export default {
   await c.env.db.prepare('DELETE FROM mail_identity_rate WHERE window<?').bind(window-10).run();
   const username=requiredUsername(params.username);
   const domain=typeof params.domain==='string'?params.domain.replace(/^@/,'').toLowerCase():'';
-  const domains=typeof c.env.domain==='string'?JSON.parse(c.env.domain):c.env.domain;
-  if(!domains.includes(domain))throw new BizError('invalidInput',400);
+  if(!registrationDomains(c.env).includes(domain))throw new BizError('invalidInput',400);
   const email=username+'@'+domain;
   const settings=await settingService.query(c);
   if(settings.register!==0 || username.length<settings.minEmailPrefix || settings.emailPrefixFilter.some(part=>username.includes(part)))return {username,email,available:false,reason:'identityNamePolicy'};
