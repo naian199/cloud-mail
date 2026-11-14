@@ -983,6 +983,9 @@
   "appShareSent": "{name}에 보냈습니다",
   "appFileGone": "파일을 더 이상 사용할 수 없음",
   "chatAllEmpty": "아직 채팅이 없습니다.",
+  "allMailConversationView": "대화",
+  "allMailListView": "메일 목록",
+  "allMailChooseConversation": "대화를 선택하여 메일을 읽으세요.",
   "navStoreShort": "스토어",
   "navFilesShort": "내 파일"
 }

@@ -983,6 +983,9 @@
   "appShareSent": "Đã gửi tới {name}",
   "appFileGone": "tệp không còn khả dụng",
   "chatAllEmpty": "Chưa có cuộc trò chuyện nào.",
+  "allMailConversationView": "Cuộc trò chuyện",
+  "allMailListView": "Danh sách thư",
+  "allMailChooseConversation": "Chọn một cuộc trò chuyện để đọc thư.",
   "navStoreShort": "Ứng dụng",
   "navFilesShort": "Tệp"
 }

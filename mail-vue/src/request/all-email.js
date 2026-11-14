@@ -4,6 +4,18 @@ export function allEmailList(params) {
   return http.get('/allEmail/list', { params: { ...params } });
 }
 
+export function allMailConversations(params) {
+  return http.get('/allEmail/conversations', { params });
+}
+
+export function allMailConversationMessages(id, before) {
+  return http.get(`/allEmail/conversations/${id}/messages`, { params: { before } });
+}
+
+export function allMailConversationOriginal(id) {
+  return http.get(`/allEmail/conversations/original/${id}`);
+}
+
 export function allEmailDelete(emailIds) {
   return http.delete('/allEmail/delete?emailIds=' + emailIds);
 }

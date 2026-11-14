@@ -983,6 +983,9 @@
   "appShareSent": "Enviado para {name}",
   "appFileGone": "arquivo não está mais disponível",
   "chatAllEmpty": "Ainda não há conversas.",
+  "allMailConversationView": "Conversas",
+  "allMailListView": "Lista de mensagens",
+  "allMailChooseConversation": "Selecione uma conversa para ler as mensagens.",
   "navStoreShort": "Loja",
   "navFilesShort": "Arquivos"
 }
