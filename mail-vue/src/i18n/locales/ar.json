@@ -982,5 +982,7 @@
   "appShareSend": "إرسال",
   "appShareSent": "أُرسل إلى {name}",
   "appFileGone": "الملف لم يعد متاحًا",
-  "chatAllEmpty": "لا توجد دردشات بعد."
+  "chatAllEmpty": "لا توجد دردشات بعد.",
+  "navStoreShort": "المتجر",
+  "navFilesShort": "ملفاتي"
 }

@@ -982,5 +982,7 @@
   "appShareSend": "Надіслати",
   "appShareSent": "Надіслано: {name}",
   "appFileGone": "файл більше недоступний",
-  "chatAllEmpty": "Поки немає чатів."
+  "chatAllEmpty": "Поки немає чатів.",
+  "navStoreShort": "Магазин",
+  "navFilesShort": "Файли"
 }

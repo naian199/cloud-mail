@@ -46,6 +46,8 @@ const zh = {
     listLoadFailed: '列表加载失败，请检查网络。',
     listNotUpdated: '未更新，显示的是上次加载的列表。',
     listRetry: '重试',
+    navStoreShort: '商城',
+    navFilesShort: '我的文档',
     chatAllEmpty: '还没有会话。',
     appShareToChat: '分享到聊天',
     appCopyLink: '复制链接',

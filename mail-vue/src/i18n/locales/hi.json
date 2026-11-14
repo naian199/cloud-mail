@@ -982,5 +982,7 @@
   "appShareSend": "भेजें",
   "appShareSent": "{name} को भेजा गया",
   "appFileGone": "फ़ाइल अब उपलब्ध नहीं है",
-  "chatAllEmpty": "अभी कोई चैट नहीं है।"
+  "chatAllEmpty": "अभी कोई चैट नहीं है।",
+  "navStoreShort": "स्टोर",
+  "navFilesShort": "मेरी फ़ाइलें"
 }

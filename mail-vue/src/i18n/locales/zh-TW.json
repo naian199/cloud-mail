@@ -982,5 +982,7 @@
   "appShareSend": "傳送",
   "appShareSent": "已傳送到 {name}",
   "appFileGone": "檔案已失效",
-  "chatAllEmpty": "還沒有對話。"
+  "chatAllEmpty": "還沒有對話。",
+  "navStoreShort": "商城",
+  "navFilesShort": "我的文件"
 }

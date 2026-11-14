@@ -982,5 +982,7 @@
   "appShareSend": "Invia",
   "appShareSent": "Inviato a {name}",
   "appFileGone": "file non più disponibile",
-  "chatAllEmpty": "Ancora nessuna chat."
+  "chatAllEmpty": "Ancora nessuna chat.",
+  "navStoreShort": "Store",
+  "navFilesShort": "File"
 }

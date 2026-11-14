@@ -982,5 +982,7 @@
   "appShareSend": "ส่ง",
   "appShareSent": "ส่งถึง {name} แล้ว",
   "appFileGone": "ไฟล์ใช้งานไม่ได้แล้ว",
-  "chatAllEmpty": "ยังไม่มีแชท"
+  "chatAllEmpty": "ยังไม่มีแชท",
+  "navStoreShort": "ร้านแอป",
+  "navFilesShort": "ไฟล์"
 }

@@ -982,5 +982,7 @@
   "appShareSend": "Hantar",
   "appShareSent": "Dihantar kepada {name}",
   "appFileGone": "fail tidak lagi tersedia",
-  "chatAllEmpty": "Belum ada sembang."
+  "chatAllEmpty": "Belum ada sembang.",
+  "navStoreShort": "Kedai",
+  "navFilesShort": "Fail"
 }

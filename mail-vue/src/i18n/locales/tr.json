@@ -982,5 +982,7 @@
   "appShareSend": "Gönder",
   "appShareSent": "{name} kişisine gönderildi",
   "appFileGone": "dosya artık kullanılamıyor",
-  "chatAllEmpty": "Henüz sohbet yok."
+  "chatAllEmpty": "Henüz sohbet yok.",
+  "navStoreShort": "Mağaza",
+  "navFilesShort": "Dosyalar"
 }

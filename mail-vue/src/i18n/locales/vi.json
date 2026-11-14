@@ -982,5 +982,7 @@
   "appShareSend": "Gửi",
   "appShareSent": "Đã gửi tới {name}",
   "appFileGone": "tệp không còn khả dụng",
-  "chatAllEmpty": "Chưa có cuộc trò chuyện nào."
+  "chatAllEmpty": "Chưa có cuộc trò chuyện nào.",
+  "navStoreShort": "Ứng dụng",
+  "navFilesShort": "Tệp"
 }
