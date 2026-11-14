@@ -33,7 +33,9 @@ const secret = devConfig.match(/^jwt_secret = "(.*)"$/m)[1];
 rmSync(stateDir, { recursive: true, force: true });
 const wrangler = spawn(path.join(worker, 'node_modules/.bin/wrangler'),
   ['dev', '--config', config, '--port', String(PORT), '--persist-to', stateDir,
-    '--var', `costaction_api_base:${costaction.origin}`, '--var', `costaction_upload_origin:${costaction.origin}`],
+    '--var', `costaction_api_base:${costaction.origin}`, '--var', `costaction_upload_origin:${costaction.origin}`,
+    // Files over 1 MB take the direct browser path here (95 MB in production).
+    '--var', 'costaction_relay_max:1048576'],
   { cwd: worker, stdio: ['ignore', 'pipe', 'inherit'] });
 wrangler.stdout.on('data', () => {});
 const stop = () => { wrangler.kill(); costaction.close(); process.exit(); };
@@ -101,7 +103,7 @@ async function seed() {
   };
   await put('/setting/set', { costactionStatus: 0, costactionToken: COSTACTION_TOKEN, costactionMinSize: 1024 * 1024, costactionMaxSize: 20 * 1024 * 1024 }, admin);
   await post(`${API}/register`, { email: FILES_PEER, password: PASSWORD });
-  const size = 1536 * 1024;
+  const size = 512 * 1024;
   const begun = await post(`${API}/large-att/begin`, { accountId: adminAccount, filename: 'holiday-photo.jpg', mimeType: 'image/jpeg', size, clientId: crypto.randomUUID().replaceAll('-', '') }, admin);
   const form = new FormData();
   form.append('file', new Blob([new Uint8Array(size)]), 'holiday-photo.jpg');

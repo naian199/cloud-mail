@@ -33,7 +33,7 @@ test('My files: search, filters, preview marks it viewed, and removing an entry'
   const row = page.locator('.file-row').filter({ hasText: 'holiday-photo.jpg' });
   await expect(row).toBeVisible();
   await expect(row.locator('.tag')).toContainText(['Uploaded by me']);
-  await page.getByRole('button', { name: 'Videos' }).click();
+  await page.getByRole('button', { name: 'Audio' }).click();
   await expect(page.locator('.files-empty')).toContainText('No matching files');
   await page.getByRole('button', { name: 'Images' }).click();
   await expect(row).toBeVisible();
@@ -48,6 +48,21 @@ test('My files: search, filters, preview marks it viewed, and removing an entry'
   await page.reload();
   await page.locator('.layout').waitFor();
   await expect(page.locator('.file-row').filter({ hasText: 'holiday-photo.jpg' }).locator('.tag')).toContainText(['Uploaded by me', 'Viewed']);
+});
+
+test('a file over the relay limit goes from the browser straight to the upload host, without a preflight', async ({ page }, testInfo) => {
+  const dir = mkdtempSync(path.join(tmpdir(), 'cloud-mail-direct-'));
+  const name = `big-video-${testInfo.project.name}.mp4`;
+  const big = path.join(dir, name);
+  writeFileSync(big, Buffer.alloc(2 * 1024 * 1024, 3));
+  await openFilesThread(page);
+  await page.locator('.composer .attach-label input[type=file]').setInputFiles(big);
+  const upload = page.locator('.large-upload').filter({ hasText: name });
+  // The mock upload host refuses CORS preflights like the real ones, so this only succeeds
+  // when the browser sends a plain form post.
+  await expect(upload).toContainText('Uploaded', { timeout: 30000 });
+  await open(page, '/files');
+  await expect(page.locator('.file-row').filter({ hasText: name })).toBeVisible();
 });
 
 test('any file chosen in an internal chat goes to CostAction, whatever its size, and lands in My files', async ({ page }) => {

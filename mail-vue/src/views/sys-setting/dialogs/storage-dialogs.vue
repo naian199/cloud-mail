@@ -42,6 +42,7 @@
           <span v-if="costactionResult" role="status" :class="costactionResult">{{ t(costactionResult === 'ok' ? 'largeAttTestOk' : 'largeAttTestFailed') }}</span>
         </div>
         <label class="costaction-field"><span>{{ t('largeAttMaxSize') }}</span><el-input-number v-model="costactionForm.maxMb" :min="1" :max="10240"><template #suffix>MB</template></el-input-number></label>
+        <p class="costaction-note">{{ t('largeAttMaxHint') }}</p>
         <label class="costaction-field"><span>{{ t('largeAttProgram') }}</span>
           <el-select v-model="costactionForm.apptype" :aria-describedby="'costaction-program-hint'">
             <el-option value="fd1" label="Turbobit (fd1)" />

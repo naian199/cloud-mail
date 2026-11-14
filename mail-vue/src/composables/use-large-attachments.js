@@ -3,7 +3,7 @@ import { ElMessage } from 'element-plus';
 import { randomUUID } from '@/utils/uuid';
 import { makePreview } from '@/utils/file-preview';
 import { cloudFilePutPreview } from '@/request/cloud-file';
-import { largeAttBegin, largeAttConfig, largeAttFailed, largeAttRemove, uploadToStorage } from '@/request/large-att';
+import { largeAttDirect, largeAttComplete, uploadDirect, largeAttBegin, largeAttConfig, largeAttFailed, largeAttRemove, uploadToStorage } from '@/request/large-att';
 
 // Large attachments chosen in the chat composer, per draft. Each file gets its own request ID,
 // so a retry reuses the same server record instead of creating another.
@@ -31,7 +31,22 @@ export function useLargeAttachments({ t, accountId, draftKey }) {
       // Removed while the upload URL was being requested: do not transfer the file.
       if (item.status === 'removed') { largeAttFailed(begun.attId).catch(() => {}); return; }
       if (begun.status !== 'ready') {
-        await uploadToStorage(begun.attId, item.file, { signal: item.controller.signal, onProgress: (p) => { item.progress = p; } });
+        if (item.size <= (config.value.relayMax || 0)) {
+          // Through this site's Worker, with real progress.
+          await uploadToStorage(begun.attId, item.file, { signal: item.controller.signal, onProgress: (p) => { item.progress = p; } });
+        } else {
+          // Too large for the Worker: straight from the browser to the storage program. Browsers
+          // cannot report progress for it without a preflight the hosts refuse, so the list shows
+          // elapsed time instead; the Worker then verifies and stores the result.
+          item.direct = true;
+          item.startedAt = Date.now();
+          const target = await largeAttDirect(begun.attId);
+          if (target.status !== 'ready') {
+            const remoteId = await uploadDirect(target.uploadUrl, item.file, { signal: item.controller.signal });
+            item.progress = 1;
+            await largeAttComplete({ attId: begun.attId, remoteId });
+          }
+        }
       }
       item.status = 'ready';
       item.progress = 1;
@@ -41,7 +56,8 @@ export function useLargeAttachments({ t, accountId, draftKey }) {
       if (item.status === 'removed') return;
       item.status = 'failed';
       if (item.attId) largeAttFailed(item.attId).catch(() => {});
-      if (error?.message?.startsWith('upload-')) ElMessage.error(t('largeAttUploadFailed'));
+      if (error?.message === 'upload-direct-network') ElMessage.error(t('largeAttDirectFailed'));
+      else ElMessage.error(t('largeAttUploadFailed'));
     }
   }
 
@@ -71,7 +87,7 @@ export function useLargeAttachments({ t, accountId, draftKey }) {
         ElMessage.error(t('largeAttMaxLimit', { max: Math.round(maxSize / 1048576) }));
         continue;
       }
-      const item = reactive({ clientId: randomUUID().replaceAll('-', ''), file, name: file.name, size: file.size, progress: 0, status: 'uploading', attId: null, fileId: null, previewStored: false, controller: null });
+      const item = reactive({ clientId: randomUUID().replaceAll('-', ''), file, name: file.name, size: file.size, progress: 0, status: 'uploading', attId: null, fileId: null, previewStored: false, controller: null, direct: false, startedAt: 0 });
       list().push(item);
       upload(item);
     }

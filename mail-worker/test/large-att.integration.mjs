@@ -108,7 +108,7 @@ before(async () => {
 	writeFileSync(config, dev.replace(/^admin = .*$/m, `admin = "${ADMIN}"`));
 	const secret = dev.match(/^jwt_secret = "(.*)"$/m)[1];
 	rmSync(stateDir, { recursive: true, force: true });
-	wrangler = spawn(path.join(worker, 'node_modules/.bin/wrangler'), ['dev', '--config', config, '--port', String(PORT), '--persist-to', stateDir, '--test-scheduled',
+	wrangler = spawn(path.join(worker, 'node_modules/.bin/wrangler'), ['dev', '--config', config, '--port', String(PORT), '--persist-to', stateDir, '--test-scheduled', '--var', `costaction_relay_max:${2.5 * 1024 * 1024}`,
 		'--var', `costaction_api_base:${MOCK_ORIGIN}`, '--var', `costaction_upload_origin:${MOCK_ORIGIN}`], { cwd: worker });
 	wrangler.stdout.on('data', (d) => { log += d; });
 	wrangler.stderr.on('data', (d) => { log += d; });
@@ -348,6 +348,25 @@ test('a file deleted at CostAction shows as unavailable only once the API confir
 	remote.deleted = true;
 	assert.equal((await call(`/cloud-file/${sentFile}/download`, admin, 'POST')).data.code, 410);
 	assert.equal((await library(admin)).find((f) => f.fileId === sentFile).status, 'deleted');
+});
+
+test('direct path: files over the relay limit get an upload URL; small files must use the relay', async () => {
+	const small = await ok('/large-att/begin', admin, 'POST', { accountId: adminAccount, filename: 'small.zip', size: 2 * MB, clientId: clientId() });
+	assert.equal((await call(`/large-att/${small.attId}/direct`, admin, 'POST', {})).data.code, 400);
+	const size = 3 * MB;
+	const big = await ok('/large-att/begin', admin, 'POST', { accountId: adminAccount, filename: 'big.zip', size, clientId: clientId() });
+	assert.equal((await relay(admin, big.attId, 'big.zip', size)).code, 400, 'too large for the relay');
+	assert.notEqual((await call(`/large-att/${big.attId}/direct`, peer, 'POST', {})).data.code, 200, 'not for other users');
+	const target = await ok(`/large-att/${big.attId}/direct`, admin, 'POST', {});
+	assert.match(target.uploadUrl, /^http:\/\/127\.0\.0\.1:8790\/upload\//);
+	// The browser posts the file itself, then the Worker verifies it.
+	const form = new FormData();
+	form.append('file', new Blob([new Uint8Array(size)]), 'big.zip');
+	const posted = await (await fetch(target.uploadUrl, { method: 'POST', body: form })).json();
+	const done = await ok('/large-att/complete', admin, 'POST', { attId: big.attId, remoteId: posted.id });
+	assert.equal(done.status, 'ready');
+	assert.ok((await library(admin)).some((f) => f.filename === 'big.zip' && f.uploaded));
+	assert.equal(folderPathOf(files.get(posted.id).folder).split('/')[1], '压缩包');
 });
 
 test('the token is never logged and only sent to the API', async () => {

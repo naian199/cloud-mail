@@ -12,7 +12,11 @@ export function startCostActionMock(port, token) {
     const body = Buffer.concat(chunks);
     const send = (status, data) => { res.writeHead(status, { 'content-type': 'application/json' }); res.end(JSON.stringify(data)); };
     const url = new URL(req.url, origin);
+    // Like the real upload hosts: a CORS preflight gets 202 with no allow headers, while the
+    // upload itself answers with Access-Control-Allow-Origin: *.
+    if (url.pathname.startsWith('/upload/') && req.method === 'OPTIONS') { res.writeHead(202); return res.end(); }
     if (url.pathname.startsWith('/upload/')) {
+      res.setHeader('access-control-allow-origin', '*');
       const form = await new Response(body, { headers: { 'content-type': req.headers['content-type'] } }).formData();
       const file = form.get('file');
       if (!file) return send(400, { status: 'error', message: 'Wrong upload url' });

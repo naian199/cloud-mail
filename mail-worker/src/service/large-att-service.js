@@ -17,7 +17,13 @@ import { CostActionError } from '../lib/costaction.mjs';
 // every other attachment keeps storage = '' and the deployment's existing R2/S3/KV path.
 
 const STORAGE = 'costaction';
+// Files up to this size are relayed by the Worker (with real progress). Larger ones exceed
+// Cloudflare's request body limit and go from the browser straight to the program's upload
+// host; the Worker hands out the upload URL and verifies the result.
+export const RELAY_MAX = 95 * 1024 * 1024;
 const fail = (message, code = 400) => { throw new BizError(message, code); };
+// Tests only: a lower relay limit so the direct path can be exercised with small files.
+const relayMax = (c) => Number(c.env.costaction_relay_max) || RELAY_MAX;
 const positiveId = (value) => {
 	const n = Number(value);
 	if (!Number.isSafeInteger(n) || n < 1) fail('Invalid ID / 无效编号');
@@ -52,7 +58,7 @@ const largeAtt = {
 	// What the composer needs to decide whether to offer large uploads.
 	async config(c) {
 		const { setting, enabled, allowed } = await policy(c);
-		return { enabled: enabled && allowed, minSize: 1, maxSize: setting.costactionMaxSize, previewDays: PREVIEW_DAYS };
+		return { enabled: enabled && allowed, minSize: 1, maxSize: setting.costactionMaxSize, previewDays: PREVIEW_DAYS, relayMax: relayMax(c) };
 	},
 
 	async begin(c, params) {
@@ -121,6 +127,7 @@ const largeAtt = {
 		// Already uploaded (a retry after a lost reply): never upload the original again.
 		if (row.status === 'ready') return { attId, fileId: row.fileId, status: 'ready' };
 		if (row.status !== 'uploading') fail('Attachment unavailable / 附件不可用', 409);
+		if (row.size > relayMax(c)) fail('Use the direct upload / 请使用直传', 400);
 		const type = c.req.header('content-type') || '';
 		const length = Number(c.req.header('content-length'));
 		// The multipart envelope adds a little to the file itself.
@@ -146,6 +153,31 @@ const largeAtt = {
 		if (!remoteId) fail('Upload to the storage service failed, try again / 上传到存储服务失败，请重试', 502);
 		await c.env.db.prepare('UPDATE cloud_file SET folder_id = ? WHERE file_id = ?').bind(folderId, row.fileId).run();
 		return this.complete(c, { attId, remoteId });
+	},
+
+	// Direct path for files over RELAY_MAX: a one-time upload URL in the right folder. The browser
+	// posts the file there as a plain multipart form (no upload progress listener, so no CORS
+	// preflight, which the upload hosts do not answer) and then calls complete with the file ID.
+	async direct(c, rawId) {
+		const { setting, userId, enabled, allowed } = await policy(c);
+		if (!enabled) fail('Large attachments are disabled / 大附件未启用', 403);
+		if (!allowed) fail('Unauthorized / 无权使用大附件', 403);
+		const attId = positiveId(rawId);
+		const row = await draft(c, attId, userId);
+		if (!row) fail('Attachment unavailable / 附件不可用', 404);
+		if (row.status === 'ready') return { attId, fileId: row.fileId, status: 'ready' };
+		if (row.status !== 'uploading') fail('Attachment unavailable / 附件不可用', 409);
+		if (row.size <= relayMax(c)) fail('Use the relayed upload / 请使用中转上传', 400);
+		const api = costaction(c, setting, row.apptype);
+		let upload, folderId;
+		try {
+			folderId = await cloudFile.folderFor(c, api, row.apptype, row.category, Math.floor(Date.now() / 1000));
+			upload = await api.requestUploadUrl(folderId);
+		} catch (error) {
+			unavailable(error);
+		}
+		await c.env.db.prepare('UPDATE cloud_file SET folder_id = ? WHERE file_id = ?').bind(folderId, row.fileId).run();
+		return { attId, fileId: row.fileId, status: 'uploading', uploadUrl: upload.url };
 	},
 
 	// Trusts nothing about the upload until the API confirms the file and its size.
