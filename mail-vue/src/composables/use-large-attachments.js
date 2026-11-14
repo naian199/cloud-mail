@@ -3,7 +3,7 @@ import { ElMessage } from 'element-plus';
 import { randomUUID } from '@/utils/uuid';
 import { makePreview } from '@/utils/file-preview';
 import { cloudFilePutPreview } from '@/request/cloud-file';
-import { largeAttDirect, largeAttComplete, uploadDirect, largeAttBegin, largeAttConfig, largeAttFailed, largeAttRemove, uploadToStorage } from '@/request/large-att';
+import { largeAttDirect, largeAttComplete, uploadDirect, largeAttBegin, largeAttConfig, largeAttFailed, largeAttRemove } from '@/request/large-att';
 
 // Large attachments chosen in the chat composer, per draft. Each file gets its own request ID,
 // so a retry reuses the same server record instead of creating another.
@@ -12,7 +12,9 @@ const MAX_PER_MESSAGE = 10;
 
 export function useLargeAttachments({ t, accountId, draftKey }) {
   const config = ref({ enabled: false, minSize: 0, maxSize: 0 });
-  largeAttConfig().then((value) => { config.value = value; }).catch(() => {});
+  // Resolves once the configuration is known (or could not be loaded), so a file chosen right
+  // after the page opens is still routed correctly.
+  const ready = largeAttConfig().then((value) => { config.value = value; }).catch(() => {});
   const uploads = reactive({});
 
   const list = (key = draftKey()) => uploads[key] || (uploads[key] = []);
@@ -31,21 +33,17 @@ export function useLargeAttachments({ t, accountId, draftKey }) {
       // Removed while the upload URL was being requested: do not transfer the file.
       if (item.status === 'removed') { largeAttFailed(begun.attId).catch(() => {}); return; }
       if (begun.status !== 'ready') {
-        if (item.size <= (config.value.relayMax || 0)) {
-          // Through this site's Worker, with real progress.
-          await uploadToStorage(begun.attId, item.file, { signal: item.controller.signal, onProgress: (p) => { item.progress = p; } });
-        } else {
-          // Too large for the Worker: straight from the browser to the storage program. Browsers
-          // cannot report progress for it without a preflight the hosts refuse, so the list shows
-          // elapsed time instead; the Worker then verifies and stores the result.
-          item.direct = true;
-          item.startedAt = Date.now();
-          const target = await largeAttDirect(begun.attId);
-          if (target.status !== 'ready') {
-            const remoteId = await uploadDirect(target.uploadUrl, item.file, { signal: item.controller.signal });
-            item.progress = 1;
-            await largeAttComplete({ attId: begun.attId, remoteId });
-          }
+        // The file's data goes straight from the browser to the storage program; the Worker only
+        // issues the upload URL, then checks that the whole file arrived and records it. Browsers
+        // cannot report progress for this upload without a preflight the hosts refuse, so the
+        // list shows elapsed time.
+        item.direct = true;
+        item.startedAt = Date.now();
+        const target = await largeAttDirect(begun.attId);
+        if (target.status !== 'ready') {
+          const remoteId = await uploadDirect(target.uploadUrl, item.file, { signal: item.controller.signal });
+          item.progress = 1;
+          await largeAttComplete({ attId: begun.attId, remoteId });
         }
       }
       item.status = 'ready';
@@ -102,5 +100,5 @@ export function useLargeAttachments({ t, accountId, draftKey }) {
     if (previous === 'ready' && item.attId) largeAttRemove(item.attId).catch(() => {});
   }
 
-  return { config, uploads, list, readyIds, busy, clear, retry: upload, choose, remove };
+  return { ready, config, uploads, list, readyIds, busy, clear, retry: upload, choose, remove };
 }

@@ -622,6 +622,11 @@ watch([accountId,universalActive],()=>{closeMenu();endConversationDrag();cancelC
 const draftKey = computed(() => `${accountId.value}:${selected.value?.key || ''}`);
 // Large attachments (CostAction/Turbobit): only offered in internal chats when enabled for this user.
 const large = useLargeAttachments({ t, accountId: () => accountId.value, draftKey: () => draftKey.value });
+// Resolves when `done()` turns true, or after `ms` at the latest.
+const settled = (done, ms) => new Promise((resolve) => {
+  const timer = setTimeout(() => { stop(); resolve(); }, ms);
+  const stop = watch(done, (value) => { if (value) { clearTimeout(timer); stop(); resolve(); } });
+});
 // Marks files that must stay on this site's storage (stickers).
 const ordinary = (event) => { if (event && typeof event === 'object') event.ordinary = true; return event; };
 const largeAllowed = computed(() => large.config.value.enabled && !!(live.value.internal || selected.value?.internal || messages.value.some(message => message.internal)));
@@ -638,7 +643,10 @@ const {
   // In internal chats with CostAction enabled, every chosen, pasted or dropped file goes there,
   // whatever its size; this site keeps only its thumbnail. Only for the open conversation's
   // draft: the new-message dialog keeps the ordinary path. Empty files stay ordinary.
-  takeLarge: (picked, current) => {
+  takeLarge: async (picked, current) => {
+    await large.ready;
+    // Whether the chat is internal is known once its messages have loaded.
+    if (!largeAllowed.value && messageLoading.value) await settled(() => !messageLoading.value, 8000);
     if (!largeAllowed.value || current !== draftKey.value) return picked;
     const big = picked.filter(f => f.size > 0);
     if (big.length) large.choose({ target: { files: big } });

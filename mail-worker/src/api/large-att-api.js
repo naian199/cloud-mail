@@ -6,7 +6,6 @@ import largeAtt from '../service/large-att-service';
 // the service checks the feature switch, the user's role and ownership.
 app.get('/large-att/config', async (c) => c.json(result.ok(await largeAtt.config(c))));
 app.post('/large-att/begin', async (c) => c.json(result.ok(await largeAtt.begin(c, await c.req.json()))));
-app.post('/large-att/:id/upload', async (c) => c.json(result.ok(await largeAtt.upload(c, c.req.param('id')))));
 app.post('/large-att/:id/direct', async (c) => c.json(result.ok(await largeAtt.direct(c, c.req.param('id')))));
 app.post('/large-att/complete', async (c) => c.json(result.ok(await largeAtt.complete(c, await c.req.json()))));
 app.post('/large-att/failed', async (c) => {

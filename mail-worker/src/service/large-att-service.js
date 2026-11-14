@@ -9,21 +9,20 @@ import { CostActionError } from '../lib/costaction.mjs';
 //
 // begin    registers the file: a cloud_file record (the original) and a draft attachments row
 //          (the composer's link to it). A client request ID makes a retry reuse both.
-// upload   the browser posts the file to this Worker, which streams it to a one-time upload
-//          URL in Cloud-Mail/<category>/<year>/<month>, then verifies it with the API.
+// direct   hands the browser a one-time upload URL in Cloud-Mail/<category>/<year>/<month>.
+//          The browser sends the file's data straight to the program's upload host.
+// complete checks with the API that the whole file arrived (it exists, size matches, not
+//          claimed by another upload), then stores the record.
 // send     the draft link becomes the message's link (mail-chat-service / mail-live-service).
 //
-// The API token and upload URLs stay on the server. Rows use attachments.storage = 'costaction';
+// The Worker never carries file data: it only issues upload URLs, verifies and records. The API
+// token stays on the server; the browser sees only one-time upload URLs and download pages. Rows use attachments.storage = 'costaction';
 // every other attachment keeps storage = '' and the deployment's existing R2/S3/KV path.
 
 const STORAGE = 'costaction';
-// Files up to this size are relayed by the Worker (with real progress). Larger ones exceed
-// Cloudflare's request body limit and go from the browser straight to the program's upload
-// host; the Worker hands out the upload URL and verifies the result.
-export const RELAY_MAX = 95 * 1024 * 1024;
+
 const fail = (message, code = 400) => { throw new BizError(message, code); };
-// Tests only: a lower relay limit so the direct path can be exercised with small files.
-const relayMax = (c) => Number(c.env.costaction_relay_max) || RELAY_MAX;
+
 const positiveId = (value) => {
 	const n = Number(value);
 	if (!Number.isSafeInteger(n) || n < 1) fail('Invalid ID / 无效编号');
@@ -58,7 +57,7 @@ const largeAtt = {
 	// What the composer needs to decide whether to offer large uploads.
 	async config(c) {
 		const { setting, enabled, allowed } = await policy(c);
-		return { enabled: enabled && allowed, minSize: 1, maxSize: setting.costactionMaxSize, previewDays: PREVIEW_DAYS, relayMax: relayMax(c) };
+		return { enabled: enabled && allowed, minSize: 1, maxSize: setting.costactionMaxSize, previewDays: PREVIEW_DAYS };
 	},
 
 	async begin(c, params) {
@@ -114,50 +113,10 @@ const largeAtt = {
 		return { attId, fileId: file.fileId, status: 'uploading' };
 	},
 
-	// Relays the browser's multipart upload to a fresh upload URL, then verifies it.
-	// The programs' upload hosts answer the CORS preflight without allow headers, so browsers
-	// cannot post to them directly; the request body is streamed through, never buffered.
-	async upload(c, rawId) {
-		const { setting, userId, enabled, allowed } = await policy(c);
-		if (!enabled) fail('Large attachments are disabled / 大附件未启用', 403);
-		if (!allowed) fail('Unauthorized / 无权使用大附件', 403);
-		const attId = positiveId(rawId);
-		const row = await draft(c, attId, userId);
-		if (!row) fail('Attachment unavailable / 附件不可用', 404);
-		// Already uploaded (a retry after a lost reply): never upload the original again.
-		if (row.status === 'ready') return { attId, fileId: row.fileId, status: 'ready' };
-		if (row.status !== 'uploading') fail('Attachment unavailable / 附件不可用', 409);
-		if (row.size > relayMax(c)) fail('Use the direct upload / 请使用直传', 400);
-		const type = c.req.header('content-type') || '';
-		const length = Number(c.req.header('content-length'));
-		// The multipart envelope adds a little to the file itself.
-		if (!/^multipart\/form-data;\s*boundary=/i.test(type) || !Number.isSafeInteger(length) || length < row.size || length > row.size + 64 * 1024 || !c.req.raw.body)
-			fail('Invalid upload / 上传请求无效');
-		const api = costaction(c, setting, row.apptype);
-		let upload, folderId;
-		try {
-			folderId = await cloudFile.folderFor(c, api, row.apptype, row.category, Math.floor(Date.now() / 1000));
-			upload = await api.requestUploadUrl(folderId);
-		} catch (error) {
-			unavailable(error);
-		}
-		const { readable, writable } = new FixedLengthStream(length);
-		const piping = c.req.raw.body.pipeTo(writable).catch(() => {});
-		let remoteId = '';
-		try {
-			const response = await fetch(upload.url, { method: 'POST', headers: { 'Content-Type': type }, body: readable });
-			const data = await response.json().catch(() => ({}));
-			if (response.ok && data.status === 'success' && typeof data.id === 'string') remoteId = data.id;
-		} catch {}
-		await piping;
-		if (!remoteId) fail('Upload to the storage service failed, try again / 上传到存储服务失败，请重试', 502);
-		await c.env.db.prepare('UPDATE cloud_file SET folder_id = ? WHERE file_id = ?').bind(folderId, row.fileId).run();
-		return this.complete(c, { attId, remoteId });
-	},
-
-	// Direct path for files over RELAY_MAX: a one-time upload URL in the right folder. The browser
-	// posts the file there as a plain multipart form (no upload progress listener, so no CORS
-	// preflight, which the upload hosts do not answer) and then calls complete with the file ID.
+	// A one-time upload URL in the file's folder. The browser posts the file's data there itself
+	// (a plain multipart form: no upload progress listener, so no CORS preflight, which the upload
+	// hosts do not answer), then calls complete with the remote file ID. File data never passes
+	// through the Worker, so Cloudflare's request size limit does not apply.
 	async direct(c, rawId) {
 		const { setting, userId, enabled, allowed } = await policy(c);
 		if (!enabled) fail('Large attachments are disabled / 大附件未启用', 403);
@@ -167,7 +126,6 @@ const largeAtt = {
 		if (!row) fail('Attachment unavailable / 附件不可用', 404);
 		if (row.status === 'ready') return { attId, fileId: row.fileId, status: 'ready' };
 		if (row.status !== 'uploading') fail('Attachment unavailable / 附件不可用', 409);
-		if (row.size <= relayMax(c)) fail('Use the relayed upload / 请使用中转上传', 400);
 		const api = costaction(c, setting, row.apptype);
 		let upload, folderId;
 		try {

@@ -50,9 +50,9 @@ test('My files: search, filters, preview marks it viewed, and removing an entry'
   await expect(page.locator('.file-row').filter({ hasText: 'holiday-photo.jpg' }).locator('.tag')).toContainText(['Uploaded by me', 'Viewed']);
 });
 
-test('a file over the relay limit goes from the browser straight to the upload host, without a preflight', async ({ page }, testInfo) => {
+test('the browser sends file data straight to the upload host, without a preflight', async ({ page }, testInfo) => {
   const dir = mkdtempSync(path.join(tmpdir(), 'cloud-mail-direct-'));
-  const name = `big-video-${testInfo.project.name}.mp4`;
+  const name = `big-video-${testInfo.project.name}-${testInfo.repeatEachIndex}.mp4`;
   const big = path.join(dir, name);
   writeFileSync(big, Buffer.alloc(2 * 1024 * 1024, 3));
   await openFilesThread(page);

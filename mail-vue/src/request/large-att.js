@@ -11,26 +11,7 @@ export const largeAttLink = (attId) => http.get(`/large-att/${attId}/link`);
 export const largeAttRemove = (attId) => http.delete(`/large-att/${attId}`);
 export const costactionTest = (token) => http.post('/setting/costactionTest', token ? { token } : {});
 
-// Posts the file to this site's Worker as multipart/form-data (field "file"), which relays it
-// to Turbobit and verifies it. Turbobit's upload hosts reject browser CORS preflights, so the
-// browser never posts to them directly. Resolves with { attId, status: 'ready' }.
-export function uploadToStorage(attId, file, { onProgress, signal } = {}) {
-  // Cancelled before the upload began.
-  if (signal?.aborted) return Promise.reject(new Error('upload-aborted'));
-  const form = new FormData();
-  form.append('file', file, file.name);
-  return http.post(`/large-att/${attId}/upload`, form, {
-    noMsg: true,
-    timeout: 0,
-    signal,
-    onUploadProgress: (event) => { if (event.total) onProgress?.(event.loaded / event.total); }
-  }).catch((error) => {
-    throw new Error(signal?.aborted ? 'upload-aborted' : 'upload-failed', { cause: error });
-  });
-}
-
-// Direct path for files too large for the Worker relay: posts the file from the browser straight
-// to the one-time upload URL. It is a plain multipart form with no upload progress listener, so
+// Posts the file's data from the browser straight to the one-time upload URL. It is a plain multipart form with no upload progress listener, so
 // the browser sends no CORS preflight (the upload hosts do not answer one); the hosts allow the
 // response to be read. Resolves with the remote file ID.
 export async function uploadDirect(url, file, { signal } = {}) {

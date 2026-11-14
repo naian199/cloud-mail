@@ -33,9 +33,7 @@ const secret = devConfig.match(/^jwt_secret = "(.*)"$/m)[1];
 rmSync(stateDir, { recursive: true, force: true });
 const wrangler = spawn(path.join(worker, 'node_modules/.bin/wrangler'),
   ['dev', '--config', config, '--port', String(PORT), '--persist-to', stateDir,
-    '--var', `costaction_api_base:${costaction.origin}`, '--var', `costaction_upload_origin:${costaction.origin}`,
-    // Files over 1 MB take the direct browser path here (95 MB in production).
-    '--var', 'costaction_relay_max:1048576'],
+    '--var', `costaction_api_base:${costaction.origin}`, '--var', `costaction_upload_origin:${costaction.origin}`],
   { cwd: worker, stdio: ['ignore', 'pipe', 'inherit'] });
 wrangler.stdout.on('data', () => {});
 const stop = () => { wrangler.kill(); costaction.close(); process.exit(); };
@@ -105,10 +103,11 @@ async function seed() {
   await post(`${API}/register`, { email: FILES_PEER, password: PASSWORD });
   const size = 512 * 1024;
   const begun = await post(`${API}/large-att/begin`, { accountId: adminAccount, filename: 'holiday-photo.jpg', mimeType: 'image/jpeg', size, clientId: crypto.randomUUID().replaceAll('-', '') }, admin);
+  const target = await post(`${API}/large-att/${begun.attId}/direct`, {}, admin);
   const form = new FormData();
   form.append('file', new Blob([new Uint8Array(size)]), 'holiday-photo.jpg');
-  const uploaded = await (await fetch(`${API}/large-att/${begun.attId}/upload`, { method: 'POST', headers: { Authorization: admin }, body: form })).json();
-  if (uploaded.code !== 200) throw new Error(`large upload: ${uploaded.message}`);
+  const remote = await (await fetch(target.uploadUrl, { method: 'POST', body: form })).json();
+  const uploaded = { data: await post(`${API}/large-att/complete`, { attId: begun.attId, remoteId: remote.id }, admin) };
   // A 2x2 PNG as the stored preview.
   const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAEklEQVR4nGP4z8DwHwyBNAMDAE7BB/k2Ej9zAAAAAElFTkSuQmCC', 'base64');
   const preview = await (await fetch(`${API}/cloud-file/${uploaded.data.fileId}/preview`, { method: 'PUT', headers: { Authorization: admin, 'content-type': 'image/png' }, body: png })).json();
