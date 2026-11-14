@@ -983,8 +983,6 @@
   "appShareSent": "An {name} gesendet",
   "appFileGone": "Datei nicht mehr verfügbar",
   "chatAllEmpty": "Noch keine Chats.",
-  "allMailConversationView": "Unterhaltungen",
-  "allMailListView": "Nachrichtenliste",
   "allMailChooseConversation": "Wähle eine Unterhaltung, um ihre Nachrichten zu lesen.",
   "navStoreShort": "Store",
   "navFilesShort": "Dateien"

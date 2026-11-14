@@ -1,578 +1,177 @@
 <template>
-  <div class="email-list-box">
-    <nav class="all-mail-modes" :aria-label="t('allMail')">
-      <RouterLink :to="{ query: {} }" :aria-current="!listMode ? 'page' : undefined">{{ t('allMailConversationView') }}</RouterLink>
-      <RouterLink :to="{ query: { view: 'list' } }" :aria-current="listMode ? 'page' : undefined">{{ t('allMailListView') }}</RouterLink>
-    </nav>
-    <Conversations v-if="!listMode" @original="openConversationOriginal" />
-    <emailScroll v-else ref="sysEmailScroll"
-                 :get-emailList="getEmailList"
-                 :email-delete="allEmailDelete"
-                 :star-add="starAdd"
-                 :star-cancel="starCancel"
-                 :show-star="false"
-                 show-user-info
-                 show-status
-                 actionLeft="4px"
-                 :show-account-icon="false"
-                 :time-sort="params.timeSort"
-                 :item-height="65"
-                 @jump="jumpContent"
-                 @refresh-before="refreshBefore"
-                 @right-search="rightSearch"
-                 :type="'all-email'"
-
-    >
-      <template #first>
-        <el-input
-            v-model="searchValue"
-            :placeholder="$t('searchByContent')"
-            class="search-input"
-        >
-          <template #prefix>
-            <div @click.stop="openSelect">
-              <el-select
-                  ref="mySelect"
-                  v-model="params.searchType"
-                  :placeholder="$t('select')"
-                  class="select"
-              >
-                <el-option key="3" :label="$t('sender')" :value="'name'"/>
-                <el-option key="4" :label="$t('subject')" :value="'subject'"/>
-                <el-option key="1" :label="$t('user')" :value="'user'"/>
-                <el-option key="2" :label="$t('selectEmail')" :value="'account'"/>
-              </el-select>
-              <div class="search-type">
-                <span>{{ selectTitle }}</span>
-                <Icon class="setting-icon" icon="mingcute:down-small-fill" width="20" height="20"/>
-              </div>
-            </div>
-          </template>
-        </el-input>
-        <el-select v-model="params.type" placeholder="Select" class="status-select" @change="typeSelectChange">
-          <el-option key="1" :label="$t('all')" value="all"/>
-          <el-option key="3" :label="$t('received')" value="receive"/>
-          <el-option key="2" :label="$t('sent')" value="send"/>
-          <el-option key="4" :label="$t('selectDeleted')" value="delete"/>
-          <el-option key="4" :label="$t('noRecipientTitle')" value="noone"/>
-        </el-select>
-        <Icon class="icon" icon="iconoir:search" @click="search" width="20" height="20"/>
-        <Icon class="icon" @click="changeTimeSort" icon="material-symbols-light:timer-arrow-down-outline"
-              v-if="params.timeSort === 0" width="28" height="28"/>
-        <Icon class="icon" @click="changeTimeSort" icon="material-symbols-light:timer-arrow-up-outline" v-else
-              width="28" height="28"/>
-        <Icon v-perm="'all-email:delete'" class="icon clear" icon="fluent:broom-sparkle-16-regular" width="22" height="22" @click="openBathDelete"/>
-      </template>
-    </emailScroll>
-    <el-dialog v-model="showBathDelete" :title="$t('clearEmail')" width="335"
-               @closed="closedClear">
-      <div class="clear-email">
-        <el-input v-model="clearParams.sendName" :placeholder="$t('sender')" @keyup.enter="batchDelete"/>
-        <el-input v-model="clearParams.subject" :placeholder="$t('subject')" @keyup.enter="batchDelete"/>
-        <el-input v-model="clearParams.sendEmail" :placeholder="$t('sendEmailAddress')" @keyup.enter="batchDelete"/>
-        <el-input v-model="clearParams.toEmail" :placeholder="$t('toEmail')" @keyup.enter="batchDelete"/>
-        <el-date-picker popper-class="my-date-picker"
-                        v-model="clearTime"
-                        type="daterange"
-                        :teleported="false"
-                        unlink-panels
-                        :range-separator="t('to')"
-                        size="default"
-        />
-        <div class="clear-button">
-          <el-select v-model="clearParams.type" style="width: 200px">
-            <el-option key="eq" :label="t('equal')" value="eq"/>
-            <el-option key="left" :label="t('leading')" value="left"/>
-            <el-option key="include" :label="t('include')" value="include"/>
-          </el-select>
-          <el-button :loading="clearLoading" type="primary" @click="batchDelete">{{ t('clear') }}</el-button>
-        </div>
+  <div class="review-mail" :class="{ 'has-thread': threadId }">
+    <aside class="review-list" :aria-label="t('mailChatTitle')">
+      <form class="review-search" @submit.prevent="search = input.trim()">
+        <input v-model="input" type="search" :aria-label="t('searchByContent')" :placeholder="t('searchByContent')" />
+        <button type="submit" :aria-label="t('searchByContent')"><Icon icon="cloud-mail:search" width="19" /></button>
+        <button type="button" :aria-label="t('chatRefresh')" @click="loadList(true)"><Icon icon="ion:reload" width="17" /></button>
+      </form>
+      <div class="review-list-scroll" :aria-busy="listLoading">
+        <ListState :state="listError" :retrying="listLoading" @retry="loadList(retryListReset)" />
+        <p v-if="!listLoading && !listError && !threads.length" class="review-empty">{{ t('mailChatEmpty') }}</p>
+        <RouterLink v-for="thread of threads" :key="thread.emailId" :to="{ query: { thread: thread.emailId } }"
+                    class="review-item" :class="{ selected: selected(thread) }" :aria-current="selected(thread) ? 'true' : undefined">
+          <span class="review-avatar" aria-hidden="true">{{ (title(thread)[0] || '?').toUpperCase() }}</span>
+          <span class="review-item-copy">
+            <strong dir="auto">{{ title(thread) }}</strong>
+            <small dir="auto">{{ address(thread) }}</small>
+            <span dir="auto">{{ thread.preview?.trim() || thread.subject || t('noSubject') }}</span>
+          </span>
+          <time>{{ fromNow(thread.createTime) }}</time>
+        </RouterLink>
+        <button v-if="listBefore && !listError" type="button" class="review-more" :disabled="listLoading" @click="loadList(false)">{{ t('mailChatMoreConversations') }}</button>
       </div>
-    </el-dialog>
-    <el-dialog v-model="removedOpen" :title="t('mailChatRemovedRecord')" width="min(900px, calc(100% - 24px))">
-      <template v-if="removedRecord"><p class="removed-owner">{{ removedRecord.owner }} · {{ removedRecord.sendEmail }}</p><h3>{{removedRecord.subject}}</h3>
-        <MailBody :html="removedRecord.richHtml" :images="removedRecord.richImages" :title="removedRecord.subject" :attachment-loader="loadRemovedAttachment"/>
-        <el-button v-for="att in removedRecord.attachments" :key="att.attId" text @click="downloadRemoved(att)">{{att.filename}}</el-button>
-      </template>
-    </el-dialog>
+    </aside>
+    <section class="review-thread" :aria-label="t('chatMessages')">
+      <header v-if="threadId" class="review-heading">
+        <RouterLink class="review-back" :to="{ query: {} }" :aria-label="t('navBack')"><Icon icon="cloud-mail:back" width="22" /></RouterLink>
+        <div v-if="latest" class="review-heading-copy">
+          <strong dir="auto">{{ title(latest) }}</strong>
+          <small dir="auto">{{ address(latest) }}</small>
+        </div>
+      </header>
+      <div v-if="threadId" ref="timeline" class="review-timeline" :aria-busy="messageLoading">
+        <ListState :state="messageError" :retrying="messageLoading" @retry="loadThread(false)" />
+        <p v-if="!messageLoading && !messageError && !messages.length" class="review-empty">{{ t('mailUnavailable') }}</p>
+        <button v-if="messageBefore && !messageError" type="button" class="review-more" :disabled="messageLoading" @click="loadThread(false)">{{ t('chatOlder') }}</button>
+        <article v-for="message in messages" :key="message.emailId" class="review-bubble" :class="{ outgoing: message.type === 1 }">
+          <div class="review-meta">
+            <strong dir="auto">{{ message.sendEmail || address(message) || t('unknown') }}</strong>
+            <time>{{ formatDetailDate(message.createTime) }}</time>
+          </div>
+          <p v-if="message.subject" class="review-subject" dir="auto">{{ message.subject }}</p>
+          <p v-if="message.text" class="review-body" dir="auto">{{ message.text }}</p>
+        </article>
+      </div>
+      <p v-else class="review-empty review-pick">{{ t('allMailChooseConversation') }}</p>
+    </section>
   </div>
 </template>
 
 <script setup>
-import {starAdd, starCancel} from "@/request/star.js";
-import emailScroll from "@/components/email-scroll/index.vue"
-import {computed, defineOptions, reactive, ref, watch, onMounted} from "vue";
-import {useEmailStore} from "@/store/email.js";
-import {
-  allEmailList,
-  allEmailDelete,
-  allEmailBatchDelete,
-  allEmailLatest, allMailConversationOriginal, removedMailDetail, removedMailAttachment
-} from "@/request/all-email.js";
-import {Icon} from "@iconify/vue";
-import router from "@/router/index.js";
-import {useI18n} from 'vue-i18n';
-import {toUtc} from "@/utils/day.js";
-import {sleep} from "@/utils/time-utils.js";
-import {useSettingStore} from "@/store/setting.js";
-import { RouterLink, useRoute } from 'vue-router'
+import { computed, nextTick, ref, watch } from 'vue';
+import { RouterLink, useRoute } from 'vue-router';
+import { Icon } from '@iconify/vue';
+import { useI18n } from 'vue-i18n';
+import ListState from '@/components/list-state.vue';
+import { allMailConversations, allMailConversationMessages } from '@/request/all-email.js';
+import { formatDetailDate, fromNow } from '@/utils/day.js';
 
-import MailBody from '@/components/mail-body.vue';
-import Conversations from './conversations.vue';
-const removedOpen=ref(false),removedRecord=ref(null);
-const loadRemovedAttachment=id=>removedMailAttachment(removedRecord.value.emailId,id);
-async function downloadRemoved(att){const blob=await loadRemovedAttachment(att.attId);const url=URL.createObjectURL(blob);const link=document.createElement('a');link.href=url;link.download=att.filename||'attachment';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
+defineOptions({ name: 'all-email' });
 
-defineOptions({
-  name: 'all-email'
-})
+const { t } = useI18n();
+const route = useRoute();
+const threadId = computed(() => {
+  const value = route.query.thread;
+  const id = typeof value === 'string' && /^\d+$/.test(value) ? Number(value) : 0;
+  return Number.isSafeInteger(id) && id > 0 ? id : null;
+});
+const input = ref(''), search = ref('');
+const threads = ref([]), messages = ref([]), timeline = ref(null);
+const listBefore = ref(null), messageBefore = ref(null);
+const listLoading = ref(false), listError = ref('');
+const retryListReset = ref(true);
+const messageLoading = ref(false), messageError = ref('');
+const latest = computed(() => messages.value.at(-1));
+let listRequest = 0, messageRequest = 0;
 
-const route = useRoute()
-const listMode = computed(() => route.query.view === 'list');
-let originalRequest = 0;
-watch(() => route.fullPath, () => { originalRequest++; });
-const {t} = useI18n();
-const emailStore = useEmailStore();
-const settingStore = useSettingStore();
-const clearTime = ref('')
-const sysEmailScroll = ref({})
-const searchValue = ref('')
-const mySelect = ref()
-const showBathDelete = ref(false)
-const clearLoading = ref(false)
+const address = (row) => row.mailbox || row.owner || '';
+const title = (row) => row.peers?.join(', ') || row.subject || t('noSubject');
+const selected = (row) => row.emailId === threadId.value ||
+  !!latest.value && row.accountId === latest.value.accountId && row.userId === latest.value.userId &&
+  title(row) === title(latest.value);
 
-onMounted(() => {
-  latest();
-})
-
-const openSelect = () => {
-  mySelect.value.toggleMenu()
-}
-
-const params = reactive({
-  timeSort: 0,
-  type: 'receive',
-  userEmail: null,
-  accountEmail: null,
-  name: null,
-  subject: null,
-  searchType: 'name'
-})
-
-const clearParams = reactive({
-  subject: '',
-  sendEmail: '',
-  sendName: '',
-  startTime: '',
-  toEmail: '',
-  endTime: '',
-  type: 'eq',
-})
-
-function resetClearParams() {
-  clearParams.subject = ''
-  clearParams.sendEmail = ''
-  clearParams.sendName = ''
-  clearParams.startTime = ''
-  clearParams.toEmail = ''
-  clearParams.endTime = ''
-}
-
-function closedClear() {
-  resetClearParams()
-  clearParams.type = 'eq'
-  clearParams.endTime = ''
-  clearTime.value = null
-}
-
-const selectTitle = computed(() => {
-  if (params.searchType === 'user') return t('user')
-  if (params.searchType === 'account') return t('selectEmail')
-  if (params.searchType === 'name') return t('sender')
-  if (params.searchType === 'subject') return t('subject')
-})
-
-const paramsStar = localStorage.getItem('all-email-params')
-if (paramsStar) {
-  const locaParams = JSON.parse(paramsStar)
-  params.type = locaParams.type
-  params.timeSort = locaParams.timeSort
-  params.status = locaParams.status
-  params.searchType = locaParams.searchType
-}
-
-watch(() => params, () => {
-  localStorage.setItem('all-email-params', JSON.stringify(params))
-}, {
-  deep: true
-})
-
-function openBathDelete() {
-  showBathDelete.value = true
-}
-
-function batchDelete() {
-
-  if (clearLoading.value) return
-
-  if (clearTime.value) {
-    clearParams.startTime = toUtc(clearTime.value[0]).format("YYYY-MM-DD HH:mm:ss")
-    clearParams.endTime = toUtc(clearTime.value[1]).add(1, 'day').format("YYYY-MM-DD HH:mm:ss")
-  }
-
-  if (!clearParams.sendEmail && !clearParams.sendName && !clearParams.subject && !clearParams.toEmail && !clearTime.value) {
-    showBathDelete.value = false
-    return
-  }
-
-  ElMessageBox.confirm(
-      t('delAllConfirm'),
-      {
-        confirmButtonText: t('confirm'),
-        cancelButtonText: t('cancel'),
-        type: 'warning',
-      }
-  ).then(() => {
-    clearLoading.value = true
-
-    allEmailBatchDelete(clearParams).then(() => {
-      ElMessage({
-        message: t('clearSuccess'),
-        type: "success",
-        plain: true
-      })
-      resetClearParams()
-      sysEmailScroll.value.refreshList();
-    }).finally(() => {
-      clearLoading.value = false
-    })
-  })
-}
-
-function rightSearch(type, value) {
-  params.searchType = type;
-  searchValue.value = value;
-  search();
-}
-
-function refreshBefore() {
-  searchValue.value = null
-  params.timeSort = 0
-  params.type = 'receive'
-  params.userEmail = null
-  params.accountEmail = null
-  params.name = null
-  params.subject = null
-  params.searchType = 'name'
-}
-
-function search() {
-
-  params.userEmail = null
-  params.accountEmail = null
-  params.name = null
-  params.subject = null
-
-  if (params.searchType === 'user') {
-    params.userEmail = searchValue.value
-  }
-
-  if (params.searchType === 'account') {
-    params.accountEmail = searchValue.value
-  }
-
-  if (params.searchType === 'name') {
-    params.name = searchValue.value
-  }
-
-  if (params.searchType === 'subject') {
-    params.subject = searchValue.value
-  }
-
-  sysEmailScroll.value.refreshList();
-}
-
-function changeTimeSort() {
-  params.timeSort = params.timeSort ? 0 : 1
-  search()
-}
-
-function typeSelectChange() {
-  search()
-}
-
-async function jumpContent(email) {
-  if(email.chatRemoved){removedRecord.value=await removedMailDetail(email.emailId);removedOpen.value=true;return;}
-  showOriginal(emailStore.toContentEmail(email));
-}
-
-async function openConversationOriginal(id) {
-  const source = route.fullPath;
-  const request = ++originalRequest;
+async function loadList(reset) {
+  const request = ++listRequest;
+  const before = reset ? null : listBefore.value;
+  retryListReset.value = reset;
+  listLoading.value = true;
   try {
-    const record = await allMailConversationOriginal(id);
-    if (request === originalRequest && route.fullPath === source) showOriginal(record);
+    const page = await allMailConversations({ q: search.value, before });
+    if (request !== listRequest) return;
+    threads.value = before ? [...threads.value, ...page.items] : page.items;
+    listBefore.value = page.before;
+    listError.value = '';
   } catch {
-    // The shared request handler reports an unavailable record or failed load.
+    if (request === listRequest) listError.value = threads.value.length ? 'stale' : 'failed';
+  } finally {
+    if (request === listRequest) listLoading.value = false;
   }
 }
 
-function showOriginal(record) {
-  emailStore.contentData.email = record
-  emailStore.contentData.delType = 'physics'
-  emailStore.contentData.showStar = false
-  emailStore.contentData.showReply = false
-  emailStore.contentData.showUnread = false
-  router.push({name: 'content'})
-}
-
-
-function getEmailList(emailId, size) {
-  return emailStore.fetchList(full => allEmailList({emailId, size, full, ...params}))
-}
-
-async function latest() {
-
-  while (true) {
-
-    let autoRefresh = settingStore.settings.autoRefresh;
-
-    await sleep(autoRefresh > 1 ? autoRefresh * 1000 : 3000);
-
-    const latestId = sysEmailScroll.value?.latestEmail?.emailId
-
-    if (autoRefresh < 2) {
-      continue
+async function loadThread(reset) {
+  const request = ++messageRequest;
+  const before = reset ? null : messageBefore.value;
+  if (!threadId.value) return;
+  messageLoading.value = true;
+  try {
+    const page = await allMailConversationMessages(threadId.value, before);
+    if (request !== messageRequest) return;
+    const previousHeight = timeline.value?.scrollHeight || 0;
+    messages.value = [...page.items.reverse(), ...(before ? messages.value : [])];
+    messageBefore.value = page.before;
+    messageError.value = '';
+    await nextTick();
+    if (request === messageRequest && timeline.value) {
+      timeline.value.scrollTop = before
+        ? timeline.value.scrollTop + timeline.value.scrollHeight - previousHeight
+        : timeline.value.scrollHeight;
     }
-
-    if (!latestId && latestId !== 0) {
-      continue
-    }
-
-    if (route.name !== 'all-email' || !listMode.value) {
-      continue
-    }
-
-
-    if (params.type !== 'receive') {
-      continue
-    }
-
-    try {
-
-      const curTimeSort = params.timeSort
-      let list = await allEmailLatest(latestId)
-
-      if (list.length === 0) {
-        continue
-      }
-
-      if (params.type !== 'receive' || !listMode.value || !sysEmailScroll.value) {
-        continue
-      }
-
-      // 确保回来之后条件没变
-      if (params.timeSort !== curTimeSort) {
-        continue
-      }
-
-      emailStore.applyFullList(list)
-
-      for (let email of list) {
-
-        sysEmailScroll.value?.addItem(email)
-        await sleep(50)
-
-      }
-
-    } catch (e) {
-      if (e.code === 401 || e.code === 403) {
-        settingStore.settings.autoRefresh = 0;
-      }
-      console.error(e)
-    }
-
+  } catch {
+    if (request === messageRequest) messageError.value = messages.value.length ? 'stale' : 'failed';
+  } finally {
+    if (request === messageRequest) messageLoading.value = false;
   }
 }
 
+watch(search, () => {
+  threads.value = [];
+  listError.value = '';
+  listBefore.value = null;
+  loadList(true);
+}, { immediate: true });
+watch(threadId, () => {
+  messages.value = [];
+  messageError.value = '';
+  messageBefore.value = null;
+  messageLoading.value = false;
+  loadThread(true);
+}, { immediate: true });
 </script>
-<style>
 
-@media (max-width: 767px) {
-  .el-date-range-picker .el-picker-panel__body {
-    min-width: auto;
-
-  }
-
-  .my-date-picker::after {
-    content: "";
-    position: absolute; /* 脱离文档流，不会撑开 */
-    left: 0;
-    right: 0;
-    height: 20px;
-    background: transparent; /* 方便看效果 */
-  }
-
-  .el-date-range-picker__content {
-    width: 100%;
-  }
-
-  .el-date-range-picker {
-    width: 300px;
-  }
-
-  .el-tooltip .el-picker_popper {
-    padding-bottom: 200px;
-  }
-
-  .el-date-range-picker__content.is-left {
-    border-right: 0;
-  }
-}
-
-</style>
-<style scoped lang="scss">
-.email-list-box {
-  height: 100%;
-  width: 100%;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-}
-
-.all-mail-modes {
-  display: flex;
-  gap: 4px;
-  align-items: center;
-  padding: 5px 12px;
-  border-bottom: 1px solid var(--el-border-color-lighter);
-}
-
-.all-mail-modes a {
-  padding: 8px 12px;
-  border-radius: 8px;
-  color: var(--el-text-color-secondary);
-  text-decoration: none;
-}
-
-.all-mail-modes a[aria-current="page"] {
-  background: var(--el-color-primary-light-9);
-  color: var(--el-color-primary);
-  font-weight: 600;
-}
-
-.email-list-box :deep(.email-container) {
-  flex: 1;
-  min-height: 0;
-}
-
-.search {
-  padding-top: 5px;
-  padding-bottom: 5px;
-}
-
-.select {
-  position: absolute;
-  width: 40px;
-  opacity: 0;
-  pointer-events: none;
-}
-
-.search-type {
-  display: flex;
-  color: var(--el-text-color-regular);
-}
-
-:deep(.header-actions) {
-  padding-top: 8px;
-  padding-bottom: 8px;
-}
-
-.search-input {
-  width: 100%;
-  max-width: 280px;
-  height: 28px;
-
-  .setting-icon {
-    position: relative;
-    top: 3px;
-  }
-}
-
-.clear-email {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-}
-
-.clear-button {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-
-  .el-button {
-    width: 100%;
-  }
-}
-
-.status-select {
-  margin-bottom: 2px;
-  width: 102px;
-
-  :deep(.el-select__wrapper) {
-    min-height: 28px;
-  }
-}
-
-.input-with-select {
-  max-width: 200px;
-  border-radius: 0 4px 4px 0;
-}
-
-:deep(.input-with-select .el-input-group__append) {
-  background-color: var(--el-fill-color-blank);
-}
-
-:deep(.el-select__wrapper) {
-  padding: 2px 10px;
-  min-height: 28px;
-}
-
-:deep(.el-date-editor.el-input__wrapper) {
-  width: 303px;
-}
-
-.icon {
-  cursor: pointer;
-}
-
-.clear {
-  @media (max-width: 419px) {
-    position: absolute;
-    top: 41px;
-    left: 242px;
-  }
-}
-
-:deep(.reload) {
-  @media (max-width: 419px) {
-    position: absolute;
-    top: 42px;
-    left: 208px;
-  }
-}
-
-:deep(.delete) {
-  @media (max-width: 456px) {
-    position: absolute;
-    top: 43px;
-    left: 294px;
-  }
-
-  @media (max-width: 419px) {
-    position: absolute;
-    top: 43px;
-    left: 282px;
-  }
+<style scoped>
+.review-mail { display:grid; grid-template-columns:minmax(235px, 325px) minmax(0, 1fr); min-height:0; flex:1; background:var(--el-bg-color-page); }
+.review-list,.review-thread { min-width:0; min-height:0; display:flex; flex-direction:column; }
+.review-list { background:var(--el-bg-color); border-inline-end:1px solid var(--el-border-color-lighter); }
+.review-search,.review-heading { display:flex; align-items:center; gap:7px; padding:8px 12px; min-height:56px; background:var(--el-bg-color); border-bottom:1px solid var(--el-border-color-lighter); }
+.review-search input { flex:1; min-width:0; border:1px solid var(--el-border-color); border-radius:10px; padding:8px; background:var(--el-fill-color-lighter); color:var(--el-text-color-primary); font:inherit; }
+.review-search button,.review-back { display:grid; place-items:center; flex:none; width:36px; height:40px; border:0; border-radius:8px; background:none; color:var(--el-text-color-primary); }
+.review-search button:hover,.review-back:hover { background:var(--el-fill-color); }
+.review-list-scroll,.review-timeline { min-height:0; overflow:auto; flex:1; }
+.review-item { display:flex; gap:8px; align-items:center; padding:10px 8px; min-width:0; border-radius:10px; text-decoration:none; color:inherit; margin:3px 6px; }
+.review-item:hover,.review-item.selected { background:var(--el-color-primary-light-9); }
+.review-avatar { border-radius:50%; width:34px; height:34px; display:grid; place-items:center; flex:none; background:var(--el-color-primary-light-8); color:var(--el-color-primary); font-weight:650; }
+.review-item-copy,.review-heading-copy { display:grid; min-width:0; flex:1; gap:2px; }
+.review-item-copy > *, .review-heading-copy > * { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.review-item-copy > span,.review-item-copy small,.review-heading small,time { font-size:12px; color:var(--el-text-color-secondary); }
+.review-item time { align-self:flex-start; font-size:11px; }
+.review-timeline { display:flex; flex-direction:column; align-items:flex-start; gap:10px; padding:16px clamp(12px, 4vw, 64px); }
+.review-bubble { flex:none; width:fit-content; max-width:min(720px, 93%); border:1px solid var(--el-border-color-lighter); border-radius:14px; background:var(--el-bg-color); padding:10px 14px; overflow-wrap:anywhere; }
+.review-bubble.outgoing { align-self:flex-end; background:var(--el-color-primary-light-9); }
+.review-meta { display:flex; align-items:baseline; gap:4px 12px; flex-wrap:wrap; font-size:12px; }
+.review-meta strong { color:var(--el-color-primary); }
+.review-body,.review-subject { margin:6px 0; white-space:pre-wrap; }
+.review-subject { font-weight:600; }
+.review-more { background:none; color:var(--el-color-primary); border:0; font:inherit; padding:7px 0; }
+.review-more { display:block; margin:5px auto; }
+.review-empty { color:var(--el-text-color-secondary); padding:16px; text-align:center; margin:auto; }
+.review-back { display:none; }
+@media (max-width: 767px), (max-width: 1024px) and (max-height: 500px) and (pointer: coarse) {
+  .review-mail { display:flex; flex-direction:column; }
+  .review-list,.review-thread { flex:1; }
+  .review-thread,.has-thread .review-list { display:none; }
+  .has-thread .review-thread { display:flex; }
+  .review-back { display:grid; }
+  .review-search input { font-size:16px; }
 }
 </style>

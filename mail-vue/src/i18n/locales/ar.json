@@ -983,8 +983,6 @@
   "appShareSent": "أُرسل إلى {name}",
   "appFileGone": "الملف لم يعد متاحًا",
   "chatAllEmpty": "لا توجد دردشات بعد.",
-  "allMailConversationView": "المحادثات",
-  "allMailListView": "قائمة الرسائل",
   "allMailChooseConversation": "اختر محادثة لقراءة رسائلها.",
   "navStoreShort": "المتجر",
   "navFilesShort": "ملفاتي"

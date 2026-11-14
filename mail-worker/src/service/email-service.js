@@ -25,7 +25,7 @@ import { att } from '../entity/att';
 import telegramService from './telegram-service';
 import { digest, indexMail, threadReferences } from '../lib/mail-conversations';
 import { notifyMail } from '../chat/mail-notify';
-import {redactRemovedQuotes, requireMailAdmin} from './removed-mail-service';
+import {redactRemovedQuotes} from './removed-mail-service';
 
 const emailService = {
 
@@ -963,17 +963,6 @@ const emailService = {
 			))
 			.groupBy(email.userId);
 		return result;
-	},
-
-	async adminConversationOriginal(c, rawId) {
-		await requireMailAdmin(c);
-		const id = Number(rawId);
-		if (!Number.isSafeInteger(id) || id < 1) throw new BizError('invalidInput', 400);
-		const row = await orm(c).select(emailListColumns).from(email)
-			.where(and(eq(email.emailId, id), eq(email.isDel, isDel.NORMAL))).get();
-		if (!row) throw new BizError('Mail unavailable / 邮件不可用', 404);
-		await this.emailAddAtt(c, [row], false);
-		return row;
 	},
 
 	async allList(c, params) {
