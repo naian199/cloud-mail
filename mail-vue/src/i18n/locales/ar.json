@@ -826,7 +826,6 @@
   "mailRemoteImagesBlocked": "تم إخفاء الصور البعيدة لحماية خصوصيتك.",
   "mailRemoteImagesShow": "عرض الصور",
   "largeAttTitle": "مرفقات كبيرة (Turbobit)",
-  "largeAttHint": "تُخزَّن الملفات الكبيرة المختارة في الدردشات الداخلية على Turbobit عبر CostAction. تبقى المرفقات الحالية في تخزينها الحالي.",
   "largeAttTokenSet": "تم حفظ الرمز",
   "largeAttTokenMissing": "لا يوجد رمز",
   "largeAttTokenKeep": "اتركه فارغًا للإبقاء على الرمز المحفوظ",

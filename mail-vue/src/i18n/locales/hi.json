@@ -826,7 +826,6 @@
   "mailRemoteImagesBlocked": "आपकी गोपनीयता की सुरक्षा के लिए दूरस्थ चित्र छिपाए गए हैं।",
   "mailRemoteImagesShow": "चित्र दिखाएँ",
   "largeAttTitle": "बड़े अटैचमेंट (Turbobit)",
-  "largeAttHint": "आंतरिक चैट में चुनी गई बड़ी फ़ाइलें CostAction के ज़रिए Turbobit पर रखी जाती हैं। मौजूदा अटैचमेंट अपने मौजूदा स्टोरेज में रहते हैं।",
   "largeAttTokenSet": "टोकन सहेजा गया",
   "largeAttTokenMissing": "कोई टोकन नहीं",
   "largeAttTokenKeep": "सहेजा गया टोकन रखने के लिए खाली छोड़ें",

@@ -52,7 +52,7 @@ const largeAtt = {
 	// What the composer needs to decide whether to offer large uploads.
 	async config(c) {
 		const { setting, enabled, allowed } = await policy(c);
-		return { enabled: enabled && allowed, minSize: setting.costactionMinSize, maxSize: setting.costactionMaxSize, previewDays: PREVIEW_DAYS };
+		return { enabled: enabled && allowed, minSize: 1, maxSize: setting.costactionMaxSize, previewDays: PREVIEW_DAYS };
 	},
 
 	async begin(c, params) {
@@ -63,7 +63,8 @@ const largeAtt = {
 		const filename = typeof params.filename === 'string' ? params.filename.trim() : '';
 		if (!filename || filename.length > 200 || /[\r\n\\/]/.test(filename)) fail('Invalid file name / 文件名无效');
 		const size = Number(params.size);
-		if (!Number.isSafeInteger(size) || size < setting.costactionMinSize || size > setting.costactionMaxSize)
+		// Any size: in internal chats every file goes here. Only the maximum (the request limit) applies.
+		if (!Number.isSafeInteger(size) || size < 1 || size > setting.costactionMaxSize)
 			fail('File size outside the large attachment limits / 文件大小不符合大附件限制');
 		if (typeof params.clientId !== 'string' || !/^[a-zA-Z0-9_-]{16,80}$/.test(params.clientId))
 			fail('Invalid request ID / 无效请求标识');
@@ -231,7 +232,7 @@ const largeAtt = {
 	// yet sent or already on the message this same request committed (a retry after a lost reply).
 	async forSend(c, account, rawIds, requestKey) {
 		if (rawIds === undefined) return [];
-		if (!Array.isArray(rawIds) || rawIds.length > 5) fail('Too many large attachments / 最多 5 个大附件');
+		if (!Array.isArray(rawIds) || rawIds.length > 10) fail('Too many large attachments / 最多 10 个大附件');
 		const ids = [...new Set(rawIds.map(positiveId))];
 		if (!ids.length) return [];
 		const { results } = await c.env.db

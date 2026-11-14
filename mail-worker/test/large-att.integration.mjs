@@ -156,8 +156,9 @@ test('only allowed roles may upload; normal users may not test the connection', 
 	assert.notEqual((await call('/setting/costactionTest', peer, 'POST', {})).data.code, 200);
 });
 
-test('size limits are enforced', async () => {
-	for (const size of [MB - 1, 5 * MB + 1]) {
+test('any size up to the maximum is accepted; empty and oversized files are not', async () => {
+	assert.equal((await ok('/large-att/begin', admin, 'POST', { accountId: adminAccount, filename: 'tiny.txt', size: 12, clientId: clientId() })).status, 'uploading');
+	for (const size of [0, 5 * MB + 1]) {
 		const r = await call('/large-att/begin', admin, 'POST', { accountId: adminAccount, filename: 'a.bin', size, clientId: clientId() });
 		assert.equal(r.data.code, 400);
 	}

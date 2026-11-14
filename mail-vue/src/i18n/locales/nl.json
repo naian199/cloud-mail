@@ -826,7 +826,6 @@
   "mailRemoteImagesBlocked": "Externe afbeeldingen zijn verborgen om je privacy te beschermen.",
   "mailRemoteImagesShow": "Afbeeldingen tonen",
   "largeAttTitle": "Grote bijlagen (Turbobit)",
-  "largeAttHint": "Grote bestanden uit interne chats worden via CostAction op Turbobit opgeslagen. Bestaande bijlagen behouden hun huidige opslag.",
   "largeAttTokenSet": "Token opgeslagen",
   "largeAttTokenMissing": "Geen token",
   "largeAttTokenKeep": "Leeg laten om het opgeslagen token te behouden",

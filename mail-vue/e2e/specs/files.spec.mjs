@@ -1,10 +1,13 @@
 import { test, expect, open } from '../fixtures.mjs';
+import { putSetting } from '../fixtures.mjs';
 import path from 'node:path';
 import { writeFileSync, mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 
 // Large attachments and "My files", against the local CostAction mock (see server.mjs).
 // Official download pages are intercepted so nothing leaves the machine.
+test.beforeAll(() => putSetting({ costactionStatus: 0 }));
+
 const blockOfficial = (page) => page.context().route(/https:\/\/turbobit\.net\/.*/, (route) => route.fulfill({ status: 200, contentType: 'text/html', body: '<title>official page</title>' }));
 
 async function openFilesThread(page) {
@@ -47,14 +50,16 @@ test('My files: search, filters, preview marks it viewed, and removing an entry'
   await expect(page.locator('.file-row').filter({ hasText: 'holiday-photo.jpg' }).locator('.tag')).toContainText(['Uploaded by me', 'Viewed']);
 });
 
-test('a large file chosen in the composer uploads with progress and lands in My files', async ({ page }) => {
+test('any file chosen in an internal chat goes to CostAction, whatever its size, and lands in My files', async ({ page }) => {
   const dir = mkdtempSync(path.join(tmpdir(), 'cloud-mail-files-'));
   const big = path.join(dir, 'report-archive.zip');
-  writeFileSync(big, Buffer.alloc(1200 * 1024, 7));
+  writeFileSync(big, Buffer.alloc(20 * 1024, 7));
   await openFilesThread(page);
-  await page.locator('.composer .large-attach-label input[type=file]').setInputFiles(big);
+  await page.locator('.composer .attach-label input[type=file]').setInputFiles(big);
   const upload = page.locator('.large-upload').filter({ hasText: 'report-archive.zip' });
   await expect(upload).toContainText('Uploaded', { timeout: 30000 });
+  // It did not take the ordinary attachment path.
+  await expect(page.locator('.composer .chosen-file')).toHaveCount(0);
   // Discarding the draft keeps the uploaded file in the library.
   await upload.getByRole('button', { name: 'Cancel' }).click();
   await expect(upload).toHaveCount(0);

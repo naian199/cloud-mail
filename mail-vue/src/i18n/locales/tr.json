@@ -826,7 +826,6 @@
   "mailRemoteImagesBlocked": "Gizliliğinizi korumak için uzak görseller gizlendi.",
   "mailRemoteImagesShow": "Görselleri göster",
   "largeAttTitle": "Büyük ekler (Turbobit)",
-  "largeAttHint": "Dahili sohbetlerde seçilen büyük dosyalar CostAction üzerinden Turbobit'te saklanır. Mevcut ekler mevcut depolamasında kalır.",
   "largeAttTokenSet": "Belirteç kayıtlı",
   "largeAttTokenMissing": "Belirteç yok",
   "largeAttTokenKeep": "Kayıtlı belirteci korumak için boş bırakın",

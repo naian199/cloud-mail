@@ -826,7 +826,6 @@
   "mailRemoteImagesBlocked": "Les images distantes sont masquées pour protéger votre vie privée.",
   "mailRemoteImagesShow": "Afficher les images",
   "largeAttTitle": "Pièces jointes volumineuses (Turbobit)",
-  "largeAttHint": "Les gros fichiers choisis dans les discussions internes sont stockés sur Turbobit via CostAction. Les pièces jointes existantes gardent leur stockage.",
   "largeAttTokenSet": "Jeton enregistré",
   "largeAttTokenMissing": "Aucun jeton",
   "largeAttTokenKeep": "Laisser vide pour garder le jeton enregistré",

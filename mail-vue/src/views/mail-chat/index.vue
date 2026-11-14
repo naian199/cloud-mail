@@ -315,10 +315,8 @@
           @input="liveInput"
         />
         <div class="composer-footer">
-          <StickerPicker ref="stickerPicker" :compact="compactChat" :dock="stickerDock" :context="draftKey" :disabled="sending" @visibility="stickerVisibility" @emoji="insertEmoji" @attachment="addSticker" @upload="chooseFiles" />
-          <VoiceTools :context="draftKey" :disabled="sending || messageLoading" @text="text => insertEmoji(text, false)" @attachment="file=>chooseFiles({target:{files:[file]}})" />
-          <label v-if="largeAllowed" class="attach-label large-attach-label" :aria-label="t('largeAttChoose')" :title="t('largeAttChoose')" tabindex="0" @keydown.enter.prevent="$event.currentTarget.querySelector('input').click()" @keydown.space.prevent="$event.currentTarget.querySelector('input').click()">
-            <Icon class="attach-icon" icon="cloud-mail:file" width="22" aria-hidden="true" /><input type="file" multiple :disabled="sending" @change="large.choose" /></label>
+          <StickerPicker ref="stickerPicker" :compact="compactChat" :dock="stickerDock" :context="draftKey" :disabled="sending" @visibility="stickerVisibility" @emoji="insertEmoji" @attachment="addSticker" @upload="e => chooseFiles(ordinary(e))" />
+          <VoiceTools :context="draftKey" :disabled="sending || messageLoading" @text="text => insertEmoji(text, false)" @attachment="file=>chooseFiles({target:{files:[file]},ordinary:true})" />
           <label class="attach-label" :aria-label="t('mailChatAttach')" :title="t('mailChatAttach')" tabindex="0" @keydown.enter.prevent="$event.currentTarget.querySelector('input').click()" @keydown.space.prevent="$event.currentTarget.querySelector('input').click()">
             <Icon class="attach-icon" icon="cloud-mail:attach" width="22" aria-hidden="true" /><span>{{ t('mailChatAttach') }}</span><input type="file" multiple :disabled="sending" @change="chooseFiles" /></label
           ><span>{{ t('chatEnterHint') }}</span
@@ -624,6 +622,8 @@ watch([accountId,universalActive],()=>{closeMenu();endConversationDrag();cancelC
 const draftKey = computed(() => `${accountId.value}:${selected.value?.key || ''}`);
 // Large attachments (CostAction/Turbobit): only offered in internal chats when enabled for this user.
 const large = useLargeAttachments({ t, accountId: () => accountId.value, draftKey: () => draftKey.value });
+// Marks files that must stay on this site's storage (stickers).
+const ordinary = (event) => { if (event && typeof event === 'object') event.ordinary = true; return event; };
 const largeAllowed = computed(() => large.config.value.enabled && !!(live.value.internal || selected.value?.internal || messages.value.some(message => message.internal)));
 const drafts = reactive({}),
   expanded = reactive({});
@@ -635,11 +635,12 @@ const {
   canAccept: () => active.value && canSend.value && !sending.value,
   selecting: () => selecting.value,
   isStopped: () => stopped,
-  // Files at or above the large-attachment minimum go to CostAction storage when it is offered here.
-  // Only for the open conversation's draft: the new-message dialog keeps the ordinary path.
+  // In internal chats with CostAction enabled, every chosen, pasted or dropped file goes there,
+  // whatever its size; this site keeps only its thumbnail. Only for the open conversation's
+  // draft: the new-message dialog keeps the ordinary path. Empty files stay ordinary.
   takeLarge: (picked, current) => {
     if (!largeAllowed.value || current !== draftKey.value) return picked;
-    const big = picked.filter(f => f.size >= large.config.value.minSize);
+    const big = picked.filter(f => f.size > 0);
     if (big.length) large.choose({ target: { files: big } });
     return picked.filter(f => !big.includes(f));
   }

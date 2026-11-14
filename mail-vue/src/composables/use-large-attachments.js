@@ -7,8 +7,8 @@ import { largeAttBegin, largeAttConfig, largeAttFailed, largeAttRemove, uploadTo
 
 // Large attachments chosen in the chat composer, per draft. Each file gets its own request ID,
 // so a retry reuses the same server record instead of creating another.
-// The server accepts at most this many large attachments per message.
-const MAX_PER_MESSAGE = 5;
+// The server accepts at most this many CostAction files per message.
+const MAX_PER_MESSAGE = 10;
 
 export function useLargeAttachments({ t, accountId, draftKey }) {
   const config = ref({ enabled: false, minSize: 0, maxSize: 0 });
@@ -61,14 +61,14 @@ export function useLargeAttachments({ t, accountId, draftKey }) {
   function choose(event) {
     const chosen = [...(event.target?.files || [])];
     if (event.target) event.target.value = '';
-    const { minSize, maxSize } = config.value;
+    const { maxSize } = config.value;
     for (const file of chosen) {
       if (list().length >= MAX_PER_MESSAGE) {
         ElMessage.error(t('largeAttCountLimit', { count: MAX_PER_MESSAGE }));
         break;
       }
-      if (file.size < minSize || file.size > maxSize) {
-        ElMessage.error(t('largeAttSizeLimit', { min: Math.round(minSize / 1048576), max: Math.round(maxSize / 1048576) }));
+      if (file.size < 1 || file.size > maxSize) {
+        ElMessage.error(t('largeAttMaxLimit', { max: Math.round(maxSize / 1048576) }));
         continue;
       }
       const item = reactive({ clientId: randomUUID().replaceAll('-', ''), file, name: file.name, size: file.size, progress: 0, status: 'uploading', attId: null, fileId: null, previewStored: false, controller: null });
