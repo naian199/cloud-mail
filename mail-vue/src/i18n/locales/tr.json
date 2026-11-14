@@ -981,5 +981,6 @@
   "appShareOpenChat": "Sohbeti aç",
   "appShareSend": "Gönder",
   "appShareSent": "{name} kişisine gönderildi",
-  "appFileGone": "dosya artık kullanılamıyor"
+  "appFileGone": "dosya artık kullanılamıyor",
+  "chatAllEmpty": "Henüz sohbet yok."
 }

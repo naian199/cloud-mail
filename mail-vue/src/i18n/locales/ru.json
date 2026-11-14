@@ -981,5 +981,6 @@
   "appShareOpenChat": "Открыть чат",
   "appShareSend": "Отправить",
   "appShareSent": "Отправлено: {name}",
-  "appFileGone": "файл больше недоступен"
+  "appFileGone": "файл больше недоступен",
+  "chatAllEmpty": "Пока нет чатов."
 }

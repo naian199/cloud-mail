@@ -981,5 +981,6 @@
   "appShareOpenChat": "Buka sembang",
   "appShareSend": "Hantar",
   "appShareSent": "Dihantar kepada {name}",
-  "appFileGone": "fail tidak lagi tersedia"
+  "appFileGone": "fail tidak lagi tersedia",
+  "chatAllEmpty": "Belum ada sembang."
 }

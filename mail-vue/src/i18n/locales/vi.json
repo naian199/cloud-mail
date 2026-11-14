@@ -981,5 +981,6 @@
   "appShareOpenChat": "Mở trò chuyện",
   "appShareSend": "Gửi",
   "appShareSent": "Đã gửi tới {name}",
-  "appFileGone": "tệp không còn khả dụng"
+  "appFileGone": "tệp không còn khả dụng",
+  "chatAllEmpty": "Chưa có cuộc trò chuyện nào."
 }

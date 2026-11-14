@@ -7,7 +7,7 @@ import { useAccountStore } from '@/store/account';
 // bar always agree on what is active. Mail is a fixed secondary entry on desktop and sits under
 // "Me" on phones, where it keeps its own unread count.
 export const SECTIONS = {
-  chat: ['mail-chat', 'rooms'],
+  chat: ['chat-all', 'mail-chat', 'rooms'],
   store: ['apps', 'app-detail', 'app-publish', 'app-review'],
   files: ['files'],
   mail: ['external-mail', 'email', 'content', 'send', 'draft', 'star'],

@@ -46,6 +46,7 @@ const en = {
     listLoadFailed: "Could not load this list. Check your connection.",
     listNotUpdated: "Not updated. Showing the last loaded list.",
     listRetry: "Retry",
+    chatAllEmpty: "No chats yet.",
     appShareToChat: "Share to chat",
     appCopyLink: "Copy link",
     appShareNoTargets: "No chats you can post in.",

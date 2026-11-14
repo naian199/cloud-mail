@@ -25,7 +25,7 @@ const route = useRoute()
 const { width: viewportWidth } = useBreakpoint()
 const isMobile = computed(() => viewportWidth.value <= BREAKPOINTS.phone)
 // Lists, tables and settings stop stretching on ultra-wide screens; chats keep the full width.
-const cappedContent = computed(() => !['mail-chat', 'external-mail', 'rooms'].includes(route.name))
+const cappedContent = computed(() => !['chat-all', 'mail-chat', 'external-mail', 'rooms'].includes(route.name))
 
 let elNotification = null
 let noticeStyle = null

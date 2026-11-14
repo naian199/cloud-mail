@@ -30,7 +30,7 @@ test.describe('redesigned site', () => {
     await expect(nav).toBeVisible();
     await expect(nav.locator('[data-nav="store"]')).toHaveClass(/active/);
     await nav.locator('[data-nav="chat"]').click();
-    await expect(page).toHaveURL(/\/mail-chat/);
+    await expect(page).toHaveURL(/\/chat$/);
     if (isPhone(testInfo)) {
       // Mail sits under "Me" on phones, with its own entry at the top.
       await nav.locator('[data-nav="me"]').click();
@@ -269,5 +269,31 @@ test.describe('redesigned site', () => {
     await expect(page.locator('.mail-unavailable')).toBeVisible();
     await expect(page.locator('.email-title')).toHaveCount(0);
     await context.close();
+  });
+
+  test('All lists direct chats and rooms together and opens each in its own view', async ({ page, api }, testInfo) => {
+    const admin = as(await token('owner@example.com'));
+    const room = (await admin('POST', '/chat/rooms', { name: `All ${testInfo.project.name}${Date.now()}`, kind: 'group' })).data;
+    await admin('POST', `/chat/rooms/${room.id}/messages`, { body: 'newest message', clientId: `all-${testInfo.project.name}-${Date.now()}` });
+    const chats = (await api.get('/mail-chat/conversations?accountId=1&category=internal')).conversations.filter((c) => c.category !== 'external');
+    await open(page, '/chat');
+    await expect(page.locator('.conversation-categories .category-active')).toBeVisible();
+    const entries = page.locator('.all-entry');
+    // The room just got a message, so it is the newest entry; direct chats follow.
+    await expect(entries.first()).toHaveAttribute('data-all', room.id);
+    await expect(page.locator(`.all-entry[data-all="${chats[0].key}"]`)).toBeVisible();
+    await entries.first().click();
+    await expect(page).toHaveURL(new RegExp(`/rooms\\?kind=group&room=${room.id}`));
+    await page.goBack();
+    await expect(page).toHaveURL(/\/chat$/);
+    await page.locator(`.all-entry[data-all="${chats[0].key}"]`).click();
+    await expect(page).toHaveURL(new RegExp(`conversation=${chats[0].key}`));
+  });
+
+  test('All shows retry, not an empty list, when a source fails', async ({ page }) => {
+    await page.route(/\/api\/chat\/rooms(\?|$)/, (route) => (route.request().method() === 'GET' ? route.abort() : route.continue()));
+    await open(page, '/chat');
+    await expect(page.locator('.all-entries .list-state-failed')).toBeVisible();
+    await expect(page.locator('.all-entries .el-empty')).toHaveCount(0);
   });
 });

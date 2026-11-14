@@ -65,7 +65,8 @@ export function useLargeAttachments({ t, accountId, draftKey }) {
 
   async function storePreview(item) {
     if (!item.fileId || item.previewStored) return;
-    const blob = await makePreview(item.file);
+    // Started when the file was chosen, alongside the upload, so it is usually ready by now.
+    const blob = await (item.preview ||= makePreview(item.file));
     if (!blob) return;
     for (let attempt = 0; attempt < 2; attempt++) {
       try {
@@ -91,6 +92,7 @@ export function useLargeAttachments({ t, accountId, draftKey }) {
       }
       const item = reactive({ clientId: randomUUID().replaceAll('-', ''), file, name: file.name, size: file.size, progress: 0, status: 'uploading', attId: null, fileId: null, previewStored: false, controller: null, direct: false, startedAt: 0, verifiedSize: 0 });
       list().push(item);
+      item.preview = makePreview(file);
       upload(item);
     }
   }

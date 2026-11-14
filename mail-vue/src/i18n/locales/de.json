@@ -981,5 +981,6 @@
   "appShareOpenChat": "Chat öffnen",
   "appShareSend": "Senden",
   "appShareSent": "An {name} gesendet",
-  "appFileGone": "Datei nicht mehr verfügbar"
+  "appFileGone": "Datei nicht mehr verfügbar",
+  "chatAllEmpty": "Noch keine Chats."
 }

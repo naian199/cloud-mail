@@ -32,7 +32,7 @@ useMessageAlerts();
 
 const uiStore = useUiStore();
 const route = useRoute();
-const chatRoute = computed(() => ['mail-chat', 'external-mail', 'rooms'].includes(route.name));
+const chatRoute = computed(() => ['chat-all', 'mail-chat', 'external-mail', 'rooms'].includes(route.name));
 const mailSection = computed(() => sectionOf(route.name) === 'mail');
 // Pages that draw their own title bar.
 const ownHeader = computed(() => ['apps', 'app-detail', 'app-publish', 'app-review', 'me'].includes(route.name));
