@@ -1,5 +1,5 @@
-// Small previews made in the browser from a file the user is uploading: an image thumbnail or
-// a video cover. Returns a Blob (WebP, or JPEG where WebP encoding is unavailable) under the
+// Small previews made in the browser from a file the user is uploading: an image thumbnail,
+// a video cover, or the first pages of a PDF. Returns a Blob (WebP, or JPEG where WebP encoding is unavailable) under the
 // server's 512 KB limit, or null when the file has no preview or one cannot be made.
 const EDGE = 480;
 const LIMIT = 500 * 1024;
@@ -51,10 +51,55 @@ function videoPreview(file) {
   });
 }
 
+// The first pages of a PDF, stacked into one image 480 px wide. pdf.js loads only when needed.
+const PDF_PAGES = 3;
+async function pdfPreview(file) {
+  if (file.size > 60 * 1024 * 1024) return null;
+  const [pdfjs, worker] = await Promise.all([
+    import('pdfjs-dist/build/pdf.min.mjs'),
+    import('pdfjs-dist/build/pdf.worker.min.mjs?url')
+  ]);
+  pdfjs.GlobalWorkerOptions.workerSrc = worker.default;
+  const doc = await pdfjs.getDocument({ data: new Uint8Array(await file.arrayBuffer()), isEvalSupported: false, disableFontFace: false }).promise;
+  try {
+    const pages = [];
+    for (let n = 1; n <= Math.min(PDF_PAGES, doc.numPages); n++) {
+      const page = await doc.getPage(n);
+      const base = page.getViewport({ scale: 1 });
+      const viewport = page.getViewport({ scale: EDGE / base.width });
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.round(viewport.width); canvas.height = Math.round(viewport.height);
+      const context = canvas.getContext('2d');
+      context.fillStyle = '#fff'; context.fillRect(0, 0, canvas.width, canvas.height);
+      await page.render({ canvasContext: context, viewport }).promise;
+      pages.push(canvas);
+      page.cleanup();
+    }
+    if (!pages.length) return null;
+    const gap = 8;
+    const sheet = document.createElement('canvas');
+    sheet.width = EDGE;
+    sheet.height = pages.reduce((h, c) => h + c.height, 0) + gap * (pages.length - 1);
+    const ctx = sheet.getContext('2d');
+    ctx.fillStyle = '#d0d0d0'; ctx.fillRect(0, 0, sheet.width, sheet.height);
+    let y = 0;
+    for (const canvas of pages) { ctx.drawImage(canvas, 0, y); y += canvas.height + gap; }
+    return await encode(sheet);
+  } finally {
+    doc.destroy();
+  }
+}
+
+const isPdf = (file) => file.type === 'application/pdf' || /\.pdf$/i.test(file.name);
+
 export async function makePreview(file) {
   try {
     if (file.type.startsWith('image/')) return await imagePreview(file);
     if (file.type.startsWith('video/')) return await videoPreview(file);
-  } catch {}
+    if (isPdf(file)) return await pdfPreview(file);
+  } catch (error) {
+    // A preview is optional; the original is stored either way.
+    console.warn('Preview could not be made:', error?.message || error);
+  }
   return null;
 }
