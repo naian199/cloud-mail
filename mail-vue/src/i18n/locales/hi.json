@@ -829,7 +829,6 @@
   "largeAttHint": "आंतरिक चैट में चुनी गई बड़ी फ़ाइलें CostAction के ज़रिए Turbobit पर रखी जाती हैं। मौजूदा अटैचमेंट अपने मौजूदा स्टोरेज में रहते हैं।",
   "largeAttTokenSet": "टोकन सहेजा गया",
   "largeAttTokenMissing": "कोई टोकन नहीं",
-  "largeAttNote": "फ़ाइलें Turbobit पर रहती हैं और Turbobit के पेज से डाउनलोड होती हैं। अवधि और गति आपके Turbobit खाते पर निर्भर है; ऐप में पूर्वावलोकन नहीं है।",
   "largeAttTokenKeep": "सहेजा गया टोकन रखने के लिए खाली छोड़ें",
   "largeAttTokenPlaceholder": "CostAction API टोकन",
   "largeAttToken": "API टोकन",

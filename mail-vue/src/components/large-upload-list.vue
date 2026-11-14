@@ -21,8 +21,10 @@ import { formatBytes } from '@/utils/file-utils';
 defineProps({ items: { type: Array, required: true } });
 const emit = defineEmits(['retry', 'remove']);
 const { t } = useI18n();
+// Progress is the bytes sent to this site's Worker, which relays them as they arrive; at 100%
+// the storage service is still confirming the file.
 const statusText = (item) => item.status === 'uploading'
-  ? `${t('largeAttUploading')} ${Math.round(item.progress * 100)}%`
+  ? (item.progress >= 1 ? t('largeAttConfirming') : `${t('largeAttUploading')} ${Math.round(item.progress * 100)}%`)
   : t(item.status === 'ready' ? 'largeAttReady' : 'largeAttFailed');
 </script>
 

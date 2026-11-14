@@ -829,7 +829,6 @@
   "largeAttHint": "Fail besar yang dipilih dalam sembang dalaman disimpan di Turbobit melalui CostAction. Lampiran sedia ada kekal dalam storan semasa.",
   "largeAttTokenSet": "Token disimpan",
   "largeAttTokenMissing": "Tiada token",
-  "largeAttNote": "Fail disimpan di Turbobit dan dimuat turun dari halaman Turbobit. Tempoh simpanan dan kelajuan bergantung pada akaun Turbobit anda; tiada pratonton dalam aplikasi.",
   "largeAttTokenKeep": "Biarkan kosong untuk mengekalkan token yang disimpan",
   "largeAttTokenPlaceholder": "Token API CostAction",
   "largeAttToken": "Token API",

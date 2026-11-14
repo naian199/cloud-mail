@@ -829,7 +829,6 @@
   "largeAttHint": "站內聊天中選擇的大型檔案透過 CostAction 存到 Turbobit，現有附件維持原有儲存。",
   "largeAttTokenSet": "Token 已設定",
   "largeAttTokenMissing": "未設定 Token",
-  "largeAttNote": "檔案保存在 Turbobit，需在 Turbobit 自己的頁面下載。保留期限與下載速度取決於你的 Turbobit 帳號，應用內不提供預覽。",
   "largeAttTokenKeep": "留空則保留已儲存的 Token",
   "largeAttTokenPlaceholder": "CostAction API Token",
   "largeAttToken": "API Token",

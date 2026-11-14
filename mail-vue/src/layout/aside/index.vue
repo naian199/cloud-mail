@@ -36,6 +36,10 @@
           <Icon icon="cloud-mail:star" width="20" height="20" />
           <span class="menu-name">{{$t('starred')}}</span>
         </el-menu-item>
+        <el-menu-item index="files" :class="route.meta.name === 'files' ? 'choose-item' : ''">
+          <Icon icon="cloud-mail:folder" width="20" height="20" />
+          <span class="menu-name">{{$t('cloudFileTitle')}}</span>
+        </el-menu-item>
         </el-menu-item-group>
       </el-menu>
       <el-menu v-if="canManage" ref="menu" class="footer-menu" @select="navigate" :default-active="route.meta.name" :default-openeds="isManagementPage ? ['management'] : []">

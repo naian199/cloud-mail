@@ -829,7 +829,6 @@
   "largeAttHint": "Les gros fichiers choisis dans les discussions internes sont stockés sur Turbobit via CostAction. Les pièces jointes existantes gardent leur stockage.",
   "largeAttTokenSet": "Jeton enregistré",
   "largeAttTokenMissing": "Aucun jeton",
-  "largeAttNote": "Les fichiers restent sur Turbobit et se téléchargent depuis la page Turbobit. La durée de conservation et la vitesse dépendent de votre compte Turbobit ; pas d'aperçu dans l'application.",
   "largeAttTokenKeep": "Laisser vide pour garder le jeton enregistré",
   "largeAttTokenPlaceholder": "Jeton API CostAction",
   "largeAttToken": "Jeton API",

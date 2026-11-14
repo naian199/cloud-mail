@@ -829,7 +829,6 @@
   "largeAttHint": "Dahili sohbetlerde seçilen büyük dosyalar CostAction üzerinden Turbobit'te saklanır. Mevcut ekler mevcut depolamasında kalır.",
   "largeAttTokenSet": "Belirteç kayıtlı",
   "largeAttTokenMissing": "Belirteç yok",
-  "largeAttNote": "Dosyalar Turbobit'te tutulur ve Turbobit'in sayfasından indirilir. Saklama süresi ve hız Turbobit hesabınıza bağlıdır; uygulama içi önizleme yoktur.",
   "largeAttTokenKeep": "Kayıtlı belirteci korumak için boş bırakın",
   "largeAttTokenPlaceholder": "CostAction API belirteci",
   "largeAttToken": "API belirteci",

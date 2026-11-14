@@ -1,6 +1,8 @@
 import { reactive, ref } from 'vue';
 import { ElMessage } from 'element-plus';
 import { randomUUID } from '@/utils/uuid';
+import { makePreview } from '@/utils/file-preview';
+import { cloudFilePutPreview } from '@/request/cloud-file';
 import { largeAttBegin, largeAttConfig, largeAttFailed, largeAttRemove, uploadToStorage } from '@/request/large-att';
 
 // Large attachments chosen in the chat composer, per draft. Each file gets its own request ID,
@@ -23,8 +25,9 @@ export function useLargeAttachments({ t, accountId, draftKey }) {
     item.progress = 0;
     item.controller = new AbortController();
     try {
-      const begun = await largeAttBegin({ accountId: accountId(), filename: item.name, size: item.size, clientId: item.clientId });
+      const begun = await largeAttBegin({ accountId: accountId(), filename: item.name, size: item.size, mimeType: item.file.type || '', clientId: item.clientId });
       item.attId = begun.attId;
+      item.fileId = begun.fileId;
       // Removed while the upload URL was being requested: do not transfer the file.
       if (item.status === 'removed') { largeAttFailed(begun.attId).catch(() => {}); return; }
       if (begun.status !== 'ready') {
@@ -32,11 +35,26 @@ export function useLargeAttachments({ t, accountId, draftKey }) {
       }
       item.status = 'ready';
       item.progress = 1;
+      // The original is stored; a preview is extra. Its failure never re-uploads the original.
+      storePreview(item);
     } catch (error) {
       if (item.status === 'removed') return;
       item.status = 'failed';
       if (item.attId) largeAttFailed(item.attId).catch(() => {});
       if (error?.message?.startsWith('upload-')) ElMessage.error(t('largeAttUploadFailed'));
+    }
+  }
+
+  async function storePreview(item) {
+    if (!item.fileId || item.previewStored) return;
+    const blob = await makePreview(item.file);
+    if (!blob) return;
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        await cloudFilePutPreview(item.fileId, blob);
+        item.previewStored = true;
+        return;
+      } catch {}
     }
   }
 
@@ -53,7 +71,7 @@ export function useLargeAttachments({ t, accountId, draftKey }) {
         ElMessage.error(t('largeAttSizeLimit', { min: Math.round(minSize / 1048576), max: Math.round(maxSize / 1048576) }));
         continue;
       }
-      const item = reactive({ clientId: randomUUID().replaceAll('-', ''), file, name: file.name, size: file.size, progress: 0, status: 'uploading', attId: null, controller: null });
+      const item = reactive({ clientId: randomUUID().replaceAll('-', ''), file, name: file.name, size: file.size, progress: 0, status: 'uploading', attId: null, fileId: null, previewStored: false, controller: null });
       list().push(item);
       upload(item);
     }

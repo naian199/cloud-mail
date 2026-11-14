@@ -829,7 +829,6 @@
   "largeAttHint": "Arquivos grandes escolhidos em chats internos são armazenados no Turbobit via CostAction. Os anexos existentes mantêm o armazenamento atual.",
   "largeAttTokenSet": "Token salvo",
   "largeAttTokenMissing": "Sem token",
-  "largeAttNote": "Os arquivos ficam no Turbobit e são baixados pela página do Turbobit. Retenção e velocidade dependem da sua conta Turbobit; não há prévia no app.",
   "largeAttTokenKeep": "Deixe vazio para manter o token salvo",
   "largeAttTokenPlaceholder": "Token da API CostAction",
   "largeAttToken": "Token da API",

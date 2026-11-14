@@ -31,7 +31,7 @@ test('message menu opens by right click or long press', async ({ page }, testInf
 test('attachments: choose, remove, paste, drop and the file limit', async ({ page }) => {
   await openThread(page);
   const chosen = page.locator('.composer .chosen-file');
-  await page.locator('.composer input[type=file]').setInputFiles([file('a.txt'), file('b.txt')]);
+  await page.locator('.composer .attach-label:not(.large-attach-label) input[type=file]').setInputFiles([file('a.txt'), file('b.txt')]);
   await expect(chosen).toHaveCount(2);
   await chosen.first().locator('button').evaluate(b => b.click());
   await expect(chosen).toHaveCount(1);
@@ -48,7 +48,7 @@ test('attachments: choose, remove, paste, drop and the file limit', async ({ pag
   await page.evaluate(() => document.querySelector('.mail-chat').dispatchEvent(new DragEvent('drop', { dataTransfer: window.__dt, bubbles: true, cancelable: true })));
   await expect(page.locator('.file-drop-overlay')).toBeHidden();
   await expect(chosen).toHaveCount(3);
-  await page.locator('.composer input[type=file]').setInputFiles(Array.from({ length: 9 }, (_, i) => file(`n${i}.txt`)));
+  await page.locator('.composer .attach-label:not(.large-attach-label) input[type=file]').setInputFiles(Array.from({ length: 9 }, (_, i) => file(`n${i}.txt`)));
   await expect(page.locator('.el-message').last()).toContainText('Up to 10 files');
   await expect(chosen).toHaveCount(3);
 });
@@ -58,7 +58,7 @@ test('sending posts the draft and files; a failed send keeps them', async ({ pag
   let payload = null;
   // Never deliver from tests: answer the request with an error instead.
   await page.route(/\/mail-chat\/(send|instant)/, async r => { payload = r.request().postDataJSON(); await r.fulfill({ contentType: 'application/json', body: JSON.stringify({ code: 500, message: 'blocked in test' }) }); });
-  await page.locator('.composer input[type=file]').setInputFiles([file('report.txt')]);
+  await page.locator('.composer .attach-label:not(.large-attach-label) input[type=file]').setInputFiles([file('report.txt')]);
   await expect(page.locator('.composer .chosen-file')).toHaveCount(1);
   await page.locator('.composer textarea').fill('E2E message');
   await page.locator('.composer button[type=submit]').click();

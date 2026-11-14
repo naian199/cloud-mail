@@ -14,8 +14,11 @@
 // errors, return values or logs.
 
 export const API_BASE = 'https://api.costaction.com';
-export const APPTYPE = 'fd1'; // turbobit.net
-const UPLOAD_HOST = /^([a-z0-9-]+\.)*turbobit\.net$/i;
+export const APPTYPE = 'fd1'; // turbobit.net (default)
+// Affiliate programs the API documents for upload_url: fd1 = turbobit.net, fd2 = hitfile.net.
+// The API needs an explicit apptype; there is no documented automatic choice.
+export const APPTYPES = ['fd1', 'fd2'];
+const UPLOAD_HOST = /^([a-z0-9-]+\.)*(turbobit|hitfile)\.net$/i;
 
 export class CostActionError extends Error {
 	constructor(message, { status = 0, retryable = false } = {}) {
@@ -51,8 +54,10 @@ export function createCostAction({
 	timeoutMs = 15000,
 	maxRetries = 3,
 	// Tests only: an exact extra origin allowed for upload URLs (e.g. a local mock).
-	extraUploadOrigin = ''
+	extraUploadOrigin = '',
+	apptype = APPTYPE
 }) {
+	if (!APPTYPES.includes(apptype)) apptype = APPTYPE;
 	if (!token) throw new CostActionError('Large attachment storage is not configured', { status: 503 });
 
 	async function request(method, path, { body, query } = {}) {
@@ -106,10 +111,10 @@ export function createCostAction({
 	return {
 		// A one-time upload URL; a new one is required for every file.
 		async requestUploadUrl(folderId = 0) {
-			const data = await request('POST', '/v1/file/upload_url', { body: { apptype: APPTYPE, folder_id: folderId } });
+			const data = await request('POST', '/v1/file/upload_url', { body: { apptype, folder_id: Number(folderId) || 0 } });
 			let url;
 			try { url = new URL(data.url); } catch { url = null; }
-			// The browser posts the file here, so only accept Turbobit upload hosts over HTTPS.
+			// The Worker posts the file here, so only accept the programs' upload hosts over HTTPS.
 			const trusted = url && ((url.protocol === 'https:' && UPLOAD_HOST.test(url.hostname)) || (extraUploadOrigin && url.origin === extraUploadOrigin));
 			if (!trusted) {
 				throw new CostActionError('Unexpected upload address from the storage service');
@@ -147,6 +152,31 @@ export function createCostAction({
 				if (error instanceof CostActionError && error.status === 403) return;
 				throw error;
 			}
+		},
+
+		// Creates a folder; parentId null means the account's root ("Inbox"). Resolves with its ID,
+		// or null when a folder with that name already exists there (the API answers 422).
+		async createFolder(name, parentId = null) {
+			try {
+				const data = await request('POST', '/v1/folder/create', { body: { name, can_be_copied: false, apptype, parent_folder_id: parentId } });
+				return data.folder?.id ? Number(data.folder.id) : null;
+			} catch (error) {
+				if (error instanceof CostActionError && error.status === 422) return null;
+				throw error;
+			}
+		},
+
+		// The ID of the folder with exactly this name directly under parentId (null = root) in this
+		// program, or null. Folder IDs are integers.
+		async findFolder(name, parentId = null) {
+			for (let page = 1; page <= 5; page++) {
+				const data = await request('POST', '/v1/folders/search', { body: { apptype, name }, query: { page, per_page: 100 } });
+				const rows = Array.isArray(data.data) ? data.data : [];
+				const hit = rows.find((row) => row.name === name && (row.parent_folder_id ?? null) === (parentId ?? null));
+				if (hit) return Number(hit.id);
+				if (!data.last_page || page >= data.last_page) break;
+			}
+			return null;
 		},
 
 		// A valid token turns a lookup of a file that cannot exist into 404; a bad one into 401.

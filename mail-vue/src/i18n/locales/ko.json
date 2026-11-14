@@ -829,7 +829,6 @@
   "largeAttHint": "내부 채팅에서 선택한 대용량 파일은 CostAction을 통해 Turbobit에 저장됩니다. 기존 첨부파일은 현재 저장소를 유지합니다.",
   "largeAttTokenSet": "토큰 저장됨",
   "largeAttTokenMissing": "토큰 없음",
-  "largeAttNote": "파일은 Turbobit에 보관되며 Turbobit 페이지에서 다운로드합니다. 보관 기간과 속도는 Turbobit 계정에 따르며 앱 내 미리보기는 없습니다.",
   "largeAttTokenKeep": "비워 두면 저장된 토큰을 유지합니다",
   "largeAttTokenPlaceholder": "CostAction API 토큰",
   "largeAttToken": "API 토큰",

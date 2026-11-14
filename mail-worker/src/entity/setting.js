@@ -73,6 +73,7 @@ export const setting = sqliteTable('setting', {
 	costactionToken: text('costaction_token').default('').notNull(),
 	costactionMinSize: integer('costaction_min_size').default(10485760).notNull(),
 	costactionMaxSize: integer('costaction_max_size').default(104857600).notNull(),
-	costactionRoles: text('costaction_roles').default('').notNull()
+	costactionRoles: text('costaction_roles').default('').notNull(),
+	costactionApptype: text('costaction_apptype').default('fd1').notNull()
 });
 export default setting

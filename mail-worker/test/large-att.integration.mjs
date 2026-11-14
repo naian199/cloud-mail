@@ -17,12 +17,13 @@ const worker = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const MOCK = 8790, PORT = 8791;
 const BASE = `http://127.0.0.1:${PORT}`, API = `${BASE}/api`, MOCK_ORIGIN = `http://127.0.0.1:${MOCK}`;
 const TOKEN = 'ca-test-token-7f3e9b1c5d';
-const ADMIN = 'owner@example.com', PEER = 'palmer@example.com', PASSWORD = 'Passw0rd!123';
+const ADMIN = 'owner@example.com', PEER = 'palmer@example.com', THIRD = 'third@example.com', PASSWORD = 'Passw0rd!123';
 
 // ---- mock CostAction -------------------------------------------------------------
 const files = new Map();
-const seen = { auth: [], uploadAuth: [], uploadUrlCalls: 0 };
-let rateLimitNext = 0, nextId = 1;
+const seen = { auth: [], uploadAuth: [], uploadUrlCalls: 0, uploadFolders: {}, folderCreates: 0 };
+const folders = []; // { id, name, parent, apptype }
+let rateLimitNext = 0, nextId = 1, mockDown = false;
 const mock = createServer(async (req, res) => {
 	const chunks = [];
 	for await (const chunk of req) chunks.push(chunk);
@@ -35,15 +36,31 @@ const mock = createServer(async (req, res) => {
 		const file = form.get('file');
 		if (!file) return send(400, { status: 'error', message: 'Wrong upload url' });
 		const id = `mockfile${nextId++}`;
-		files.set(id, { id, name: file.name, size: file.size, deleted: false });
+		files.set(id, { id, name: file.name, size: file.size, deleted: false, folder: seen.uploadFolders[url.pathname.split('/')[2]] });
 		return send(200, { id, message: 'Everything is ok', delete_id: 'DEL' + id, status: 'success' });
 	}
+	if (mockDown) return send(503, { status: 'error', message: 'Service unavailable' });
 	seen.auth.push(req.headers.authorization || '');
 	if (req.headers.authorization !== `Bearer ${TOKEN}`) return send(401, { message: 'This action is unauthorized.', status: 'error' });
 	if (req.method === 'POST' && url.pathname === '/v1/file/upload_url') {
 		seen.uploadUrlCalls++;
 		if (rateLimitNext > 0) { rateLimitNext--; return send(429, { message: 'Too many attempts', status: 'error', 'retry-after': 1 }, { 'retry-after': '1' }); }
+		const req = JSON.parse(body.toString() || '{}');
+		seen.uploadFolders[seen.uploadUrlCalls] = req.folder_id;
 		return send(200, { url: `${MOCK_ORIGIN}/upload/${seen.uploadUrlCalls}`, expire: '2099-01-01 00:00:00', status: 'success' });
+	}
+	if (req.method === 'POST' && url.pathname === '/v1/folder/create') {
+		const { name, parent_folder_id: parent = null, apptype } = JSON.parse(body.toString());
+		seen.folderCreates++;
+		if (folders.some((f) => f.name === name && f.parent === parent && f.apptype === apptype)) return send(422, { status: 'error', message: 'Folder with the same name already exists' });
+		const folder = { id: 1000 + folders.length, name, parent, apptype };
+		folders.push(folder);
+		return send(201, { folder: { id: folder.id, name, parent_folder_id: parent }, status: 'success' });
+	}
+	if (req.method === 'POST' && url.pathname === '/v1/folders/search') {
+		const { name, apptype } = JSON.parse(body.toString());
+		const data = folders.filter((f) => f.apptype === apptype && f.name.includes(name)).map((f) => ({ id: f.id, name: f.name, parent_folder_id: f.parent }));
+		return send(200, { current_page: 1, last_page: 1, data, status: 'success' });
 	}
 	const match = url.pathname.match(/^\/v1\/file\/([^/]+)(\/share)?$/);
 	const file = match && files.get(match[1]);
@@ -75,6 +92,15 @@ const relay = async (token, attId, name, size) => {
 	return (await fetch(`${API}/large-att/${attId}/upload`, { method: 'POST', headers: { Authorization: token }, body: form })).json();
 };
 let admin, peer, adminAccount, peerAccount;
+const folderPathOf = (id) => { const names = []; for (let f = folders.find((x) => x.id === id); f; f = folders.find((x) => x.id === f.parent)) names.unshift(f.name); return names.join('/'); };
+// Reads or changes the local D1 database directly (test setup only).
+const d1 = (sql) => new Promise((resolve, reject) => {
+	const p = spawn(path.join(worker, 'node_modules/.bin/wrangler'), ['d1', 'execute', 'email', '--local', '--persist-to', stateDir, '--config', config, '--json', '--command', sql], { cwd: worker });
+	let out = '';
+	p.stdout.on('data', (d) => { out += d; });
+	p.on('close', (code) => { try { resolve(JSON.parse(out)[0].results); } catch { reject(new Error(`d1 failed (${code}): ${out}`)); } });
+});
+const library = async (token, query = '') => (await ok(`/cloud-file/list${query}`, token)).list;
 
 before(async () => {
 	await new Promise((r) => mock.listen(MOCK, '127.0.0.1', r));
@@ -82,7 +108,7 @@ before(async () => {
 	writeFileSync(config, dev.replace(/^admin = .*$/m, `admin = "${ADMIN}"`));
 	const secret = dev.match(/^jwt_secret = "(.*)"$/m)[1];
 	rmSync(stateDir, { recursive: true, force: true });
-	wrangler = spawn(path.join(worker, 'node_modules/.bin/wrangler'), ['dev', '--config', config, '--port', String(PORT), '--persist-to', stateDir,
+	wrangler = spawn(path.join(worker, 'node_modules/.bin/wrangler'), ['dev', '--config', config, '--port', String(PORT), '--persist-to', stateDir, '--test-scheduled',
 		'--var', `costaction_api_base:${MOCK_ORIGIN}`, '--var', `costaction_upload_origin:${MOCK_ORIGIN}`], { cwd: worker });
 	wrangler.stdout.on('data', (d) => { log += d; });
 	wrangler.stderr.on('data', (d) => { log += d; });
@@ -93,6 +119,7 @@ before(async () => {
 	await fetch(`${API}/init/${secret}`);
 	await ok('/register', null, 'POST', { email: ADMIN, password: PASSWORD });
 	await ok('/register', null, 'POST', { email: PEER, password: PASSWORD });
+	await ok('/register', null, 'POST', { email: THIRD, password: PASSWORD });
 	admin = await login(ADMIN); peer = await login(PEER);
 	adminAccount = (await ok('/my/loginUserInfo', admin)).account.accountId;
 	peerAccount = (await ok('/my/loginUserInfo', peer)).account.accountId;
@@ -172,7 +199,29 @@ test('a 429 from the API is retried after retry-after', async () => {
 });
 
 let peerAttId;
-test('send in an internal chat; the recipient sees the file and gets a download page', async () => {
+let sentFile;
+test('the upload is filed under Cloud-Mail/<category>/<year>/<month> and lands in the uploader\'s library', async () => {
+	const date = new Date();
+	const month = `${date.getUTCFullYear()}/${String(date.getUTCMonth() + 1).padStart(2, '0')}`;
+	assert.equal(folderPathOf(files.get(remoteId).folder), `Cloud-Mail/压缩包/${month}`);
+	const mine = await library(admin);
+	const entry = mine.find((f) => f.filename === 'archive.zip');
+	assert.ok(entry, JSON.stringify(mine));
+	assert.deepEqual([entry.uploaded, entry.viewed, entry.downloaded, entry.category, entry.status], [true, false, false, 'archive', 'ready']);
+	sentFile = entry.fileId;
+	// Folders are created once and then cached.
+	const creates = seen.folderCreates;
+	const begun = await ok('/large-att/begin', admin, 'POST', { accountId: adminAccount, filename: 'second.zip', size: 2 * MB, clientId: clientId() });
+	await relay(admin, begun.attId, 'second.zip', 2 * MB);
+	assert.equal(seen.folderCreates, creates);
+	assert.equal(folderPathOf(files.get([...files.keys()].at(-1)).folder), `Cloud-Mail/压缩包/${month}`);
+	// A video goes to its own category folder.
+	const video = await ok('/large-att/begin', admin, 'POST', { accountId: adminAccount, filename: 'clip.mp4', mimeType: 'video/mp4', size: 2 * MB, clientId: clientId() });
+	await relay(admin, video.attId, 'clip.mp4', 2 * MB);
+	assert.equal(folderPathOf(files.get([...files.keys()].at(-1)).folder), `Cloud-Mail/视频/${month}`);
+});
+
+test('send in an internal chat; the recipient sees the file; showing it does not collect it', async () => {
 	await ok('/mail-chat/send', admin, 'POST', { accountId: adminAccount, recipients: [PEER], subject: 'Chat', text: '', attachments: [], largeAttIds: [sentAtt], clientId: clientId() });
 	// The same upload cannot be attached twice.
 	const again = await call('/mail-chat/send', admin, 'POST', { accountId: adminAccount, recipients: [PEER], subject: 'Chat', text: 'x', attachments: [], largeAttIds: [sentAtt], clientId: clientId() });
@@ -181,15 +230,54 @@ test('send in an internal chat; the recipient sees the file and gets a download 
 	const messages = await ok(`/mail-chat/messages?accountId=${peerAccount}&key=${conversations[0].key}`, peer);
 	const message = messages.messages.find((m) => m.largeFiles?.length);
 	assert.ok(message, JSON.stringify(messages).slice(0, 400));
-	assert.deepEqual(message.largeFiles.map(({ attId, ...f }) => f), [{ filename: 'archive.zip', size: 2 * MB, status: 'ready' }]);
+	const [file] = message.largeFiles;
+	assert.deepEqual([file.fileId, file.filename, file.size, file.status, file.category, file.preview], [sentFile, 'archive.zip', 2 * MB, 'ready', 'archive', 'none']);
 	assert.equal(message.attachments.length, 0, 'large files are not treated as media');
-	peerAttId = message.largeFiles[0].attId;
-	const link = await ok(`/large-att/${peerAttId}/link`, peer);
-	assert.equal(link.url, `https://turbobit.net/${remoteId}/archive.zip.html`);
+	peerAttId = file.attId;
+	assert.equal((await library(peer)).length, 0, 'loading messages collects nothing');
 	// The stored-file endpoint does not serve large attachments.
 	assert.equal((await call(`/mail-chat/attachment/${peerAttId}`, peer)).data.code, 404);
-	// Another user's attachment ID is not reachable.
-	assert.equal((await call(`/large-att/${sentAtt}/link`, peer)).data.code, 404);
+});
+
+test('clicking download opens the official share page and collects the file as downloaded', async () => {
+	const link = await ok(`/cloud-file/${sentFile}/download`, peer, 'POST');
+	assert.equal(link.url, `https://turbobit.net/${remoteId}/archive.zip.html`);
+	const [entry] = await library(peer);
+	assert.deepEqual([entry.fileId, entry.uploaded, entry.downloaded], [sentFile, false, true]);
+	// Viewing adds a mark to the same single entry.
+	await ok(`/cloud-file/${sentFile}/view`, peer, 'POST');
+	const entries = await library(peer);
+	assert.equal(entries.length, 1);
+	assert.deepEqual([entries[0].viewed, entries[0].downloaded], [true, true]);
+	// Search, type filter and marks.
+	assert.equal((await library(peer, '?q=archive')).length, 1);
+	assert.equal((await library(peer, '?q=nothing')).length, 0);
+	assert.equal((await library(peer, '?category=video')).length, 0);
+	assert.equal((await library(admin, '?category=video')).length, 1);
+	assert.equal((await library(admin, '?mark=downloaded')).length, 0);
+	// Another user without access cannot reach a file by its ID.
+	assert.equal((await call(`/cloud-file/${sentFile}/download`, await login(THIRD), 'POST')).data.code, 404);
+});
+
+test('deleting the chat for both keeps both libraries, and downloads still work from them', async () => {
+	const { conversations } = await ok(`/mail-chat/conversations?accountId=${adminAccount}&category=internal`, admin);
+	const conv = conversations.find((x) => x.peerEmail === PEER || x.email === PEER) || conversations[0];
+	const messages = await ok(`/mail-chat/messages?accountId=${adminAccount}&key=${conv.key}`, admin);
+	const through = messages.messages.at(-1).emailId;
+	await ok('/mail-chat/delete', admin, 'POST', { accountId: adminAccount, key: conv.key, through });
+	assert.ok((await library(admin)).some((f) => f.fileId === sentFile));
+	assert.ok((await library(peer)).some((f) => f.fileId === sentFile));
+	assert.ok((await ok(`/cloud-file/${sentFile}/download`, peer, 'POST')).url);
+	assert.ok((await ok(`/cloud-file/${sentFile}/download`, admin, 'POST')).url);
+});
+
+test('removing a library entry affects only that user, not the original', async () => {
+	await ok(`/cloud-file/${sentFile}`, peer, 'DELETE');
+	assert.equal((await library(peer)).length, 0);
+	// The chat is gone and the entry removed: the peer has no way to the file any more.
+	assert.equal((await call(`/cloud-file/${sentFile}/download`, peer, 'POST')).data.code, 404);
+	assert.ok((await library(admin)).some((f) => f.fileId === sentFile));
+	assert.equal(files.get(remoteId).deleted, false);
 });
 
 test('retrying a committed send returns the same message', async () => {
@@ -214,11 +302,51 @@ test('existing small attachments keep working', async () => {
 	assert.equal(await response.text(), 'hello attachment');
 });
 
-test('only the uploader deletes; then the file is gone for everyone', async () => {
-	assert.equal((await call(`/large-att/${peerAttId}`, peer, 'DELETE')).data.code, 404);
-	await ok(`/large-att/${sentAtt}`, admin, 'DELETE');
-	assert.equal(files.get(remoteId).deleted, true);
-	assert.equal((await call(`/large-att/${peerAttId}/link`, peer)).data.code, 410);
+test('a draft can be removed from the composer without deleting anything remote', async () => {
+	const begun = await ok('/large-att/begin', admin, 'POST', { accountId: adminAccount, filename: 'draft.zip', size: 2 * MB, clientId: clientId() });
+	await relay(admin, begun.attId, 'draft.zip', 2 * MB);
+	const remote = [...files.keys()].at(-1);
+	await ok(`/large-att/${begun.attId}`, admin, 'DELETE');
+	assert.equal(files.get(remote).deleted, false);
+	assert.ok((await library(admin)).some((f) => f.filename === 'draft.zip'), 'an uploaded file stays in the library');
+});
+
+test('previews: the uploader stores a small one; it is served for 7 days, then the card stays downloadable', async () => {
+	const begun = await ok('/large-att/begin', admin, 'POST', { accountId: adminAccount, filename: 'photo.jpg', mimeType: 'image/jpeg', size: 2 * MB, clientId: clientId() });
+	const done = await relay(admin, begun.attId, 'photo.jpg', 2 * MB);
+	const fileId = done.data.fileId;
+	const put = (token, body, type = 'image/webp') => fetch(`${API}/cloud-file/${fileId}/preview`, { method: 'PUT', headers: { Authorization: token, 'content-type': type }, body });
+	assert.notEqual((await (await put(peer, new Uint8Array(100))).json()).code, 200, 'only the uploader stores a preview');
+	assert.equal((await (await put(admin, new Uint8Array(100), 'text/html')).json()).code, 400);
+	assert.equal((await (await put(admin, new Uint8Array(600 * 1024))).json()).code, 400);
+	assert.equal((await (await put(admin, new Uint8Array([1, 2, 3, 4]))).json()).code, 200);
+	const image = await fetch(`${API}/cloud-file/${fileId}/preview`, { headers: { Authorization: admin } });
+	assert.equal(image.status, 200);
+	assert.equal(image.headers.get('content-type'), 'image/webp');
+	assert.deepEqual([...new Uint8Array(await image.arrayBuffer())], [1, 2, 3, 4]);
+	assert.equal((await library(admin)).find((f) => f.fileId === fileId).preview, 'ready');
+	// Others without access get nothing.
+	assert.equal((await (await fetch(`${API}/cloud-file/${fileId}/preview`, { headers: { Authorization: peer } })).json()).code, 404);
+	// Seven days later (moved back in time here), the hourly job drops it.
+	await d1(`UPDATE cloud_file SET preview_until = unixepoch() - 1 WHERE file_id = ${fileId}`);
+	assert.equal((await library(admin)).find((f) => f.fileId === fileId).preview, 'expired');
+	assert.equal((await (await fetch(`${API}/cloud-file/${fileId}/preview`, { headers: { Authorization: admin } })).json()).code, 410);
+	await fetch(`${BASE}/__scheduled?cron=0+*+*+*+*`);
+	assert.deepEqual(await d1(`SELECT preview_key, preview_status FROM cloud_file WHERE file_id = ${fileId}`), [{ preview_key: '', preview_status: 'expired' }]);
+	assert.ok((await ok(`/cloud-file/${fileId}/download`, admin, 'POST')).url, 'still downloadable');
+});
+
+test('a file deleted at CostAction shows as unavailable only once the API confirms it', async () => {
+	const remote = files.get(remoteId);
+	// A network failure is reported as retryable, not as deleted.
+	mockDown = true;
+	const down = await call(`/cloud-file/${sentFile}/download`, admin, 'POST');
+	mockDown = false;
+	assert.equal(down.data.code, 502);
+	assert.equal((await library(admin)).find((f) => f.fileId === sentFile).status, 'ready');
+	remote.deleted = true;
+	assert.equal((await call(`/cloud-file/${sentFile}/download`, admin, 'POST')).data.code, 410);
+	assert.equal((await library(admin)).find((f) => f.fileId === sentFile).status, 'deleted');
 });
 
 test('the token is never logged and only sent to the API', async () => {
