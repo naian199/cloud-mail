@@ -826,7 +826,6 @@
   "mailRemoteImagesBlocked": "Внешние изображения скрыты для защиты вашей конфиденциальности.",
   "mailRemoteImagesShow": "Показать изображения",
   "largeAttTitle": "Большие вложения (Turbobit)",
-  "largeAttHint": "Большие файлы из внутренних чатов хранятся на Turbobit через CostAction. Существующие вложения остаются в прежнем хранилище.",
   "largeAttTokenSet": "Токен сохранён",
   "largeAttTokenMissing": "Нет токена",
   "largeAttTokenKeep": "Оставьте пустым, чтобы сохранить текущий токен",

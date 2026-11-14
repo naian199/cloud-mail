@@ -826,7 +826,6 @@
   "mailRemoteImagesBlocked": "개인정보 보호를 위해 외부 이미지를 숨겼습니다.",
   "mailRemoteImagesShow": "이미지 표시",
   "largeAttTitle": "대용량 첨부파일(Turbobit)",
-  "largeAttHint": "내부 채팅에서 선택한 대용량 파일은 CostAction을 통해 Turbobit에 저장됩니다. 기존 첨부파일은 현재 저장소를 유지합니다.",
   "largeAttTokenSet": "토큰 저장됨",
   "largeAttTokenMissing": "토큰 없음",
   "largeAttTokenKeep": "비워 두면 저장된 토큰을 유지합니다",

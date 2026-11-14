@@ -826,7 +826,6 @@
   "mailRemoteImagesBlocked": "ซ่อนรูปภาพภายนอกเพื่อปกป้องความเป็นส่วนตัวของคุณ",
   "mailRemoteImagesShow": "แสดงรูปภาพ",
   "largeAttTitle": "ไฟล์แนบขนาดใหญ่ (Turbobit)",
-  "largeAttHint": "ไฟล์ขนาดใหญ่ที่เลือกในแชทภายในจะถูกเก็บบน Turbobit ผ่าน CostAction ไฟล์แนบเดิมยังคงอยู่ในที่เก็บเดิม",
   "largeAttTokenSet": "บันทึกโทเค็นแล้ว",
   "largeAttTokenMissing": "ไม่มีโทเค็น",
   "largeAttTokenKeep": "เว้นว่างไว้เพื่อใช้โทเค็นที่บันทึกไว้",

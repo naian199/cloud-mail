@@ -826,7 +826,6 @@
   "mailRemoteImagesBlocked": "プライバシー保護のため、外部画像を非表示にしています。",
   "mailRemoteImagesShow": "画像を表示",
   "largeAttTitle": "大容量添付ファイル（Turbobit）",
-  "largeAttHint": "社内チャットで選択した大きなファイルは CostAction 経由で Turbobit に保存されます。既存の添付ファイルは現在の保存先のままです。",
   "largeAttTokenSet": "トークン設定済み",
   "largeAttTokenMissing": "トークン未設定",
   "largeAttTokenKeep": "空欄のままにすると保存済みのトークンを維持します",

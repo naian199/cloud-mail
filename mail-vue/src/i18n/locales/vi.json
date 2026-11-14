@@ -826,7 +826,6 @@
   "mailRemoteImagesBlocked": "Hình ảnh từ xa đã bị ẩn để bảo vệ quyền riêng tư của bạn.",
   "mailRemoteImagesShow": "Hiển thị hình ảnh",
   "largeAttTitle": "Tệp đính kèm lớn (Turbobit)",
-  "largeAttHint": "Tệp lớn chọn trong trò chuyện nội bộ được lưu trên Turbobit qua CostAction. Tệp đính kèm hiện có giữ nguyên nơi lưu trữ.",
   "largeAttTokenSet": "Đã lưu token",
   "largeAttTokenMissing": "Chưa có token",
   "largeAttTokenKeep": "Để trống để giữ token đã lưu",

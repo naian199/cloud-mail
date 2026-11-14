@@ -826,7 +826,6 @@
   "mailRemoteImagesBlocked": "Externe Bilder werden zum Schutz Ihrer Privatsphäre ausgeblendet.",
   "mailRemoteImagesShow": "Bilder anzeigen",
   "largeAttTitle": "Große Anhänge (Turbobit)",
-  "largeAttHint": "Große Dateien aus internen Chats werden über CostAction auf Turbobit gespeichert. Bestehende Anhänge behalten ihren Speicher.",
   "largeAttTokenSet": "Token gespeichert",
   "largeAttTokenMissing": "Kein Token",
   "largeAttTokenKeep": "Leer lassen, um das gespeicherte Token zu behalten",

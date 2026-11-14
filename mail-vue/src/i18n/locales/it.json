@@ -826,7 +826,6 @@
   "mailRemoteImagesBlocked": "Le immagini remote sono nascoste per proteggere la tua privacy.",
   "mailRemoteImagesShow": "Mostra immagini",
   "largeAttTitle": "Allegati grandi (Turbobit)",
-  "largeAttHint": "I file grandi scelti nelle chat interne vengono salvati su Turbobit tramite CostAction. Gli allegati esistenti mantengono la loro archiviazione.",
   "largeAttTokenSet": "Token salvato",
   "largeAttTokenMissing": "Nessun token",
   "largeAttTokenKeep": "Lascia vuoto per mantenere il token salvato",

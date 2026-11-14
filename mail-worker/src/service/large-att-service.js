@@ -9,15 +9,20 @@ import { CostActionError } from '../lib/costaction.mjs';
 //
 // begin    registers the file: a cloud_file record (the original) and a draft attachments row
 //          (the composer's link to it). A client request ID makes a retry reuse both.
-// upload   the browser posts the file to this Worker, which streams it to a one-time upload
-//          URL in Cloud-Mail/<category>/<year>/<month>, then verifies it with the API.
+// direct   hands the browser a one-time upload URL in Cloud-Mail/<category>/<year>/<month>.
+//          The browser sends the file's data straight to the program's upload host.
+// complete checks with the API that the whole file arrived (it exists, size matches, not
+//          claimed by another upload), then stores the record.
 // send     the draft link becomes the message's link (mail-chat-service / mail-live-service).
 //
-// The API token and upload URLs stay on the server. Rows use attachments.storage = 'costaction';
+// The Worker never carries file data: it only issues upload URLs, verifies and records. The API
+// token stays on the server; the browser sees only one-time upload URLs and download pages. Rows use attachments.storage = 'costaction';
 // every other attachment keeps storage = '' and the deployment's existing R2/S3/KV path.
 
 const STORAGE = 'costaction';
+
 const fail = (message, code = 400) => { throw new BizError(message, code); };
+
 const positiveId = (value) => {
 	const n = Number(value);
 	if (!Number.isSafeInteger(n) || n < 1) fail('Invalid ID / 无效编号');
@@ -52,7 +57,7 @@ const largeAtt = {
 	// What the composer needs to decide whether to offer large uploads.
 	async config(c) {
 		const { setting, enabled, allowed } = await policy(c);
-		return { enabled: enabled && allowed, minSize: setting.costactionMinSize, maxSize: setting.costactionMaxSize, previewDays: PREVIEW_DAYS };
+		return { enabled: enabled && allowed, minSize: 1, maxSize: setting.costactionMaxSize, previewDays: PREVIEW_DAYS };
 	},
 
 	async begin(c, params) {
@@ -63,7 +68,8 @@ const largeAtt = {
 		const filename = typeof params.filename === 'string' ? params.filename.trim() : '';
 		if (!filename || filename.length > 200 || /[\r\n\\/]/.test(filename)) fail('Invalid file name / 文件名无效');
 		const size = Number(params.size);
-		if (!Number.isSafeInteger(size) || size < setting.costactionMinSize || size > setting.costactionMaxSize)
+		// Any size: in internal chats every file goes here. Only the maximum (the request limit) applies.
+		if (!Number.isSafeInteger(size) || size < 1 || size > setting.costactionMaxSize)
 			fail('File size outside the large attachment limits / 文件大小不符合大附件限制');
 		if (typeof params.clientId !== 'string' || !/^[a-zA-Z0-9_-]{16,80}$/.test(params.clientId))
 			fail('Invalid request ID / 无效请求标识');
@@ -107,24 +113,19 @@ const largeAtt = {
 		return { attId, fileId: file.fileId, status: 'uploading' };
 	},
 
-	// Relays the browser's multipart upload to a fresh upload URL, then verifies it.
-	// The programs' upload hosts answer the CORS preflight without allow headers, so browsers
-	// cannot post to them directly; the request body is streamed through, never buffered.
-	async upload(c, rawId) {
+	// A one-time upload URL in the file's folder. The browser posts the file's data there itself
+	// (a plain multipart form: no upload progress listener, so no CORS preflight, which the upload
+	// hosts do not answer), then calls complete with the remote file ID. File data never passes
+	// through the Worker, so Cloudflare's request size limit does not apply.
+	async direct(c, rawId) {
 		const { setting, userId, enabled, allowed } = await policy(c);
 		if (!enabled) fail('Large attachments are disabled / 大附件未启用', 403);
 		if (!allowed) fail('Unauthorized / 无权使用大附件', 403);
 		const attId = positiveId(rawId);
 		const row = await draft(c, attId, userId);
 		if (!row) fail('Attachment unavailable / 附件不可用', 404);
-		// Already uploaded (a retry after a lost reply): never upload the original again.
 		if (row.status === 'ready') return { attId, fileId: row.fileId, status: 'ready' };
 		if (row.status !== 'uploading') fail('Attachment unavailable / 附件不可用', 409);
-		const type = c.req.header('content-type') || '';
-		const length = Number(c.req.header('content-length'));
-		// The multipart envelope adds a little to the file itself.
-		if (!/^multipart\/form-data;\s*boundary=/i.test(type) || !Number.isSafeInteger(length) || length < row.size || length > row.size + 64 * 1024 || !c.req.raw.body)
-			fail('Invalid upload / 上传请求无效');
 		const api = costaction(c, setting, row.apptype);
 		let upload, folderId;
 		try {
@@ -133,18 +134,8 @@ const largeAtt = {
 		} catch (error) {
 			unavailable(error);
 		}
-		const { readable, writable } = new FixedLengthStream(length);
-		const piping = c.req.raw.body.pipeTo(writable).catch(() => {});
-		let remoteId = '';
-		try {
-			const response = await fetch(upload.url, { method: 'POST', headers: { 'Content-Type': type }, body: readable });
-			const data = await response.json().catch(() => ({}));
-			if (response.ok && data.status === 'success' && typeof data.id === 'string') remoteId = data.id;
-		} catch {}
-		await piping;
-		if (!remoteId) fail('Upload to the storage service failed, try again / 上传到存储服务失败，请重试', 502);
 		await c.env.db.prepare('UPDATE cloud_file SET folder_id = ? WHERE file_id = ?').bind(folderId, row.fileId).run();
-		return this.complete(c, { attId, remoteId });
+		return { attId, fileId: row.fileId, status: 'uploading', uploadUrl: upload.url };
 	},
 
 	// Trusts nothing about the upload until the API confirms the file and its size.
@@ -231,7 +222,7 @@ const largeAtt = {
 	// yet sent or already on the message this same request committed (a retry after a lost reply).
 	async forSend(c, account, rawIds, requestKey) {
 		if (rawIds === undefined) return [];
-		if (!Array.isArray(rawIds) || rawIds.length > 5) fail('Too many large attachments / 最多 5 个大附件');
+		if (!Array.isArray(rawIds) || rawIds.length > 10) fail('Too many large attachments / 最多 10 个大附件');
 		const ids = [...new Set(rawIds.map(positiveId))];
 		if (!ids.length) return [];
 		const { results } = await c.env.db

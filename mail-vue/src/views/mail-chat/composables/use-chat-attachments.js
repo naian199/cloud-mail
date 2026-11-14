@@ -55,7 +55,8 @@ export function useChatAttachments({ t, draftKey, canAccept, selecting, isStoppe
   async function chooseFiles(event, current = draftKey()) {
     const picked = [...(event.target?.files || [])];
     if (event.target) event.target.value = '';
-    const chosen = takeLarge(picked, current);
+    // Voice notes and stickers stay on this site's storage so they play and show inline.
+    const chosen = event.ordinary ? picked : await takeLarge(picked, current);
     if (!chosen.length) return;
     const existing = files[current] || [], pending = fileReads[current] || { count: 0, size: 0 };
     const size = chosen.reduce((n, f) => n + f.size, 0);

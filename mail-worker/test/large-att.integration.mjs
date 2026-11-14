@@ -85,11 +85,16 @@ async function call(pathname, token, method = 'GET', body) {
 }
 const ok = async (...args) => { const r = await call(...args); assert.equal(r.data.code, 200, `${args[0]}: ${r.text}`); return r.data.data; };
 const login = async (email) => (await ok('/login', null, 'POST', { email, password: PASSWORD })).token;
-// The browser posts the file to the Worker, which relays it to the storage service.
-const relay = async (token, attId, name, size) => {
+// The browser sends the file's data straight to the upload URL the Worker issues, then the
+// Worker checks that it all arrived. Returns the complete call's { code, data }.
+const transfer = async (token, attId, name, size, sentSize = size) => {
+	const target = await call(`/large-att/${attId}/direct`, token, 'POST', {});
+	if (target.data.code !== 200) return target.data;
+	if (target.data.data.status === 'ready') return target.data;
 	const form = new FormData();
-	form.append('file', new Blob([new Uint8Array(size)]), name);
-	return (await fetch(`${API}/large-att/${attId}/upload`, { method: 'POST', headers: { Authorization: token }, body: form })).json();
+	form.append('file', new Blob([new Uint8Array(sentSize)]), name);
+	const posted = await (await fetch(target.data.data.uploadUrl, { method: 'POST', body: form })).json();
+	return (await call('/large-att/complete', token, 'POST', { attId, remoteId: posted.id })).data;
 };
 let admin, peer, adminAccount, peerAccount;
 const folderPathOf = (id) => { const names = []; for (let f = folders.find((x) => x.id === id); f; f = folders.find((x) => x.id === f.parent)) names.unshift(f.name); return names.join('/'); };
@@ -156,8 +161,9 @@ test('only allowed roles may upload; normal users may not test the connection', 
 	assert.notEqual((await call('/setting/costactionTest', peer, 'POST', {})).data.code, 200);
 });
 
-test('size limits are enforced', async () => {
-	for (const size of [MB - 1, 5 * MB + 1]) {
+test('any size up to the maximum is accepted; empty and oversized files are not', async () => {
+	assert.equal((await ok('/large-att/begin', admin, 'POST', { accountId: adminAccount, filename: 'tiny.txt', size: 12, clientId: clientId() })).status, 'uploading');
+	for (const size of [0, 5 * MB + 1]) {
 		const r = await call('/large-att/begin', admin, 'POST', { accountId: adminAccount, filename: 'a.bin', size, clientId: clientId() });
 		assert.equal(r.data.code, 400);
 	}
@@ -175,13 +181,14 @@ test('upload: one row per request ID, the file is verified before it is ready', 
 
 	assert.equal((await call('/large-att/complete', admin, 'POST', { attId: first.attId, remoteId: 'mockfile999' })).data.code, 404);
 	// Another user cannot upload into this record.
-	assert.notEqual((await relay(peer, first.attId, 'archive.zip', size)).code, 200);
-	// A body that does not match the registered size is refused before anything is relayed.
-	assert.equal((await relay(admin, first.attId, 'archive.zip', MB)).code, 400);
-	const done = await relay(admin, first.attId, 'archive.zip', size);
+	assert.notEqual((await transfer(peer, first.attId, 'archive.zip', size)).code, 200);
+	// A file that did not fully arrive (size differs from the registered one) is not accepted.
+	const partial = await ok('/large-att/begin', admin, 'POST', { accountId: adminAccount, filename: 'cut.zip', size, clientId: clientId() });
+	assert.equal((await transfer(admin, partial.attId, 'cut.zip', size, MB)).code, 409);
+	const done = await transfer(admin, first.attId, 'archive.zip', size);
 	assert.equal(done.code, 200, JSON.stringify(done));
 	assert.equal(done.data.status, 'ready');
-	assert.equal(seen.uploadAuth.at(-1), '', 'the relayed upload carries no token');
+	assert.equal(seen.uploadAuth.at(-1), '', 'the browser upload carries no token');
 	const uploaded = { id: [...files.keys()].at(-1) };
 	assert.equal(files.get(uploaded.id).size, size);
 	// Once ready, the same request ID does not start another upload.
@@ -194,7 +201,7 @@ test('upload: one row per request ID, the file is verified before it is ready', 
 test('a 429 from the API is retried after retry-after', async () => {
 	rateLimitNext = 1;
 	const r = await ok('/large-att/begin', admin, 'POST', { accountId: adminAccount, filename: 'b.zip', size: 2 * MB, clientId: clientId() });
-	assert.equal((await relay(admin, r.attId, 'b.zip', 2 * MB)).data.status, 'ready');
+	assert.equal((await transfer(admin, r.attId, 'b.zip', 2 * MB)).data.status, 'ready');
 	assert.equal(rateLimitNext, 0);
 });
 
@@ -212,12 +219,12 @@ test('the upload is filed under Cloud-Mail/<category>/<year>/<month> and lands i
 	// Folders are created once and then cached.
 	const creates = seen.folderCreates;
 	const begun = await ok('/large-att/begin', admin, 'POST', { accountId: adminAccount, filename: 'second.zip', size: 2 * MB, clientId: clientId() });
-	await relay(admin, begun.attId, 'second.zip', 2 * MB);
+	await transfer(admin, begun.attId, 'second.zip', 2 * MB);
 	assert.equal(seen.folderCreates, creates);
 	assert.equal(folderPathOf(files.get([...files.keys()].at(-1)).folder), `Cloud-Mail/压缩包/${month}`);
 	// A video goes to its own category folder.
 	const video = await ok('/large-att/begin', admin, 'POST', { accountId: adminAccount, filename: 'clip.mp4', mimeType: 'video/mp4', size: 2 * MB, clientId: clientId() });
-	await relay(admin, video.attId, 'clip.mp4', 2 * MB);
+	await transfer(admin, video.attId, 'clip.mp4', 2 * MB);
 	assert.equal(folderPathOf(files.get([...files.keys()].at(-1)).folder), `Cloud-Mail/视频/${month}`);
 });
 
@@ -283,7 +290,7 @@ test('removing a library entry affects only that user, not the original', async 
 test('retrying a committed send returns the same message', async () => {
 	const id = clientId(), size = 2 * MB;
 	const begun = await ok('/large-att/begin', admin, 'POST', { accountId: adminAccount, filename: 'retry.zip', size, clientId: clientId() });
-	assert.equal((await relay(admin, begun.attId, 'retry.zip', size)).data.status, 'ready');
+	assert.equal((await transfer(admin, begun.attId, 'retry.zip', size)).data.status, 'ready');
 	const payload = { accountId: adminAccount, recipients: [PEER], subject: 'Chat', text: 'retry', attachments: [], largeAttIds: [begun.attId], clientId: id };
 	const first = await ok('/mail-chat/send', admin, 'POST', payload);
 	// The reply was lost; the composer resends the same request.
@@ -304,7 +311,7 @@ test('existing small attachments keep working', async () => {
 
 test('a draft can be removed from the composer without deleting anything remote', async () => {
 	const begun = await ok('/large-att/begin', admin, 'POST', { accountId: adminAccount, filename: 'draft.zip', size: 2 * MB, clientId: clientId() });
-	await relay(admin, begun.attId, 'draft.zip', 2 * MB);
+	await transfer(admin, begun.attId, 'draft.zip', 2 * MB);
 	const remote = [...files.keys()].at(-1);
 	await ok(`/large-att/${begun.attId}`, admin, 'DELETE');
 	assert.equal(files.get(remote).deleted, false);
@@ -313,7 +320,7 @@ test('a draft can be removed from the composer without deleting anything remote'
 
 test('previews: the uploader stores a small one; it is served for 7 days, then the card stays downloadable', async () => {
 	const begun = await ok('/large-att/begin', admin, 'POST', { accountId: adminAccount, filename: 'photo.jpg', mimeType: 'image/jpeg', size: 2 * MB, clientId: clientId() });
-	const done = await relay(admin, begun.attId, 'photo.jpg', 2 * MB);
+	const done = await transfer(admin, begun.attId, 'photo.jpg', 2 * MB);
 	const fileId = done.data.fileId;
 	const put = (token, body, type = 'image/webp') => fetch(`${API}/cloud-file/${fileId}/preview`, { method: 'PUT', headers: { Authorization: token, 'content-type': type }, body });
 	assert.notEqual((await (await put(peer, new Uint8Array(100))).json()).code, 200, 'only the uploader stores a preview');
@@ -347,6 +354,15 @@ test('a file deleted at CostAction shows as unavailable only once the API confir
 	remote.deleted = true;
 	assert.equal((await call(`/cloud-file/${sentFile}/download`, admin, 'POST')).data.code, 410);
 	assert.equal((await library(admin)).find((f) => f.fileId === sentFile).status, 'deleted');
+});
+
+test('the Worker never carries file data: there is no relay route', async () => {
+	const begun = await ok('/large-att/begin', admin, 'POST', { accountId: adminAccount, filename: 'x.zip', size: 2 * MB, clientId: clientId() });
+	const form = new FormData();
+	form.append('file', new Blob([new Uint8Array(10)]), 'x.zip');
+	const response = await fetch(`${API}/large-att/${begun.attId}/upload`, { method: 'POST', headers: { Authorization: admin }, body: form });
+	assert.notEqual((await response.json().catch(() => ({ code: response.status }))).code, 200);
+	assert.notEqual((await call(`/large-att/${begun.attId}/direct`, peer, 'POST', {})).data.code, 200, 'upload URLs only for the uploader');
 });
 
 test('the token is never logged and only sent to the API', async () => {

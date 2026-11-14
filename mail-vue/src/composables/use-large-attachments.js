@@ -3,16 +3,18 @@ import { ElMessage } from 'element-plus';
 import { randomUUID } from '@/utils/uuid';
 import { makePreview } from '@/utils/file-preview';
 import { cloudFilePutPreview } from '@/request/cloud-file';
-import { largeAttBegin, largeAttConfig, largeAttFailed, largeAttRemove, uploadToStorage } from '@/request/large-att';
+import { largeAttDirect, largeAttComplete, uploadDirect, largeAttBegin, largeAttConfig, largeAttFailed, largeAttRemove } from '@/request/large-att';
 
 // Large attachments chosen in the chat composer, per draft. Each file gets its own request ID,
 // so a retry reuses the same server record instead of creating another.
-// The server accepts at most this many large attachments per message.
-const MAX_PER_MESSAGE = 5;
+// The server accepts at most this many CostAction files per message.
+const MAX_PER_MESSAGE = 10;
 
 export function useLargeAttachments({ t, accountId, draftKey }) {
   const config = ref({ enabled: false, minSize: 0, maxSize: 0 });
-  largeAttConfig().then((value) => { config.value = value; }).catch(() => {});
+  // Resolves once the configuration is known (or could not be loaded), so a file chosen right
+  // after the page opens is still routed correctly.
+  const ready = largeAttConfig().then((value) => { config.value = value; }).catch(() => {});
   const uploads = reactive({});
 
   const list = (key = draftKey()) => uploads[key] || (uploads[key] = []);
@@ -31,7 +33,18 @@ export function useLargeAttachments({ t, accountId, draftKey }) {
       // Removed while the upload URL was being requested: do not transfer the file.
       if (item.status === 'removed') { largeAttFailed(begun.attId).catch(() => {}); return; }
       if (begun.status !== 'ready') {
-        await uploadToStorage(begun.attId, item.file, { signal: item.controller.signal, onProgress: (p) => { item.progress = p; } });
+        // The file's data goes straight from the browser to the storage program; the Worker only
+        // issues the upload URL, then checks that the whole file arrived and records it. Browsers
+        // cannot report progress for this upload without a preflight the hosts refuse, so the
+        // list shows elapsed time.
+        item.direct = true;
+        item.startedAt = Date.now();
+        const target = await largeAttDirect(begun.attId);
+        if (target.status !== 'ready') {
+          const remoteId = await uploadDirect(target.uploadUrl, item.file, { signal: item.controller.signal });
+          item.progress = 1;
+          await largeAttComplete({ attId: begun.attId, remoteId });
+        }
       }
       item.status = 'ready';
       item.progress = 1;
@@ -41,7 +54,8 @@ export function useLargeAttachments({ t, accountId, draftKey }) {
       if (item.status === 'removed') return;
       item.status = 'failed';
       if (item.attId) largeAttFailed(item.attId).catch(() => {});
-      if (error?.message?.startsWith('upload-')) ElMessage.error(t('largeAttUploadFailed'));
+      if (error?.message === 'upload-direct-network') ElMessage.error(t('largeAttDirectFailed'));
+      else ElMessage.error(t('largeAttUploadFailed'));
     }
   }
 
@@ -61,17 +75,17 @@ export function useLargeAttachments({ t, accountId, draftKey }) {
   function choose(event) {
     const chosen = [...(event.target?.files || [])];
     if (event.target) event.target.value = '';
-    const { minSize, maxSize } = config.value;
+    const { maxSize } = config.value;
     for (const file of chosen) {
       if (list().length >= MAX_PER_MESSAGE) {
         ElMessage.error(t('largeAttCountLimit', { count: MAX_PER_MESSAGE }));
         break;
       }
-      if (file.size < minSize || file.size > maxSize) {
-        ElMessage.error(t('largeAttSizeLimit', { min: Math.round(minSize / 1048576), max: Math.round(maxSize / 1048576) }));
+      if (file.size < 1 || file.size > maxSize) {
+        ElMessage.error(t('largeAttMaxLimit', { max: Math.round(maxSize / 1048576) }));
         continue;
       }
-      const item = reactive({ clientId: randomUUID().replaceAll('-', ''), file, name: file.name, size: file.size, progress: 0, status: 'uploading', attId: null, fileId: null, previewStored: false, controller: null });
+      const item = reactive({ clientId: randomUUID().replaceAll('-', ''), file, name: file.name, size: file.size, progress: 0, status: 'uploading', attId: null, fileId: null, previewStored: false, controller: null, direct: false, startedAt: 0 });
       list().push(item);
       upload(item);
     }
@@ -86,5 +100,5 @@ export function useLargeAttachments({ t, accountId, draftKey }) {
     if (previous === 'ready' && item.attId) largeAttRemove(item.attId).catch(() => {});
   }
 
-  return { config, uploads, list, readyIds, busy, clear, retry: upload, choose, remove };
+  return { ready, config, uploads, list, readyIds, busy, clear, retry: upload, choose, remove };
 }

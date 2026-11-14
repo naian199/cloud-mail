@@ -35,6 +35,13 @@ export const test = base.extend({
 
 export { expect, BASE };
 
+// Changes system settings as the admin (usable in beforeAll, where test fixtures are not).
+export async function putSetting(body) {
+  const t = await adminToken();
+  const data = await (await fetch(`${API}/setting/set`, { method: 'PUT', headers: { Authorization: t, 'content-type': 'application/json' }, body: JSON.stringify(body) })).json();
+  if (data.code !== 200) throw new Error(`setting/set: ${data.message}`);
+}
+
 // Opens a page and waits for the app shell; the chat list keeps polling, so no networkidle.
 export async function open(page, path) {
   await page.goto(BASE + path, { waitUntil: 'load' });
