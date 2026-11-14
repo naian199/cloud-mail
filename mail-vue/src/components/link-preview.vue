@@ -1,5 +1,6 @@
 <template>
-  <div ref="host" class="link-preview-shell">
+  <AppCard v-if="appId" :app-id="appId" @resize="$emit('resize')" />
+  <div v-else ref="host" class="link-preview-shell">
     <a v-if="available" class="chat-link-preview" :href="url" @click="openLinkBrowser(url, $event)" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer" :aria-label="data.title || hostname">
       <div class="link-copy"><small>{{ data.siteName || hostname }}<span v-if="data.siteName && data.siteName !== hostname" class="link-domain"> · {{ hostname }}</span></small><strong v-if="data.title && data.title !== hostname">{{ data.title }}</strong><span v-if="data.description" class="link-description">{{ data.description }}</span></div>
       <div v-if="image || (pending && data.hasImage)" class="link-cover"><img v-if="image" :src="image" alt="" @error="clearImage" @load="$emit('resize')" /><BrandLoading v-else :size="32" /></div>
@@ -14,9 +15,13 @@ import { useI18n } from 'vue-i18n';
 import { openLinkBrowser } from '@/composables/use-link-browser';
 import { computed, ref, nextTick, watch, onMounted, onBeforeUnmount } from 'vue';
 import { fetchLinkPreview, fetchLinkPreviewImage } from '@/request/mail-chat';
+import AppCard from '@/components/app-card.vue';
+import { appLinkId } from '@/request/apps';
 const emit=defineEmits(['resize']);
 const props=defineProps({url:{type:String,required:true},source:{type:Object,required:true}});
 const { t } = useI18n();
+// Links to an app on this site show the store card, resolved by the server, instead of a web preview.
+const appId=appLinkId(props.url);
 const host=ref(null),data=ref({}),image=ref(''),pending=ref(true);
 const available=computed(()=>!!(data.value.previewAvailable||data.value.description||image.value||(data.value.title&&data.value.title!==hostname.value)));
 const failureText=computed(()=>{const status=Number(data.value.httpStatus);return t(previewFailureKey(data.value.reason))+(status>=300&&status<=599?` (HTTP ${status})`:'');});
@@ -24,6 +29,7 @@ const parsed=computed(()=>new URL(props.url)),hostname=computed(()=>parsed.value
 let observer,controller,attempted=false,visible=false,disposed=false,generation=0;
 function clearImage(){if(image.value)URL.revokeObjectURL(image.value);image.value='';}
 async function load(){
+  if(appId)return;
   if(attempted||disposed)return;attempted=true;pending.value=true;controller=new AbortController();const signal=controller.signal,mine=generation,params={...props.source,url:props.url};
   try{
     const result=await fetchLinkPreview(params,signal);if(disposed||signal.aborted||mine!==generation)return;if(!result||typeof result.title!=='string')throw Error('Invalid preview response');data.value=result;await nextTick();emit('resize');

@@ -49,7 +49,8 @@ const routes = [
                 }
             },
             {
-                path: '/mail',
+                // /mail/:emailId opens one message; plain /mail is the legacy address.
+                path: '/mail/:emailId(\\d+)?',
                 name: 'content',
                 component: () => import('@/views/content/index.vue'),
                 meta: {
@@ -73,6 +74,24 @@ const routes = [
                 name: 'files',
                 component: () => import('@/views/files/index.vue'),
                 meta: { title: 'cloudFileTitle', name: 'files', menu: true }
+            },
+            {
+                path: '/apps',
+                name: 'apps',
+                component: () => import('@/views/apps/index.vue'),
+                meta: { title: 'navStore', name: 'apps', menu: true }
+            },
+            {
+                path: '/apps/:id(\\d+)',
+                name: 'app-detail',
+                component: () => import('@/views/apps/detail.vue'),
+                meta: { title: 'navStore', name: 'app-detail', menu: false }
+            },
+            {
+                path: '/me',
+                name: 'me',
+                component: () => import('@/views/me/index.vue'),
+                meta: { title: 'navMe', name: 'me', menu: true }
             },
             {
                 path: '/starred',
@@ -135,7 +154,8 @@ router.beforeEach((to, from, next) => {
     if (!token) {void clearMediaCache();void setPushIdentity(null);}
 
     if (!token && !to.path.startsWith('/login')) {
-        return next({name: 'login'})
+        // Come back to the same in-site page after signing in (for example a shared app link).
+        return next(to.path === '/' ? {name: 'login'} : {name: 'login', query: {redirect: to.fullPath}})
     }
 
     if (!token && to.path.startsWith('/login')) {

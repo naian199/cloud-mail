@@ -74,7 +74,7 @@
         @touchend="endTouch"
         @touchcancel="cancelPress"
       >
-        <el-button class="back" text :aria-label="t('chatBack')" @click="closeThread"
+        <el-button class="back" text :aria-label="t('chatBack')" @click="closeThreadByUser"
           ><Icon icon="cloud-mail:back" width="24"
         /></el-button>
         <button
@@ -752,7 +752,7 @@ function menuEscape(event) {
   if(universalActive.value){universalSearch.value?.close();consume();return;}
   if(selecting.value){if(!selectionBusy.value)endSelection();consume();return;}
   if(quoteTarget.value){quoteTarget.value=null;consume();return;}
-  if(selected.value){closeThread();consume();}
+  if(selected.value){closeThreadByUser();consume();}
 }
 const stickerErrors = reactive({});
 const selecting = ref(false), selectedIds = ref(new Set()), selectionBusy = ref(false);
@@ -1495,13 +1495,33 @@ watch([()=>route.query.compose,()=>route.query.contacts],()=>{
   router.replace({path:route.path,query});
 },{immediate:true});
 let openingLink = false;
+// The address is the source of truth for the open conversation. A link is acted on once (so a
+// later list refresh or a manual mailbox switch never re-applies an old link); explicit opens add
+// a history entry, restoring a tab's last chat replaces it, and Back walks the entries.
+let handledLink = '';
+let restoring = false;
+const currentLink = () => `${route.query.accountId || ''}|${route.query.conversation || ''}|${route.query.message || ''}`;
+function closeThreadByUser() {
+  closeThread();
+  if (route.query.conversation) router.replace({ path: categoryPath, query: {} });
+}
+watch(() => selected.value?.key, (key) => {
+  if (!key || stopped || route.path !== categoryPath || route.query.conversation === key) return;
+  const query = { accountId: String(accountId.value), conversation: key };
+  handledLink = `${query.accountId}|${key}|`;
+  (restoring || !route.query.conversation && openingLink ? router.replace : router.push)({ path: categoryPath, query });
+});
+// Back to an address without a conversation closes the open one.
+watch(() => route.query.conversation, (key) => {
+  if (!key && selected.value && route.path === categoryPath && !restoring) { closeThread(); handledLink = currentLink(); }
+});
 watch(
   [() => route.query.accountId, () => route.query.conversation, () => route.query.message, accounts, conversations],
   async () => {
     const requested = Number(route.query.accountId),
       key = route.query.conversation, target = Number(route.query.message || 0);
     if (
-      openingLink ||
+      openingLink || currentLink() === handledLink ||
       !requested ||
       !accounts.value.some((account) => account.accountId === requested)
     )
@@ -1519,12 +1539,17 @@ watch(
         if (stopped || accountId.value !== requested || route.query.conversation !== key) return;
         found = data.conversations[0] || data.contacts?.[0];
       }
-      if (!found) return;
+      if (!found) { handledLink = currentLink(); return; }
       if (found.category !== category) { await select(found); return; }
       if (selected.value?.key !== found.key) await select(found);
       if (stopped) return;
       if (Number.isSafeInteger(target) && target>0) await jumpToResult(target);
-      if(route.query.conversation===key && Number(route.query.message||0)===target) await router.replace({ path: categoryPath, query: {} });
+      // Keep the conversation in the address (refresh and Back keep working); a one-off message
+      // jump is dropped once done.
+      if(route.query.conversation===key && Number(route.query.message||0)===target) {
+        handledLink = `${requested}|${key}|`;
+        if (target) await router.replace({ path: categoryPath, query: { accountId: String(requested), conversation: key } });
+      }
     } finally {
       openingLink = false;
     }
@@ -1555,7 +1580,8 @@ onMounted(async () => {
     const saved = rememberedThread();
     if (saved && accounts.value.some((account) => account.accountId === saved.accountId)) {
       if (accountId.value !== saved.accountId) switchMailbox(saved.accountId);
-      await select(saved.conversation);
+      restoring = true;
+      try { await select(saved.conversation); await nextTick(); } finally { restoring = false; }
     }
   }
   sync();

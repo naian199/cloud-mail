@@ -22,6 +22,8 @@ const exclude = [
 ];
 
 const requirePerms = [
+  '/app-publish',
+  '/app-review',
   '/user/official',
   '/setting/translation',
 	'/email/send',
@@ -66,6 +68,8 @@ const requirePerms = [
 ];
 
 const premKey = {
+  'app:publish': ['/app-publish'],
+  'app:review': ['/app-review'],
   'user:verify':['/user/official'],
 	'email:delete': ['/email/delete'],
 	'email:send': ['/email/send'],

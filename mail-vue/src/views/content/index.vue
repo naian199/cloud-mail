@@ -11,7 +11,11 @@
       <Icon class="icon" v-if="emailStore.contentData.showReply" v-perm="'email:send'"  @click="openForward" icon="iconoir:arrow-up-right" width="20" height="20" />
     </div>
     <div></div>
-    <el-scrollbar class="scrollbar">
+    <div v-if="unavailable" class="mail-unavailable" role="alert">
+      <p>{{ t('mailUnavailable') }}</p>
+      <el-button @click="handleBack">{{ t('navBack') }}</el-button>
+    </div>
+    <el-scrollbar v-else class="scrollbar">
       <div class="container">
         <div class="email-title">
           {{ email.subject }}
@@ -77,9 +81,10 @@
 <script setup>
 import MailBody from '@/components/mail-body.vue'
 import {computed, reactive, ref, watch, onMounted, onUnmounted} from "vue";
-import {useRouter} from 'vue-router'
+import {useRouter, useRoute} from 'vue-router'
+import {goBack} from '@/utils/go-back.js'
 import {ElMessage, ElMessageBox} from 'element-plus'
-import {emailDelete, emailRead} from "@/request/email.js";
+import {emailDelete, emailRead, emailDetail} from "@/request/email.js";
 import {Icon} from "@iconify/vue";
 import {useEmailStore} from "@/store/email.js";
 import {useAccountStore} from "@/store/account.js";
@@ -99,6 +104,7 @@ const settingStore = useSettingStore();
 const accountStore = useAccountStore();
 const emailStore = useEmailStore();
 const router = useRouter()
+const route = useRoute()
 const email = computed(() => emailStore.contentData.email || {
   emailId: 0,
   attList: [],
@@ -148,6 +154,25 @@ watch(
   () => tryMarkRead(),
   { flush: 'post' }
 )
+
+// /mail/:emailId opened directly (new tab, refresh in another tab, shared address): load that
+// message for this user instead of trusting whatever was opened last.
+const unavailable = ref(false)
+async function loadFromRoute() {
+  const id = Number(route.params.emailId)
+  unavailable.value = false
+  if (!id || emailStore.contentData.email?.emailId === id) return
+  emailStore.contentData.email = null
+  try {
+    const row = await emailDetail(id)
+    if (Number(route.params.emailId) !== id) return
+    emailStore.detailMap[id] = row
+    Object.assign(emailStore.contentData, { email: row, delType: 'logic', showStar: true, showReply: true, showUnread: true })
+  } catch {
+    if (Number(route.params.emailId) === id) unavailable.value = true
+  }
+}
+watch(() => route.params.emailId, loadFromRoute, { immediate: true })
 
 onMounted(() => {
   tryMarkRead()
@@ -238,7 +263,7 @@ function changeStar() {
 }
 
 const handleBack = () => {
-  router.back()
+  goBack(router, route.query.from === 'star' ? '/starred' : '/inbox')
 }
 
 const handleDelete = () => {
@@ -273,6 +298,7 @@ const handleDelete = () => {
 }
 </script>
 <style scoped lang="scss">
+.mail-unavailable { display:flex; flex-direction:column; align-items:center; gap:12px; padding:48px 16px; color:var(--el-text-color-secondary); }
 .box {
   height: 100%;
   min-width: 0;

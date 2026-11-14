@@ -145,7 +145,10 @@ watch(active,value=>{ui.mobileChatFocused=!!value;},{immediate:true});
 function senderName(id) { return senders[id]?.displayName || senders[id]?.username || `${t('roomMember')} ${id}`; }
 function roomDate(value) { return new Date(value.replace(' ','T')+'Z').toLocaleDateString(locale.value); }
 function time(value) { return new Date(value.replace(' ','T')+'Z').toLocaleTimeString(locale.value,{hour:'2-digit',minute:'2-digit'}); }
-async function choose(id) { if(stopped)return;const query={...route.query};delete query.message; if(id){query.room=id;const room=rooms.value.find(room=>room.id===id);if(room)query.kind=room.kind;}else delete query.room; await router.replace({query}); }
+async function choose(id) { if(stopped)return;const query={...route.query};delete query.message; if(id){query.room=id;const room=rooms.value.find(room=>room.id===id);if(room)query.kind=room.kind;}else delete query.room;
+  // Opening a room is an explicit step: it gets its own history entry, like opening a chat. Closing
+  // one, or a room that disappeared, replaces the entry.
+  if(id&&id!==route.query.room)await router.push({query});else await router.replace({query}); }
 function reset() { historyTarget.value=null;roomSearchOpen.value=false;messageSearch.value='';memberSearch.value='';version++; messages.value=[];members.value=[];Object.keys(senders).forEach(key=>delete senders[key]);hasOlder.value=false;atBottom.value=true;membersOpen.value=false;messageLoading.value=!!activeId.value; }
 watch([()=>route.query.room,()=>route.query.message],([id,message])=>{const nextId=typeof id==='string'?id:null;if(nextId===activeId.value&&!message)return;activeId.value=nextId;reset();refresh();});
 function merge(data) { Object.assign(senders,data.senders);const map=new Map(messages.value.map(message=>[message.id,message]));data.messages.forEach(message=>map.set(message.id,message));messages.value=[...map.values()].sort((a,b)=>a.id-b.id); }
