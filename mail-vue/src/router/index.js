@@ -69,6 +69,12 @@ const routes = [
                 }
             },
             {
+                path: '/files',
+                name: 'files',
+                component: () => import('@/views/files/index.vue'),
+                meta: { title: 'cloudFileTitle', name: 'files', menu: true }
+            },
+            {
                 path: '/starred',
                 name: 'star',
                 component: () => import('@/views/star/index.vue'),

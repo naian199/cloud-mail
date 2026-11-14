@@ -829,7 +829,6 @@
   "largeAttHint": "ไฟล์ขนาดใหญ่ที่เลือกในแชทภายในจะถูกเก็บบน Turbobit ผ่าน CostAction ไฟล์แนบเดิมยังคงอยู่ในที่เก็บเดิม",
   "largeAttTokenSet": "บันทึกโทเค็นแล้ว",
   "largeAttTokenMissing": "ไม่มีโทเค็น",
-  "largeAttNote": "ไฟล์จะเก็บไว้บน Turbobit และดาวน์โหลดจากหน้าของ Turbobit ระยะเวลาเก็บและความเร็วขึ้นกับบัญชี Turbobit ของคุณ ไม่มีการแสดงตัวอย่างในแอป",
   "largeAttTokenKeep": "เว้นว่างไว้เพื่อใช้โทเค็นที่บันทึกไว้",
   "largeAttTokenPlaceholder": "โทเค็น API ของ CostAction",
   "largeAttToken": "โทเค็น API",

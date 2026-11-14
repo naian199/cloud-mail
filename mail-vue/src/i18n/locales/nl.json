@@ -829,7 +829,6 @@
   "largeAttHint": "Grote bestanden uit interne chats worden via CostAction op Turbobit opgeslagen. Bestaande bijlagen behouden hun huidige opslag.",
   "largeAttTokenSet": "Token opgeslagen",
   "largeAttTokenMissing": "Geen token",
-  "largeAttNote": "Bestanden blijven op Turbobit en worden via de Turbobit-pagina gedownload. Bewaartermijn en snelheid hangen af van je Turbobit-account; geen voorbeeld in de app.",
   "largeAttTokenKeep": "Leeg laten om het opgeslagen token te behouden",
   "largeAttTokenPlaceholder": "CostAction API-token",
   "largeAttToken": "API-token",

@@ -148,6 +148,7 @@ const settingService = {
 			if (!Number.isSafeInteger(value) || value < 1024 * 1024 || value > 10 * 1024 * 1024 * 1024) throw new BizError('Invalid size', 400);
 			params[field] = value;
 		}
+		if (params.costactionApptype !== undefined && !['fd1', 'fd2'].includes(params.costactionApptype)) throw new BizError('Invalid program', 400);
 		if (params.costactionRoles !== undefined) {
 			params.costactionRoles = (Array.isArray(params.costactionRoles) ? params.costactionRoles : String(params.costactionRoles).split(','))
 				.map(Number).filter(Number.isSafeInteger).join(',');

@@ -452,9 +452,9 @@ export default {
 					.bind(requestKey, account.user_id, att.attId, account.user_id),
 				c.env.db
 					.prepare(
-						`INSERT INTO attachments(user_id,account_id,email_id,key,filename,size,mime_type,type,storage,remote_id,remote_status) SELECT ?,?,email_id,?,?,?,'application/octet-stream',0,'costaction',?,'ready' FROM email WHERE ingest_key=? AND user_id=?`
+						`INSERT INTO attachments(user_id,account_id,email_id,key,filename,size,mime_type,type,storage,remote_id,remote_status,file_id) SELECT ?,?,email_id,?,?,?,?,0,'costaction',?,'ready',? FROM email WHERE ingest_key=? AND user_id=?`
 					)
-					.bind(peer.user_id, peer.account_id, `costaction:${att.remoteId}`, att.filename, att.size, att.remoteId, `instant:${requestKey}`, peer.user_id)
+					.bind(peer.user_id, peer.account_id, `costaction:${att.remoteId}`, att.filename, att.size, att.mimeType || 'application/octet-stream', att.remoteId, att.fileId, `instant:${requestKey}`, peer.user_id)
 			);
 		}
 		statements.push(

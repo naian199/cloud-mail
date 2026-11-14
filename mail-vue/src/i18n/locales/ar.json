@@ -829,7 +829,6 @@
   "largeAttHint": "تُخزَّن الملفات الكبيرة المختارة في الدردشات الداخلية على Turbobit عبر CostAction. تبقى المرفقات الحالية في تخزينها الحالي.",
   "largeAttTokenSet": "تم حفظ الرمز",
   "largeAttTokenMissing": "لا يوجد رمز",
-  "largeAttNote": "تبقى الملفات على Turbobit وتُنزَّل من صفحة Turbobit. مدة الاحتفاظ والسرعة تعتمدان على حسابك في Turbobit، ولا توجد معاينة داخل التطبيق.",
   "largeAttTokenKeep": "اتركه فارغًا للإبقاء على الرمز المحفوظ",
   "largeAttTokenPlaceholder": "رمز CostAction API",
   "largeAttToken": "رمز API",

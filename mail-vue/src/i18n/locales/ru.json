@@ -829,7 +829,6 @@
   "largeAttHint": "Большие файлы из внутренних чатов хранятся на Turbobit через CostAction. Существующие вложения остаются в прежнем хранилище.",
   "largeAttTokenSet": "Токен сохранён",
   "largeAttTokenMissing": "Нет токена",
-  "largeAttNote": "Файлы хранятся на Turbobit и скачиваются со страницы Turbobit. Срок хранения и скорость зависят от вашего аккаунта Turbobit; предпросмотра в приложении нет.",
   "largeAttTokenKeep": "Оставьте пустым, чтобы сохранить текущий токен",
   "largeAttTokenPlaceholder": "Токен API CostAction",
   "largeAttToken": "Токен API",

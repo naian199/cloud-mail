@@ -20,6 +20,7 @@ import {
 import verify from '../utils/verify-utils';
 import { notifyMail } from '../chat/mail-notify';
 import largeAtt from './large-att-service';
+import cloudFile from './cloud-file-service';
 
 const fail = (message, code = 400) => {
 	throw new BizError(message, code);
@@ -243,16 +244,21 @@ const mailChat = {
 		if (messages.length) {
 			const { results: atts } = await c.env.db
 				.prepare(
-					`SELECT att_id AS attId, email_id AS emailId, filename, size, mime_type AS mimeType, content_id AS contentId, type, key, storage, remote_status AS remoteStatus FROM attachments
-        WHERE user_id = ? AND account_id = ? AND type IN (0,1)
-        AND email_id IN (${messages.map(() => '?').join(',')})`
+					`SELECT a.att_id AS attId, a.email_id AS emailId, a.filename, a.size, a.mime_type AS mimeType, a.content_id AS contentId, a.type, a.key, a.storage, a.remote_status AS remoteStatus,
+          a.file_id AS fileId, f.status AS fileStatus, f.category, f.preview_key AS previewKey, f.preview_status AS previewStatus, f.preview_until AS previewUntil
+        FROM attachments a LEFT JOIN cloud_file f ON f.file_id = a.file_id
+        WHERE a.user_id = ? AND a.account_id = ? AND a.type IN (0,1)
+        AND a.email_id IN (${messages.map(() => '?').join(',')})`
 				)
 				.bind(account.user_id, account.account_id, ...messages.map((m) => m.emailId))
 				.all();
 			for (const att of atts) {
 				const message = messages.find((m) => m.emailId === att.emailId);
 				// Large attachments live with CostAction: never treat them as images or media.
-				if (att.storage === 'costaction') message?.largeFiles.push({ attId: att.attId, filename: att.filename, size: att.size, status: att.remoteStatus });
+				if (att.storage === 'costaction') {
+					const preview = att.fileId ? cloudFile.previewState({ preview_key: att.previewKey, preview_status: att.previewStatus, preview_until: att.previewUntil }) : 'none';
+					message?.largeFiles.push({ attId: att.attId, fileId: att.fileId || 0, filename: att.filename, size: att.size, mimeType: att.mimeType, category: att.category || 'other', status: att.fileStatus || att.remoteStatus, preview });
+				}
 				else message?.attachments.push(att);
 			}
 		}

@@ -43,6 +43,13 @@
         </div>
         <label class="costaction-field"><span>{{ t('largeAttMinSize') }}</span><el-input-number v-model="costactionForm.minMb" :min="1" :max="10240"><template #suffix>MB</template></el-input-number></label>
         <label class="costaction-field"><span>{{ t('largeAttMaxSize') }}</span><el-input-number v-model="costactionForm.maxMb" :min="1" :max="10240"><template #suffix>MB</template></el-input-number></label>
+        <label class="costaction-field"><span>{{ t('largeAttProgram') }}</span>
+          <el-select v-model="costactionForm.apptype" :aria-describedby="'costaction-program-hint'">
+            <el-option value="fd1" label="Turbobit (fd1)" />
+            <el-option value="fd2" label="Hitfile (fd2)" />
+          </el-select>
+        </label>
+        <p id="costaction-program-hint" class="costaction-note">{{ t('largeAttProgramHint') }}</p>
         <label class="costaction-field"><span>{{ t('largeAttRoles') }}</span>
           <el-select v-model="costactionForm.roles" multiple :placeholder="t('largeAttRolesAdmin')">
             <el-option v-for="role in costactionRoles" :key="role.roleId" :label="role.name" :value="role.roleId"/>
@@ -124,13 +131,14 @@ async function saveS3() {
 // Large attachments (CostAction/Turbobit). The token is write-only: the page only learns whether one is saved.
 const MB = 1024 * 1024;
 const costactionShow = ref(false), costactionTesting = ref(false), costactionResult = ref(''), costactionRoles = ref([]);
-const costactionForm = reactive({ token: '', minMb: 10, maxMb: 100, roles: [] });
+const costactionForm = reactive({ token: '', minMb: 10, maxMb: 95, roles: [], apptype: 'fd1' });
 
 function openCostaction() {
   costactionForm.token = '';
   costactionForm.minMb = Math.round((setting.value.costactionMinSize || 10 * MB) / MB);
   costactionForm.maxMb = Math.round((setting.value.costactionMaxSize || 100 * MB) / MB);
   costactionForm.roles = String(setting.value.costactionRoles || '').split(',').filter(Boolean).map(Number);
+  costactionForm.apptype = setting.value.costactionApptype === 'fd2' ? 'fd2' : 'fd1';
   costactionResult.value = '';
   roleSelectUse().then(list => { costactionRoles.value = list; }).catch(() => {});
   costactionShow.value = true;
@@ -156,7 +164,8 @@ async function saveCostaction() {
     costactionToken: costactionForm.token.trim(),
     costactionMinSize: costactionForm.minMb * MB,
     costactionMaxSize: costactionForm.maxMb * MB,
-    costactionRoles: costactionForm.roles.join(',')
+    costactionRoles: costactionForm.roles.join(','),
+    costactionApptype: costactionForm.apptype
   });
   if (saved) costactionShow.value = false;
 }

@@ -829,7 +829,6 @@
   "largeAttHint": "File besar yang dipilih di obrolan internal disimpan di Turbobit melalui CostAction. Lampiran yang ada tetap di penyimpanan saat ini.",
   "largeAttTokenSet": "Token tersimpan",
   "largeAttTokenMissing": "Belum ada token",
-  "largeAttNote": "File disimpan di Turbobit dan diunduh dari halaman Turbobit. Masa simpan dan kecepatan mengikuti akun Turbobit Anda; tidak ada pratinjau di aplikasi.",
   "largeAttTokenKeep": "Kosongkan untuk mempertahankan token tersimpan",
   "largeAttTokenPlaceholder": "Token API CostAction",
   "largeAttToken": "Token API",

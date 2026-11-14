@@ -10,7 +10,11 @@ import { createServer } from 'node:http';
 import { readFileSync, writeFileSync, rmSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
-import { API, BASE, PORT, READY_PORT, ADMIN, PEER, PASSWORD } from './env.mjs';
+import { API, BASE, PORT, READY_PORT, ADMIN, PEER, FILES_PEER, PASSWORD, COSTACTION_PORT } from './env.mjs';
+import { startCostActionMock } from './costaction-mock.mjs';
+
+const COSTACTION_TOKEN = 'e2e-costaction-token';
+const costaction = startCostActionMock(COSTACTION_PORT, COSTACTION_TOKEN);
 
 const vue = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const worker = path.resolve(vue, '../mail-worker');
@@ -28,10 +32,11 @@ const secret = devConfig.match(/^jwt_secret = "(.*)"$/m)[1];
 
 rmSync(stateDir, { recursive: true, force: true });
 const wrangler = spawn(path.join(worker, 'node_modules/.bin/wrangler'),
-  ['dev', '--config', config, '--port', String(PORT), '--persist-to', stateDir],
+  ['dev', '--config', config, '--port', String(PORT), '--persist-to', stateDir,
+    '--var', `costaction_api_base:${costaction.origin}`, '--var', `costaction_upload_origin:${costaction.origin}`],
   { cwd: worker, stdio: ['ignore', 'pipe', 'inherit'] });
 wrangler.stdout.on('data', () => {});
-const stop = () => { wrangler.kill(); process.exit(); };
+const stop = () => { wrangler.kill(); costaction.close(); process.exit(); };
 process.on('SIGINT', stop);
 process.on('SIGTERM', stop);
 wrangler.on('exit', code => { console.error(`wrangler exited (${code})`); process.exit(1); });
@@ -87,6 +92,26 @@ async function seed() {
     { accountId, recipients: [to], subject: 'Chat', text, attachments: [], clientId: crypto.randomUUID() }, token);
   await send(admin, adminAccount, PEER, 'Hi there, first message');
   await send(peer, peerAccount, ADMIN, 'Hello back');
+
+  // Large attachments, against the local CostAction mock: one image with a preview, sent to a
+  // separate user so the conversations above stay as they are.
+  const put = async (path, body, token) => {
+    const data = await (await fetch(`${API}${path}`, { method: 'PUT', headers: { 'content-type': 'application/json', Authorization: token }, body: JSON.stringify(body) })).json();
+    if (data.code !== 200) throw new Error(`${path}: ${data.message}`);
+  };
+  await put('/setting/set', { costactionStatus: 0, costactionToken: COSTACTION_TOKEN, costactionMinSize: 1024 * 1024, costactionMaxSize: 20 * 1024 * 1024 }, admin);
+  await post(`${API}/register`, { email: FILES_PEER, password: PASSWORD });
+  const size = 1536 * 1024;
+  const begun = await post(`${API}/large-att/begin`, { accountId: adminAccount, filename: 'holiday-photo.jpg', mimeType: 'image/jpeg', size, clientId: crypto.randomUUID().replaceAll('-', '') }, admin);
+  const form = new FormData();
+  form.append('file', new Blob([new Uint8Array(size)]), 'holiday-photo.jpg');
+  const uploaded = await (await fetch(`${API}/large-att/${begun.attId}/upload`, { method: 'POST', headers: { Authorization: admin }, body: form })).json();
+  if (uploaded.code !== 200) throw new Error(`large upload: ${uploaded.message}`);
+  // A 2x2 PNG as the stored preview.
+  const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAEklEQVR4nGP4z8DwHwyBNAMDAE7BB/k2Ej9zAAAAAElFTkSuQmCC', 'base64');
+  const preview = await (await fetch(`${API}/cloud-file/${uploaded.data.fileId}/preview`, { method: 'PUT', headers: { Authorization: admin, 'content-type': 'image/png' }, body: png })).json();
+  if (preview.code !== 200) throw new Error(`preview: ${preview.message}`);
+  await post(`${API}/mail-chat/send`, { accountId: adminAccount, recipients: [FILES_PEER], subject: 'Chat', text: 'Photos from the trip', attachments: [], largeAttIds: [begun.attId], clientId: crypto.randomUUID() }, admin);
 }
 
 await waitForBackend();

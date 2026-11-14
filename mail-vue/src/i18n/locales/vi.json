@@ -829,7 +829,6 @@
   "largeAttHint": "Tệp lớn chọn trong trò chuyện nội bộ được lưu trên Turbobit qua CostAction. Tệp đính kèm hiện có giữ nguyên nơi lưu trữ.",
   "largeAttTokenSet": "Đã lưu token",
   "largeAttTokenMissing": "Chưa có token",
-  "largeAttNote": "Tệp được lưu trên Turbobit và tải xuống từ trang của Turbobit. Thời hạn lưu và tốc độ phụ thuộc tài khoản Turbobit; không có xem trước trong ứng dụng.",
   "largeAttTokenKeep": "Để trống để giữ token đã lưu",
   "largeAttTokenPlaceholder": "Token API CostAction",
   "largeAttToken": "Token API",

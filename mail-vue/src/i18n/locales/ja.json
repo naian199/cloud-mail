@@ -829,7 +829,6 @@
   "largeAttHint": "社内チャットで選択した大きなファイルは CostAction 経由で Turbobit に保存されます。既存の添付ファイルは現在の保存先のままです。",
   "largeAttTokenSet": "トークン設定済み",
   "largeAttTokenMissing": "トークン未設定",
-  "largeAttNote": "ファイルは Turbobit に保存され、Turbobit のページからダウンロードします。保存期間と速度は Turbobit アカウントに依存し、アプリ内プレビューはありません。",
   "largeAttTokenKeep": "空欄のままにすると保存済みのトークンを維持します",
   "largeAttTokenPlaceholder": "CostAction API トークン",
   "largeAttToken": "API トークン",

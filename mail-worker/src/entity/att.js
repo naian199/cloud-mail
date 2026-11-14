@@ -24,5 +24,7 @@ export const  att = sqliteTable('attachments', {
 	remoteStatus: text('remote_status').default('').notNull(),
 	remoteDeleteId: text('remote_delete_id').default('').notNull(),
 	clientKey: text('client_key').default('').notNull(),
+	// The cloud_file this row links to (large attachments only).
+	fileId: integer('file_id').default(0).notNull(),
 });
 
