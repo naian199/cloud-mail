@@ -191,7 +191,8 @@ const largeAtt = {
 		const row = await draft(c, positiveId(params?.attId), userId);
 		if (!row || row.status !== 'uploading') return;
 		await c.env.db.batch([
-			c.env.db.prepare("UPDATE attachments SET remote_status = 'failed' WHERE att_id = ?").bind(row.attId),
+			// Guarded: an upload that completed meanwhile stays ready.
+			c.env.db.prepare("UPDATE attachments SET remote_status = 'failed' WHERE att_id = ? AND remote_status = 'uploading'").bind(row.attId),
 			c.env.db.prepare("UPDATE cloud_file SET status = 'failed' WHERE file_id = ? AND status = 'uploading'").bind(row.fileId)
 		]);
 	},

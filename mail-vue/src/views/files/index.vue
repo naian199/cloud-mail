@@ -66,7 +66,7 @@
 </template>
 
 <script setup>
-import { defineOptions, onBeforeUnmount, reactive, ref, watch } from 'vue';
+import { defineOptions, onActivated, onBeforeUnmount, reactive, ref, watch } from 'vue';
 import { Icon } from '@iconify/vue';
 import { useI18n } from 'vue-i18n';
 import { ElMessage, ElMessageBox } from 'element-plus';
@@ -113,6 +113,9 @@ const reloadSoon = debounce(reload, 300);
 watch(query, reloadSoon);
 watch([category, mark, sort], reload);
 reload();
+// The page is kept alive; returning from chat shows files collected meanwhile.
+let firstActivation = true;
+onActivated(() => { if (firstActivation) firstActivation = false; else reload(); });
 
 async function loadThumbs(list) {
   for (const item of list) {

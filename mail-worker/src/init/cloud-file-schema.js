@@ -65,21 +65,29 @@ export async function migrateCloudFiles(db) {
 	await tryRun(db, "ALTER TABLE setting ADD COLUMN costaction_apptype TEXT NOT NULL DEFAULT 'fd1'");
 	await tryRun(db, 'ALTER TABLE attachments ADD COLUMN file_id INTEGER NOT NULL DEFAULT 0');
 	await tryRun(db, 'CREATE INDEX IF NOT EXISTS idx_attachments_file ON attachments(file_id) WHERE file_id != 0');
+	// The data backfill runs once: /init runs on every deployment, and must not bring back
+	// library entries users removed since.
+	const migrated = await db.prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?").bind(MARKER).first();
 	const columns = (await db.prepare('PRAGMA table_info(attachments)').all()).results.map((c) => c.name);
-	if (columns.includes('storage') && columns.includes('client_key')) {
-		// Large attachments made before this schema: one file per upload record, then link every
-		// message copy by remote ID, and put each upload in its uploader's library.
+	if (!migrated && columns.includes('storage') && columns.includes('client_key')) {
+		// Large attachments made before this schema: one file per upload record; then one per remote
+		// ID that only survives as a message copy (its uploader's row was deleted), with no uploader;
+		// then link every copy, and put each known upload in its uploader's library.
 		await db.batch([
 			db.prepare(`INSERT OR IGNORE INTO cloud_file(uploader_id, client_key, remote_id, filename, size, status, ready_at, create_time)
         SELECT user_id, client_key, remote_id, filename, size,
           CASE WHEN remote_status IN ('ready','failed','deleted','expired','uploading') THEN remote_status ELSE 'failed' END,
           CASE WHEN remote_status = 'ready' THEN unixepoch() ELSE 0 END, unixepoch()
         FROM attachments WHERE storage = 'costaction' AND client_key != ''`),
+			db.prepare(`INSERT OR IGNORE INTO cloud_file(uploader_id, remote_id, filename, size, status, ready_at, create_time)
+        SELECT 0, remote_id, filename, size,
+          CASE WHEN remote_status IN ('ready','deleted','expired') THEN remote_status ELSE 'ready' END, unixepoch(), unixepoch()
+        FROM attachments WHERE storage = 'costaction' AND remote_id != '' GROUP BY remote_id`),
 			db.prepare(`UPDATE attachments SET file_id = COALESCE(
           (SELECT f.file_id FROM cloud_file f WHERE f.uploader_id = attachments.user_id AND f.client_key = attachments.client_key AND attachments.client_key != ''),
           (SELECT f.file_id FROM cloud_file f WHERE f.remote_id = attachments.remote_id AND attachments.remote_id != ''), 0)
         WHERE storage = 'costaction' AND file_id = 0`),
-			db.prepare(`INSERT OR IGNORE INTO user_file(user_id, file_id, uploaded) SELECT uploader_id, file_id, 1 FROM cloud_file WHERE status = 'ready'`)
+			db.prepare(`INSERT OR IGNORE INTO user_file(user_id, file_id, uploaded) SELECT uploader_id, file_id, 1 FROM cloud_file WHERE status = 'ready' AND uploader_id != 0`)
 		]);
 	}
 	await db.prepare(`CREATE TABLE IF NOT EXISTS ${MARKER} (id INTEGER PRIMARY KEY)`).run();

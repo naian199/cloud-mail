@@ -67,14 +67,20 @@ test('migration: existing large attachments become files, message copies link to
     INSERT INTO attachments VALUES (1, 10, 5, 'a.zip', 100, 'costaction', 'R1', 'ready', 'k1');
     INSERT INTO attachments VALUES (2, 20, 6, 'a.zip', 100, 'costaction', 'R1', 'ready', '');
     INSERT INTO attachments VALUES (3, 10, 0, 'b.zip', 50, 'costaction', '', 'failed', 'k2');
-    INSERT INTO attachments VALUES (4, 10, 7, 'pic.png', 9, '', '', '', '');`);
+    INSERT INTO attachments VALUES (4, 10, 7, 'pic.png', 9, '', '', '', '');
+    INSERT INTO attachments VALUES (5, 30, 8, 'old.zip', 70, 'costaction', 'R9', 'ready', '');`);
 	const wrapped = d1(db);
 	await migrateCloudFiles(wrapped);
-	await migrateCloudFiles(wrapped); // idempotent
 	const files = db.prepare('SELECT file_id, uploader_id, remote_id, status FROM cloud_file ORDER BY file_id').all();
-	assert.deepEqual(files.map((f) => [f.uploader_id, f.remote_id, f.status]), [[10, 'R1', 'ready'], [10, '', 'failed']]);
+	// R9 survives only as a recipient's copy: it gets a file with no uploader.
+	assert.deepEqual(files.map((f) => [f.uploader_id, f.remote_id, f.status]), [[10, 'R1', 'ready'], [10, '', 'failed'], [0, 'R9', 'ready']]);
 	const links = db.prepare('SELECT att_id, file_id FROM attachments ORDER BY att_id').all().map((r) => r.file_id);
-	assert.deepEqual(links, [files[0].file_id, files[0].file_id, files[1].file_id, 0]);
+	assert.deepEqual(links, [files[0].file_id, files[0].file_id, files[1].file_id, 0, files[2].file_id]);
 	assert.deepEqual(db.prepare('SELECT user_id, file_id, uploaded FROM user_file').all().map((r) => [r.user_id, r.file_id, r.uploaded]), [[10, files[0].file_id, 1]]);
+	// The backfill runs once: a later /init does not restore an entry the user removed.
+	db.exec('DELETE FROM user_file');
+	await migrateCloudFiles(wrapped);
+	assert.equal(db.prepare('SELECT COUNT(*) AS n FROM user_file').get().n, 0);
+	assert.equal(db.prepare('SELECT COUNT(*) AS n FROM cloud_file').get().n, 3);
 	assert.ok(db.prepare("SELECT costaction_apptype FROM setting").all());
 });
