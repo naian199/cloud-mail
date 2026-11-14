@@ -19,6 +19,7 @@ export const CATEGORIES = ['tools', 'social', 'productivity', 'media', 'games', 
 const PAGE = 24;
 
 const fail = (message, code = 400) => { throw new BizError(message, code); };
+const conflict = () => fail('Changed since you opened it. Refresh and try again. / 状态已变化，请刷新后重试。', 409);
 const now = () => Math.floor(Date.now() / 1000);
 const id = (value) => {
 	const n = Number(value);
@@ -73,13 +74,13 @@ const appService = {
 		const platform = PLATFORMS.includes(query.platform) ? query.platform : '';
 		const category = CATEGORIES.includes(query.category) ? query.category : '';
 		const page = Math.max(0, Math.min(1000, Number(query.page) || 0));
-		const where = [`a.status = 'published'`, `EXISTS (SELECT 1 FROM app_version v WHERE v.app_id = a.app_id AND v.status = 'published'${platform ? ' AND v.platform = ?' : ''})`];
+		const where = [`a.status = 'published'`, `EXISTS (SELECT 1 FROM app_version v JOIN cloud_file lf ON lf.file_id = v.file_id AND lf.status = 'ready' WHERE v.app_id = a.app_id AND v.status = 'published'${platform ? ' AND v.platform = ?' : ''})`];
 		const binds = platform ? [platform] : [];
 		if (q) { where.push(`(instr(lower(a.name), ?) > 0 OR instr(lower(a.summary), ?) > 0)`); binds.push(q, q); }
 		if (category) { where.push('a.category = ?'); binds.push(category); }
 		const { results } = await c.env.db.prepare(`SELECT a.*, ${PUBLISHER},
-        (SELECT group_concat(DISTINCT v.platform) FROM app_version v WHERE v.app_id = a.app_id AND v.status = 'published') AS platforms,
-        (SELECT v.version FROM app_version v WHERE v.app_id = a.app_id AND v.status = 'published' ORDER BY v.publish_time DESC, v.version_id DESC LIMIT 1) AS latestVersion
+        (SELECT group_concat(DISTINCT v.platform) FROM app_version v JOIN cloud_file lf ON lf.file_id = v.file_id AND lf.status = 'ready' WHERE v.app_id = a.app_id AND v.status = 'published') AS platforms,
+        (SELECT v.version FROM app_version v JOIN cloud_file lf ON lf.file_id = v.file_id AND lf.status = 'ready' WHERE v.app_id = a.app_id AND v.status = 'published' ORDER BY v.publish_time DESC, v.version_id DESC LIMIT 1) AS latestVersion
       FROM app a ${PUBLISHER_JOIN} WHERE ${where.join(' AND ')}
       ORDER BY a.publish_time DESC, a.app_id DESC LIMIT ? OFFSET ?`).bind(...binds, PAGE + 1, page * PAGE).all();
 		return { apps: results.slice(0, PAGE).map(appRow), hasMore: results.length > PAGE, platforms: PLATFORMS, categories: CATEGORIES };
@@ -87,8 +88,8 @@ const appService = {
 
 	async loadApp(c, appId) {
 		return c.env.db.prepare(`SELECT a.*, ${PUBLISHER},
-        (SELECT group_concat(DISTINCT v.platform) FROM app_version v WHERE v.app_id = a.app_id AND v.status = 'published') AS platforms,
-        (SELECT v.version FROM app_version v WHERE v.app_id = a.app_id AND v.status = 'published' ORDER BY v.publish_time DESC, v.version_id DESC LIMIT 1) AS latestVersion
+        (SELECT group_concat(DISTINCT v.platform) FROM app_version v JOIN cloud_file lf ON lf.file_id = v.file_id AND lf.status = 'ready' WHERE v.app_id = a.app_id AND v.status = 'published') AS platforms,
+        (SELECT v.version FROM app_version v JOIN cloud_file lf ON lf.file_id = v.file_id AND lf.status = 'ready' WHERE v.app_id = a.app_id AND v.status = 'published' ORDER BY v.publish_time DESC, v.version_id DESC LIMIT 1) AS latestVersion
       FROM app a ${PUBLISHER_JOIN} WHERE a.app_id = ?`).bind(appId).first();
 	},
 
@@ -122,7 +123,8 @@ const appService = {
 		const { row } = await this.access(c, id(rawId));
 		if (!row || row.status !== 'published') return { appId: Number(rawId), available: false };
 		const app = appRow(row);
-		return { appId: app.appId, available: true, name: app.name, summary: app.summary, platforms: app.platforms, latestVersion: app.latestVersion, publisherName: app.publisherName };
+		// A listed app with no version that can be downloaded right now still shows, marked as such.
+		return { appId: app.appId, available: true, downloadable: app.platforms.length > 0, name: app.name, summary: app.summary, platforms: app.platforms, latestVersion: app.latestVersion, publisherName: app.publisherName };
 	},
 
 	async download(c, rawAppId, rawVersionId) {
@@ -180,8 +182,9 @@ const appService = {
 		if (row.status === 'removed') fail('Removed by review / 已被审核下架', 409);
 		const f = this.fields(params);
 		const status = row.status === 'draft' ? 'draft' : 'review';
-		await c.env.db.prepare(`UPDATE app SET name = ?, summary = ?, description = ?, category = ?, source_url = ?, status = ?, update_time = ? WHERE app_id = ?`)
-			.bind(f.name, f.summary, f.description, f.category, f.sourceUrl, status, now(), row.app_id).run();
+		const res = await c.env.db.prepare(`UPDATE app SET name = ?, summary = ?, description = ?, category = ?, source_url = ?, status = ?, update_time = MAX(?, update_time + 1) WHERE app_id = ? AND status = ?`)
+			.bind(f.name, f.summary, f.description, f.category, f.sourceUrl, status, now(), row.app_id, row.status).run();
+		if (!res.meta.changes) conflict();
 		return { status };
 	},
 
@@ -195,23 +198,23 @@ const appService = {
 		if (!file) fail('Choose a verified file you uploaded / 请选择你上传且已核验的文件', 400);
 		const res = await c.env.db.prepare(`INSERT INTO app_version(app_id, version, platform, notes, file_id) VALUES (?, ?, ?, ?, ?) RETURNING version_id`)
 			.bind(row.app_id, version, platform, text(params?.notes, 2000), fileId).first();
-		await c.env.db.prepare('UPDATE app SET update_time = ? WHERE app_id = ?').bind(now(), row.app_id).run();
+		await c.env.db.prepare('UPDATE app SET update_time = MAX(?, update_time + 1) WHERE app_id = ?').bind(now(), row.app_id).run();
 		return { versionId: res.version_id };
 	},
 
 	async submit(c, rawId) {
 		const row = await this.own(c, rawId);
-		if (!['draft', 'rejected', 'hidden'].includes(row.status)) fail('Nothing to submit / 无需提交', 409);
 		const { count } = await c.env.db.prepare(`SELECT count(*) AS count FROM app_version WHERE app_id = ? AND status IN ('review','published')`).bind(row.app_id).first();
 		if (!count) fail('Add a version first / 请先添加版本', 409);
-		await c.env.db.prepare(`UPDATE app SET status = 'review', removed_by = '', update_time = ? WHERE app_id = ?`).bind(now(), row.app_id).run();
+		const res = await c.env.db.prepare(`UPDATE app SET status = 'review', removed_by = '', update_time = MAX(?, update_time + 1) WHERE app_id = ? AND status IN ('draft','rejected','hidden')`).bind(now(), row.app_id).run();
+		if (!res.meta.changes) conflict();
 		return { status: 'review' };
 	},
 
 	async hide(c, rawId) {
 		const row = await this.own(c, rawId);
-		if (row.status !== 'published') fail('Only published apps can be hidden / 仅已上架应用可下架', 409);
-		await c.env.db.prepare(`UPDATE app SET status = 'hidden', removed_by = 'publisher', update_time = ? WHERE app_id = ?`).bind(now(), row.app_id).run();
+		const res = await c.env.db.prepare(`UPDATE app SET status = 'hidden', removed_by = 'publisher', update_time = MAX(?, update_time + 1) WHERE app_id = ? AND status = 'published'`).bind(now(), row.app_id).run();
+		if (!res.meta.changes) conflict();
 		return { status: 'hidden' };
 	},
 
@@ -219,7 +222,8 @@ const appService = {
 		const row = await this.own(c, rawId);
 		const res = await c.env.db.prepare(`UPDATE app_version SET status = 'withdrawn' WHERE version_id = ? AND app_id = ? AND status IN ('review','published')`)
 			.bind(id(rawVersionId), row.app_id).run();
-		if (!res.meta.changes) fail('Version unavailable / 版本不可用', 404);
+		if (!res.meta.changes) conflict();
+		await c.env.db.prepare('UPDATE app SET update_time = MAX(?, update_time + 1) WHERE app_id = ?').bind(now(), row.app_id).run();
 		return { status: 'withdrawn' };
 	},
 
@@ -235,64 +239,58 @@ const appService = {
 		return results.map((r) => ({ ...appRow(r), pendingVersions: r.pending }));
 	},
 
+	// Every change is a conditional UPDATE on the state the reviewer saw. Approving needs the
+	// listing's updateTime as seen (a new version or edit changes it) and publishes only the
+	// versions the reviewer explicitly approved that are still waiting; a version withdrawn or
+	// blocked meanwhile is never published. A lost race answers 409.
 	async reviewApp(c, rawId, params) {
 		const appId = id(rawId);
 		const note = text(params?.note, 500);
-		const row = await c.env.db.prepare('SELECT * FROM app WHERE app_id = ?').bind(appId).first();
-		if (!row) fail('App unavailable / 应用不可用', 404);
-		const action = params?.action;
-		const t = now();
+		const action = params?.action, t = now();
+		const db = c.env.db;
 		if (action === 'approve') {
-			if (row.status !== 'review') fail('Not waiting for review / 不在待审核状态', 409);
-			await c.env.db.batch([
-				c.env.db.prepare(`UPDATE app SET status = 'published', removed_by = '', review_note = ?, publish_time = CASE WHEN publish_time = 0 THEN ? ELSE publish_time END, update_time = ? WHERE app_id = ?`).bind(note, t, t, appId),
-				// Approving a listing approves the versions submitted with it.
-				c.env.db.prepare(`UPDATE app_version SET status = 'published', publish_time = ? WHERE app_id = ? AND status = 'review'`).bind(t, appId)
-			]);
+			const seen = Number(params?.updateTime);
+			if (!Number.isSafeInteger(seen)) fail('Missing review snapshot / 缺少审核快照');
+			const versionIds = [...new Set((Array.isArray(params?.versionIds) ? params.versionIds : []).map(Number).filter((n) => Number.isSafeInteger(n) && n > 0))].slice(0, 100);
+			const res = await db.prepare(`UPDATE app SET status = 'published', removed_by = '', review_note = ?, publish_time = CASE WHEN publish_time = 0 THEN ? ELSE publish_time END, update_time = MAX(?, update_time + 1)
+        WHERE app_id = ? AND status = 'review' AND update_time = ?`).bind(note, t, t, appId, seen).run();
+			if (!res.meta.changes) conflict();
+			if (versionIds.length) {
+				await db.prepare(`UPDATE app_version SET status = 'published', publish_time = ? WHERE app_id = ? AND status = 'review' AND version_id IN (${versionIds.map(() => '?').join(',')})`)
+					.bind(t, appId, ...versionIds).run();
+			}
 			return { status: 'published' };
 		}
-		if (action === 'reject') {
-			if (row.status !== 'review') fail('Not waiting for review / 不在待审核状态', 409);
-			if (!note) fail('Give a reason / 请填写原因');
-			await c.env.db.prepare(`UPDATE app SET status = 'rejected', review_note = ?, update_time = ? WHERE app_id = ?`).bind(note, t, appId).run();
-			return { status: 'rejected' };
-		}
-		if (action === 'remove') {
-			if (!['published', 'hidden', 'review'].includes(row.status)) fail('Cannot remove / 无法下架', 409);
-			if (!note) fail('Give a reason / 请填写原因');
-			await c.env.db.prepare(`UPDATE app SET status = 'removed', removed_by = 'admin', review_note = ?, update_time = ? WHERE app_id = ?`).bind(note, t, appId).run();
-			return { status: 'removed' };
-		}
-		if (action === 'restore') {
-			if (row.status !== 'removed') fail('Not removed / 未下架', 409);
-			await c.env.db.prepare(`UPDATE app SET status = 'published', removed_by = '', review_note = ?, update_time = ? WHERE app_id = ?`).bind(note, t, appId).run();
-			return { status: 'published' };
-		}
-		fail('Unknown action / 未知操作');
+		const rules = {
+			reject: { from: ['review'], to: 'rejected', reason: true, by: '' },
+			remove: { from: ['published', 'hidden', 'review'], to: 'removed', reason: true, by: 'admin' },
+			restore: { from: ['removed'], to: 'published', reason: false, by: '' }
+		}[action];
+		if (!rules) fail('Unknown action / 未知操作');
+		if (rules.reason && !note) fail('Give a reason / 请填写原因');
+		const res = await db.prepare(`UPDATE app SET status = ?, removed_by = ?, review_note = ?, update_time = MAX(?, update_time + 1) WHERE app_id = ? AND status IN (${rules.from.map(() => '?').join(',')})`)
+			.bind(rules.to, rules.by, note, t, appId, ...rules.from).run();
+		if (!res.meta.changes) conflict();
+		return { status: rules.to };
 	},
 
 	async reviewVersion(c, rawId, rawVersionId, params) {
 		const appId = id(rawId), versionId = id(rawVersionId);
 		const note = text(params?.note, 500);
-		const row = await c.env.db.prepare('SELECT * FROM app_version WHERE version_id = ? AND app_id = ?').bind(versionId, appId).first();
-		if (!row) fail('Version unavailable / 版本不可用', 404);
-		const action = params?.action, t = now();
-		if (action === 'approve' && row.status === 'review') {
-			await c.env.db.prepare(`UPDATE app_version SET status = 'published', review_note = ?, publish_time = ? WHERE version_id = ?`).bind(note, t, versionId).run();
-			return { status: 'published' };
-		}
-		if (action === 'reject' && row.status === 'review') {
-			if (!note) fail('Give a reason / 请填写原因');
-			await c.env.db.prepare(`UPDATE app_version SET status = 'rejected', review_note = ? WHERE version_id = ?`).bind(note, versionId).run();
-			return { status: 'rejected' };
-		}
-		// Blocking stops downloads at once; it is not just hidden from the list.
-		if (action === 'block' && ['published', 'review'].includes(row.status)) {
-			if (!note) fail('Give a reason / 请填写原因');
-			await c.env.db.prepare(`UPDATE app_version SET status = 'blocked', review_note = ? WHERE version_id = ?`).bind(note, versionId).run();
-			return { status: 'blocked' };
-		}
-		fail('Not allowed in this state / 当前状态不可操作', 409);
+		const rules = {
+			approve: { from: ['review'], to: 'published', reason: false },
+			reject: { from: ['review'], to: 'rejected', reason: true },
+			// Blocking stops downloads at once; it is not just hidden from the list.
+			block: { from: ['published', 'review'], to: 'blocked', reason: true }
+		}[params?.action];
+		if (!rules) fail('Unknown action / 未知操作');
+		if (rules.reason && !note) fail('Give a reason / 请填写原因');
+		const t = now();
+		const res = await c.env.db.prepare(`UPDATE app_version SET status = ?, review_note = ?, publish_time = CASE WHEN ? = 'published' THEN ? ELSE publish_time END
+      WHERE version_id = ? AND app_id = ? AND status IN (${rules.from.map(() => '?').join(',')})`)
+			.bind(rules.to, note, rules.to, t, versionId, appId, ...rules.from).run();
+		if (!res.meta.changes) conflict();
+		return { status: rules.to };
 	}
 };
 

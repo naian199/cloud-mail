@@ -16,7 +16,7 @@
               <template v-if="a.pendingVersions"> · {{ t('appPendingVersions', { n: a.pendingVersions }) }}</template></small>
           </div>
           <div class="review-actions">
-            <el-button v-if="a.status === 'review'" size="small" type="primary" @click="decide(a, 'approve')">{{ t('appApprove') }}</el-button>
+            <el-button v-if="a.status === 'review'" size="small" type="primary" data-approve @click="approve(a)">{{ t('appApprove') }}</el-button>
             <el-button v-if="a.status === 'review'" size="small" @click="decide(a, 'reject', true)">{{ t('appReject') }}</el-button>
             <el-button v-if="['published','hidden','review'].includes(a.status)" size="small" type="danger" plain @click="decide(a, 'remove', true)">{{ t('appRemove') }}</el-button>
             <el-button v-if="a.status === 'removed'" size="small" @click="decide(a, 'restore')">{{ t('appRestore') }}</el-button>
@@ -54,13 +54,26 @@ import { formatBytes } from '@/utils/file-utils.js';
 const { t } = useI18n();
 const router = useRouter();
 const queue = ref([]), loaded = ref(false), loading = ref(false), error = ref('');
-const open = reactive({}), versions = reactive({});
+const open = reactive({}), versions = reactive({}), seen = reactive({});
 
 async function load() {
   loading.value = true;
   try { queue.value = await reviewQueue(); loaded.value = true; error.value = ''; } catch { error.value = loaded.value ? 'stale' : 'failed'; } finally { loading.value = false; }
 }
-async function loadVersions(a) { try { versions[a.appId] = (await appDetail(a.appId)).versions; } catch {} }
+async function loadVersions(a) {
+  try { const data = await appDetail(a.appId); versions[a.appId] = data.versions; seen[a.appId] = data.app.updateTime; return true; } catch { return false; }
+}
+// Approving publishes the listing and only the pending versions shown here, as of this snapshot.
+// If the publisher changed anything since, the server refuses and the list reloads.
+async function approve(a) {
+  open[a.appId] = true;
+  if (!(await loadVersions(a))) return;
+  const pending = versions[a.appId].filter((v) => v.status === 'review');
+  const list = pending.map((v) => `v${v.version} · ${t('appPlatform_' + v.platform)}`).join('\n') || t('appNoVersions');
+  try { await ElMessageBox.confirm(list, t('appApprove'), { customStyle: { whiteSpace: 'pre-line' } }); } catch { return; }
+  try { await reviewApp(a.appId, 'approve', '', { updateTime: seen[a.appId], versionIds: pending.map((v) => v.versionId) }); } catch {}
+  await load(); loadVersions(a);
+}
 function toggle(a) { open[a.appId] = !open[a.appId]; if (open[a.appId]) loadVersions(a); }
 // Rejecting, removing and blocking need a reason the publisher will see.
 async function reason(needed) {
@@ -69,11 +82,13 @@ async function reason(needed) {
 }
 async function decide(a, action, needsReason = false) {
   const note = await reason(needsReason); if (note === null) return;
-  try { await reviewApp(a.appId, action, note); await load(); if (open[a.appId]) loadVersions(a); } catch {}
+  try { await reviewApp(a.appId, action, note); } catch {}
+  await load(); if (open[a.appId]) loadVersions(a);
 }
 async function decideVersion(a, v, action, needsReason = false) {
   const note = await reason(needsReason); if (note === null) return;
-  try { await reviewVersion(a.appId, v.versionId, action, note); await Promise.all([load(), loadVersions(a)]); } catch {}
+  try { await reviewVersion(a.appId, v.versionId, action, note); } catch {}
+  await Promise.all([load(), loadVersions(a)]);
 }
 const back = () => goBack(router, '/me');
 load();

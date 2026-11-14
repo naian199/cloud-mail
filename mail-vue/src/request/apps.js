@@ -16,7 +16,7 @@ export const hideApp = (id) => http.post(`/app-publish/${id}/hide`);
 export const withdrawVersion = (id, versionId) => http.post(`/app-publish/${id}/versions/${versionId}/withdraw`);
 
 export const reviewQueue = () => http.get('/app-review/queue');
-export const reviewApp = (id, action, note = '') => http.post(`/app-review/${id}`, { action, note });
+export const reviewApp = (id, action, note = '', extra = {}) => http.post(`/app-review/${id}`, { action, note, ...extra });
 export const reviewVersion = (id, versionId, action, note = '') => http.post(`/app-review/${id}/versions/${versionId}`, { action, note });
 
 // A link to an app on this site: https://<this host>/apps/<id>.

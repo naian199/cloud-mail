@@ -972,5 +972,14 @@
   "appStatus_hidden": "Non listée",
   "appStatus_removed": "Retirée",
   "appStatus_withdrawn": "Retirée par l'éditeur",
-  "appStatus_blocked": "Bloquée"
+  "appStatus_blocked": "Bloquée",
+  "appShareToChat": "Partager dans une discussion",
+  "appCopyLink": "Copier le lien",
+  "appShareNoTargets": "Aucune discussion où vous pouvez publier.",
+  "appShareDraftHint": "La discussion s'ouvre avec le lien dans la zone de saisie. C'est vous qui envoyez.",
+  "appShareSendHint": "Le lien est envoyé comme message et affiche la carte de l'app.",
+  "appShareOpenChat": "Ouvrir la discussion",
+  "appShareSend": "Envoyer",
+  "appShareSent": "Envoyé à {name}",
+  "appFileGone": "fichier plus disponible"
 }

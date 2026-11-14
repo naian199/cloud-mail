@@ -972,5 +972,14 @@
   "appStatus_hidden": "게시 중단됨",
   "appStatus_removed": "강제 중단됨",
   "appStatus_withdrawn": "철회됨",
-  "appStatus_blocked": "차단됨"
+  "appStatus_blocked": "차단됨",
+  "appShareToChat": "채팅으로 공유",
+  "appCopyLink": "링크 복사",
+  "appShareNoTargets": "보낼 수 있는 채팅이 없습니다.",
+  "appShareDraftHint": "채팅을 열고 링크를 입력창에 넣습니다. 보내기는 직접 누르세요.",
+  "appShareSendHint": "링크를 메시지로 보내고 앱 카드를 표시합니다.",
+  "appShareOpenChat": "채팅 열기",
+  "appShareSend": "보내기",
+  "appShareSent": "{name}에 보냈습니다",
+  "appFileGone": "파일을 더 이상 사용할 수 없음"
 }

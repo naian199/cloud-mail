@@ -972,5 +972,14 @@
   "appStatus_hidden": "مخفي",
   "appStatus_removed": "تمت إزالته",
   "appStatus_withdrawn": "مسحوب",
-  "appStatus_blocked": "محظور"
+  "appStatus_blocked": "محظور",
+  "appShareToChat": "مشاركة في دردشة",
+  "appCopyLink": "نسخ الرابط",
+  "appShareNoTargets": "لا توجد دردشات يمكنك النشر فيها.",
+  "appShareDraftHint": "تُفتح الدردشة والرابط في مربع الرسالة، وأنت من يضغط إرسال.",
+  "appShareSendHint": "يُرسل الرابط كرسالة ويعرض بطاقة التطبيق.",
+  "appShareOpenChat": "فتح الدردشة",
+  "appShareSend": "إرسال",
+  "appShareSent": "أُرسل إلى {name}",
+  "appFileGone": "الملف لم يعد متاحًا"
 }

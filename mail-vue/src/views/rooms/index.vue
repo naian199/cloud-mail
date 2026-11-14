@@ -91,7 +91,7 @@ import ConversationCategories from '@/components/conversation-categories.vue';
 import { useConversationSidebar } from '@/composables/use-conversation-sidebar';
 import ConversationSidebarTools from '@/components/conversation-sidebar-tools.vue';
 import ConversationResize from '@/components/conversation-resize.vue';
-import { computed, reactive, ref, watch, nextTick, onMounted, onBeforeUnmount } from 'vue';
+import { computed, reactive, ref, watch, nextTick, onMounted, onBeforeUnmount, onActivated, onDeactivated } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import ListState from '@/components/list-state.vue';
@@ -133,6 +133,7 @@ function nextResult(delta){const length=matches.value.length;if(!length)return;r
 watch(messageSearch,()=>{resultIndex.value=0;focusResult();});
 watch(()=>matches.value.length,length=>{if(resultIndex.value>=length)resultIndex.value=Math.max(0,length-1);});
 watch(()=>route.query.create,value=>{
+  if(route.name!=='rooms')return;
   if(value!=='1')return;
   newRoom.kind=filter.value;newOpen.value=true;
   const query={...route.query};delete query.create;router.replace({query});
@@ -145,12 +146,12 @@ watch(active,value=>{ui.mobileChatFocused=!!value;},{immediate:true});
 function senderName(id) { return senders[id]?.displayName || senders[id]?.username || `${t('roomMember')} ${id}`; }
 function roomDate(value) { return new Date(value.replace(' ','T')+'Z').toLocaleDateString(locale.value); }
 function time(value) { return new Date(value.replace(' ','T')+'Z').toLocaleTimeString(locale.value,{hour:'2-digit',minute:'2-digit'}); }
-async function choose(id) { if(stopped)return;const query={...route.query};delete query.message; if(id){query.room=id;const room=rooms.value.find(room=>room.id===id);if(room)query.kind=room.kind;}else delete query.room;
+async function choose(id) { if(stopped||route.name!=='rooms')return;const query={...route.query};delete query.message; if(id){query.room=id;const room=rooms.value.find(room=>room.id===id);if(room)query.kind=room.kind;}else delete query.room;
   // Opening a room is an explicit step: it gets its own history entry, like opening a chat. Closing
   // one, or a room that disappeared, replaces the entry.
   if(id&&id!==route.query.room)await router.push({query});else await router.replace({query}); }
 function reset() { historyTarget.value=null;roomSearchOpen.value=false;messageSearch.value='';memberSearch.value='';version++; messages.value=[];members.value=[];Object.keys(senders).forEach(key=>delete senders[key]);hasOlder.value=false;atBottom.value=true;membersOpen.value=false;messageLoading.value=!!activeId.value; }
-watch([()=>route.query.room,()=>route.query.message],([id,message])=>{const nextId=typeof id==='string'?id:null;if(nextId===activeId.value&&!message)return;activeId.value=nextId;reset();refresh();});
+watch([()=>route.query.room,()=>route.query.message],([id,message])=>{if(route.name!=='rooms')return;const nextId=typeof id==='string'?id:null;if(nextId===activeId.value&&!message)return;activeId.value=nextId;reset();refresh();});
 function merge(data) { Object.assign(senders,data.senders);const map=new Map(messages.value.map(message=>[message.id,message]));data.messages.forEach(message=>map.set(message.id,message));messages.value=[...map.values()].sort((a,b)=>a.id-b.id); }
 async function bottom() {
   let jumped=false;
@@ -240,6 +241,11 @@ async function kick(member){const selected=activeId.value;try{await ElMessageBox
 function respond(accept){return action(id=>respondRoom(id,accept));}
 async function leave(){const selected=activeId.value;try{await ElMessageBox.confirm(t('roomLeave'),active.value.name);if(selected===activeId.value&&!stopped)await action(id=>leaveRoom(id));}catch{}}
 async function remove(){const selected=activeId.value;try{await ElMessageBox.confirm(t('roomDeleteConfirm'),active.value.name);if(selected===activeId.value&&!stopped)await action(id=>deleteRoom(id));}catch{}}
+// Kept alive across navigation (drafts and position survive a visit to an app or a message);
+// while hidden it must not react to keys or hold the phone's focused-chat layout.
+defineOptions({ name: 'rooms' });
+onDeactivated(()=>{document.removeEventListener('keydown',roomEscape);ui.mobileChatFocused=false;});
+onActivated(()=>{document.removeEventListener('keydown',roomEscape);document.addEventListener('keydown',roomEscape);ui.mobileChatFocused=!!active.value;});
 onBeforeUnmount(()=>{document.removeEventListener('keydown',roomEscape);stopped=true;version++;ui.mobileChatFocused=false;translationStatus.settingsOpen=false;});
 </script>
 <style scoped>

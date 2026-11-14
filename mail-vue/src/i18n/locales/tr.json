@@ -972,5 +972,14 @@
   "appStatus_hidden": "Listelenmiyor",
   "appStatus_removed": "Kaldırıldı",
   "appStatus_withdrawn": "Geri çekildi",
-  "appStatus_blocked": "Engellendi"
+  "appStatus_blocked": "Engellendi",
+  "appShareToChat": "Sohbette paylaş",
+  "appCopyLink": "Bağlantıyı kopyala",
+  "appShareNoTargets": "Yazabileceğiniz sohbet yok.",
+  "appShareDraftHint": "Sohbet, bağlantı ileti kutusunda olacak şekilde açılır. Gönder'e siz basarsınız.",
+  "appShareSendHint": "Bağlantı ileti olarak gönderilir ve uygulama kartını gösterir.",
+  "appShareOpenChat": "Sohbeti aç",
+  "appShareSend": "Gönder",
+  "appShareSent": "{name} kişisine gönderildi",
+  "appFileGone": "dosya artık kullanılamıyor"
 }

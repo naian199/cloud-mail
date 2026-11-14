@@ -972,5 +972,14 @@
   "appStatus_hidden": "ซ่อนแล้ว",
   "appStatus_removed": "ถูกนำออก",
   "appStatus_withdrawn": "ถอนแล้ว",
-  "appStatus_blocked": "ถูกบล็อก"
+  "appStatus_blocked": "ถูกบล็อก",
+  "appShareToChat": "แชร์ไปที่แชท",
+  "appCopyLink": "คัดลอกลิงก์",
+  "appShareNoTargets": "ไม่มีแชทที่คุณส่งข้อความได้",
+  "appShareDraftHint": "แชทจะเปิดพร้อมลิงก์ในช่องพิมพ์ คุณเป็นคนกดส่งเอง",
+  "appShareSendHint": "ลิงก์จะถูกส่งเป็นข้อความและแสดงการ์ดแอป",
+  "appShareOpenChat": "เปิดแชท",
+  "appShareSend": "ส่ง",
+  "appShareSent": "ส่งถึง {name} แล้ว",
+  "appFileGone": "ไฟล์ใช้งานไม่ได้แล้ว"
 }

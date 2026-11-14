@@ -83,6 +83,7 @@ import MailBody from '@/components/mail-body.vue'
 import {computed, reactive, ref, watch, onMounted, onUnmounted} from "vue";
 import {useRouter, useRoute} from 'vue-router'
 import {goBack} from '@/utils/go-back.js'
+import {hasPerm} from '@/perm/perm.js'
 import {ElMessage, ElMessageBox} from 'element-plus'
 import {emailDelete, emailRead, emailDetail} from "@/request/email.js";
 import {Icon} from "@iconify/vue";
@@ -155,21 +156,29 @@ watch(
   { flush: 'post' }
 )
 
-// /mail/:emailId opened directly (new tab, refresh in another tab, shared address): load that
-// message for this user instead of trusting whatever was opened last.
+// /mail/:emailId always loads that message from the server for the signed-in user, so a cached
+// copy in this tab never outlives a mailbox switch, a deletion or lost access. Plain /mail is
+// only the admin all-mail viewer (which opens records the admin may see but does not own);
+// anyone else is sent to the inbox.
 const unavailable = ref(false)
 async function loadFromRoute() {
   const id = Number(route.params.emailId)
   unavailable.value = false
-  if (!id || emailStore.contentData.email?.emailId === id) return
-  emailStore.contentData.email = null
+  if (!id) {
+    if (emailStore.contentData.delType !== 'physics' || !hasPerm('all-email:query')) router.replace('/inbox')
+    return
+  }
+  if (emailStore.contentData.email?.emailId !== id) emailStore.contentData.email = null
   try {
     const row = await emailDetail(id)
     if (Number(route.params.emailId) !== id) return
     emailStore.detailMap[id] = row
     Object.assign(emailStore.contentData, { email: row, delType: 'logic', showStar: true, showReply: true, showUnread: true })
   } catch {
-    if (Number(route.params.emailId) === id) unavailable.value = true
+    if (Number(route.params.emailId) !== id) return
+    emailStore.contentData.email = null
+    delete emailStore.detailMap[id]
+    unavailable.value = true
   }
 }
 watch(() => route.params.emailId, loadFromRoute, { immediate: true })

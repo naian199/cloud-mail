@@ -31,4 +31,3 @@ test('phones navigate with the tab bar', async ({ page }, testInfo) => {
   await page.locator('.site-tabbar [data-nav="files"]').click();
   await expect(page).toHaveURL(/\/files$/);
 });
-

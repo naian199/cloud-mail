@@ -972,5 +972,14 @@
   "appStatus_hidden": "Đã ẩn",
   "appStatus_removed": "Đã bị gỡ",
   "appStatus_withdrawn": "Đã rút lại",
-  "appStatus_blocked": "Đã chặn"
+  "appStatus_blocked": "Đã chặn",
+  "appShareToChat": "Chia sẻ vào trò chuyện",
+  "appCopyLink": "Sao chép liên kết",
+  "appShareNoTargets": "Không có cuộc trò chuyện nào bạn có thể gửi.",
+  "appShareDraftHint": "Cuộc trò chuyện sẽ mở với liên kết trong ô nhập. Bạn tự bấm Gửi.",
+  "appShareSendHint": "Liên kết được gửi thành tin nhắn và hiển thị thẻ ứng dụng.",
+  "appShareOpenChat": "Mở trò chuyện",
+  "appShareSend": "Gửi",
+  "appShareSent": "Đã gửi tới {name}",
+  "appFileGone": "tệp không còn khả dụng"
 }

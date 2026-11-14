@@ -972,5 +972,14 @@
   "appStatus_hidden": "Ausgeblendet",
   "appStatus_removed": "Entfernt",
   "appStatus_withdrawn": "Zurückgezogen",
-  "appStatus_blocked": "Gesperrt"
+  "appStatus_blocked": "Gesperrt",
+  "appShareToChat": "Im Chat teilen",
+  "appCopyLink": "Link kopieren",
+  "appShareNoTargets": "Keine Chats, in denen Sie schreiben können.",
+  "appShareDraftHint": "Der Chat öffnet sich mit dem Link im Eingabefeld. Senden tippen Sie selbst.",
+  "appShareSendHint": "Der Link wird als Nachricht gesendet und zeigt die App-Karte.",
+  "appShareOpenChat": "Chat öffnen",
+  "appShareSend": "Senden",
+  "appShareSent": "An {name} gesendet",
+  "appFileGone": "Datei nicht mehr verfügbar"
 }

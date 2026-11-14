@@ -16,7 +16,8 @@ async function publishedApp(api, tag) {
   const { appId } = (await api('POST', '/app-publish', { name: `Pocket Ledger ${tag}`, summary: 'Track spending offline', category: 'tools', sourceUrl: 'https://example.com/ledger' })).data;
   const { versionId } = (await api('POST', `/app-publish/${appId}/versions`, { version: '1.4.0', platform: 'android', fileId: files[0].fileId, notes: 'First release' })).data;
   expect((await api('POST', `/app-publish/${appId}/submit`)).code).toBe(200);
-  expect((await api('POST', `/app-review/${appId}`, { action: 'approve' })).code).toBe(200);
+  const updateTime = (await api('GET', `/apps/${appId}`)).data.app.updateTime;
+  expect((await api('POST', `/app-review/${appId}`, { action: 'approve', updateTime, versionIds: [versionId] })).code).toBe(200);
   return { appId, versionId };
 }
 
@@ -154,5 +155,81 @@ test.describe('redesigned site', () => {
     expect(await page.evaluate(() => history.length)).toBe(before + 1);
     await page.goBack();
     await expect(page).not.toHaveURL(/room=/);
+  });
+
+  test('review is race-safe: stale snapshots fail, only chosen versions publish, withdrawn ones never do', async () => {
+    const admin = as(await token('owner@example.com'));
+    const files = (await admin('GET', '/app-publish/files')).data;
+    const { appId } = (await admin('POST', '/app-publish', { name: `Race ${Date.now()}` })).data;
+    const v1 = (await admin('POST', `/app-publish/${appId}/versions`, { version: '1.0', platform: 'linux', fileId: files[0].fileId })).data.versionId;
+    await admin('POST', `/app-publish/${appId}/submit`);
+    const snapshot = (await admin('GET', `/apps/${appId}`)).data.app.updateTime;
+    // The publisher adds a version after the reviewer looked: the old snapshot is refused.
+    const v2 = (await admin('POST', `/app-publish/${appId}/versions`, { version: '1.1', platform: 'linux', fileId: files[0].fileId })).data.versionId;
+    const stale = await admin('POST', `/app-review/${appId}`, { action: 'approve', updateTime: snapshot, versionIds: [v1, v2] });
+    expect(stale.code).toBe(409);
+    // A fresh snapshot approving only v1 publishes v1; v2 keeps waiting.
+    const fresh = (await admin('GET', `/apps/${appId}`)).data.app.updateTime;
+    expect((await admin('POST', `/app-review/${appId}`, { action: 'approve', updateTime: fresh, versionIds: [v1] })).code).toBe(200);
+    const after = (await admin('GET', `/apps/${appId}`)).data.versions;
+    expect(after.find((v) => v.versionId === v1).status).toBe('published');
+    expect(after.find((v) => v.versionId === v2).status).toBe('review');
+    // Withdrawn meanwhile: a late approval of that version is refused and it stays withdrawn.
+    await admin('POST', `/app-publish/${appId}/versions/${v2}/withdraw`);
+    expect((await admin('POST', `/app-review/${appId}/versions/${v2}`, { action: 'approve' })).code).toBe(409);
+    expect((await admin('GET', `/apps/${appId}`)).data.versions.find((v) => v.versionId === v2).status).toBe('withdrawn');
+    // Blocking a published version stops its downloads at once.
+    await admin('POST', `/app-review/${appId}/versions/${v1}`, { action: 'block', note: 'Malware report' });
+    expect((await admin('POST', `/apps/${appId}/versions/${v1}/download`)).code).toBe(404);
+  });
+
+  test('share to chat: a group gets the link after a preview; a direct chat gets it as a draft', async ({ page, api }, testInfo) => {
+    const admin = as(await token('owner@example.com'));
+    const tag = `${testInfo.project.name}${Date.now()}`;
+    const { appId } = await publishedApp(admin, `S${tag}`);
+    const room = (await admin('POST', '/chat/rooms', { name: `Sharing ${tag}`, kind: 'group' })).data;
+    await open(page, `/apps/${appId}`);
+    await page.locator('[data-share]').click();
+    await page.locator(`[data-share-target="${room.id}"]`).click();
+    await expect(page.locator('.share-preview a[data-app-card]')).toBeVisible();
+    await page.locator('[data-share-confirm]').click();
+    await expect.poll(async () => (await admin('GET', `/chat/rooms/${room.id}/messages`)).data.messages.some((m) => m.body.includes(`/apps/${appId}`))).toBe(true);
+
+    const chats = (await api.get('/mail-chat/conversations?accountId=1&category=internal')).conversations.filter((c) => c.category !== 'external');
+    await page.locator('[data-share]').click();
+    await page.locator(`[data-share-target="${chats[0].key}"]`).click();
+    await page.locator('[data-share-confirm]').click();
+    await expect(page).toHaveURL(new RegExp(`/mail-chat\\?accountId=1&conversation=${chats[0].key}$`));
+    await expect(page.locator('.composer textarea').first()).toHaveValue(new RegExp(`/apps/${appId}`));
+  });
+
+  test('a chat draft survives a visit to the store and Back', async ({ page, api }, testInfo) => {
+    test.skip(isPhone(testInfo), 'the rail is a desktop control; phones hide the tab bar inside a chat');
+    const chats = (await api.get('/mail-chat/conversations?accountId=1&category=internal')).conversations.filter((c) => c.category !== 'external');
+    await open(page, `/mail-chat?accountId=1&conversation=${chats[0].key}`);
+    const box = page.locator('.composer textarea').first();
+    await box.fill('draft kept across pages');
+    await page.locator('.site-rail [data-nav="store"]').click();
+    await expect(page).toHaveURL(/\/apps/);
+    await page.goBack();
+    await expect(page).toHaveURL(new RegExp(`conversation=${chats[0].key}`));
+    await expect(box).toHaveValue('draft kept across pages');
+  });
+
+  test('mail detail checks ownership; plain /mail is only the admin viewer', async ({ browser, api }) => {
+    const list = await api.get('/email/list?accountId=1&allReceive=0&emailId=0&timeSort=0&size=1&type=0');
+    const ownerMail = list.list[0];
+    const detail = await api.get(`/email/detail?emailId=${ownerMail.emailId}`);
+    expect(detail.isStar === 0 || detail.isStar === 1).toBe(true);
+    const peer = as(await token(PEER));
+    expect((await peer('GET', `/email/detail?emailId=${ownerMail.emailId}`)).code).toBe(404);
+    const context = await browser.newContext({ serviceWorkers: 'block' });
+    await context.addInitScript((value) => localStorage.setItem('token', value), await token(PEER));
+    const page = await context.newPage();
+    await page.goto(`${BASE}/mail/${ownerMail.emailId}`);
+    await expect(page.locator('.mail-unavailable')).toBeVisible();
+    await page.goto(`${BASE}/mail`);
+    await expect(page).toHaveURL(/\/inbox$/);
+    await context.close();
   });
 });

@@ -972,5 +972,14 @@
   "appStatus_hidden": "Disembunyikan",
   "appStatus_removed": "Diturunkan",
   "appStatus_withdrawn": "Ditarik",
-  "appStatus_blocked": "Diblokir"
+  "appStatus_blocked": "Diblokir",
+  "appShareToChat": "Bagikan ke obrolan",
+  "appCopyLink": "Salin tautan",
+  "appShareNoTargets": "Tidak ada obrolan yang bisa Anda kirimi.",
+  "appShareDraftHint": "Obrolan terbuka dengan tautan di kotak pesan. Anda yang menekan Kirim.",
+  "appShareSendHint": "Tautan dikirim sebagai pesan dan menampilkan kartu aplikasi.",
+  "appShareOpenChat": "Buka obrolan",
+  "appShareSend": "Kirim",
+  "appShareSent": "Terkirim ke {name}",
+  "appFileGone": "berkas tidak tersedia lagi"
 }

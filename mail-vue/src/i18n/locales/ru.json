@@ -972,5 +972,14 @@
   "appStatus_hidden": "Скрыто",
   "appStatus_removed": "Снято",
   "appStatus_withdrawn": "Отозвано",
-  "appStatus_blocked": "Заблокировано"
+  "appStatus_blocked": "Заблокировано",
+  "appShareToChat": "Поделиться в чате",
+  "appCopyLink": "Копировать ссылку",
+  "appShareNoTargets": "Нет чатов, в которые можно писать.",
+  "appShareDraftHint": "Чат откроется со ссылкой в поле ввода. Отправите вы сами.",
+  "appShareSendHint": "Ссылка отправится сообщением с карточкой приложения.",
+  "appShareOpenChat": "Открыть чат",
+  "appShareSend": "Отправить",
+  "appShareSent": "Отправлено: {name}",
+  "appFileGone": "файл больше недоступен"
 }

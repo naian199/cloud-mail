@@ -972,5 +972,14 @@
   "appStatus_hidden": "非公開",
   "appStatus_removed": "掲載停止",
   "appStatus_withdrawn": "取り下げ済み",
-  "appStatus_blocked": "ブロック済み"
+  "appStatus_blocked": "ブロック済み",
+  "appShareToChat": "チャットで共有",
+  "appCopyLink": "リンクをコピー",
+  "appShareNoTargets": "投稿できるチャットがありません。",
+  "appShareDraftHint": "チャットを開き、リンクを入力欄に入れます。送信はご自身で行います。",
+  "appShareSendHint": "リンクをメッセージとして送信し、アプリカードを表示します。",
+  "appShareOpenChat": "チャットを開く",
+  "appShareSend": "送信",
+  "appShareSent": "{name} に送信しました",
+  "appFileGone": "ファイルは利用できなくなりました"
 }

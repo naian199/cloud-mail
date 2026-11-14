@@ -6,7 +6,8 @@
       <small>{{ t('navStore') }}<template v-if="card.publisherName"> · {{ card.publisherName }}</template></small>
       <strong>{{ card.name }}</strong>
       <span v-if="card.summary" class="app-card-summary">{{ card.summary }}</span>
-      <span class="app-card-meta"><span v-for="p in card.platforms" :key="p" class="app-chip">{{ t('appPlatform_' + p) }}</span><span v-if="card.latestVersion">v{{ card.latestVersion }}</span></span>
+      <span v-if="card.downloadable" class="app-card-meta"><span v-for="p in card.platforms" :key="p" class="app-chip">{{ t('appPlatform_' + p) }}</span><span v-if="card.latestVersion">v{{ card.latestVersion }}</span></span>
+      <span v-else class="app-card-meta">{{ t('appNoVersions') }}</span>
     </span>
   </RouterLink>
   <div v-else-if="card" class="app-card app-card-off" :data-app-card="appId" role="note">

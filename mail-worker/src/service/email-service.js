@@ -39,11 +39,16 @@ const emailService = {
 			.from(email)
 			.leftJoin(star, and(eq(star.emailId, email.emailId), eq(star.userId, userId)))
 			.innerJoin(account, eq(account.accountId, email.accountId))
-			.where(and(eq(email.emailId, emailId), eq(email.userId, userId), eq(email.isDel, isDel.NORMAL)))
+			// Same ownership and state rules as the inbox list: the user's own message, not deleted, in
+			// one of the user's mailboxes that is itself not deleted.
+			.where(and(eq(email.emailId, emailId), eq(email.userId, userId), eq(email.isDel, isDel.NORMAL),
+				eq(account.userId, userId), eq(account.isDel, isDel.NORMAL)))
 			.get();
 		if (!row) throw new BizError('Mail unavailable / 邮件不可用', 404);
 		row.attList = await attService.selectByEmailIds(c, [emailId]);
-		return row;
+		// Same shape as list items.
+		const { starId, ...rest } = row;
+		return { ...rest, isStar: starId != null ? 1 : 0 };
 	},
 
 	async list(c, params, userId) {

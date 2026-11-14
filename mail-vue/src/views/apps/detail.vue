@@ -40,7 +40,8 @@
           </div>
           <div class="get-row">
             <el-button type="primary" size="large" class="get-download" :loading="downloading" :disabled="!versionId" @click="download"><Icon icon="cloud-mail:download" width="18" />&nbsp;{{ t('appDownload') }}</el-button>
-            <el-button size="large" @click="share"><Icon icon="cloud-mail:share" width="18" />&nbsp;{{ t('appShare') }}</el-button>
+            <el-button size="large" data-share @click="shareOpen = true"><Icon icon="cloud-mail:share" width="18" />&nbsp;{{ t('appShareToChat') }}</el-button>
+            <el-button size="large" text @click="share">{{ t('appCopyLink') }}</el-button>
           </div>
           <p class="get-note">{{ t('appDownloadNote') }}<template v-if="chosen"> · {{ formatBytes(chosen.size) }}</template></p>
         </template>
@@ -56,7 +57,7 @@
         <h2>{{ t('appVersions') }}</h2>
         <ul class="versions">
           <li v-for="v in versions" :key="v.versionId" :data-version="v.versionId">
-            <div><strong>v{{ v.version }}</strong> · {{ t('appPlatform_' + v.platform) }}<span v-if="v.status !== 'published'" class="v-status" :data-status="v.status"> · {{ t('appStatus_' + v.status) }}</span></div>
+            <div><strong>v{{ v.version }}</strong> · {{ t('appPlatform_' + v.platform) }}<span v-if="v.status !== 'published'" class="v-status" :data-status="v.status"> · {{ t('appStatus_' + v.status) }}</span><span v-else-if="v.fileStatus !== 'ready'" class="v-status" data-status="gone"> · {{ t('appFileGone') }}</span></div>
             <small>{{ date(v.publishTime || v.createTime) }}<template v-if="canManage || canReview"> · {{ v.filename }} · {{ t('appClicks', { n: v.clicks }) }}</template></small>
             <p v-if="v.notes">{{ v.notes }}</p>
             <p v-if="v.reviewNote && (canManage || canReview)" class="v-note">{{ v.reviewNote }}</p>
@@ -64,6 +65,7 @@
         </ul>
       </section>
     </div>
+    <ShareToChat v-if="app.appId" v-model="shareOpen" :app-id="app.appId" :app-name="app.name" />
   </div>
 </template>
 
@@ -74,6 +76,7 @@ import { Icon } from '@iconify/vue';
 import { useI18n } from 'vue-i18n';
 import { ElMessage } from 'element-plus';
 import ListState from '@/components/list-state.vue';
+import ShareToChat from '@/components/share-to-chat.vue';
 import { appDetail, appDownload, appLink } from '@/request/apps';
 import { goBack } from '@/utils/go-back.js';
 import { formatBytes } from '@/utils/file-utils.js';
@@ -81,8 +84,8 @@ import { formatBytes } from '@/utils/file-utils.js';
 const { t, locale } = useI18n();
 const route = useRoute(), router = useRouter();
 const state = ref('loading'), app = ref({}), versions = ref([]), canManage = ref(false), canReview = ref(false);
-const platform = ref(''), versionId = ref(0), downloading = ref(false);
-const installable = computed(() => versions.value.filter((v) => v.status === 'published' && app.value.status === 'published'));
+const platform = ref(''), versionId = ref(0), downloading = ref(false), shareOpen = ref(false);
+const installable = computed(() => versions.value.filter((v) => v.status === 'published' && v.fileStatus === 'ready' && app.value.status === 'published'));
 const platformsOf = computed(() => [...new Set(installable.value.map((v) => v.platform))]);
 const forPlatform = computed(() => installable.value.filter((v) => v.platform === platform.value));
 const chosen = computed(() => installable.value.find((v) => v.versionId === versionId.value));

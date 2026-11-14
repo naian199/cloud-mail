@@ -972,5 +972,14 @@
   "appStatus_hidden": "Disembunyikan",
   "appStatus_removed": "Diturunkan",
   "appStatus_withdrawn": "Ditarik balik",
-  "appStatus_blocked": "Disekat"
+  "appStatus_blocked": "Disekat",
+  "appShareToChat": "Kongsi ke sembang",
+  "appCopyLink": "Salin pautan",
+  "appShareNoTargets": "Tiada sembang yang boleh anda hantar.",
+  "appShareDraftHint": "Sembang dibuka dengan pautan dalam kotak mesej. Anda yang tekan Hantar.",
+  "appShareSendHint": "Pautan dihantar sebagai mesej dan memaparkan kad aplikasi.",
+  "appShareOpenChat": "Buka sembang",
+  "appShareSend": "Hantar",
+  "appShareSent": "Dihantar kepada {name}",
+  "appFileGone": "fail tidak lagi tersedia"
 }

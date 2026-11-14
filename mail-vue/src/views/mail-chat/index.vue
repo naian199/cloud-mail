@@ -455,7 +455,7 @@ import {mediaCacheKey,cachedMediaBlob} from '@/utils/media-cache.mjs';
 import {sortConversations} from '@/utils/conversation-order.mjs';
 import { randomUUID } from '@/utils/uuid';
 
-import { computed, nextTick, onMounted, onBeforeUnmount, reactive, ref, watch } from 'vue';
+import { computed, nextTick, onMounted, onBeforeUnmount, onActivated, onDeactivated, reactive, ref, watch } from 'vue';
 import MailBody from '@/components/mail-body.vue';
 import { useBreakpoint } from '@/composables/use-breakpoint';
 import LargeFileCard from '@/components/large-file-card.vue';
@@ -1488,6 +1488,7 @@ function searchAction({id,email}) {
   else if(id==='contacts') { if (contactsDrawer.value) contactsDrawer.value.open(); else nextTick(() => contactsDrawer.value?.open()); }
 }
 watch([()=>route.query.compose,()=>route.query.contacts],()=>{
+  if(route.path!==categoryPath)return;
   if(route.query.compose!=='1' && route.query.contacts!=='1')return;
   if(route.query.compose==='1')searchAction({id:'mail',email:typeof route.query.to==='string'?route.query.to.slice(0,254):''});
   else searchAction({id:'contacts'});
@@ -1543,12 +1544,15 @@ watch(
       if (found.category !== category) { await select(found); return; }
       if (selected.value?.key !== found.key) await select(found);
       if (stopped) return;
+      // ?draft= (from "Share to chat") goes into this conversation's draft; the user sends it.
+      const shared = typeof route.query.draft === 'string' ? route.query.draft.trim().slice(0, 2000) : '';
+      if (shared) { const k = draftKey.value; drafts[k] = drafts[k] ? `${drafts[k]} ${shared}` : shared; }
       if (Number.isSafeInteger(target) && target>0) await jumpToResult(target);
       // Keep the conversation in the address (refresh and Back keep working); a one-off message
       // jump is dropped once done.
       if(route.query.conversation===key && Number(route.query.message||0)===target) {
         handledLink = `${requested}|${key}|`;
-        if (target) await router.replace({ path: categoryPath, query: { accountId: String(requested), conversation: key } });
+        if (target || route.query.draft) await router.replace({ path: categoryPath, query: { accountId: String(requested), conversation: key } });
       }
     } finally {
       openingLink = false;
@@ -1586,6 +1590,11 @@ onMounted(async () => {
   }
   sync();
 });
+// Kept alive across navigation (drafts and position survive a visit to an app or a message);
+// while hidden it must not react to keys or hold the phone's focused-chat layout.
+defineOptions({ name: 'mail-chat' });
+onDeactivated(() => { document.removeEventListener('keydown', menuEscape); ui.mobileChatFocused = false; });
+onActivated(() => { document.removeEventListener('keydown', menuEscape); document.addEventListener('keydown', menuEscape); ui.mobileChatFocused = !!active.value; });
 onBeforeUnmount(() => {
   ui.mobileChatFocused = false;
   cancelContactPress();

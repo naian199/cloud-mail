@@ -972,5 +972,14 @@
   "appStatus_hidden": "सूची से हटाया गया",
   "appStatus_removed": "हटाया गया",
   "appStatus_withdrawn": "वापस लिया गया",
-  "appStatus_blocked": "ब्लॉक किया गया"
+  "appStatus_blocked": "ब्लॉक किया गया",
+  "appShareToChat": "चैट में शेयर करें",
+  "appCopyLink": "लिंक कॉपी करें",
+  "appShareNoTargets": "ऐसी कोई चैट नहीं जिसमें आप भेज सकें।",
+  "appShareDraftHint": "चैट खुलेगी और लिंक संदेश बॉक्स में होगा। भेजें आप दबाएँगे।",
+  "appShareSendHint": "लिंक संदेश के रूप में भेजा जाएगा और ऐप कार्ड दिखेगा।",
+  "appShareOpenChat": "चैट खोलें",
+  "appShareSend": "भेजें",
+  "appShareSent": "{name} को भेजा गया",
+  "appFileGone": "फ़ाइल अब उपलब्ध नहीं है"
 }

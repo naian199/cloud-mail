@@ -972,5 +972,14 @@
   "appStatus_hidden": "Verborgen",
   "appStatus_removed": "Verwijderd",
   "appStatus_withdrawn": "Ingetrokken",
-  "appStatus_blocked": "Geblokkeerd"
+  "appStatus_blocked": "Geblokkeerd",
+  "appShareToChat": "Delen in chat",
+  "appCopyLink": "Link kopiëren",
+  "appShareNoTargets": "Geen chats waarin je kunt posten.",
+  "appShareDraftHint": "De chat opent met de link in het berichtvak. Jij drukt op Verzenden.",
+  "appShareSendHint": "De link wordt als bericht verzonden en toont de app-kaart.",
+  "appShareOpenChat": "Chat openen",
+  "appShareSend": "Verzenden",
+  "appShareSent": "Verzonden naar {name}",
+  "appFileGone": "bestand niet meer beschikbaar"
 }

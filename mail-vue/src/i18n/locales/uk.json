@@ -972,5 +972,14 @@
   "appStatus_hidden": "Приховано",
   "appStatus_removed": "Знято",
   "appStatus_withdrawn": "Відкликано",
-  "appStatus_blocked": "Заблоковано"
+  "appStatus_blocked": "Заблоковано",
+  "appShareToChat": "Поділитися в чаті",
+  "appCopyLink": "Копіювати посилання",
+  "appShareNoTargets": "Немає чатів, у які можна писати.",
+  "appShareDraftHint": "Чат відкриється з посиланням у полі введення. Надішлете ви самі.",
+  "appShareSendHint": "Посилання надішлеться повідомленням із карткою застосунку.",
+  "appShareOpenChat": "Відкрити чат",
+  "appShareSend": "Надіслати",
+  "appShareSent": "Надіслано: {name}",
+  "appFileGone": "файл більше недоступний"
 }

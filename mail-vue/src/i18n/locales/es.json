@@ -972,5 +972,14 @@
   "appStatus_hidden": "Oculta",
   "appStatus_removed": "Retirada",
   "appStatus_withdrawn": "Retirada por el editor",
-  "appStatus_blocked": "Bloqueada"
+  "appStatus_blocked": "Bloqueada",
+  "appShareToChat": "Compartir en un chat",
+  "appCopyLink": "Copiar enlace",
+  "appShareNoTargets": "No hay chats en los que puedas publicar.",
+  "appShareDraftHint": "El chat se abre con el enlace en el cuadro de mensaje. Tú pulsas Enviar.",
+  "appShareSendHint": "El enlace se envía como mensaje y muestra la tarjeta de la app.",
+  "appShareOpenChat": "Abrir chat",
+  "appShareSend": "Enviar",
+  "appShareSent": "Enviado a {name}",
+  "appFileGone": "el archivo ya no está disponible"
 }

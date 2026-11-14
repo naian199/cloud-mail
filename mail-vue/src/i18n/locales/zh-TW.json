@@ -972,5 +972,14 @@
   "appStatus_hidden": "已下架",
   "appStatus_removed": "已被下架",
   "appStatus_withdrawn": "已撤回",
-  "appStatus_blocked": "已封鎖"
+  "appStatus_blocked": "已封鎖",
+  "appShareToChat": "分享到聊天",
+  "appCopyLink": "複製連結",
+  "appShareNoTargets": "沒有可以傳送的對話。",
+  "appShareDraftHint": "會開啟這個私訊，並把連結放進輸入框，由你按傳送。",
+  "appShareSendHint": "連結會作為一則訊息傳送，並顯示應用卡片。",
+  "appShareOpenChat": "開啟聊天",
+  "appShareSend": "傳送",
+  "appShareSent": "已傳送到 {name}",
+  "appFileGone": "檔案已失效"
 }
