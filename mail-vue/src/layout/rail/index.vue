@@ -41,7 +41,7 @@ const user = useUserStore();
 const settings = useSettingStore().settings;
 const { section, unread } = useSiteNav();
 const primary = computed(() => [
-  { id: 'chat', to: '/mail-chat', icon: 'cloud-mail:chat', label: 'navChat', count: unread.value.chat },
+  { id: 'chat', to: '/chat', icon: 'cloud-mail:chat', label: 'navChat', count: unread.value.chat },
   { id: 'store', to: '/apps', icon: 'cloud-mail:store', label: 'navStore', count: 0 },
   { id: 'files', to: '/files', icon: 'cloud-mail:folder', label: 'cloudFileTitle', count: 0 }
 ]);

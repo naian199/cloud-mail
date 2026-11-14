@@ -981,5 +981,6 @@
   "appShareOpenChat": "فتح الدردشة",
   "appShareSend": "إرسال",
   "appShareSent": "أُرسل إلى {name}",
-  "appFileGone": "الملف لم يعد متاحًا"
+  "appFileGone": "الملف لم يعد متاحًا",
+  "chatAllEmpty": "لا توجد دردشات بعد."
 }

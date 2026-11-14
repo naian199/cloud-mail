@@ -42,7 +42,8 @@ export default {
       coalesce(nullif(op.display_name,''),oh.username,'') AS ownerName,oh.username AS ownerUsername,
       CASE WHEN m.status='joined' THEN (SELECT substr(body,1,150) FROM mail_room_message WHERE room_id=r.id ORDER BY id DESC LIMIT 1) ELSE '' END AS preview,
       CASE WHEN m.status='joined' THEN (SELECT count(*) FROM (SELECT id FROM mail_room_message WHERE room_id=r.id AND id>m.read_id AND sender_id!=m.user_id LIMIT 100)) ELSE 0 END AS unread,
-      CASE WHEN m.status='joined' THEN (SELECT coalesce(max(id),0) FROM mail_room_message WHERE room_id=r.id) ELSE 0 END AS latestId
+      CASE WHEN m.status='joined' THEN (SELECT coalesce(max(id),0) FROM mail_room_message WHERE room_id=r.id) ELSE 0 END AS latestId,
+      coalesce(CASE WHEN m.status='joined' THEN (SELECT created_at FROM mail_room_message WHERE room_id=r.id ORDER BY id DESC LIMIT 1) END, r.created_at) AS latestAt
       FROM mail_room_member m JOIN mail_room r ON r.id=m.room_id
       JOIN user actor ON actor.user_id=m.user_id AND actor.status=0 AND actor.is_del=0
       JOIN user owner ON owner.user_id=r.owner_id

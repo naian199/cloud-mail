@@ -981,5 +981,6 @@
   "appShareOpenChat": "チャットを開く",
   "appShareSend": "送信",
   "appShareSent": "{name} に送信しました",
-  "appFileGone": "ファイルは利用できなくなりました"
+  "appFileGone": "ファイルは利用できなくなりました",
+  "chatAllEmpty": "まだチャットはありません。"
 }

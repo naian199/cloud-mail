@@ -33,10 +33,11 @@ const routes = [
                 meta: { title: 'roomTitle', name: 'rooms', menu: true }
             },
             {
+                // "All": direct chats, groups and channels in one read-only list.
                 path: '/chat',
-                name: 'chat',
-                redirect: '/mail-chat',
-                meta: { title: 'chatTitle', name: 'chat', menu: true }
+                name: 'chat-all',
+                component: () => import('@/views/chat-all/index.vue'),
+                meta: { title: 'navChat', name: 'chat-all', menu: true }
             },
             {
                 path: '/inbox',

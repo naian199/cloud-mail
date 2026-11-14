@@ -14,15 +14,16 @@ import {categoryUnread} from '@/composables/use-category-unread';
 const {collapsed}=useConversationSidebar();
 const props = defineProps({ kind: { type: String, default: 'group' },accountId:{type:Number,default:0} });
 const route = useRoute(), { t,n } = useI18n(),accounts=useAccountStore();
-const counts=computed(()=>({...categoryUnread.value.categories,chat:0,external:0,...categoryUnread.value.accounts[props.accountId||accounts.currentAccountId]}));
+const counts=computed(()=>{const c={...categoryUnread.value.categories,chat:0,external:0,...categoryUnread.value.accounts[props.accountId||accounts.currentAccountId]};return {...c,all:(Number(c.chat)||0)+(Number(c.group)||0)+(Number(c.channel)||0)};});
 const label=item=>t(item.label)+(counts.value[item.id]?` · ${n(counts.value[item.id])} ${t('chatUnread')}`:'');
 const categories = [
   // Chat segments. External mail lives in the mail workspace (its own tabs), not here.
+  { id: 'all', icon:'cloud-mail:chat', label: 'appAll', to: '/chat' },
   { id: 'chat', icon:'cloud-mail:chat', label: 'navDirect', to: '/mail-chat' },
   { id: 'group', icon:'cloud-mail:group', label: 'roomGroup', to: { path: '/rooms', query: { kind: 'group' } } },
   { id: 'channel', icon:'cloud-mail:channel', label: 'roomChannel', to: { path: '/rooms', query: { kind: 'channel' } } }
 ];
-const active = computed(() => route.name === 'rooms' ? props.kind : route.name === 'external-mail' ? 'external' : 'chat');
+const active = computed(() => route.name === 'chat-all' ? 'all' : route.name === 'rooms' ? props.kind : route.name === 'external-mail' ? 'external' : 'chat');
 </script>
 <style scoped>
 .conversation-categories { display:flex; flex-shrink:0; gap:0; padding:0 4px; border-bottom:1px solid var(--el-border-color);container-type:inline-size; }
@@ -32,7 +33,7 @@ a { position:relative; display:flex;align-items:center;justify-content:center;ga
 @container(max-width:280px){a{gap:3px;}.category-badge{font-size:0;min-width:6px;width:6px;height:6px;padding:0;border-radius:50%;}}
 a:hover { background:var(--el-fill-color-light); }.category-active { color:var(--el-color-primary); font-weight:600; }.category-active::after { content:''; position:absolute; height:3px; background:currentColor; inset-inline:8px; bottom:0; border-radius:3px 3px 0 0; }
 a:focus-visible { outline:2px solid var(--el-color-primary); outline-offset:-2px; }
-.categories-collapsed {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));padding:4px 2px;gap:0;}
+.categories-collapsed {display:grid;grid-template-columns:repeat(4,minmax(0,1fr));padding:4px 2px;gap:0;}
 .categories-collapsed a {padding:0;min-width:0;min-height:32px;height:32px;gap:0;}
 .categories-collapsed .category-badge {position:absolute;inset-block-start:3px;inset-inline-end:3px;}
 .categories-collapsed .category-active::after {inset-inline:7px;height:2px;}

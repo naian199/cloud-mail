@@ -981,5 +981,6 @@
   "appShareOpenChat": "開啟聊天",
   "appShareSend": "傳送",
   "appShareSent": "已傳送到 {name}",
-  "appFileGone": "檔案已失效"
+  "appFileGone": "檔案已失效",
+  "chatAllEmpty": "還沒有對話。"
 }

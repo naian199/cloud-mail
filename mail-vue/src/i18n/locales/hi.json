@@ -981,5 +981,6 @@
   "appShareOpenChat": "चैट खोलें",
   "appShareSend": "भेजें",
   "appShareSent": "{name} को भेजा गया",
-  "appFileGone": "फ़ाइल अब उपलब्ध नहीं है"
+  "appFileGone": "फ़ाइल अब उपलब्ध नहीं है",
+  "chatAllEmpty": "अभी कोई चैट नहीं है।"
 }

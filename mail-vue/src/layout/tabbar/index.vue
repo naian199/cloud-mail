@@ -24,7 +24,7 @@ const { section, unread } = useSiteNav();
 // Mail lives under "Me" on phones; its unread messages show as a count there.
 const active = computed(() => (section.value === 'mail' ? 'me' : section.value));
 const tabs = computed(() => [
-  { id: 'chat', to: '/mail-chat', icon: 'cloud-mail:chat', label: 'navChat', count: unread.value.chat },
+  { id: 'chat', to: '/chat', icon: 'cloud-mail:chat', label: 'navChat', count: unread.value.chat },
   { id: 'store', to: '/apps', icon: 'cloud-mail:store', label: 'navStore', count: 0 },
   { id: 'files', to: '/files', icon: 'cloud-mail:folder', label: 'cloudFileTitle', count: 0 },
   { id: 'me', to: '/me', icon: 'cloud-mail:me', label: 'navMe', count: unread.value.mail }
