@@ -252,13 +252,18 @@ const appService = {
 			const seen = Number(params?.updateTime);
 			if (!Number.isSafeInteger(seen)) fail('Missing review snapshot / 缺少审核快照');
 			const versionIds = [...new Set((Array.isArray(params?.versionIds) ? params.versionIds : []).map(Number).filter((n) => Number.isSafeInteger(n) && n > 0))].slice(0, 100);
-			const res = await db.prepare(`UPDATE app SET status = 'published', removed_by = '', review_note = ?, publish_time = CASE WHEN publish_time = 0 THEN ? ELSE publish_time END, update_time = MAX(?, update_time + 1)
-        WHERE app_id = ? AND status = 'review' AND update_time = ?`).bind(note, t, t, appId, seen).run();
+			const selected = JSON.stringify(versionIds);
+			const approveApp = db.prepare(`UPDATE app SET status = 'published', removed_by = '', review_note = ?, publish_time = CASE WHEN publish_time = 0 THEN ? ELSE publish_time END, update_time = MAX(?, update_time + 1)
+        WHERE app_id = ? AND status = 'review' AND update_time = ?
+        AND (SELECT count(*) FROM app_version v JOIN cloud_file f ON f.file_id = v.file_id
+          WHERE v.app_id = app.app_id AND v.status = 'review' AND f.status = 'ready'
+          AND v.version_id IN (SELECT value FROM json_each(?))) = ?`)
+				.bind(note, t, t, appId, seen, selected, versionIds.length);
+			const approveVersions = db.prepare(`UPDATE app_version SET status = 'published', publish_time = ?
+        WHERE app_id = ? AND status = 'review' AND changes() = 1
+        AND version_id IN (SELECT value FROM json_each(?))`).bind(t, appId, selected);
+			const [res] = await db.batch([approveApp, approveVersions]);
 			if (!res.meta.changes) conflict();
-			if (versionIds.length) {
-				await db.prepare(`UPDATE app_version SET status = 'published', publish_time = ? WHERE app_id = ? AND status = 'review' AND version_id IN (${versionIds.map(() => '?').join(',')})`)
-					.bind(t, appId, ...versionIds).run();
-			}
 			return { status: 'published' };
 		}
 		const rules = {

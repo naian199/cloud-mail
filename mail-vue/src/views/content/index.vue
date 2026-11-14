@@ -2,19 +2,20 @@
   <div class="box">
     <div class="header-actions">
       <Icon class="icon" icon="material-symbols-light:arrow-back-ios-new" width="20" height="20" @click="handleBack"/>
-      <Icon v-perm="'email:delete'" class="icon" icon="uiw:delete" width="16" height="16" @click="handleDelete"/>
-      <span class="star" v-if="emailStore.contentData.showStar">
+      <Icon v-if="mailReady" v-perm="'email:delete'" class="icon" icon="uiw:delete" width="16" height="16" @click="handleDelete"/>
+      <span class="star" v-if="mailReady && emailStore.contentData.showStar">
         <Icon class="icon" @click="changeStar" v-if="email.isStar" icon="fluent-color:star-16" width="20" height="20"/>
         <Icon class="icon" @click="changeStar" v-else icon="solar:star-line-duotone" width="18" height="18"/>
       </span>
-      <Icon class="icon" v-if="emailStore.contentData.showReply" v-perm="'email:send'"  @click="openReply" icon="la:reply" width="21" height="21" />
-      <Icon class="icon" v-if="emailStore.contentData.showReply" v-perm="'email:send'"  @click="openForward" icon="iconoir:arrow-up-right" width="20" height="20" />
+      <Icon class="icon" v-if="mailReady && emailStore.contentData.showReply" v-perm="'email:send'"  @click="openReply" icon="la:reply" width="21" height="21" />
+      <Icon class="icon" v-if="mailReady && emailStore.contentData.showReply" v-perm="'email:send'"  @click="openForward" icon="iconoir:arrow-up-right" width="20" height="20" />
     </div>
     <div></div>
     <div v-if="unavailable" class="mail-unavailable" role="alert">
       <p>{{ t('mailUnavailable') }}</p>
       <el-button @click="handleBack">{{ t('navBack') }}</el-button>
     </div>
+    <div v-else-if="!mailReady" v-loading="true" class="mail-unavailable" aria-busy="true"></div>
     <el-scrollbar v-else class="scrollbar">
       <div class="container">
         <div class="email-title">
@@ -106,6 +107,8 @@ const accountStore = useAccountStore();
 const emailStore = useEmailStore();
 const router = useRouter()
 const route = useRoute()
+const mailReady = ref(false)
+let detailRequest = 0
 const email = computed(() => emailStore.contentData.email || {
   emailId: 0,
   attList: [],
@@ -124,7 +127,7 @@ watch(() => accountStore.currentAccountId, () => {
 let readRequesting = false
 
 function tryMarkRead() {
-  if (!emailStore.contentData.showUnread || readRequesting) return
+  if (!mailReady.value || !emailStore.contentData.showUnread || readRequesting) return
   const current = email.value
   if (!current?.emailId || current.unread !== EmailUnreadEnum.UNREAD) return
 
@@ -147,6 +150,7 @@ function tryMarkRead() {
 
 watch(
   () => [
+    mailReady.value,
     email.value?.emailId,
     email.value?.content,
     email.value?.text,
@@ -163,19 +167,27 @@ watch(
 const unavailable = ref(false)
 async function loadFromRoute() {
   const id = Number(route.params.emailId)
+  const request = ++detailRequest
+  mailReady.value = false
+  showPreview.value = false
   unavailable.value = false
   if (!id) {
-    if (emailStore.contentData.delType !== 'physics' || !hasPerm('all-email:query')) router.replace('/inbox')
+    if (emailStore.contentData.delType === 'physics' && hasPerm('all-email:query') && emailStore.contentData.email) {
+      mailReady.value = true
+    } else {
+      router.replace('/inbox')
+    }
     return
   }
-  if (emailStore.contentData.email?.emailId !== id) emailStore.contentData.email = null
+  emailStore.contentData.email = null
   try {
     const row = await emailDetail(id)
-    if (Number(route.params.emailId) !== id) return
+    if (request !== detailRequest || Number(route.params.emailId) !== id) return
     emailStore.detailMap[id] = row
     Object.assign(emailStore.contentData, { email: row, delType: 'logic', showStar: true, showReply: true, showUnread: true })
+    mailReady.value = true
   } catch {
-    if (Number(route.params.emailId) !== id) return
+    if (request !== detailRequest || Number(route.params.emailId) !== id) return
     emailStore.contentData.email = null
     delete emailStore.detailMap[id]
     unavailable.value = true
@@ -189,6 +201,7 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
+  detailRequest++;
   emailStore.contentData.showUnread = false;
   readRequesting = false
   window.removeEventListener('keydown', handleKeyDown);
