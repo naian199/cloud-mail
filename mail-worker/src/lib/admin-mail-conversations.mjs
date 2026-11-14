@@ -1,6 +1,10 @@
 // Indexed rows already carry a normalized, sorted peer list. Older mail may never
 // have been opened in the personal chat UI, so derive the same peers without writing
-// to any user's mailbox. The mailbox is part of the conversation identity.
+// to any user's mailbox.
+//
+// One conversation is identified by everyone in it: the mailbox plus its peers, sorted. Both
+// sides of a conversation between two mailboxes on this site therefore show as one entry, and
+// opening it shows the messages from both mailboxes, each message once.
 const peers = `CASE
   WHEN e.conversation_key != '' AND json_valid(e.conversation_peers) AND e.conversation_peers != '[]'
   THEN e.conversation_peers
@@ -30,26 +34,36 @@ const messageIdentity = `CASE WHEN trim(coalesce(message_id, '')) = '' THEN 'id:
 const summaries = `email_id AS emailId, send_email AS sendEmail, name, subject, type,
   user_id AS userId, account_id AS accountId, create_time AS createTime, mailbox, owner, peers`;
 
-export const adminConversationList = `WITH scoped AS (
+const withParticipants = (source) => `SELECT *, (SELECT json_group_array(v) FROM (
+    SELECT lower(value) AS v FROM json_each(${source}.peers)
+    UNION SELECT lower(${source}.mailbox) WHERE ${source}.mailbox IS NOT NULL
+    ORDER BY v)) AS participants FROM ${source}`;
+
+export const adminConversationList = `WITH base AS (
   SELECT ${columns} ${joins} WHERE ${eligible}
+), scoped AS (
+  ${withParticipants('base')}
 ), ranked AS (
-  SELECT *, row_number() OVER (PARTITION BY user_id, account_id, peers ORDER BY create_time DESC, email_id DESC) AS position
+  SELECT *, row_number() OVER (PARTITION BY participants ORDER BY create_time DESC, email_id DESC) AS position
   FROM scoped
 ), matching AS (
-  SELECT DISTINCT user_id, account_id, peers FROM scoped
+  SELECT DISTINCT participants FROM scoped
   WHERE instr(lower(coalesce(mailbox, '')), ?1) > 0 OR instr(lower(coalesce(owner, '')), ?1) > 0
     OR instr(lower(peers), ?1) > 0 OR instr(lower(coalesce(name, '')), ?1) > 0
     OR instr(lower(coalesce(subject, '')), ?1) > 0 OR instr(lower(coalesce(text, '')), ?1) > 0
 ) SELECT ${summaries}, substr(text, 1, 180) AS preview
-  FROM ranked JOIN matching USING (user_id, account_id, peers)
+  FROM ranked JOIN matching USING (participants)
   WHERE position = 1 AND (?2 = '' OR (create_time, email_id) < (?2, ?3))
   ORDER BY create_time DESC, email_id DESC LIMIT ?4`;
 
-export const adminConversationMessages = `WITH anchor AS (
-  SELECT e.user_id, e.account_id, ${peers} AS peers ${joins} WHERE e.email_id = ?1 AND ${eligible}
+export const adminConversationMessages = `WITH base AS (
+  SELECT ${columns} ${joins} WHERE ${eligible}
+), everyone AS (
+  ${withParticipants('base')}
+), anchor AS (
+  SELECT participants FROM everyone WHERE email_id = ?1
 ), scoped AS (
-  SELECT ${columns} ${joins} JOIN anchor ON anchor.user_id = e.user_id AND anchor.account_id = e.account_id
-  WHERE ${eligible} AND ${peers} = anchor.peers
+  SELECT everyone.* FROM everyone JOIN anchor USING (participants)
 ), copies AS (
   SELECT *, row_number() OVER (PARTITION BY ${messageIdentity} ORDER BY create_time DESC, email_id DESC) AS copy
   FROM scoped
