@@ -14,7 +14,6 @@
 </template>
 
 <script setup>
-import { onBeforeUnmount, ref } from 'vue';
 import { Icon } from '@iconify/vue';
 import { useI18n } from 'vue-i18n';
 import { formatBytes } from '@/utils/file-utils';
@@ -22,21 +21,11 @@ import { formatBytes } from '@/utils/file-utils';
 defineProps({ items: { type: Array, required: true } });
 const emit = defineEmits(['retry', 'remove']);
 const { t } = useI18n();
-// The file's data goes from the browser straight to the storage program. Browsers cannot report
-// how many bytes have been sent there (see uploadDirect), so the list shows the total size and
-// elapsed time, then "received, verifying" while the Worker checks it with the API, and finally
-// only the size the storage program confirmed, which means the transfer is complete.
-const now = ref(Date.now());
-const clock = setInterval(() => { now.value = Date.now(); }, 1000);
-onBeforeUnmount(() => clearInterval(clock));
-const elapsed = (item) => { const s = Math.max(0, Math.floor((now.value - (item.startedAt || now.value)) / 1000)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
+// While the file is being sent and verified the row says it is uploading; once the Worker has
+// verified it, the row shows only the size the storage program confirmed.
 function statusText(item) {
   const total = formatBytes(item.size);
-  if (item.status === 'uploading') {
-    if (item.progress >= 1) return t('largeAttVerifying', { size: total });
-    return t('largeAttSending', { size: total, time: elapsed(item) });
-  }
-  // Verified by the Worker: only the confirmed size is shown, which means the transfer is complete.
+  if (item.status === 'uploading') return `${total} · ${t('largeAttUploading')}`;
   if (item.status === 'ready') return formatBytes(item.verifiedSize || item.size);
   return `${total} · ${t('largeAttFailed')}`;
 }

@@ -57,8 +57,6 @@ const zh = {
     largeAttDirectUploading: "直传到存储平台中",
     largeAttDirectFailed: "无法从浏览器直接连接存储平台，请检查网络后重试。",
     largeAttMaxHint: "文件数据由浏览器直接传到存储平台，不经过本站，因此不受 Cloudflare 请求大小限制；本站只负责核对和记录。上传时只显示已用时间，需要用户网络能直接连上平台。",
-    largeAttSending: "共 {size} · 上传中 · 已用 {time}",
-    largeAttVerifying: "{size} · 存储平台已收到，正在验证…",
     largeAttTitle: "大附件存储（Turbobit）",
     largeAttHint: "开启后，站内聊天中选择、粘贴或拖入的所有文件都通过 CostAction 存到合作平台，按格式归档；本站只保存缩略图。语音、表情包和已有附件保持原有存储。",
     largeAttTokenSet: "Token 已配置",
