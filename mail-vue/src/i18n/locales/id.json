@@ -985,5 +985,7 @@
   "chatAllEmpty": "Belum ada obrolan.",
   "allMailConversationView": "Percakapan",
   "allMailListView": "Daftar pesan",
-  "allMailChooseConversation": "Pilih percakapan untuk membaca pesannya."
+  "allMailChooseConversation": "Pilih percakapan untuk membaca pesannya.",
+  "navStoreShort": "Toko",
+  "navFilesShort": "Berkas"
 }

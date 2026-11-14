@@ -985,5 +985,7 @@
   "chatAllEmpty": "Пока нет чатов.",
   "allMailConversationView": "Переписка",
   "allMailListView": "Список писем",
-  "allMailChooseConversation": "Выберите переписку, чтобы прочитать письма."
+  "allMailChooseConversation": "Выберите переписку, чтобы прочитать письма.",
+  "navStoreShort": "Магазин",
+  "navFilesShort": "Файлы"
 }

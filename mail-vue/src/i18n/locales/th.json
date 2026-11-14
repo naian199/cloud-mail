@@ -985,5 +985,7 @@
   "chatAllEmpty": "ยังไม่มีแชท",
   "allMailConversationView": "การสนทนา",
   "allMailListView": "รายการข้อความ",
-  "allMailChooseConversation": "เลือกการสนทนาเพื่ออ่านข้อความ"
+  "allMailChooseConversation": "เลือกการสนทนาเพื่ออ่านข้อความ",
+  "navStoreShort": "ร้านแอป",
+  "navFilesShort": "ไฟล์"
 }

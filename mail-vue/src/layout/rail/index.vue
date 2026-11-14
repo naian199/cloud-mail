@@ -42,8 +42,8 @@ const settings = useSettingStore().settings;
 const { section, unread } = useSiteNav();
 const primary = computed(() => [
   { id: 'chat', to: '/chat', icon: 'cloud-mail:chat', label: 'navChat', count: unread.value.chat },
-  { id: 'store', to: '/apps', icon: 'cloud-mail:store', label: 'navStore', count: 0 },
-  { id: 'files', to: '/files', icon: 'cloud-mail:folder', label: 'cloudFileTitle', count: 0 }
+  { id: 'store', to: '/apps', icon: 'cloud-mail:store', label: 'navStoreShort', count: 0 },
+  { id: 'files', to: '/files', icon: 'cloud-mail:folder', label: 'navFilesShort', count: 0 }
 ]);
 </script>
 
@@ -61,7 +61,7 @@ html.dark .site-rail { --rail-bg:#141a24; --rail-ink:#dde5f2; --rail-muted:#8c99
 .rail-item.active { background:var(--rail-active); color:var(--rail-accent); font-weight:600; box-shadow:0 1px 3px rgb(15 23 42 / 8%); }
 .rail-item:focus-visible { outline:2px solid var(--rail-accent); outline-offset:-2px; }
 .rail-icon { position:relative; display:grid; place-items:center; width:30px; height:26px; }
-.rail-label { max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.rail-label { max-width:100%; overflow:hidden; text-align:center; line-height:1.15; overflow-wrap:anywhere; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
 .rail-badge { position:absolute; top:-6px; inset-inline-start:18px; min-width:17px; height:17px; padding:0 5px; box-sizing:border-box; border-radius:9px;
   background:#ef4444; color:#fff; font-size:10px; line-height:17px; font-weight:600; text-align:center; font-variant-numeric:tabular-nums; border:2px solid var(--rail-bg); }
 .rail-divider { width:36px; height:1px; margin:8px 0; background:var(--rail-line); }

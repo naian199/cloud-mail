@@ -985,5 +985,7 @@
   "chatAllEmpty": "Henüz sohbet yok.",
   "allMailConversationView": "Konuşmalar",
   "allMailListView": "İleti listesi",
-  "allMailChooseConversation": "İletilerini okumak için bir konuşma seçin."
+  "allMailChooseConversation": "İletilerini okumak için bir konuşma seçin.",
+  "navStoreShort": "Mağaza",
+  "navFilesShort": "Dosyalar"
 }

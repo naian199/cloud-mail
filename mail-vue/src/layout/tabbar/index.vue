@@ -25,8 +25,8 @@ const { section, unread } = useSiteNav();
 const active = computed(() => (section.value === 'mail' ? 'me' : section.value));
 const tabs = computed(() => [
   { id: 'chat', to: '/chat', icon: 'cloud-mail:chat', label: 'navChat', count: unread.value.chat },
-  { id: 'store', to: '/apps', icon: 'cloud-mail:store', label: 'navStore', count: 0 },
-  { id: 'files', to: '/files', icon: 'cloud-mail:folder', label: 'cloudFileTitle', count: 0 },
+  { id: 'store', to: '/apps', icon: 'cloud-mail:store', label: 'navStoreShort', count: 0 },
+  { id: 'files', to: '/files', icon: 'cloud-mail:folder', label: 'navFilesShort', count: 0 },
   { id: 'me', to: '/me', icon: 'cloud-mail:me', label: 'navMe', count: unread.value.mail }
 ]);
 </script>
@@ -40,7 +40,7 @@ const tabs = computed(() => [
 .tab.active { color:var(--el-color-primary); font-weight:600; }
 .tab:focus-visible { outline:2px solid var(--el-color-primary); outline-offset:-4px; border-radius:10px; }
 .tab-icon { position:relative; display:grid; place-items:center; }
-.tab-label { max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; padding:0 2px; }
+.tab-label { max-width:100%; overflow:hidden; text-align:center; line-height:1.1; padding:0 2px; overflow-wrap:anywhere; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
 .tab-badge { position:absolute; top:-5px; inset-inline-start:15px; min-width:17px; height:17px; padding:0 5px; box-sizing:border-box; border-radius:9px;
   background:#ef4444; color:#fff; font-size:10px; line-height:17px; font-weight:600; text-align:center; }
 .tab-dot { position:absolute; top:-1px; inset-inline-start:19px; width:8px; height:8px; border-radius:50%; background:#ef4444; }

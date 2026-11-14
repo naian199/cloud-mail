@@ -985,5 +985,7 @@
   "chatAllEmpty": "Aún no hay chats.",
   "allMailConversationView": "Conversaciones",
   "allMailListView": "Lista de mensajes",
-  "allMailChooseConversation": "Selecciona una conversación para leer sus mensajes."
+  "allMailChooseConversation": "Selecciona una conversación para leer sus mensajes.",
+  "navStoreShort": "Tienda",
+  "navFilesShort": "Archivos"
 }

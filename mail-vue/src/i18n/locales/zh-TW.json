@@ -985,5 +985,7 @@
   "chatAllEmpty": "還沒有對話。",
   "allMailConversationView": "會話",
   "allMailListView": "逐封清單",
-  "allMailChooseConversation": "選擇一個會話以查看往來郵件。"
+  "allMailChooseConversation": "選擇一個會話以查看往來郵件。",
+  "navStoreShort": "商城",
+  "navFilesShort": "我的文件"
 }

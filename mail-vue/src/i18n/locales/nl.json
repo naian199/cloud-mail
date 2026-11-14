@@ -985,5 +985,7 @@
   "chatAllEmpty": "Nog geen chats.",
   "allMailConversationView": "Gesprekken",
   "allMailListView": "Berichtenlijst",
-  "allMailChooseConversation": "Kies een gesprek om de berichten te lezen."
+  "allMailChooseConversation": "Kies een gesprek om de berichten te lezen.",
+  "navStoreShort": "Store",
+  "navFilesShort": "Bestanden"
 }

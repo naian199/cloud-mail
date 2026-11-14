@@ -985,5 +985,7 @@
   "chatAllEmpty": "अभी कोई चैट नहीं है।",
   "allMailConversationView": "बातचीत",
   "allMailListView": "संदेशों की सूची",
-  "allMailChooseConversation": "संदेश पढ़ने के लिए कोई बातचीत चुनें।"
+  "allMailChooseConversation": "संदेश पढ़ने के लिए कोई बातचीत चुनें।",
+  "navStoreShort": "स्टोर",
+  "navFilesShort": "मेरी फ़ाइलें"
 }

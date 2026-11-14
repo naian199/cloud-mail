@@ -46,6 +46,8 @@ const en = {
     listLoadFailed: "Could not load this list. Check your connection.",
     listNotUpdated: "Not updated. Showing the last loaded list.",
     listRetry: "Retry",
+    navStoreShort: "Store",
+    navFilesShort: "Files",
     chatAllEmpty: "No chats yet.",
     appShareToChat: "Share to chat",
     appCopyLink: "Copy link",

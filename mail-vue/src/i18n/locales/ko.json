@@ -985,5 +985,7 @@
   "chatAllEmpty": "아직 채팅이 없습니다.",
   "allMailConversationView": "대화",
   "allMailListView": "메일 목록",
-  "allMailChooseConversation": "대화를 선택하여 메일을 읽으세요."
+  "allMailChooseConversation": "대화를 선택하여 메일을 읽으세요.",
+  "navStoreShort": "스토어",
+  "navFilesShort": "내 파일"
 }

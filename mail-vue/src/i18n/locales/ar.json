@@ -985,5 +985,7 @@
   "chatAllEmpty": "لا توجد دردشات بعد.",
   "allMailConversationView": "المحادثات",
   "allMailListView": "قائمة الرسائل",
-  "allMailChooseConversation": "اختر محادثة لقراءة رسائلها."
+  "allMailChooseConversation": "اختر محادثة لقراءة رسائلها.",
+  "navStoreShort": "المتجر",
+  "navFilesShort": "ملفاتي"
 }
