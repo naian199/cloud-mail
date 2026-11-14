@@ -279,8 +279,6 @@ const zh = {
     analytics: '分析页',
     allUsers: '用户列表',
     allMail: '全部邮件',
-    allMailConversationView: "会话",
-    allMailListView: "逐封列表",
     allMailChooseConversation: "选择一个会话查看往来邮件。",
     permissions: '权限控制',
     inviteCode: '注册密钥',

@@ -279,8 +279,6 @@ const en = {
     analytics: 'Analytics',
     allUsers: 'All Users',
     allMail: 'All Mail',
-    allMailConversationView: "Conversations",
-    allMailListView: "Message list",
     allMailChooseConversation: "Choose a conversation to read its messages.",
     permissions: 'Role',
     inviteCode: 'Invite Code',

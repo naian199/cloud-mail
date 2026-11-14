@@ -983,8 +983,6 @@
   "appShareSent": "ส่งถึง {name} แล้ว",
   "appFileGone": "ไฟล์ใช้งานไม่ได้แล้ว",
   "chatAllEmpty": "ยังไม่มีแชท",
-  "allMailConversationView": "การสนทนา",
-  "allMailListView": "รายการข้อความ",
   "allMailChooseConversation": "เลือกการสนทนาเพื่ออ่านข้อความ",
   "navStoreShort": "ร้านแอป",
   "navFilesShort": "ไฟล์"

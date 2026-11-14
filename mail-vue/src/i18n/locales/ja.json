@@ -983,8 +983,6 @@
   "appShareSent": "{name} に送信しました",
   "appFileGone": "ファイルは利用できなくなりました",
   "chatAllEmpty": "まだチャットはありません。",
-  "allMailConversationView": "会話",
-  "allMailListView": "メール一覧",
   "allMailChooseConversation": "会話を選ぶとメールのやり取りを読めます。",
   "navStoreShort": "ストア",
   "navFilesShort": "ファイル"

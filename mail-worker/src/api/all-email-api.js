@@ -18,10 +18,6 @@ app.get('/allEmail/conversations/:id/messages', async (c) =>
 	c.json(result.ok(await listAdminConversationMessages(c, c.req.param('id'), c.req.query())))
 );
 
-app.get('/allEmail/conversations/original/:id', async (c) =>
-	c.json(result.ok(await emailService.adminConversationOriginal(c, c.req.param('id'))))
-);
-
 app.delete('/allEmail/delete', async (c) => {
 	const list = await emailService.physicsDelete(c, c.req.query());
 	return c.json(result.ok(list));

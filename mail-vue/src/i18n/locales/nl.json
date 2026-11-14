@@ -983,8 +983,6 @@
   "appShareSent": "Verzonden naar {name}",
   "appFileGone": "bestand niet meer beschikbaar",
   "chatAllEmpty": "Nog geen chats.",
-  "allMailConversationView": "Gesprekken",
-  "allMailListView": "Berichtenlijst",
   "allMailChooseConversation": "Kies een gesprek om de berichten te lezen.",
   "navStoreShort": "Store",
   "navFilesShort": "Bestanden"
