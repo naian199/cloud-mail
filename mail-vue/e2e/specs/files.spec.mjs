@@ -60,7 +60,8 @@ test('the browser sends file data straight to the upload host, without a preflig
   const upload = page.locator('.large-upload').filter({ hasText: name });
   // The mock upload host refuses CORS preflights like the real ones, so this only succeeds
   // when the browser sends a plain form post.
-  await expect(upload).toContainText('Uploaded', { timeout: 30000 });
+  // While sending it shows the total size; once verified, the size the storage program confirmed.
+  await expect(upload).toContainText('2 MB · stored', { timeout: 30000 });
   await open(page, '/files');
   await expect(page.locator('.file-row').filter({ hasText: name })).toBeVisible();
 });
@@ -72,7 +73,7 @@ test('any file chosen in an internal chat goes to CostAction, whatever its size,
   await openFilesThread(page);
   await page.locator('.composer .attach-label input[type=file]').setInputFiles(big);
   const upload = page.locator('.large-upload').filter({ hasText: 'report-archive.zip' });
-  await expect(upload).toContainText('Uploaded', { timeout: 30000 });
+  await expect(upload).toContainText(/KB · stored/, { timeout: 30000 });
   // It did not take the ordinary attachment path.
   await expect(page.locator('.composer .chosen-file')).toHaveCount(0);
   // Discarding the draft keeps the uploaded file in the library.

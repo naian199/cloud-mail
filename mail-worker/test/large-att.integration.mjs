@@ -188,6 +188,7 @@ test('upload: one row per request ID, the file is verified before it is ready', 
 	const done = await transfer(admin, first.attId, 'archive.zip', size);
 	assert.equal(done.code, 200, JSON.stringify(done));
 	assert.equal(done.data.status, 'ready');
+	assert.equal(done.data.size, size, 'the size the storage program confirmed');
 	assert.equal(seen.uploadAuth.at(-1), '', 'the browser upload carries no token');
 	const uploaded = { id: [...files.keys()].at(-1) };
 	assert.equal(files.get(uploaded.id).size, size);
