@@ -178,6 +178,18 @@ test.describe('redesigned site', () => {
     await admin('POST', `/app-publish/${appId}/versions/${v2}/withdraw`);
     expect((await admin('POST', `/app-review/${appId}/versions/${v2}`, { action: 'approve' })).code).toBe(409);
     expect((await admin('GET', `/apps/${appId}`)).data.versions.find((v) => v.versionId === v2).status).toBe('withdrawn');
+    // A version blocked before approval is never published, even when listed in the approval.
+    const v3 = (await admin('POST', `/app-publish/${appId}/versions`, { version: '1.2', platform: 'linux', fileId: files[0].fileId })).data.versionId;
+    await admin('POST', `/app-review/${appId}/versions/${v3}`, { action: 'block', note: 'Bad build' });
+    await admin('POST', `/app-review/${appId}`, { action: 'remove', note: 'Recheck' });
+    await admin('POST', `/app-review/${appId}`, { action: 'restore' });
+    // Unlist and resubmit: the approval is one atomic batch, retried with a fresh snapshot.
+    await admin('POST', `/app-publish/${appId}/hide`);
+    await admin('POST', `/app-publish/${appId}/submit`);
+    const again = (await admin('GET', `/apps/${appId}`)).data.app.updateTime;
+    expect((await admin('POST', `/app-review/${appId}`, { action: 'approve', updateTime: again - 1, versionIds: [v3] })).code).toBe(409);
+    expect((await admin('POST', `/app-review/${appId}`, { action: 'approve', updateTime: again, versionIds: [v3] })).code).toBe(200);
+    expect((await admin('GET', `/apps/${appId}`)).data.versions.find((v) => v.versionId === v3).status).toBe('blocked');
     // Blocking a published version stops its downloads at once.
     await admin('POST', `/app-review/${appId}/versions/${v1}`, { action: 'block', note: 'Malware report' });
     expect((await admin('POST', `/apps/${appId}/versions/${v1}/download`)).code).toBe(404);
@@ -230,6 +242,30 @@ test.describe('redesigned site', () => {
     await expect(page.locator('.mail-unavailable')).toBeVisible();
     await page.goto(`${BASE}/mail`);
     await expect(page).toHaveURL(/\/inbox$/);
+    await context.close();
+  });
+
+  test('a cached message is never shown before the server confirms access (same tab, other account)', async ({ browser, api }) => {
+    const list = await api.get('/email/list?accountId=1&allReceive=0&emailId=0&timeSort=0&size=1&type=0');
+    const mail = list.list[0];
+    const context = await browser.newContext({ serviceWorkers: 'block' });
+    const page = await context.newPage();
+    await page.goto(BASE + '/login');
+    await page.evaluate((t) => localStorage.setItem('token', t), await token('owner@example.com'));
+    await page.goto(`${BASE}/mail/${mail.emailId}`);
+    await expect(page.locator('.email-title')).toHaveText(mail.subject);
+    // Same tab, now signed in as someone else; this tab's sessionStorage still holds the message.
+    await page.evaluate((t) => localStorage.setItem('token', t), await token(PEER));
+    let release;
+    await page.route(/\/api\/email\/detail/, async (route) => { await new Promise((r) => { release = r; }); await route.continue(); });
+    await page.reload();
+    await expect(page.locator('.mail-verifying')).toBeVisible();
+    await expect(page.locator('.email-title')).toHaveCount(0);
+    await expect(page.locator('.header-actions')).toBeHidden();
+    await expect.poll(() => typeof release).toBe('function');
+    release();
+    await expect(page.locator('.mail-unavailable')).toBeVisible();
+    await expect(page.locator('.email-title')).toHaveCount(0);
     await context.close();
   });
 });

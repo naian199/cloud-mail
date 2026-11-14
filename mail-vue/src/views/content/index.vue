@@ -1,6 +1,6 @@
 <template>
   <div class="box">
-    <div class="header-actions">
+    <div v-show="!verifying" class="header-actions">
       <Icon class="icon" icon="material-symbols-light:arrow-back-ios-new" width="20" height="20" @click="handleBack"/>
       <Icon v-perm="'email:delete'" class="icon" icon="uiw:delete" width="16" height="16" @click="handleDelete"/>
       <span class="star" v-if="emailStore.contentData.showStar">
@@ -15,6 +15,7 @@
       <p>{{ t('mailUnavailable') }}</p>
       <el-button @click="handleBack">{{ t('navBack') }}</el-button>
     </div>
+    <div v-else-if="verifying" class="mail-verifying" v-loading="true"></div>
     <el-scrollbar v-else class="scrollbar">
       <div class="container">
         <div class="email-title">
@@ -124,7 +125,7 @@ watch(() => accountStore.currentAccountId, () => {
 let readRequesting = false
 
 function tryMarkRead() {
-  if (!emailStore.contentData.showUnread || readRequesting) return
+  if (verifying.value || !emailStore.contentData.showUnread || readRequesting) return
   const current = email.value
   if (!current?.emailId || current.unread !== EmailUnreadEnum.UNREAD) return
 
@@ -161,9 +162,13 @@ watch(
 // only the admin all-mail viewer (which opens records the admin may see but does not own);
 // anyone else is sent to the inbox.
 const unavailable = ref(false)
+// Nothing from this tab's cache is shown for /mail/:id until the server has confirmed the signed-in
+// user may read that message (covers signing out and in as someone else in the same tab).
+const verifying = ref(!!Number(route.params.emailId))
 async function loadFromRoute() {
   const id = Number(route.params.emailId)
   unavailable.value = false
+  verifying.value = !!id
   if (!id) {
     if (emailStore.contentData.delType !== 'physics' || !hasPerm('all-email:query')) router.replace('/inbox')
     return
@@ -174,11 +179,13 @@ async function loadFromRoute() {
     if (Number(route.params.emailId) !== id) return
     emailStore.detailMap[id] = row
     Object.assign(emailStore.contentData, { email: row, delType: 'logic', showStar: true, showReply: true, showUnread: true })
+    verifying.value = false
   } catch {
     if (Number(route.params.emailId) !== id) return
     emailStore.contentData.email = null
     delete emailStore.detailMap[id]
     unavailable.value = true
+    verifying.value = false
   }
 }
 watch(() => route.params.emailId, loadFromRoute, { immediate: true })
@@ -307,6 +314,7 @@ const handleDelete = () => {
 }
 </script>
 <style scoped lang="scss">
+.mail-verifying { flex:1; min-height:200px; }
 .mail-unavailable { display:flex; flex-direction:column; align-items:center; gap:12px; padding:48px 16px; color:var(--el-text-color-secondary); }
 .box {
   height: 100%;
