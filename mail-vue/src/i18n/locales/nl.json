@@ -889,5 +889,8 @@
   "largeAttDirectFailed": "Je browser kon de opslagdienst niet bereiken. Controleer je verbinding en probeer het opnieuw.",
   "largeAttMaxHint": "De bestandsgegevens gaan rechtstreeks van de browser naar de dienst, niet via deze site, dus de limiet voor de verzoekgrootte van Cloudflare geldt niet; deze site controleert en registreert alleen. Tijdens het uploaden wordt alleen de verstreken tijd getoond en gebruikers hebben directe toegang tot de dienst nodig.",
   "largeAttHint": "Wanneer ingeschakeld, wordt elk bestand dat in interne chats wordt gekozen, geplakt of neergezet via CostAction bij de dienst opgeslagen en op formaat gesorteerd; deze site bewaart alleen miniaturen. Spraakberichten, stickers en bestaande bijlagen behouden hun huidige opslag.",
-  "largeAttNote": "Originelen worden bij de gekozen dienst bewaard onder Cloud-Mail/<type>/<jaar>/<maand> en alleen via de officiële pagina gedownload. Deze site bewaart miniaturen en videocovers 7 dagen. Bewaartermijn, downloadsnelheid en inkomsten volgen de dienst en je account."
+  "largeAttNote": "Originelen worden bij de gekozen dienst bewaard onder Cloud-Mail/<type>/<jaar>/<maand> en alleen via de officiële pagina gedownload. Deze site bewaart miniaturen en videocovers 7 dagen. Bewaartermijn, downloadsnelheid en inkomsten volgen de dienst en je account.",
+  "listLoadFailed": "Deze lijst kon niet worden geladen. Controleer je verbinding.",
+  "listNotUpdated": "Niet bijgewerkt. De laatst geladen lijst wordt getoond.",
+  "listRetry": "Opnieuw proberen"
 }

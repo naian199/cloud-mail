@@ -7,12 +7,13 @@
         <ConversationCategories v-show="!universalActive" :kind="filter" />
       </div>
       <div class="room-entries" v-show="!universalActive">
+        <ListState v-if="!collapsed" :state="listError" :retrying="listRetrying" @retry="retryList" />
         <button v-for="room in filtered" :key="room.id" class="room-entry" :title="roomLabel(room)" :aria-label="roomLabel(room)" :class="{ selected: activeId === room.id }" @click="choose(room.id)">
           <span class="room-symbol">{{ collapsed ? (Array.from(room.name || '')[0] || '#') : room.kind === 'channel' ? '#' : '☷' }}</span>
           <span class="room-summary"><strong>{{ room.name }}</strong><small>{{ room.status === 'invited' ? t('roomInvited') : room.preview || t(room.kind === 'channel' ? 'roomChannel' : 'roomGroup') }}</small></span>
           <span v-if="room.unread" class="room-unread">{{ room.unread > 99 ? '99+' : room.unread }}</span>
         </button>
-        <el-empty v-if="!collapsed && !loading && !filtered.length" :description="t('roomEmpty')" :image-size="70" />
+        <el-empty v-if="!collapsed && !loading && listLoaded && !filtered.length" :description="t('roomEmpty')" :image-size="70" />
       </div>
       <ConversationResize />
     </aside>
@@ -93,6 +94,7 @@ import ConversationResize from '@/components/conversation-resize.vue';
 import { computed, reactive, ref, watch, nextTick, onMounted, onBeforeUnmount } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
+import ListState from '@/components/list-state.vue';
 import { Icon } from '@iconify/vue';
 import { ElMessageBox } from 'element-plus';
 import { useUserStore } from '@/store/user';
@@ -120,7 +122,7 @@ const active=computed(()=>rooms.value.find(room=>room.id===activeId.value));
 const canManage=computed(()=>active.value?.status==='joined' && ['owner','admin'].includes(active.value.role));
 const canPost=computed(()=>active.value?.status==='joined' && (active.value.kind==='group' || canManage.value));
 const filter=computed(()=>['group','channel'].includes(route.query.kind)?route.query.kind:active.value?.kind||'group');
-const historyTarget=ref(null), universalActive=ref(false), universalSearch=ref(null), search=ref(''), loading=ref(true), messageLoading=ref(false), hasOlder=ref(false), olderLoading=ref(false), sending=ref(false), atBottom=ref(true), scroll=ref(null);
+const historyTarget=ref(null), universalActive=ref(false), universalSearch=ref(null), search=ref(''), loading=ref(true), listLoaded=ref(false), listError=ref(''), listRetrying=ref(false), messageLoading=ref(false), hasOlder=ref(false), olderLoading=ref(false), sending=ref(false), atBottom=ref(true), scroll=ref(null);
 const filtered=computed(()=>rooms.value.filter(room=>room.kind===filter.value&&room.name.toLowerCase().includes(search.value.toLowerCase())));
 const newOpen=ref(false), creating=ref(false), newRoom=reactive({kind:'group',name:''});
 const roomSearchOpen=ref(false), messageSearch=ref(''), resultIndex=ref(0), memberSearch=ref('');
@@ -161,6 +163,7 @@ async function bottom() {
 }
 async function markRead() { const id=active.value?.id,last=messages.value.at(-1)?.id;if(id && last && active.value.status==='joined' && !historyTarget.value && atBottom.value && !document.hidden && (readProgress.get(id)||0)<last){readProgress.set(id,last);try{await readRoom(id,last);}catch(error){if(readProgress.get(id)===last)readProgress.delete(id);throw error;}} }
 function onScroll() { const element=scroll.value;if(element)atBottom.value=element.scrollHeight-element.scrollTop-element.clientHeight<50;if(atBottom.value)markRead().catch(()=>{}); }
+async function retryList() {listRetrying.value=true;try{await refresh();}finally{listRetrying.value=false;}}
 async function refresh() {
   if(stopped)return;
   if(busy){dirty=true;return;}
@@ -169,7 +172,7 @@ async function refresh() {
     do {
       dirty=false;
       const id=activeId.value,mine=version,stick=atBottom.value, target=Number(route.query.message || 0);
-      const list=await listRooms();if(stopped)return;rooms.value=list;
+      let list;try{list=await listRooms();}catch(error){if(!stopped)listError.value=listLoaded.value?'stale':'failed';throw error;}if(stopped)return;rooms.value=list;listLoaded.value=true;listError.value='';
       if(id!==activeId.value||mine!==version){dirty=true;continue;}
       if(id&&!active.value){reset();await choose(null);continue;}
       if(active.value?.status==='joined') {

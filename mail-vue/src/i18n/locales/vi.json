@@ -889,5 +889,8 @@
   "largeAttDirectFailed": "Trình duyệt của bạn không kết nối được với dịch vụ lưu trữ. Hãy kiểm tra kết nối rồi thử lại.",
   "largeAttMaxHint": "Dữ liệu tệp đi thẳng từ trình duyệt đến dịch vụ, không qua trang này, nên giới hạn kích thước yêu cầu của Cloudflare không áp dụng; trang này chỉ xác minh và ghi nhận. Khi tải lên chỉ hiển thị thời gian đã trôi qua, và người dùng cần truy cập trực tiếp được dịch vụ.",
   "largeAttHint": "Khi bật, mọi tệp được chọn, dán hoặc kéo thả trong trò chuyện nội bộ đều được lưu ở dịch vụ thông qua CostAction và phân loại theo định dạng; trang này chỉ giữ ảnh thu nhỏ. Tin nhắn thoại, nhãn dán và tệp đính kèm hiện có vẫn giữ cách lưu trữ hiện tại.",
-  "largeAttNote": "Tệp gốc được lưu ở dịch vụ đã chọn, xếp theo Cloud-Mail/<loại>/<năm>/<tháng>, và chỉ tải xuống từ trang chính thức của dịch vụ. Trang này giữ ảnh thu nhỏ và ảnh bìa video trong 7 ngày. Thời hạn lưu trữ, tốc độ tải xuống và thu nhập tuân theo dịch vụ và tài khoản của bạn."
+  "largeAttNote": "Tệp gốc được lưu ở dịch vụ đã chọn, xếp theo Cloud-Mail/<loại>/<năm>/<tháng>, và chỉ tải xuống từ trang chính thức của dịch vụ. Trang này giữ ảnh thu nhỏ và ảnh bìa video trong 7 ngày. Thời hạn lưu trữ, tốc độ tải xuống và thu nhập tuân theo dịch vụ và tài khoản của bạn.",
+  "listLoadFailed": "Không thể tải danh sách này. Hãy kiểm tra kết nối.",
+  "listNotUpdated": "Chưa được cập nhật. Đang hiển thị danh sách tải gần nhất.",
+  "listRetry": "Thử lại"
 }

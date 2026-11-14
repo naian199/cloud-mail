@@ -8,6 +8,7 @@
       <ConversationCategories v-show="!universalActive" :account-id="accountId" />
       </div>
       <div class="contact-entries" v-show="!universalActive" v-loading="listLoading">
+        <ListState v-if="!collapsed" :state="listError" :retrying="listRetrying" @retry="retryList" />
         <button
           v-for="c in sortedConversations"
           :key="c.key"
@@ -45,7 +46,7 @@
             ><span v-if="c.unread" class="badge">{{ c.unread > 99 ? $n(99) + '+' : $n(c.unread) }}</span></span
           >
         </button>
-        <el-empty v-if="!collapsed && !listLoading && !conversations.length" :description="t('mailChatEmpty')" :image-size="70" />
+        <el-empty v-if="!collapsed && !listLoading && listLoaded && !conversations.length" :description="t('mailChatEmpty')" :image-size="70" />
         <el-button
           v-if="listHasMore"
           class="load-more"
@@ -485,6 +486,7 @@ import AudioAttachment from '@/components/audio-attachment.vue';
 import { isAudioFile } from '@/utils/video-files.mjs';
 import StickerMedia from '@/components/sticker-media.vue';
 import AutoTranslationSettings from '@/components/auto-translation-settings.vue';
+import ListState from '@/components/list-state.vue';
 import { translationStatus } from '@/composables/use-auto-translation';
 import { useRoute, useRouter } from 'vue-router';
 import { Icon } from '@iconify/vue';
@@ -654,6 +656,11 @@ const {
   }
 });
 const listLoading = ref(true),
+  // listLoaded: the list for this mailbox has loaded at least once, so an empty list is real.
+  // listError: '' | 'failed' (never loaded) | 'stale' (a refresh failed; showing the last list).
+  listLoaded = ref(false),
+  listError = ref(''),
+  listRetrying = ref(false),
   messageLoading = ref(false),
   olderLoading = ref(false),
   sending = ref(false);
@@ -1135,7 +1142,13 @@ async function sync() {
       dirty = false;
       const a = accountId.value,
         q = search.value;
-      const list = await mailConversations({ accountId: a, search: q, category });
+      let list;
+      try {
+        list = await mailConversations({ accountId: a, search: q, category });
+      } catch (error) {
+        if (a === accountId.value && !stopped) listError.value = listLoaded.value ? 'stale' : 'failed';
+        throw error;
+      }
       if (a !== accountId.value || q !== search.value || stopped) {
         dirty = true;
         continue;
@@ -1161,6 +1174,8 @@ async function sync() {
             !kept.some((r) => r.key === c.key)
         )
       ];
+      listLoaded.value = true;
+      listError.value = '';
       indexing.value = list.indexing;
       if (!retained.length) listHasMore.value = list.hasMore;
       clearTimeout(indexTimer);
@@ -1205,6 +1220,10 @@ async function sync() {
     busy = false;
     listLoading.value = false;
   }
+}
+async function retryList() {
+  listRetrying.value = true;
+  try { await sync(); } finally { listRetrying.value = false; }
 }
 async function moreConversations() {
   if (listLoading.value || !conversations.value.length) return;
@@ -1299,6 +1318,8 @@ function switchMailbox(value) {
   accountStore.currentAccount = accounts.value.find((a) => a.accountId === value);
   conversations.value = [];
   listLoading.value = true;
+  listLoaded.value = false;
+  listError.value = '';
   search.value = '';
   sync();
 }
