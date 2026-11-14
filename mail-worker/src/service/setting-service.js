@@ -10,6 +10,7 @@ import {t} from '../i18n/i18n'
 import verifyRecordService from './verify-record-service';
 import userContext from '../security/user-context';
 import domainUtils from '../utils/domain-uitls';
+import { registrationDomains } from '../lib/registration-domains.mjs';
 
 const settingService = {
 
@@ -218,10 +219,12 @@ const settingService = {
 
 		const settingRow = await this.get(c, true);
 		const token = await userContext.getToken(c);
+		const signupDomains = registrationDomains(c.env).map((domain) => '@' + domain);
 
 		return {
 			register: settingRow.register,
-      registrationDomain: settingRow.register===0 ? settingRow.domainList[0] : '',
+			registrationDomain: settingRow.register === 0 ? (signupDomains[0] || '') : '',
+			registrationDomains: settingRow.loginDomain === 1 ? [] : signupDomains,
 			title: settingRow.title,
 			manyEmail: settingRow.manyEmail,
 			addEmail: settingRow.addEmail,
@@ -233,7 +236,7 @@ const settingService = {
 			siteKey: settingRow.siteKey,
 			background: settingRow.background,
 			loginOpacity: settingRow.loginOpacity,
-			domainList: settingRow.loginDomain === 1 && !token ? [] : settingRow.domainList,
+			domainList: token ? settingRow.domainList : settingRow.loginDomain === 1 ? [] : signupDomains,
 			regKey: settingRow.regKey,
 			regVerifyOpen: settingRow.regVerifyOpen,
 			addVerifyOpen: settingRow.addVerifyOpen,

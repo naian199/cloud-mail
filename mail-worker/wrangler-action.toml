@@ -40,6 +40,7 @@ ai_model = "${AI_MODEL}"
 analysis_cache = "${ANALYSIS_CACHE}"
 #orm_log = false
 domain = "${DOMAIN}"
+registration_excluded_domains = ["199.naian.edu.kg"]
 admin = "${ADMIN}"
 jwt_secret = "${JWT_SECRET}"
 project_link = "${PROJECT_LINK}"

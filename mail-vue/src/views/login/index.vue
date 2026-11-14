@@ -34,11 +34,11 @@
           <el-input :class="!hideLoginDomain ? 'email-input' : ''" v-model="registerForm.email" type="text" inputmode="email" autocapitalize="none" :spellcheck="false" :placeholder="$t('contactUsername')"
                     autocomplete="username" @keyup.enter="submitRegister">
             <template #append v-if="!hideLoginDomain">
-              <div @click.stop="openSelect">
+              <div v-if="domainList.length > 1" @click.stop="openSelect">
                 <el-select
                     v-if="show !== 'login'"
                     ref="mySelect"
-                    v-model="suffix"
+                    v-model="selectedSuffix"
                     :placeholder="$t('select')"
                     class="select"
                 >
@@ -50,10 +50,11 @@
                   />
                 </el-select>
                 <div>
-                  <span>{{ suffix }}</span>
+                  <span>{{ selectedSuffix }}</span>
                   <Icon class="setting-icon" icon="mingcute:down-small-fill" width="20" height="20"/>
                 </div>
               </div>
+              <span v-else>{{ selectedSuffix }}</span>
             </template>
           </el-input>
           <p class="identity-preview" role="status">{{ $t('identityMailboxPreview') }} <strong>{{ identityName.name || 'username' }}{{ registrationDomain }}</strong><br><span :class="{ 'identity-error':availability.error }">{{ availability.checking ? $t('identityChecking') : availability.error ? $t(availability.error) : availability.available ? $t('identityAvailable') : $t('identityUsernameRules') }}</span></p>
@@ -89,10 +90,10 @@
       <div class="bind-container"><p>{{ $t('identityUsernameRules') }}</p>
         <el-input :class="!hideLoginDomain ? 'email-input' : ''" v-model="bindForm.email" type="text" :placeholder="$t('contactUsername')" autocomplete="off" @keyup.enter="bind">
           <template #append v-if="!hideLoginDomain">
-            <div @click.stop="openSelect">
+            <div v-if="domainList.length > 1" @click.stop="openSelect">
               <el-select
                   ref="mySelect"
-                  v-model="suffix"
+                  v-model="selectedSuffix"
                   :placeholder="$t('select')"
                   class="select"
               >
@@ -104,10 +105,11 @@
                 />
               </el-select>
               <div>
-                <span>{{ suffix }}</span>
+                <span>{{ selectedSuffix }}</span>
                 <Icon class="setting-icon" icon="mingcute:down-small-fill" width="20" height="20"/>
               </div>
             </div>
+            <span v-else>{{ selectedSuffix }}</span>
           </template>
         </el-input>
         <el-input v-if="settingStore.settings.regKey === 0" v-model="bindForm.code" :placeholder="$t('regKey')"
@@ -199,7 +201,12 @@ const registerForm = reactive({
   nickname: '',
   code: null
 })
-const registrationDomain=computed(()=>settingStore.settings.loginDomain===1 && registerForm.email.includes('@') ? '@'+registerForm.email.split('@').at(-1).trim().toLowerCase() : suffix.value||settingStore.settings.registrationDomain||'');
+const domainList = computed(() => settingStore.settings.registrationDomains ?? settingStore.domainList);
+const selectedSuffix = computed({
+  get: () => domainList.value.includes(suffix.value) ? suffix.value : domainList.value[0] || '',
+  set: (value) => { suffix.value = value; }
+});
+const registrationDomain=computed(()=>settingStore.settings.loginDomain===1 && registerForm.email.includes('@') ? '@'+registerForm.email.split('@').at(-1).trim().toLowerCase() : selectedSuffix.value||settingStore.settings.registrationDomain||'');
 const identityName=computed(()=>identityUsername(registrationPrefix(registerForm.email)));
 const availability=reactive({checking:false,available:false,error:''});
 let availabilityTimer,availabilityRevision=0;
@@ -215,9 +222,7 @@ watch(()=>[registerForm.email,registrationDomain.value],()=>{
  },450);
 });
 onBeforeUnmount(()=>{clearTimeout(availabilityTimer);availabilityRevision++;});
-const domainList = settingStore.domainList;
 const registerLoading = ref(false)
-suffix.value = domainList[0]
 const verifyShow = ref(false)
 let verifyToken = ''
 let turnstileId = null
@@ -295,7 +300,7 @@ const openSelect = () => {
 }
 
 const getFullEmail = (email) => {
-  return registrationEmail(email, suffix.value, hideLoginDomain.value)
+  return registrationEmail(email, selectedSuffix.value, hideLoginDomain.value)
 }
 
 const getEmailName = (email) => {
@@ -466,9 +471,6 @@ function refreshWebsiteConfig() {
   websiteConfig().then(setting => {
     settingStore.settings = setting
     settingStore.domainList = setting.domainList
-    if (!suffix.value && setting.domainList.length > 0) {
-      suffix.value = setting.domainList[0]
-    }
     document.title = setting.title
   }).catch(e => {
     console.error(e)
