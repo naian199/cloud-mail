@@ -25,7 +25,7 @@ const { t } = useI18n();
 // The file's data goes from the browser straight to the storage program. Browsers cannot report
 // how many bytes have been sent there (see uploadDirect), so the list shows the total size and
 // elapsed time, then "received, verifying" while the Worker checks it with the API, and finally
-// the size the storage program confirmed, which means the file is fully stored.
+// only the size the storage program confirmed, which means the transfer is complete.
 const now = ref(Date.now());
 const clock = setInterval(() => { now.value = Date.now(); }, 1000);
 onBeforeUnmount(() => clearInterval(clock));
@@ -36,7 +36,8 @@ function statusText(item) {
     if (item.progress >= 1) return t('largeAttVerifying', { size: total });
     return t('largeAttSending', { size: total, time: elapsed(item) });
   }
-  if (item.status === 'ready') return t('largeAttStored', { size: formatBytes(item.verifiedSize || item.size) });
+  // Verified by the Worker: only the confirmed size is shown, which means the transfer is complete.
+  if (item.status === 'ready') return formatBytes(item.verifiedSize || item.size);
   return `${total} · ${t('largeAttFailed')}`;
 }
 </script>

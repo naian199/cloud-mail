@@ -59,7 +59,6 @@ const en = {
     largeAttMaxHint: "File data goes from the browser straight to the program, not through this site, so Cloudflare's request size limit does not apply; this site only verifies and records. Uploads show elapsed time only, and users need direct access to the program.",
     largeAttSending: "{size} total · uploading · {time}",
     largeAttVerifying: "{size} · received by the storage program, verifying…",
-    largeAttStored: "{size} · stored",
     largeAttTitle: "Large attachments (Turbobit)",
     largeAttHint: "When on, every file chosen, pasted or dropped in internal chats is stored with the program through CostAction and filed by format; this site keeps only thumbnails. Voice notes, stickers and existing attachments keep their current storage.",
     largeAttTokenSet: "Token saved",
