@@ -8,23 +8,27 @@ for (const path of ['/mail-chat', '/inbox', '/settings', '/system-settings', '/a
   });
 }
 
-test('docked navigation is clickable on wide screens', async ({ page }, testInfo) => {
-  test.skip(isPhone(testInfo), 'phones use the drawer');
-  await page.setViewportSize({ width: 1920, height: 1000 });
-  await open(page, '/settings');
-  const items = page.locator('.persistent-aside .el-menu-item:visible');
-  const blocked = await items.evaluateAll(list => list.filter(item => {
-    const box = item.getBoundingClientRect();
-    return !item.contains(document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2));
-  }).length);
-  expect(blocked).toBe(0);
-  await page.locator('.persistent-aside .el-menu-item', { hasText: 'Inbox' }).click();
-  await expect(page).toHaveURL(/\/inbox$/);
+// The desktop rail replaces the old drawer and docked menu, at every desktop width.
+for (const width of [1920, 962]) {
+  test(`the navigation rail is visible and clickable at ${width}px`, async ({ page }, testInfo) => {
+    test.skip(isPhone(testInfo), 'phones use the tab bar');
+    await page.setViewportSize({ width, height: 800 });
+    await open(page, '/settings');
+    const items = page.locator('.site-rail .rail-item:visible');
+    const blocked = await items.evaluateAll(list => list.filter(item => {
+      const box = item.getBoundingClientRect();
+      return !item.contains(document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2));
+    }).length);
+    expect(blocked).toBe(0);
+    await page.locator('.site-rail [data-nav="mail"]').click();
+    await expect(page).toHaveURL(/\/inbox$/);
+  });
+}
+
+test('phones navigate with the tab bar', async ({ page }, testInfo) => {
+  test.skip(!isPhone(testInfo), 'desktop uses the rail');
+  await open(page, '/inbox');
+  await page.locator('.site-tabbar [data-nav="files"]').click();
+  await expect(page).toHaveURL(/\/files$/);
 });
 
-test('narrow screens open navigation from the drawer', async ({ page }) => {
-  await page.setViewportSize({ width: 1200, height: 800 });
-  await open(page, '/inbox');
-  await page.locator('.global-navigation-toggle').click();
-  await expect(page.locator('.navigation-drawer')).toBeVisible();
-});

@@ -30,7 +30,7 @@ test('star from the context menu', async ({ page }, testInfo) => {
 test('opening a message shows it in the sandboxed frame', async ({ page }) => {
   await open(page, '/inbox');
   await row(page, 'Newsletter number 4').click();
-  await expect(page).toHaveURL(/\/mail$/);
+  await expect(page).toHaveURL(/\/mail\/\d+$/);
   const cell = page.frameLocator('.mail-content iframe').locator('td');
   await expect(cell).toContainText('Wide newsletter 4');
   // Wide newsletters reflow to the frame instead of being zoomed out.

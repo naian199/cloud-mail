@@ -3,7 +3,7 @@ import { test, expect, open } from '../fixtures.mjs';
 test('mail HTML cannot run script in the app', async ({ page }) => {
   await open(page, '/inbox');
   await page.locator('.email-row', { hasText: 'XSS probe' }).click();
-  await expect(page).toHaveURL(/\/mail$/);
+  await expect(page).toHaveURL(/\/mail\/\d+$/);
   await page.waitForTimeout(1500);
   // The probe's onerror handler sets this if mail HTML ever runs in the app's window.
   expect(await page.evaluate(() => window.__XSS_FIRED ?? null)).toBeNull();
