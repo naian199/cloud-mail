@@ -63,7 +63,8 @@ async function pdfPreview(file) {
   ]);
   pdfjs.GlobalWorkerOptions.workerSrc = worker.default;
   // CMaps (CJK and other composite fonts) and standard fonts are served by this site.
-  const assets = `/${PDF_ASSETS}`;
+  // Follow the site base (VITE_STATIC_URL) so a CDN or sub-path deployment finds the files too.
+  const assets = `${import.meta.env.BASE_URL.replace(/\/$/, "")}/${PDF_ASSETS}`;
   const task = pdfjs.getDocument({
     data: new Uint8Array(await file.arrayBuffer()),
     isEvalSupported: false,
