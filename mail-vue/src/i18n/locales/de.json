@@ -889,5 +889,8 @@
   "largeAttDirectFailed": "Ihr Browser konnte den Speicherdienst nicht erreichen. Prüfen Sie Ihre Verbindung und versuchen Sie es erneut.",
   "largeAttMaxHint": "Die Dateidaten gehen direkt vom Browser zum Dienst und nicht über diese Website, daher gilt das Größenlimit für Cloudflare-Anfragen nicht; diese Website prüft und protokolliert nur. Beim Hochladen wird nur die verstrichene Zeit angezeigt, und Nutzer brauchen direkten Zugang zum Dienst.",
   "largeAttHint": "Wenn aktiviert, wird jede in internen Chats ausgewählte, eingefügte oder abgelegte Datei über CostAction beim Dienst gespeichert und nach Format abgelegt; diese Website behält nur Vorschaubilder. Sprachnachrichten, Sticker und vorhandene Anhänge behalten ihren bisherigen Speicherort.",
-  "largeAttNote": "Originale werden beim gewählten Dienst unter Cloud-Mail/<Typ>/<Jahr>/<Monat> abgelegt und nur über dessen offizielle Seite heruntergeladen. Diese Website behält Vorschaubilder und Videocover 7 Tage lang. Aufbewahrung, Download-Geschwindigkeit und Einnahmen richten sich nach dem Dienst und Ihrem Konto."
+  "largeAttNote": "Originale werden beim gewählten Dienst unter Cloud-Mail/<Typ>/<Jahr>/<Monat> abgelegt und nur über dessen offizielle Seite heruntergeladen. Diese Website behält Vorschaubilder und Videocover 7 Tage lang. Aufbewahrung, Download-Geschwindigkeit und Einnahmen richten sich nach dem Dienst und Ihrem Konto.",
+  "listLoadFailed": "Diese Liste konnte nicht geladen werden. Prüfen Sie Ihre Verbindung.",
+  "listNotUpdated": "Nicht aktualisiert. Die zuletzt geladene Liste wird angezeigt.",
+  "listRetry": "Erneut versuchen"
 }

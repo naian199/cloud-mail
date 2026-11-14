@@ -889,5 +889,8 @@
   "largeAttDirectFailed": "Pelayar anda tidak dapat mencapai perkhidmatan storan. Semak sambungan anda dan cuba lagi.",
   "largeAttMaxHint": "Data fail dihantar terus dari pelayar ke perkhidmatan, bukan melalui laman ini, jadi had saiz permintaan Cloudflare tidak terpakai; laman ini hanya mengesahkan dan merekod. Semasa muat naik hanya masa berlalu dipaparkan, dan pengguna memerlukan akses terus ke perkhidmatan.",
   "largeAttHint": "Apabila dihidupkan, setiap fail yang dipilih, ditampal atau dilepaskan dalam sembang dalaman disimpan di perkhidmatan melalui CostAction dan disusun mengikut format; laman ini hanya menyimpan imej kecil. Nota suara, pelekat dan lampiran sedia ada kekal dengan storan semasa.",
-  "largeAttNote": "Fail asal disimpan di perkhidmatan yang dipilih, disusun di bawah Cloud-Mail/<jenis>/<tahun>/<bulan>, dan hanya dimuat turun dari halaman rasminya. Laman ini menyimpan imej kecil dan kulit video selama 7 hari. Tempoh simpanan, kelajuan muat turun dan pendapatan bergantung pada perkhidmatan dan akaun anda."
+  "largeAttNote": "Fail asal disimpan di perkhidmatan yang dipilih, disusun di bawah Cloud-Mail/<jenis>/<tahun>/<bulan>, dan hanya dimuat turun dari halaman rasminya. Laman ini menyimpan imej kecil dan kulit video selama 7 hari. Tempoh simpanan, kelajuan muat turun dan pendapatan bergantung pada perkhidmatan dan akaun anda.",
+  "listLoadFailed": "Tidak dapat memuatkan senarai ini. Semak sambungan anda.",
+  "listNotUpdated": "Tidak dikemas kini. Memaparkan senarai terakhir yang dimuatkan.",
+  "listRetry": "Cuba lagi"
 }

@@ -889,5 +889,8 @@
   "largeAttDirectFailed": "Browser Anda tidak dapat menjangkau layanan penyimpanan. Periksa koneksi Anda lalu coba lagi.",
   "largeAttMaxHint": "Data file dikirim langsung dari browser ke layanan, tidak melalui situs ini, sehingga batas ukuran permintaan Cloudflare tidak berlaku; situs ini hanya memverifikasi dan mencatat. Saat mengunggah hanya waktu berjalan yang ditampilkan, dan pengguna memerlukan akses langsung ke layanan.",
   "largeAttHint": "Jika aktif, setiap file yang dipilih, ditempel, atau diseret ke obrolan internal disimpan di layanan melalui CostAction dan dikelompokkan menurut format; situs ini hanya menyimpan thumbnail. Pesan suara, stiker, dan lampiran yang sudah ada tetap menggunakan penyimpanan saat ini.",
-  "largeAttNote": "File asli disimpan di layanan yang dipilih, dikelompokkan di Cloud-Mail/<jenis>/<tahun>/<bulan>, dan hanya dapat diunduh dari halaman resminya. Situs ini menyimpan thumbnail dan sampul video selama 7 hari. Masa simpan, kecepatan unduh, dan pendapatan mengikuti layanan dan akun Anda."
+  "largeAttNote": "File asli disimpan di layanan yang dipilih, dikelompokkan di Cloud-Mail/<jenis>/<tahun>/<bulan>, dan hanya dapat diunduh dari halaman resminya. Situs ini menyimpan thumbnail dan sampul video selama 7 hari. Masa simpan, kecepatan unduh, dan pendapatan mengikuti layanan dan akun Anda.",
+  "listLoadFailed": "Tidak dapat memuat daftar ini. Periksa koneksi Anda.",
+  "listNotUpdated": "Belum diperbarui. Menampilkan daftar yang terakhir dimuat.",
+  "listRetry": "Coba lagi"
 }

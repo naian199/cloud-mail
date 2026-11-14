@@ -889,5 +889,8 @@
   "largeAttDirectFailed": "Seu navegador não conseguiu acessar o serviço de armazenamento. Verifique sua conexão e tente novamente.",
   "largeAttMaxHint": "Os dados do arquivo vão direto do navegador para o serviço, sem passar por este site, então o limite de tamanho de requisição do Cloudflare não se aplica; este site apenas verifica e registra. Durante o envio, só o tempo decorrido é exibido, e os usuários precisam de acesso direto ao serviço.",
   "largeAttHint": "Quando ativado, todo arquivo escolhido, colado ou arrastado nas conversas internas é armazenado no serviço via CostAction e organizado por formato; este site guarda apenas as miniaturas. Mensagens de voz, figurinhas e anexos existentes mantêm o armazenamento atual.",
-  "largeAttNote": "Os originais ficam no serviço escolhido, organizados em Cloud-Mail/<tipo>/<ano>/<mês>, e só podem ser baixados pela página oficial dele. Este site guarda miniaturas e capas de vídeo por 7 dias. Retenção, velocidade de download e ganhos seguem as regras do serviço e da sua conta."
+  "largeAttNote": "Os originais ficam no serviço escolhido, organizados em Cloud-Mail/<tipo>/<ano>/<mês>, e só podem ser baixados pela página oficial dele. Este site guarda miniaturas e capas de vídeo por 7 dias. Retenção, velocidade de download e ganhos seguem as regras do serviço e da sua conta.",
+  "listLoadFailed": "Não foi possível carregar esta lista. Verifique sua conexão.",
+  "listNotUpdated": "Não atualizado. Exibindo a última lista carregada.",
+  "listRetry": "Tentar novamente"
 }
