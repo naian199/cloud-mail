@@ -178,7 +178,7 @@ test.describe('redesigned site', () => {
     await admin('POST', `/app-publish/${appId}/versions/${v2}/withdraw`);
     expect((await admin('POST', `/app-review/${appId}/versions/${v2}`, { action: 'approve' })).code).toBe(409);
     expect((await admin('GET', `/apps/${appId}`)).data.versions.find((v) => v.versionId === v2).status).toBe('withdrawn');
-    // A version blocked before approval is never published, even when listed in the approval.
+    // A version blocked before approval is never published: an approval listing it is refused.
     const v3 = (await admin('POST', `/app-publish/${appId}/versions`, { version: '1.2', platform: 'linux', fileId: files[0].fileId })).data.versionId;
     await admin('POST', `/app-review/${appId}/versions/${v3}`, { action: 'block', note: 'Bad build' });
     await admin('POST', `/app-review/${appId}`, { action: 'remove', note: 'Recheck' });
@@ -188,8 +188,10 @@ test.describe('redesigned site', () => {
     await admin('POST', `/app-publish/${appId}/submit`);
     const again = (await admin('GET', `/apps/${appId}`)).data.app.updateTime;
     expect((await admin('POST', `/app-review/${appId}`, { action: 'approve', updateTime: again - 1, versionIds: [v3] })).code).toBe(409);
-    expect((await admin('POST', `/app-review/${appId}`, { action: 'approve', updateTime: again, versionIds: [v3] })).code).toBe(200);
+    expect((await admin('POST', `/app-review/${appId}`, { action: 'approve', updateTime: again, versionIds: [v3] })).code).toBe(409);
     expect((await admin('GET', `/apps/${appId}`)).data.versions.find((v) => v.versionId === v3).status).toBe('blocked');
+    // The refused batch left the listing untouched, so the same snapshot can be retried as is.
+    expect((await admin('POST', `/app-review/${appId}`, { action: 'approve', updateTime: again, versionIds: [] })).code).toBe(200);
     // Blocking a published version stops its downloads at once.
     await admin('POST', `/app-review/${appId}/versions/${v1}`, { action: 'block', note: 'Malware report' });
     expect((await admin('POST', `/apps/${appId}/versions/${v1}/download`)).code).toBe(404);
@@ -259,9 +261,9 @@ test.describe('redesigned site', () => {
     let release;
     await page.route(/\/api\/email\/detail/, async (route) => { await new Promise((r) => { release = r; }); await route.continue(); });
     await page.reload();
-    await expect(page.locator('.mail-verifying')).toBeVisible();
+    await expect(page.locator('.box [aria-busy="true"]')).toBeVisible();
     await expect(page.locator('.email-title')).toHaveCount(0);
-    await expect(page.locator('.header-actions')).toBeHidden();
+    await expect(page.locator('.header-actions .icon')).toHaveCount(1);
     await expect.poll(() => typeof release).toBe('function');
     release();
     await expect(page.locator('.mail-unavailable')).toBeVisible();

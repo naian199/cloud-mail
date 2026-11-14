@@ -252,18 +252,17 @@ const appService = {
 			const seen = Number(params?.updateTime);
 			if (!Number.isSafeInteger(seen)) fail('Missing review snapshot / 缺少审核快照');
 			const versionIds = [...new Set((Array.isArray(params?.versionIds) ? params.versionIds : []).map(Number).filter((n) => Number.isSafeInteger(n) && n > 0))].slice(0, 100);
-			// One atomic batch: the listing moves from the snapshot the reviewer saw to seen + 1, and the
-			// chosen versions publish only if that exact transition happened in this batch. A failure
-			// leaves both untouched, so a retry with the same snapshot still works.
-			const next = seen + 1;
-			const statements = [db.prepare(`UPDATE app SET status = 'published', removed_by = '', review_note = ?, publish_time = CASE WHEN publish_time = 0 THEN ? ELSE publish_time END, update_time = ?
-        WHERE app_id = ? AND status = 'review' AND update_time = ?`).bind(note, t, next, appId, seen)];
-			if (versionIds.length) {
-				statements.push(db.prepare(`UPDATE app_version SET status = 'published', publish_time = ? WHERE app_id = ? AND status = 'review'
-          AND version_id IN (${versionIds.map(() => '?').join(',')})
-          AND EXISTS (SELECT 1 FROM app WHERE app_id = ? AND status = 'published' AND update_time = ?)`).bind(t, appId, ...versionIds, appId, next));
-			}
-			const [res] = await db.batch(statements);
+			const selected = JSON.stringify(versionIds);
+			const approveApp = db.prepare(`UPDATE app SET status = 'published', removed_by = '', review_note = ?, publish_time = CASE WHEN publish_time = 0 THEN ? ELSE publish_time END, update_time = MAX(?, update_time + 1)
+        WHERE app_id = ? AND status = 'review' AND update_time = ?
+        AND (SELECT count(*) FROM app_version v JOIN cloud_file f ON f.file_id = v.file_id
+          WHERE v.app_id = app.app_id AND v.status = 'review' AND f.status = 'ready'
+          AND v.version_id IN (SELECT value FROM json_each(?))) = ?`)
+				.bind(note, t, t, appId, seen, selected, versionIds.length);
+			const approveVersions = db.prepare(`UPDATE app_version SET status = 'published', publish_time = ?
+        WHERE app_id = ? AND status = 'review' AND changes() = 1
+        AND version_id IN (SELECT value FROM json_each(?))`).bind(t, appId, selected);
+			const [res] = await db.batch([approveApp, approveVersions]);
 			if (!res.meta.changes) conflict();
 			return { status: 'published' };
 		}
