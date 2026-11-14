@@ -1,6 +1,11 @@
 <template>
   <div class="email-list-box">
-    <emailScroll ref="sysEmailScroll"
+    <nav class="all-mail-modes" :aria-label="t('allMail')">
+      <RouterLink :to="{ query: {} }" :aria-current="!listMode ? 'page' : undefined">{{ t('allMailConversationView') }}</RouterLink>
+      <RouterLink :to="{ query: { view: 'list' } }" :aria-current="listMode ? 'page' : undefined">{{ t('allMailListView') }}</RouterLink>
+    </nav>
+    <Conversations v-if="!listMode" @original="openConversationOriginal" />
+    <emailScroll v-else ref="sysEmailScroll"
                  :get-emailList="getEmailList"
                  :email-delete="allEmailDelete"
                  :star-add="starAdd"
@@ -56,7 +61,7 @@
               v-if="params.timeSort === 0" width="28" height="28"/>
         <Icon class="icon" @click="changeTimeSort" icon="material-symbols-light:timer-arrow-up-outline" v-else
               width="28" height="28"/>
-        <Icon class="icon clear" icon="fluent:broom-sparkle-16-regular" width="22" height="22" @click="openBathDelete"/>
+        <Icon v-perm="'all-email:delete'" class="icon clear" icon="fluent:broom-sparkle-16-regular" width="22" height="22" @click="openBathDelete"/>
       </template>
     </emailScroll>
     <el-dialog v-model="showBathDelete" :title="$t('clearEmail')" width="335"
@@ -102,7 +107,7 @@ import {
   allEmailList,
   allEmailDelete,
   allEmailBatchDelete,
-  allEmailLatest, removedMailDetail, removedMailAttachment
+  allEmailLatest, allMailConversationOriginal, removedMailDetail, removedMailAttachment
 } from "@/request/all-email.js";
 import {Icon} from "@iconify/vue";
 import router from "@/router/index.js";
@@ -110,9 +115,10 @@ import {useI18n} from 'vue-i18n';
 import {toUtc} from "@/utils/day.js";
 import {sleep} from "@/utils/time-utils.js";
 import {useSettingStore} from "@/store/setting.js";
-import { useRoute } from 'vue-router'
+import { RouterLink, useRoute } from 'vue-router'
 
 import MailBody from '@/components/mail-body.vue';
+import Conversations from './conversations.vue';
 const removedOpen=ref(false),removedRecord=ref(null);
 const loadRemovedAttachment=id=>removedMailAttachment(removedRecord.value.emailId,id);
 async function downloadRemoved(att){const blob=await loadRemovedAttachment(att.attId);const url=URL.createObjectURL(blob);const link=document.createElement('a');link.href=url;link.download=att.filename||'attachment';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
@@ -122,6 +128,9 @@ defineOptions({
 })
 
 const route = useRoute()
+const listMode = computed(() => route.query.view === 'list');
+let originalRequest = 0;
+watch(() => route.fullPath, () => { originalRequest++; });
 const {t} = useI18n();
 const emailStore = useEmailStore();
 const settingStore = useSettingStore();
@@ -294,10 +303,26 @@ function typeSelectChange() {
 
 async function jumpContent(email) {
   if(email.chatRemoved){removedRecord.value=await removedMailDetail(email.emailId);removedOpen.value=true;return;}
-  emailStore.contentData.email = emailStore.toContentEmail(email)
+  showOriginal(emailStore.toContentEmail(email));
+}
+
+async function openConversationOriginal(id) {
+  const source = route.fullPath;
+  const request = ++originalRequest;
+  try {
+    const record = await allMailConversationOriginal(id);
+    if (request === originalRequest && route.fullPath === source) showOriginal(record);
+  } catch {
+    // The shared request handler reports an unavailable record or failed load.
+  }
+}
+
+function showOriginal(record) {
+  emailStore.contentData.email = record
   emailStore.contentData.delType = 'physics'
   emailStore.contentData.showStar = false
   emailStore.contentData.showReply = false
+  emailStore.contentData.showUnread = false
   router.push({name: 'content'})
 }
 
@@ -314,7 +339,7 @@ async function latest() {
 
     await sleep(autoRefresh > 1 ? autoRefresh * 1000 : 3000);
 
-    const latestId = sysEmailScroll.value.latestEmail?.emailId
+    const latestId = sysEmailScroll.value?.latestEmail?.emailId
 
     if (autoRefresh < 2) {
       continue
@@ -324,7 +349,7 @@ async function latest() {
       continue
     }
 
-    if (route.name !== 'all-email') {
+    if (route.name !== 'all-email' || !listMode.value) {
       continue
     }
 
@@ -342,7 +367,7 @@ async function latest() {
         continue
       }
 
-      if (params.type !== 'receive') {
+      if (params.type !== 'receive' || !listMode.value || !sysEmailScroll.value) {
         continue
       }
 
@@ -355,7 +380,7 @@ async function latest() {
 
       for (let email of list) {
 
-        sysEmailScroll.value.addItem(email)
+        sysEmailScroll.value?.addItem(email)
         await sleep(50)
 
       }
@@ -411,8 +436,35 @@ async function latest() {
   height: 100%;
   width: 100%;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
+.all-mail-modes {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  padding: 5px 12px;
+  border-bottom: 1px solid var(--el-border-color-lighter);
+}
+
+.all-mail-modes a {
+  padding: 8px 12px;
+  border-radius: 8px;
+  color: var(--el-text-color-secondary);
+  text-decoration: none;
+}
+
+.all-mail-modes a[aria-current="page"] {
+  background: var(--el-color-primary-light-9);
+  color: var(--el-color-primary);
+  font-weight: 600;
+}
+
+.email-list-box :deep(.email-container) {
+  flex: 1;
+  min-height: 0;
+}
 
 .search {
   padding-top: 5px;
