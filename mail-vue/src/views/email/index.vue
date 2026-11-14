@@ -69,7 +69,7 @@ function jumpContent(email) {
   emailStore.contentData.showUnread = true
   emailStore.contentData.showStar = true
   emailStore.contentData.showReply = true
-  router.push('/mail')
+  router.push(`/mail/${email.emailId}`)
 }
 
 const existIds = new Set();

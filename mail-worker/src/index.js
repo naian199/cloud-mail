@@ -9,6 +9,7 @@ import oauthService from './service/oauth-service';
 import analysisService from './service/analysis-service';
 import { ensureMailChat } from './init/mail-chat-schema';
 import { ensureCloudFiles } from './init/cloud-file-schema';
+import { ensureAppStore } from './init/app-store-schema';
 import cloudFile from './service/cloud-file-service';
 import {revokedAttachment} from './service/removed-mail-service';
 export { ChatNotifications } from './chat/notifications';
@@ -20,7 +21,7 @@ export default {
 		const requestUrl = req.url;
 		const finish = response => secureResponse(response, requestUrl);
 		const url = new URL(req.url)
-		if (!url.pathname.startsWith('/api/init/')) { await ensureMailChat(env); await ensureCloudFiles(env); }
+		if (!url.pathname.startsWith('/api/init/')) { await ensureMailChat(env); await ensureCloudFiles(env); await ensureAppStore(env); }
 
 		if (url.pathname.startsWith('/api/')) {
 			url.pathname = url.pathname.replace('/api', '')

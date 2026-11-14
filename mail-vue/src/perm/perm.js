@@ -47,6 +47,22 @@ export function syncPermissionRoutes(router,permKeys=[]) {
 }
 
 const routers = {
+    'app:publish': [
+        {
+            path: '/apps/publish',
+            name: 'app-publish',
+            component: () => import('@/views/apps/publish.vue'),
+            meta: { title: 'appPublishTitle', name: 'app-publish', menu: false }
+        }
+    ],
+    'app:review': [
+        {
+            path: '/apps/review',
+            name: 'app-review',
+            component: () => import('@/views/apps/review.vue'),
+            meta: { title: 'appReviewTitle', name: 'app-review', menu: false }
+        }
+    ],
     'email:send': [
         {
             path: '/sent',

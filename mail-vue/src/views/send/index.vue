@@ -60,7 +60,7 @@ function jumpContent(email) {
   emailStore.contentData.delType = 'logic'
   emailStore.contentData.showStar = true
   emailStore.contentData.showReply = true
-  router.push('/mail')
+  router.push(`/mail/${email.emailId}`)
 }
 
 function addStar(email) {

@@ -18,8 +18,10 @@ export const useEmailStore = defineStore('email', {
         sendScroll: null,
         detailMap: {},
     }),
+    // Per tab: another tab opening a different message must never change this one.
     persist: {
         pick: ['contentData'],
+        storage: sessionStorage,
     },
     actions: {
         fetchList(request) {

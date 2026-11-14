@@ -29,6 +29,28 @@ import {redactRemovedQuotes} from './removed-mail-service';
 
 const emailService = {
 
+	// One message by ID, only if it belongs to this user and is not deleted. Used when a message
+	// address (/mail/:emailId) is opened directly, so the page never shows another tab's message.
+	async detail(c, params, userId) {
+		const emailId = Number(params.emailId);
+		if (!Number.isSafeInteger(emailId) || emailId < 1) throw new BizError('Mail unavailable / 邮件不可用', 404);
+		const row = await orm(c)
+			.select({ ...emailListColumns, starId: star.starId })
+			.from(email)
+			.leftJoin(star, and(eq(star.emailId, email.emailId), eq(star.userId, userId)))
+			.innerJoin(account, eq(account.accountId, email.accountId))
+			// Same ownership and state rules as the inbox list: the user's own message, not deleted, in
+			// one of the user's mailboxes that is itself not deleted.
+			.where(and(eq(email.emailId, emailId), eq(email.userId, userId), eq(email.isDel, isDel.NORMAL),
+				eq(account.userId, userId), eq(account.isDel, isDel.NORMAL)))
+			.get();
+		if (!row) throw new BizError('Mail unavailable / 邮件不可用', 404);
+		row.attList = await attService.selectByEmailIds(c, [emailId]);
+		// Same shape as list items.
+		const { starId, ...rest } = row;
+		return { ...rest, isStar: starId != null ? 1 : 0 };
+	},
+
 	async list(c, params, userId) {
 
 		let { emailId, type, accountId, size, timeSort, allReceive, full } = params;

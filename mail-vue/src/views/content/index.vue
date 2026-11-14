@@ -2,16 +2,21 @@
   <div class="box">
     <div class="header-actions">
       <Icon class="icon" icon="material-symbols-light:arrow-back-ios-new" width="20" height="20" @click="handleBack"/>
-      <Icon v-perm="'email:delete'" class="icon" icon="uiw:delete" width="16" height="16" @click="handleDelete"/>
-      <span class="star" v-if="emailStore.contentData.showStar">
+      <Icon v-if="mailReady" v-perm="'email:delete'" class="icon" icon="uiw:delete" width="16" height="16" @click="handleDelete"/>
+      <span class="star" v-if="mailReady && emailStore.contentData.showStar">
         <Icon class="icon" @click="changeStar" v-if="email.isStar" icon="fluent-color:star-16" width="20" height="20"/>
         <Icon class="icon" @click="changeStar" v-else icon="solar:star-line-duotone" width="18" height="18"/>
       </span>
-      <Icon class="icon" v-if="emailStore.contentData.showReply" v-perm="'email:send'"  @click="openReply" icon="la:reply" width="21" height="21" />
-      <Icon class="icon" v-if="emailStore.contentData.showReply" v-perm="'email:send'"  @click="openForward" icon="iconoir:arrow-up-right" width="20" height="20" />
+      <Icon class="icon" v-if="mailReady && emailStore.contentData.showReply" v-perm="'email:send'"  @click="openReply" icon="la:reply" width="21" height="21" />
+      <Icon class="icon" v-if="mailReady && emailStore.contentData.showReply" v-perm="'email:send'"  @click="openForward" icon="iconoir:arrow-up-right" width="20" height="20" />
     </div>
     <div></div>
-    <el-scrollbar class="scrollbar">
+    <div v-if="unavailable" class="mail-unavailable" role="alert">
+      <p>{{ t('mailUnavailable') }}</p>
+      <el-button @click="handleBack">{{ t('navBack') }}</el-button>
+    </div>
+    <div v-else-if="!mailReady" v-loading="true" class="mail-unavailable" aria-busy="true"></div>
+    <el-scrollbar v-else class="scrollbar">
       <div class="container">
         <div class="email-title">
           {{ email.subject }}
@@ -77,9 +82,11 @@
 <script setup>
 import MailBody from '@/components/mail-body.vue'
 import {computed, reactive, ref, watch, onMounted, onUnmounted} from "vue";
-import {useRouter} from 'vue-router'
+import {useRouter, useRoute} from 'vue-router'
+import {goBack} from '@/utils/go-back.js'
+import {hasPerm} from '@/perm/perm.js'
 import {ElMessage, ElMessageBox} from 'element-plus'
-import {emailDelete, emailRead} from "@/request/email.js";
+import {emailDelete, emailRead, emailDetail} from "@/request/email.js";
 import {Icon} from "@iconify/vue";
 import {useEmailStore} from "@/store/email.js";
 import {useAccountStore} from "@/store/account.js";
@@ -99,6 +106,9 @@ const settingStore = useSettingStore();
 const accountStore = useAccountStore();
 const emailStore = useEmailStore();
 const router = useRouter()
+const route = useRoute()
+const mailReady = ref(false)
+let detailRequest = 0
 const email = computed(() => emailStore.contentData.email || {
   emailId: 0,
   attList: [],
@@ -117,7 +127,7 @@ watch(() => accountStore.currentAccountId, () => {
 let readRequesting = false
 
 function tryMarkRead() {
-  if (!emailStore.contentData.showUnread || readRequesting) return
+  if (!mailReady.value || !emailStore.contentData.showUnread || readRequesting) return
   const current = email.value
   if (!current?.emailId || current.unread !== EmailUnreadEnum.UNREAD) return
 
@@ -140,6 +150,7 @@ function tryMarkRead() {
 
 watch(
   () => [
+    mailReady.value,
     email.value?.emailId,
     email.value?.content,
     email.value?.text,
@@ -149,12 +160,48 @@ watch(
   { flush: 'post' }
 )
 
+// /mail/:emailId always loads that message from the server for the signed-in user, so a cached
+// copy in this tab never outlives a mailbox switch, a deletion or lost access. Plain /mail is
+// only the admin all-mail viewer (which opens records the admin may see but does not own);
+// anyone else is sent to the inbox.
+const unavailable = ref(false)
+async function loadFromRoute() {
+  const id = Number(route.params.emailId)
+  const request = ++detailRequest
+  mailReady.value = false
+  showPreview.value = false
+  unavailable.value = false
+  if (!id) {
+    if (emailStore.contentData.delType === 'physics' && hasPerm('all-email:query') && emailStore.contentData.email) {
+      mailReady.value = true
+    } else {
+      router.replace('/inbox')
+    }
+    return
+  }
+  emailStore.contentData.email = null
+  try {
+    const row = await emailDetail(id)
+    if (request !== detailRequest || Number(route.params.emailId) !== id) return
+    emailStore.detailMap[id] = row
+    Object.assign(emailStore.contentData, { email: row, delType: 'logic', showStar: true, showReply: true, showUnread: true })
+    mailReady.value = true
+  } catch {
+    if (request !== detailRequest || Number(route.params.emailId) !== id) return
+    emailStore.contentData.email = null
+    delete emailStore.detailMap[id]
+    unavailable.value = true
+  }
+}
+watch(() => route.params.emailId, loadFromRoute, { immediate: true })
+
 onMounted(() => {
   tryMarkRead()
   window.addEventListener('keydown', handleKeyDown);
 })
 
 onUnmounted(() => {
+  detailRequest++;
   emailStore.contentData.showUnread = false;
   readRequesting = false
   window.removeEventListener('keydown', handleKeyDown);
@@ -238,7 +285,7 @@ function changeStar() {
 }
 
 const handleBack = () => {
-  router.back()
+  goBack(router, route.query.from === 'star' ? '/starred' : '/inbox')
 }
 
 const handleDelete = () => {
@@ -273,6 +320,7 @@ const handleDelete = () => {
 }
 </script>
 <style scoped lang="scss">
+.mail-unavailable { display:flex; flex-direction:column; align-items:center; gap:12px; padding:48px 16px; color:var(--el-text-color-secondary); }
 .box {
   height: 100%;
   min-width: 0;

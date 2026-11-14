@@ -454,7 +454,9 @@ async function saveToken(token) {
   accountStore.currentAccount = user.account;
   userStore.user = user;
   syncPermissionRoutes(router,user.permKeys);
-  await router.replace({name: 'layout'})
+  // Only same-site paths: never an absolute or protocol-relative address.
+  const target = typeof route.query.redirect === 'string' ? route.query.redirect : '';
+  await router.replace(target.startsWith('/') && !target.startsWith('//') && !target.startsWith('/login') ? target : {name: 'layout'})
   uiStore.showNotice()
   oauthLoading.value = false;
   bindLoading.value = false;

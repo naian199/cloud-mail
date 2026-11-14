@@ -137,6 +137,14 @@ const cloudFile = {
 	async download(c, rawId) {
 		const userId = userContext.getUserId(c);
 		const file = await this.accessible(c, userId, rawId);
+		const link = await this.officialLink(c, file);
+		await this.collect(c, userId, file.file_id, 'downloaded');
+		return link;
+	},
+
+	// Asks CostAction for the official share page of a ready file, after confirming it still
+	// exists there. Callers decide who may reach the file; this only talks to the provider.
+	async officialLink(c, file) {
 		if (file.status !== 'ready') fail('File is no longer available / 文件已失效', 410);
 		const setting = await settingService.query(c);
 		if (!setting.costactionToken) fail('Large attachment service unavailable / 大附件服务暂不可用', 503);
@@ -157,7 +165,6 @@ const cloudFile = {
 			await this.markGone(c, file, info.deleteReason === 'lifetime' ? 'expired' : 'deleted');
 			fail('File is no longer available / 文件已失效', 410);
 		}
-		await this.collect(c, userId, file.file_id, 'downloaded');
 		return { url, daysLeft: info.daysLeft };
 	},
 

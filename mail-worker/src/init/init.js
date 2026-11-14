@@ -4,6 +4,7 @@ import {emailConst} from "../const/entity-const";
 import { chatSchema } from './chat-schema';
 import { migrateMailChat } from './mail-chat-schema';
 import { migrateCloudFiles } from './cloud-file-schema';
+import { migrateAppStore } from './app-store-schema';
 
 const dbInit = {
 	async init(c) {
@@ -39,6 +40,7 @@ const dbInit = {
 		await c.env.db.batch(chatSchema.map(sql => c.env.db.prepare(sql)));
 		await migrateMailChat(c.env.db);
 		await migrateCloudFiles(c.env.db);
+		await migrateAppStore(c.env.db);
 		await settingService.refresh(c);
 		return c.text('success');
 	},

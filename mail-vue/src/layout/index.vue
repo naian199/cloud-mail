@@ -1,26 +1,13 @@
 <template>
-  <el-container class="layout" :class="{ 'persistent-nav': persistentNav, 'navigation-open': uiStore.asideShow, 'mobile-chat-focused': uiStore.mobileChatFocused, 'sidebar-collapsible': !compactSidebar && chatRoute, 'conversation-sidebar-collapsed': sidebarCollapsed && chatRoute }" :style="{ '--chat-viewport-height': 'var(--app-viewport-height, 100dvh)', '--chat-viewport-top': 'var(--app-viewport-top, 0px)', '--conversation-width': conversationWidth + 'px' }">
-    <!-- Shares the drawer's navigation-drawer class so the menu keeps its --nav-* palette. -->
-    <el-aside v-if="persistentNav" width="260px" class="persistent-aside navigation-drawer">
-      <div class="navigation-brand persistent-brand"><img src="/mail-brand.svg" alt="" width="36" height="36"><div><strong>{{ settingStore.settings.title }}</strong><span>{{ $t('navigationBrandHint') }}</span></div></div>
-      <nav id="main-navigation" :aria-label="$t('navigationMenu')"><Aside /></nav>
-      <div class="persistent-aside-footer"><Header compact drawer /></div>
-    </el-aside>
-    <template v-else>
-    <button type="button" class="global-navigation-toggle" :aria-label="$t('navigationMenu')" :title="$t('navigationMenu')" :aria-expanded="uiStore.asideShow" aria-controls="main-navigation" aria-haspopup="dialog" @click="uiStore.asideShow = !uiStore.asideShow">
-      <Icon icon="cloud-mail:menu" width="20" height="20" />
-    </button>
-    <el-drawer v-model="uiStore.asideShow" direction="ltr" size="min(304px, calc(100vw - 28px))" :with-header="true" :show-close="false" :title="$t('navigationMenu')" class="navigation-drawer">
-      <template #header><div class="navigation-brand"><img src="/mail-brand.svg" alt="" width="36" height="36"><div><strong>{{ settingStore.settings.title }}</strong><span>{{ $t('navigationBrandHint') }}</span></div><button class="navigation-close" type="button" :aria-label="$t('cancel')" @click="uiStore.asideShow=false"><Icon icon="cloud-mail:close" width="20" /></button></div></template>
-      <nav id="main-navigation" :aria-label="$t('navigationMenu')"><Aside /></nav>
-      <template #footer><Header compact drawer /></template>
-    </el-drawer>
-    </template>
+  <el-container class="layout" :class="{ 'phone-shell': phone, 'with-tabbar': showTabbar, 'mobile-chat-focused': uiStore.mobileChatFocused, 'sidebar-collapsible': !compactSidebar && chatRoute, 'conversation-sidebar-collapsed': sidebarCollapsed && chatRoute }" :style="{ '--chat-viewport-height': 'var(--app-viewport-height, 100dvh)', '--chat-viewport-top': 'var(--app-viewport-top, 0px)', '--conversation-width': conversationWidth + 'px' }">
+    <Rail v-if="!phone" />
     <el-container class="main-container">
       <el-main>
-        <el-header v-if="!chatRoute"><Header :toolbar="false" /></el-header>
+        <el-header v-if="!chatRoute && !ownHeader"><Header :toolbar="!phone" /></el-header>
+        <MailTabs v-if="mailSection && !(phone && route.name === 'content')" />
         <Main />
       </el-main>
+      <Tabbar v-if="showTabbar" />
     </el-container>
   </el-container>
   <writer ref="writerRef" />
@@ -28,37 +15,45 @@
 
 <script setup>
 import { useConversationSidebar } from '@/composables/use-conversation-sidebar';
-import Aside from '@/layout/aside/index.vue'
-import { Icon } from '@iconify/vue'
 import Header from '@/layout/header/index.vue'
 import Main from '@/layout/main/index.vue'
-import { computed, ref, watch, onMounted } from 'vue'
+import Rail from '@/layout/rail/index.vue'
+import Tabbar from '@/layout/tabbar/index.vue'
+import MailTabs from '@/layout/mail-tabs/index.vue'
+import { computed, ref, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute } from 'vue-router'
 import {useUiStore} from "@/store/ui.js";
-import {useSettingStore} from '@/store/setting';
 import writer from '@/layout/write/index.vue'
 import { useMessageAlerts } from '@/composables/use-message-alerts';
-import { useBreakpoint, BREAKPOINTS } from '@/composables/use-breakpoint.js';
+import { useBreakpoint } from '@/composables/use-breakpoint.js';
+import { sectionOf } from '@/composables/use-site-nav';
 
 useMessageAlerts();
 
 const uiStore = useUiStore();
-const settingStore = useSettingStore();
 const route = useRoute();
 const chatRoute = computed(() => ['mail-chat', 'external-mail', 'rooms'].includes(route.name));
+const mailSection = computed(() => sectionOf(route.name) === 'mail');
+// Pages that draw their own title bar.
+const ownHeader = computed(() => ['apps', 'app-detail', 'app-publish', 'app-review', 'me'].includes(route.name));
 const {collapsed:sidebarCollapsed,compact:compactSidebar}=useConversationSidebar();
 const conversationWidth = computed(() => sidebarCollapsed.value ? 64 : Math.min(420, Math.max(260, Number(uiStore.conversationWidth) || 300)));
 uiStore.asideShow = false;
-watch(() => route.fullPath, () => { uiStore.asideShow = false; });
-// Wide desktops keep navigation visible; narrower screens use the drawer.
-const { width: viewportWidth } = useBreakpoint();
-const persistentNav = computed(() => viewportWidth.value > BREAKPOINTS.laptop);
-watch(persistentNav, (wide) => { if (wide) uiStore.asideShow = false; });
+const { isPhone: phone } = useBreakpoint();
+// The on-screen keyboard shrinks the visual viewport; hide the tab bar while it is up.
+const keyboard = ref(false);
+function measureKeyboard() {
+  const vv = window.visualViewport;
+  keyboard.value = !!vv && window.innerHeight - vv.height > 150;
+}
+const detail = computed(() => uiStore.mobileChatFocused || ['content', 'app-detail', 'app-publish', 'app-review'].includes(route.name));
+const showTabbar = computed(() => phone.value && !detail.value && !keyboard.value);
 const writerRef = ref({})
 onMounted(() => {
   uiStore.writerRef = writerRef
-
+  window.visualViewport?.addEventListener('resize', measureKeyboard);
 })
+onBeforeUnmount(() => window.visualViewport?.removeEventListener('resize', measureKeyboard));
 </script>
 
 <style lang="scss" scoped>
@@ -73,7 +68,10 @@ onMounted(() => {
   padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
 }
 
+.layout.with-tabbar { padding-bottom: 0; }
+
 .main-container {
+  flex-direction: column;
   min-width: 0;
   min-height: 0;
   background: var(--el-bg-color);
@@ -109,19 +107,10 @@ onMounted(() => {
 </style>
 
 <style scoped>
-.global-navigation-toggle { position: fixed; top: calc(env(safe-area-inset-top, 0px) + 4px); left: calc(env(safe-area-inset-left, 0px) + 4px); width: 40px; height: 40px; display: grid; place-items: center; border: 0; border-radius: 6px; background: var(--el-bg-color); color: var(--el-text-color-primary); z-index: 102; cursor: pointer; }
-.global-navigation-toggle:hover { background: var(--el-fill-color); }
-.global-navigation-toggle:focus-visible { outline: 2px solid var(--el-color-primary); outline-offset: -2px; }
-.layout { --nav-toggle-space: 52px; }
-.layout.persistent-nav { --nav-toggle-space: 12px; }
+.layout { --nav-toggle-space: 12px; }
 .layout :deep(.header-btn) { padding-inline-start: var(--nav-toggle-space); }
 .layout :deep(.mail-chat .contact-controls .search) { margin-inline-start: var(--nav-toggle-space); width: calc(100% - 12px - var(--nav-toggle-space)); }
-.persistent-aside { display: flex; flex-direction: column; min-height: 0; }
-.persistent-brand { box-sizing: border-box; flex-shrink: 0; padding: 22px 18px 18px; border-bottom: 1px solid var(--nav-line); }
-.persistent-aside #main-navigation { flex: 1; min-height: 0; }
-.persistent-aside-footer { flex-shrink: 0; padding: 12px; border-top: 1px solid var(--nav-line); background: var(--nav-bg); }
 @media (max-width: 767px), (max-width: 1024px) and (max-height: 500px) and (pointer: coarse) {
-  .layout.mobile-chat-focused .global-navigation-toggle { display:none; }
   .layout.mobile-chat-focused :deep(.mail-chat .thread-header), .layout.mobile-chat-focused :deep(.rooms .room-heading) { padding-inline-start: 4px; }
 }
 </style>
@@ -138,5 +127,4 @@ html.dark .navigation-drawer{--nav-bg:#191f2b;--nav-ink:#e3e9f4;--nav-muted:#909
 
 <style scoped>
 .layout.sidebar-collapsible :deep(.contact-controls .search),.layout.sidebar-collapsible :deep(.room-controls .search) {width:calc(100% - 48px - var(--nav-toggle-space));margin-inline-end:48px;}
-.layout.conversation-sidebar-collapsed .global-navigation-toggle {width:32px;inset-inline-start:0;}
 </style>

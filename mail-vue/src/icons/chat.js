@@ -50,6 +50,14 @@ addCollection({
       '<path d="M3 5h12M9 3v2m-4 3c1 4 4 7 8 9M13 5c-1 6-4 10-10 13m11 3 4-11 4 11m-7-3h6"/>'
     ),
     delete: outline('<path d="M3 6h18M9 6V3h6v3M6 6l1 15h10l1-15M10 10v7m4-7v7"/>'),
-    back: outline('<path d="m12 5-7 7 7 7M5 12h15"/>')
+    back: outline('<path d="m12 5-7 7 7 7M5 12h15"/>'),
+    store: outline('<path d="M4 8h16l-1.2 10.2A2 2 0 0 1 16.8 20H7.2a2 2 0 0 1-2-1.8z"/><path d="M8.5 8V6.5a3.5 3.5 0 0 1 7 0V8"/>'),
+    me: outline('<circle cx="12" cy="8" r="4"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/>'),
+    download: outline('<path d="M12 4v11"/><path d="m7 10 5 5 5-5"/><path d="M5 20h14"/>'),
+    share: outline('<circle cx="18" cy="5.5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="18.5" r="2.5"/><path d="m8.2 10.8 7.6-4.1M8.2 13.2l7.6 4.1"/>'),
+    shield: outline('<path d="M12 3 5 6v5.5c0 4.3 3 8 7 9.5 4-1.5 7-5.2 7-9.5V6z"/><path d="m9 12 2 2 4-4"/>'),
+    upload: outline('<path d="M12 16V5"/><path d="m7 10 5-5 5 5"/><path d="M5 20h14"/>'),
+    chevron: outline('<path d="m9 6 6 6-6 6"/>'),
+    logout: outline('<path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3"/><path d="M10 16l-4-4 4-4"/><path d="M6 12h10"/>')
   }
 });
