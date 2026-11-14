@@ -4,9 +4,8 @@
       <Icon icon="cloud-mail:file" width="22" aria-hidden="true" />
       <span class="large-upload-detail">
         <strong :title="item.name">{{ item.name }}</strong>
-        <small>{{ formatBytes(item.size) }} · {{ statusText(item) }}</small>
-        <progress v-if="item.status === 'uploading' && !item.direct" :value="item.progress" max="1" :aria-label="t('largeAttUploading')" />
-        <progress v-else-if="item.status === 'uploading'" :aria-label="t('largeAttDirectUploading')" />
+        <small>{{ statusText(item) }}</small>
+        <progress v-if="item.status === 'uploading'" :aria-label="t('largeAttDirectUploading')" />
       </span>
       <el-button v-if="item.status === 'failed'" text size="small" @click="emit('retry', item)">{{ t('largeAttRetry') }}</el-button>
       <el-button text size="small" :aria-label="t('cancel')" @click="emit('remove', item)">×</el-button>
@@ -15,7 +14,6 @@
 </template>
 
 <script setup>
-import { onBeforeUnmount, ref } from 'vue';
 import { Icon } from '@iconify/vue';
 import { useI18n } from 'vue-i18n';
 import { formatBytes } from '@/utils/file-utils';
@@ -23,20 +21,14 @@ import { formatBytes } from '@/utils/file-utils';
 defineProps({ items: { type: Array, required: true } });
 const emit = defineEmits(['retry', 'remove']);
 const { t } = useI18n();
-// Progress is the bytes sent to this site's Worker, which relays them as they arrive; at 100%
-// the storage service is still confirming the file.
-//
-// Files too large for the Worker go straight to the storage program; browsers give no progress
-// for those (see uploadDirect), so they show the elapsed time.
-const now = ref(Date.now());
-const clock = setInterval(() => { now.value = Date.now(); }, 1000);
-onBeforeUnmount(() => clearInterval(clock));
-const elapsed = (item) => { const s = Math.max(0, Math.floor((now.value - item.startedAt) / 1000)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
-const statusText = (item) => item.status === 'uploading' && item.direct
-  ? (item.progress >= 1 ? t('largeAttConfirming') : `${t('largeAttDirectUploading')} · ${elapsed(item)}`)
-  : item.status === 'uploading'
-  ? (item.progress >= 1 ? t('largeAttConfirming') : `${t('largeAttUploading')} ${Math.round(item.progress * 100)}%`)
-  : t(item.status === 'ready' ? 'largeAttReady' : 'largeAttFailed');
+// While the file is being sent and verified the row says it is uploading; once the Worker has
+// verified it, the row shows only the size the storage program confirmed.
+function statusText(item) {
+  const total = formatBytes(item.size);
+  if (item.status === 'uploading') return `${total} · ${t('largeAttUploading')}`;
+  if (item.status === 'ready') return formatBytes(item.verifiedSize || item.size);
+  return `${total} · ${t('largeAttFailed')}`;
+}
 </script>
 
 <style scoped>

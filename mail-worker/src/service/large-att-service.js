@@ -174,7 +174,8 @@ const largeAtt = {
 				.bind(remoteId, `${STORAGE}:${remoteId}`, attId, userId)
 		]);
 		await cloudFile.collect(c, userId, row.fileId, 'uploaded');
-		return { attId, fileId: row.fileId, status: 'ready', daysLeft: info.daysLeft };
+		// The size CostAction reports for the stored file: the whole file arrived.
+		return { attId, fileId: row.fileId, status: 'ready', size: info.size, daysLeft: info.daysLeft };
 	},
 
 	async markFailed(c, params) {

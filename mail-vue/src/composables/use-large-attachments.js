@@ -42,10 +42,14 @@ export function useLargeAttachments({ t, accountId, draftKey }) {
         const target = await largeAttDirect(begun.attId);
         if (target.status !== 'ready') {
           const remoteId = await uploadDirect(target.uploadUrl, item.file, { signal: item.controller.signal });
+          // The storage program has received all of the data; now the Worker verifies it.
           item.progress = 1;
-          await largeAttComplete({ attId: begun.attId, remoteId });
+          const done = await largeAttComplete({ attId: begun.attId, remoteId });
+          item.verifiedSize = done.size ?? item.size;
         }
       }
+      // Already verified earlier (a retry after a lost reply) when no size came back here.
+      if (!item.verifiedSize) item.verifiedSize = item.size;
       item.status = 'ready';
       item.progress = 1;
       // The original is stored; a preview is extra. Its failure never re-uploads the original.
@@ -85,7 +89,7 @@ export function useLargeAttachments({ t, accountId, draftKey }) {
         ElMessage.error(t('largeAttMaxLimit', { max: Math.round(maxSize / 1048576) }));
         continue;
       }
-      const item = reactive({ clientId: randomUUID().replaceAll('-', ''), file, name: file.name, size: file.size, progress: 0, status: 'uploading', attId: null, fileId: null, previewStored: false, controller: null, direct: false, startedAt: 0 });
+      const item = reactive({ clientId: randomUUID().replaceAll('-', ''), file, name: file.name, size: file.size, progress: 0, status: 'uploading', attId: null, fileId: null, previewStored: false, controller: null, direct: false, startedAt: 0, verifiedSize: 0 });
       list().push(item);
       upload(item);
     }
