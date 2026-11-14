@@ -53,6 +53,8 @@ function videoPreview(file) {
 
 // The first pages of a PDF, stacked into one image 480 px wide. pdf.js loads only when needed.
 const PDF_PAGES = 3;
+// Must match build/pdf-assets.mjs.
+const PDF_ASSETS = 'pdfjs-4.10.38';
 async function pdfPreview(file) {
   if (file.size > 60 * 1024 * 1024) return null;
   const [pdfjs, worker] = await Promise.all([
@@ -60,8 +62,18 @@ async function pdfPreview(file) {
     import('pdfjs-dist/build/pdf.worker.min.mjs?url')
   ]);
   pdfjs.GlobalWorkerOptions.workerSrc = worker.default;
-  const doc = await pdfjs.getDocument({ data: new Uint8Array(await file.arrayBuffer()), isEvalSupported: false, disableFontFace: false }).promise;
+  // CMaps (CJK and other composite fonts) and standard fonts are served by this site.
+  const assets = `/${PDF_ASSETS}`;
+  const task = pdfjs.getDocument({
+    data: new Uint8Array(await file.arrayBuffer()),
+    isEvalSupported: false,
+    cMapUrl: `${assets}/cmaps/`,
+    cMapPacked: true,
+    standardFontDataUrl: `${assets}/standard_fonts/`
+  });
   try {
+    // Inside try: a document that fails to load (password, damage) still has its worker freed.
+    const doc = await task.promise;
     const pages = [];
     for (let n = 1; n <= Math.min(PDF_PAGES, doc.numPages); n++) {
       const page = await doc.getPage(n);
@@ -86,7 +98,7 @@ async function pdfPreview(file) {
     for (const canvas of pages) { ctx.drawImage(canvas, 0, y); y += canvas.height + gap; }
     return await encode(sheet);
   } finally {
-    doc.destroy();
+    await task.destroy();
   }
 }
 

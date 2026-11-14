@@ -66,17 +66,25 @@ test('the browser sends file data straight to the upload host, without a preflig
   await expect(page.locator('.file-row').filter({ hasText: name })).toBeVisible();
 });
 
-// A minimal valid two-page PDF, built with correct cross-reference offsets.
-function twoPagePdf() {
+// A minimal valid two-page PDF, built with correct cross-reference offsets. `cjk` uses a
+// non-embedded Chinese font with a predefined Adobe CMap, which pdf.js must fetch.
+function twoPagePdf({ cjk = false } = {}) {
+  const page = '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 300 400] /Contents 5 0 R /Resources << /Font << /F1 6 0 R >> >> >>';
   const objects = [
     '<< /Type /Catalog /Pages 2 0 R >>',
     '<< /Type /Pages /Kids [3 0 R 4 0 R] /Count 2 >>',
-    '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 300 400] /Contents 5 0 R /Resources << /Font << /F1 6 0 R >> >> >>',
-    '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 300 400] /Contents 5 0 R /Resources << /Font << /F1 6 0 R >> >> >>',
+    page,
+    page,
     null,
-    '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>'
+    cjk
+      ? '<< /Type /Font /Subtype /Type0 /BaseFont /STSong-Light /Encoding /UniGB-UCS2-H /DescendantFonts [7 0 R] >>'
+      : '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>'
   ];
-  const stream = 'BT /F1 24 Tf 40 300 Td (Quarterly report) Tj ET';
+  if (cjk) {
+    objects.push('<< /Type /Font /Subtype /CIDFontType0 /BaseFont /STSong-Light /CIDSystemInfo << /Registry (Adobe) /Ordering (GB1) /Supplement 2 >> /FontDescriptor 8 0 R >>');
+    objects.push('<< /Type /FontDescriptor /FontName /STSong-Light /Flags 6 /FontBBox [0 -200 1000 900] /ItalicAngle 0 /Ascent 880 /Descent -120 /CapHeight 880 /StemV 93 >>');
+  }
+  const stream = cjk ? 'BT /F1 24 Tf 40 300 Td <62A5544A> Tj ET' : 'BT /F1 24 Tf 40 300 Td (Quarterly report) Tj ET';
   objects[4] = `<< /Length ${stream.length} >>\nstream\n${stream}\nendstream`;
   let out = '%PDF-1.4\n';
   const offsets = objects.map((body, i) => { const at = out.length; out += `${i + 1} 0 obj\n${body}\nendobj\n`; return at; });
@@ -104,6 +112,25 @@ test('a PDF gets a preview of its first pages, shown in My files', async ({ page
   const size = await row.locator('button.file-thumb img').evaluate((img) => [img.naturalWidth, img.naturalHeight]);
   expect(size[0]).toBe(480);
   expect(size[1]).toBeGreaterThan(1000); // two pages stacked
+});
+
+test('a Chinese PDF loads its CMap from this site and still gets a preview; a broken PDF does not stop the upload', async ({ page }, testInfo) => {
+  const tag = `${testInfo.project.name}-${testInfo.repeatEachIndex}`;
+  // Passed as content: Playwright drops files given by a non-ASCII path when no locale is set.
+  const cjk = { name: `报告-${tag}.pdf`, mimeType: 'application/pdf', buffer: twoPagePdf({ cjk: true }) };
+  const broken = { name: `broken-${tag}.pdf`, mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.4\nthis is not really a pdf\n') };
+  // pdf.js fetches CMaps from its worker; worker requests are seen on the context.
+  const cmap = page.context().waitForEvent('response', { predicate: (r) => /\/pdfjs-4\.10\.38\/cmaps\/UniGB-UCS2-H\.bcmap$/.test(r.url()), timeout: 30000 }).catch(() => null);
+  const stored = page.waitForResponse((r) => r.request().method() === 'PUT' && /\/cloud-file\/\d+\/preview$/.test(r.url()), { timeout: 30000 });
+  await openFilesThread(page);
+  await page.locator('.composer .attach-label input[type=file]').setInputFiles([cjk, broken]);
+  // Only the Chinese PDF gets a preview; the broken one is uploaded without one.
+  expect((await stored).status()).toBe(200);
+  const cmapResponse = await cmap;
+  if (cmapResponse) expect(cmapResponse.status()).toBe(200);
+  for (const file of [cjk, broken]) {
+    await expect(page.locator('.large-upload').filter({ hasText: file.name }).locator('small')).toHaveText(/^[\d.]+ (B|KB)$/, { timeout: 30000 });
+  }
 });
 
 test('any file chosen in an internal chat goes to CostAction, whatever its size, and lands in My files', async ({ page }) => {
