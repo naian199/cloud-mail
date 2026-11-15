@@ -985,5 +985,15 @@
   "chatAllEmpty": "لا توجد دردشات بعد.",
   "allMailChooseConversation": "اختر محادثة لقراءة رسائلها.",
   "navStoreShort": "المتجر",
-  "navFilesShort": "ملفاتي"
+  "navFilesShort": "ملفاتي",
+  "userManagement": "إدارة المستخدمين",
+  "userManagementCount": "عدد المستخدمين: {count}",
+  "userManagementSearch": "بحث",
+  "userManagementAllStatuses": "كل الحالات",
+  "userManagementNewest": "الأحدث تسجيلاً أولاً",
+  "userManagementOldest": "الأقدم تسجيلاً أولاً",
+  "userManagementCountFilter": "خيارات العدّ",
+  "userManagementRefresh": "تحديث",
+  "userManagementSelectPage": "تحديد هذه الصفحة",
+  "userManagementEmpty": "لم يتم العثور على مستخدمين."
 }

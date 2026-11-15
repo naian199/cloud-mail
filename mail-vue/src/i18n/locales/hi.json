@@ -985,5 +985,15 @@
   "chatAllEmpty": "अभी कोई चैट नहीं है।",
   "allMailChooseConversation": "संदेश पढ़ने के लिए कोई बातचीत चुनें।",
   "navStoreShort": "स्टोर",
-  "navFilesShort": "मेरी फ़ाइलें"
+  "navFilesShort": "मेरी फ़ाइलें",
+  "userManagement": "उपयोगकर्ता प्रबंधन",
+  "userManagementCount": "{count} उपयोगकर्ता",
+  "userManagementSearch": "खोजें",
+  "userManagementAllStatuses": "सभी स्थितियाँ",
+  "userManagementNewest": "सबसे नए पहले",
+  "userManagementOldest": "सबसे पुराने पहले",
+  "userManagementCountFilter": "गिनती के विकल्प",
+  "userManagementRefresh": "रीफ़्रेश करें",
+  "userManagementSelectPage": "यह पेज चुनें",
+  "userManagementEmpty": "कोई उपयोगकर्ता नहीं मिला।"
 }

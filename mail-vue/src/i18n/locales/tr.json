@@ -985,5 +985,15 @@
   "chatAllEmpty": "Henüz sohbet yok.",
   "allMailChooseConversation": "İletilerini okumak için bir konuşma seçin.",
   "navStoreShort": "Mağaza",
-  "navFilesShort": "Dosyalar"
+  "navFilesShort": "Dosyalar",
+  "userManagement": "Kullanıcı yönetimi",
+  "userManagementCount": "{count} kullanıcı",
+  "userManagementSearch": "Ara",
+  "userManagementAllStatuses": "Tüm durumlar",
+  "userManagementNewest": "En yeni önce",
+  "userManagementOldest": "En eski önce",
+  "userManagementCountFilter": "Sayım seçenekleri",
+  "userManagementRefresh": "Yenile",
+  "userManagementSelectPage": "Bu sayfayı seç",
+  "userManagementEmpty": "Kullanıcı bulunamadı."
 }

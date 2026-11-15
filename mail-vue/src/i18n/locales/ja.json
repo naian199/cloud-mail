@@ -985,5 +985,15 @@
   "chatAllEmpty": "まだチャットはありません。",
   "allMailChooseConversation": "会話を選ぶとメールのやり取りを読めます。",
   "navStoreShort": "ストア",
-  "navFilesShort": "ファイル"
+  "navFilesShort": "ファイル",
+  "userManagement": "ユーザー管理",
+  "userManagementCount": "ユーザー {count} 人",
+  "userManagementSearch": "検索",
+  "userManagementAllStatuses": "すべての状態",
+  "userManagementNewest": "登録が新しい順",
+  "userManagementOldest": "登録が古い順",
+  "userManagementCountFilter": "集計オプション",
+  "userManagementRefresh": "更新",
+  "userManagementSelectPage": "このページを全選択",
+  "userManagementEmpty": "ユーザーが見つかりませんでした。"
 }

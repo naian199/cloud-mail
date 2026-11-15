@@ -1,5 +1,5 @@
 <template>
-  <el-dialog class="account-dialog" v-model="accountShow" :title="t('userAccount')" @closed="resetAccountList" >
+  <el-dialog width="min(500px, calc(100% - 28px))" class="account-dialog" v-model="accountShow" :title="t('userAccount')" @closed="resetAccountList" >
     <el-table :data="accountList" style="height: 480px" v-loading="accountLoading" element-loading-background="transparent" :empty-text="accountLoading ? '' : null">
       <el-table-column property="email" :label="t('emailAccount')" >
         <template #default="props">
@@ -12,7 +12,7 @@
           <el-tag type="info" disable-transitions v-if="props.row.isDel === 1">{{$t('deleted')}}</el-tag>
         </template>
       </el-table-column>
-      <el-table-column :label="t('action')" :width="locale === 'en' ? 75 : 65" >
+      <el-table-column v-if="hasPerm('user:delete')" :label="t('action')" :width="locale === 'en' ? 75 : 65" >
         <template #default="props">
           <el-dropdown trigger="click">
             <el-button type="primary" size="small">{{t('action')}}</el-button>
@@ -42,6 +42,7 @@
 <script setup>
 import { reactive, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { hasPerm } from '@/perm/perm.js';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { userAllAccount, userDeleteAccount } from '@/request/user.js';
 

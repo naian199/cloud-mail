@@ -985,5 +985,15 @@
   "chatAllEmpty": "Nog geen chats.",
   "allMailChooseConversation": "Kies een gesprek om de berichten te lezen.",
   "navStoreShort": "Store",
-  "navFilesShort": "Bestanden"
+  "navFilesShort": "Bestanden",
+  "userManagement": "Gebruikersbeheer",
+  "userManagementCount": "{count} gebruikers",
+  "userManagementSearch": "Zoeken",
+  "userManagementAllStatuses": "Alle statussen",
+  "userManagementNewest": "Nieuwste eerst",
+  "userManagementOldest": "Oudste eerst",
+  "userManagementCountFilter": "Telopties",
+  "userManagementRefresh": "Vernieuwen",
+  "userManagementSelectPage": "Deze pagina selecteren",
+  "userManagementEmpty": "Geen gebruikers gevonden."
 }

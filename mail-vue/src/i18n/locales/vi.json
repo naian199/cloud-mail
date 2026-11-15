@@ -985,5 +985,15 @@
   "chatAllEmpty": "Chưa có cuộc trò chuyện nào.",
   "allMailChooseConversation": "Chọn một cuộc trò chuyện để đọc thư.",
   "navStoreShort": "Ứng dụng",
-  "navFilesShort": "Tệp"
+  "navFilesShort": "Tệp",
+  "userManagement": "Quản lý người dùng",
+  "userManagementCount": "{count} người dùng",
+  "userManagementSearch": "Tìm kiếm",
+  "userManagementAllStatuses": "Tất cả trạng thái",
+  "userManagementNewest": "Đăng ký mới nhất trước",
+  "userManagementOldest": "Đăng ký cũ nhất trước",
+  "userManagementCountFilter": "Tùy chọn đếm",
+  "userManagementRefresh": "Làm mới",
+  "userManagementSelectPage": "Chọn cả trang này",
+  "userManagementEmpty": "Không tìm thấy người dùng."
 }

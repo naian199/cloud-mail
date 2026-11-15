@@ -985,5 +985,15 @@
   "chatAllEmpty": "還沒有對話。",
   "allMailChooseConversation": "選擇一個會話以查看往來郵件。",
   "navStoreShort": "商城",
-  "navFilesShort": "我的文件"
+  "navFilesShort": "我的文件",
+  "userManagement": "使用者管理",
+  "userManagementCount": "共 {count} 位使用者",
+  "userManagementSearch": "搜尋",
+  "userManagementAllStatuses": "所有狀態",
+  "userManagementNewest": "最新註冊優先",
+  "userManagementOldest": "最早註冊優先",
+  "userManagementCountFilter": "計數選項",
+  "userManagementRefresh": "重新整理",
+  "userManagementSelectPage": "全選本頁",
+  "userManagementEmpty": "找不到使用者"
 }

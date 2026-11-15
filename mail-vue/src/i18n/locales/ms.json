@@ -985,5 +985,15 @@
   "chatAllEmpty": "Belum ada sembang.",
   "allMailChooseConversation": "Pilih perbualan untuk membaca mesejnya.",
   "navStoreShort": "Kedai",
-  "navFilesShort": "Fail"
+  "navFilesShort": "Fail",
+  "userManagement": "Pengurusan pengguna",
+  "userManagementCount": "{count} pengguna",
+  "userManagementSearch": "Cari",
+  "userManagementAllStatuses": "Semua status",
+  "userManagementNewest": "Terbaharu dahulu",
+  "userManagementOldest": "Terlama dahulu",
+  "userManagementCountFilter": "Pilihan kiraan",
+  "userManagementRefresh": "Muat semula",
+  "userManagementSelectPage": "Pilih halaman ini",
+  "userManagementEmpty": "Tiada pengguna ditemui."
 }
