@@ -985,5 +985,15 @@
   "chatAllEmpty": "Поки немає чатів.",
   "allMailChooseConversation": "Виберіть листування, щоб прочитати листи.",
   "navStoreShort": "Магазин",
-  "navFilesShort": "Файли"
+  "navFilesShort": "Файли",
+  "userManagement": "Керування користувачами",
+  "userManagementCount": "Користувачів: {count}",
+  "userManagementSearch": "Пошук",
+  "userManagementAllStatuses": "Усі статуси",
+  "userManagementNewest": "Спочатку нові",
+  "userManagementOldest": "Спочатку старі",
+  "userManagementCountFilter": "Параметри підрахунку",
+  "userManagementRefresh": "Оновити",
+  "userManagementSelectPage": "Вибрати цю сторінку",
+  "userManagementEmpty": "Користувачів не знайдено."
 }

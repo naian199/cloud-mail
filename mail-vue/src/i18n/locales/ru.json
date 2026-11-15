@@ -985,5 +985,15 @@
   "chatAllEmpty": "Пока нет чатов.",
   "allMailChooseConversation": "Выберите переписку, чтобы прочитать письма.",
   "navStoreShort": "Магазин",
-  "navFilesShort": "Файлы"
+  "navFilesShort": "Файлы",
+  "userManagement": "Управление пользователями",
+  "userManagementCount": "Пользователей: {count}",
+  "userManagementSearch": "Поиск",
+  "userManagementAllStatuses": "Все статусы",
+  "userManagementNewest": "Сначала новые",
+  "userManagementOldest": "Сначала старые",
+  "userManagementCountFilter": "Параметры подсчёта",
+  "userManagementRefresh": "Обновить",
+  "userManagementSelectPage": "Выбрать эту страницу",
+  "userManagementEmpty": "Пользователи не найдены."
 }

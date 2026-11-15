@@ -1,5 +1,5 @@
 <template>
-  <el-dialog v-model="showAdd" :title="$t('addUser')" @closed="resetAddForm">
+  <el-dialog width="min(440px, calc(100% - 28px))" v-model="showAdd" :title="$t('addUser')" @closed="resetAddForm">
     <div class="container">
       <el-input v-model="addForm.email" type="text" :placeholder="$t('emailAccount')" autocomplete="off" @keyup.enter="submit">
         <template #append>

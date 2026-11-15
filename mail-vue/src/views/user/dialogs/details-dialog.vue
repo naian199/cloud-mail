@@ -1,34 +1,33 @@
 <template>
-  <el-dialog class="account-dialog" v-model="detailsShow" :title="t('userDetails')"  >
+  <el-dialog class="account-dialog" v-model="detailsShow" :title="t('userDetails')" width="min(520px, calc(100% - 28px))">
     <div class="details">
-      <div v-if="userDetails.platform || userDetails.username" class="oauth-details">
-        <el-avatar :src="userDetails.avatar" :size="30" class="oauth-avatar"/>
-        <span>{{ $t('username') }}：{{ userDetails.username }}</span>
-        <span v-if="userDetails.trustLevel != null">
-          {{ $t('trustLevel') }}：<el-tag type="success">{{ userDetails.trustLevel }}</el-tag>
-        </span>
+      <div class="account-identity">
+        <UserAvatar :email="userDetails.email" :size="42" aria-hidden="true" />
+        <div>
+          <strong><bdi>{{ userDetails.email }}</bdi><OfficialBadge :profile="userDetails" /></strong>
+          <small v-if="userDetails.identityUsername"><bdi>@{{ userDetails.identityUsername }}</bdi></small>
+        </div>
       </div>
-      <div v-if="!columns.sendNumShow"><span
-          class="details-item-title">{{ $t('tabSent') }}:</span>{{ $n(userDetails.sendEmailCount || 0) }}
-      </div>
-      <div v-if="!columns.accountNumShow"><span class="details-item-title">{{ $t('tabMailboxes') }}:</span>{{
-          userDetails.accountCount
-        }}
-      </div>
-      <div v-if="!columns.createTimeShow"><span class="details-item-title">{{ $t('tabRegisteredAt') }}:</span>{{
-          tzDayjs(userDetails.createTime).format('YYYY-MM-DD HH:mm')
-        }}
-      </div>
-      <div v-if="!columns.typeShow"><span class="details-item-title">{{ $t('perm') }}:</span>
+      <div>
+        <span class="details-item-title">{{ $t('tabRole') }}</span>
         {{ roleName(userDetails.type) }}
       </div>
-      <div v-if="!columns.statusShow">
-        <span class="details-item-title">{{ $t('tabStatus') }}:</span>
-        <el-tag disable-transitions v-if="userDetails.isDel === 1" type="info">{{ $t('deleted') }}</el-tag>
-        <el-tag disable-transitions v-else-if="userDetails.status === 0" type="primary">{{ $t('active') }}
-        </el-tag>
-        <el-tag disable-transitions v-else-if="userDetails.status === 1" type="danger">{{ $t('banned') }}
-        </el-tag>
+      <div>
+        <span class="details-item-title">{{ $t('tabStatus') }}</span>
+        <el-tag v-if="userDetails.isDel === 1" type="info" round>{{ $t('selectDeleted') }}</el-tag>
+        <el-tag v-else-if="userDetails.status === 0" type="success" round>{{ $t('active') }}</el-tag>
+        <el-tag v-else-if="userDetails.status === 1" type="danger" round>{{ $t('banned') }}</el-tag>
+      </div>
+      <div>
+        <span class="details-item-title">{{ $t('tabRegisteredAt') }}</span>
+        <bdi>{{ userDetails.createTime ? tzDayjs(userDetails.createTime).format('YYYY-MM-DD HH:mm') : $t('unknown') }}</bdi>
+      </div>
+      <div v-if="userDetails.username || userDetails.trustLevel != null" class="oauth-details">
+        <el-avatar v-if="userDetails.avatar" :src="userDetails.avatar" :size="28" referrerpolicy="no-referrer" />
+        <span v-if="userDetails.username">{{ $t('username') }} <bdi>{{ userDetails.username }}</bdi></span>
+        <span v-if="userDetails.trustLevel != null">
+          {{ $t('trustLevel') }} <el-tag type="success">{{ userDetails.trustLevel }}</el-tag>
+        </span>
       </div>
       <div><span class="details-item-title">{{ $t('registrationIp') }}:</span>{{
           userDetails.createIp || $t('unknown')
@@ -53,11 +52,11 @@
       <div>
         <span class="details-item-title">{{ $t('sendEmail') }}:</span>
         <span>{{ formatSendCount(userDetails) }}</span>
-        <el-tag style="margin-left: 10px" v-if="userDetails.sendAction.hasPerm">
+        <el-tag style="margin-left: 10px" v-if="userDetails.sendAction?.hasPerm">
           {{ formatSendType(userDetails) }}
         </el-tag>
         <el-button size="small" style="margin-left: 10px"
-                   v-if="userDetails.sendAction.hasPerm && userDetails.sendAction.sendCount"
+                   v-if="hasPerm('user:reset-send') && userDetails.sendAction?.hasPerm && userDetails.sendAction.sendCount"
                    @click="resetSendCount(userDetails)" type="primary">{{ $t('reset') }}
         </el-button>
       </div>
@@ -71,13 +70,11 @@ import { useI18n } from 'vue-i18n';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { userRestSendCount } from '@/request/user.js';
 import { tzDayjs } from '@/utils/day.js';
+import { hasPerm } from '@/perm/perm.js';
+import UserAvatar from '@/components/user-avatar.vue';
+import OfficialBadge from '@/components/official-badge.vue';
 
-// Everything about a user, including the facts whose table columns are hidden at this width.
-defineProps({
-  // Which table columns are visible; hidden ones are shown here instead.
-  columns: { type: Object, required: true },
-  roleName: { type: Function, required: true }
-});
+defineProps({ roleName: { type: Function, required: true } });
 const { t } = useI18n();
 
 const detailsShow = ref(false);
@@ -91,7 +88,7 @@ function formatSendType(user) {
 }
 
 function formatSendCount(user) {
-  if (!user.sendAction.hasPerm) return t('unauthorized');
+  if (!user.sendAction?.hasPerm) return t('unauthorized');
   if (!user.sendAction.sendCount) return t('unlimited');
   return user.sendCount + '/' + user.sendAction.sendCount;
 }
@@ -119,14 +116,31 @@ defineExpose({
 
 <style scoped lang="scss">
 .details {
-  padding: 0 10px 10px 10px;
+  padding: 0 2px 10px;
+  overflow-wrap: anywhere;
   display: grid;
   gap: 10px;
   .details-item-title {
     white-space: pre;
-    color: #909399;
+    color: var(--el-text-color-secondary);
     font-weight: bold;
-    padding-right: 10px;
+    padding-inline-end: 10px;
+  }
+}
+
+.account-identity {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid var(--el-border-color-lighter);
+  margin-block-end: 6px;
+  padding-block-end: 15px;
+  color: var(--el-text-color-primary);
+
+  small {
+    display: block;
+    margin-block-start: 3px;
+    color: var(--el-text-color-secondary);
   }
 }
 

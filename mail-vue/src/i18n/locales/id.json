@@ -985,5 +985,15 @@
   "chatAllEmpty": "Belum ada obrolan.",
   "allMailChooseConversation": "Pilih percakapan untuk membaca pesannya.",
   "navStoreShort": "Toko",
-  "navFilesShort": "Berkas"
+  "navFilesShort": "Berkas",
+  "userManagement": "Pengelolaan pengguna",
+  "userManagementCount": "{count} pengguna",
+  "userManagementSearch": "Cari",
+  "userManagementAllStatuses": "Semua status",
+  "userManagementNewest": "Terbaru dahulu",
+  "userManagementOldest": "Terlama dahulu",
+  "userManagementCountFilter": "Opsi penghitungan",
+  "userManagementRefresh": "Muat ulang",
+  "userManagementSelectPage": "Pilih halaman ini",
+  "userManagementEmpty": "Tidak ada pengguna yang ditemukan."
 }

@@ -1,5 +1,5 @@
 <template>
-  <el-dialog class="dialog" v-model="setPwdShow" :title="$t('changePassword')" @closed="resetUserForm">
+  <el-dialog width="min(420px, calc(100% - 28px))" class="dialog" v-model="setPwdShow" :title="$t('changePassword')" @closed="resetUserForm">
     <div class="dialog-box">
       <el-input v-model="userForm.password" type="password" :placeholder="$t('newPassword')" autocomplete="off" @keyup.enter="updatePwd">
       </el-input>
@@ -8,7 +8,7 @@
       </el-button>
     </div>
   </el-dialog>
-  <el-dialog class="dialog" v-model="setTypeShow" :title="$t('changePerm')" @closed="resetUserForm">
+  <el-dialog width="min(420px, calc(100% - 28px))" class="dialog" v-model="setTypeShow" :title="$t('changePerm')" @closed="resetUserForm">
     <div class="dialog-box">
       <el-input disabled :model-value="$t('admin')" v-if="userForm.type === 0"/>
       <el-select v-else v-model="userForm.type" placeholder="Select">

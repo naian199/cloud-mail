@@ -985,5 +985,15 @@
   "chatAllEmpty": "ยังไม่มีแชท",
   "allMailChooseConversation": "เลือกการสนทนาเพื่ออ่านข้อความ",
   "navStoreShort": "ร้านแอป",
-  "navFilesShort": "ไฟล์"
+  "navFilesShort": "ไฟล์",
+  "userManagement": "จัดการผู้ใช้",
+  "userManagementCount": "ผู้ใช้ {count} คน",
+  "userManagementSearch": "ค้นหา",
+  "userManagementAllStatuses": "ทุกสถานะ",
+  "userManagementNewest": "ลงทะเบียนล่าสุดก่อน",
+  "userManagementOldest": "ลงทะเบียนเก่าที่สุดก่อน",
+  "userManagementCountFilter": "ตัวเลือกการนับ",
+  "userManagementRefresh": "รีเฟรช",
+  "userManagementSelectPage": "เลือกทั้งหน้านี้",
+  "userManagementEmpty": "ไม่พบผู้ใช้"
 }

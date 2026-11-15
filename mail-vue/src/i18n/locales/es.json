@@ -985,5 +985,15 @@
   "chatAllEmpty": "Aún no hay chats.",
   "allMailChooseConversation": "Selecciona una conversación para leer sus mensajes.",
   "navStoreShort": "Tienda",
-  "navFilesShort": "Archivos"
+  "navFilesShort": "Archivos",
+  "userManagement": "Gestión de usuarios",
+  "userManagementCount": "{count} usuarios",
+  "userManagementSearch": "Buscar",
+  "userManagementAllStatuses": "Todos los estados",
+  "userManagementNewest": "Más recientes primero",
+  "userManagementOldest": "Más antiguos primero",
+  "userManagementCountFilter": "Opciones de recuento",
+  "userManagementRefresh": "Actualizar",
+  "userManagementSelectPage": "Seleccionar esta página",
+  "userManagementEmpty": "No se encontraron usuarios."
 }

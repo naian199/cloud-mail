@@ -1,857 +1,795 @@
 <template>
-  <div class="user-box">
-    <div class="header-actions">
-      <Icon class="icon" icon="ion:add-outline" width="23" height="23" @click="openAdd"/>
-      <div class="search">
-        <el-input
-            v-model="params.email"
-            class="search-input"
-            :placeholder="$t('searchByEmail')"
-        >
-        </el-input>
-      </div>
-      <el-select v-model="params.status" placeholder="Select" class="status-select"
-                 :style="`width: ${locale === 'en' ? 95 : 80 }px`">
-        <el-option :key="-1" :label="$t('all')" :value="-1"/>
-        <el-option :key="0" :label="$t('active')" :value="0"/>
-        <el-option :key="1" :label="$t('banned')" :value="1"/>
-        <el-option :key="-2" :label="$t('deleted')" :value="-2"/>
-      </el-select>
-      <Icon class="icon" icon="iconoir:search" @click="search" width="20" height="20"/>
-      <Icon class="icon" @click="changeTimeSort" icon="material-symbols-light:timer-arrow-down-outline"
-            v-if="params.timeSort === 1" width="28" height="28"/>
-      <Icon class="icon" @click="changeTimeSort" icon="material-symbols-light:timer-arrow-up-outline" v-else width="28"
-            height="28"/>
-      <Icon class="icon" icon="ion:reload" width="18" height="18" @click="refresh"/>
-      <Icon class="icon" icon="uiw:delete" width="16" height="16" @click="delUser"/>
-    </div>
-    <el-scrollbar ref="scrollbarRef" class="scrollbar">
-      <div>
-        <div class="loading" :class="tableLoading ? 'loading-show' : 'loading-hide'"
-             :style="first ? 'background: transparent' : ''">
-          <loading/>
+  <section class="users-page">
+    <div class="users-content">
+      <header class="page-heading">
+        <div>
+          <h1>{{ t('userManagement') }}</h1>
+          <p v-if="loaded" class="result-count" aria-live="polite">
+            {{ t('userManagementCount', { count: n(total) }) }}
+          </p>
         </div>
-        <el-table
-            @filter-change="tableFilter"
-            :empty-text="first ? '' : null"
-            :data="users"
-            :preserve-expanded-content="preserveExpanded"
-            style="width: 100%;"
-            ref="tableRef"
-            @cell-contextmenu="handleContextmenu"
-            :cell-class-name="cellClassName"
-        >
-          <el-table-column :width="expandWidth" type="selection" :selectable="row => row.type !== 0" />
-          <el-table-column show-overflow-tooltip :tooltip-formatter="tableRowFormatter" :label="$t('tabEmailAddress')"
-                           :min-width="emailWidth">
-            <template #default="props">
-              <div style="display: flex;gap: 5px;align-items: center">
-                <div class="email-row">{{ props.row.email }}</div>
-                <template v-if="oauthPlatform(props.row)">
-                  <el-avatar v-if="oauthPlatform(props.row).iconType === 'image'"
-                             :src="oauthPlatform(props.row).icon"
-                             :size="16"
-                             class="oauth-platform-icon"/>
-                  <Icon v-else
-                        :icon="oauthPlatform(props.row).icon"
-                        width="16"
-                        height="16"
-                        class="oauth-platform-icon"/>
-                </template>
+        <el-button v-if="canAdd" type="primary" @click="addDialog.open()">
+          <Icon icon="ion:add-outline" width="19" aria-hidden="true" />
+          {{ t('addUser') }}
+        </el-button>
+      </header>
+
+      <div class="users-panel">
+        <div class="toolbar">
+          <form class="search-form" role="search" @submit.prevent="search">
+            <el-input v-model="emailInput" :aria-label="t('searchByEmail')" :placeholder="t('searchByEmail')" clearable @clear="search">
+              <template #prefix><Icon icon="iconoir:search" width="17" aria-hidden="true" /></template>
+            </el-input>
+            <el-button native-type="submit">{{ t('userManagementSearch') }}</el-button>
+          </form>
+
+          <div class="filter-actions">
+            <el-select
+              v-model="params.status"
+              class="status-select"
+              :aria-label="t('tabStatus')"
+              @change="restartList"
+            >
+              <el-option :label="t('userManagementAllStatuses')" :value="-1" />
+              <el-option :label="t('active')" :value="0" />
+              <el-option :label="t('banned')" :value="1" />
+              <el-option :label="t('selectDeleted')" :value="-2" />
+            </el-select>
+            <el-select
+              v-model="params.timeSort"
+              class="sort-select"
+              :aria-label="t('tabRegisteredAt')"
+              @change="restartList"
+            >
+              <el-option :label="t('userManagementNewest')" :value="0" />
+              <el-option :label="t('userManagementOldest')" :value="1" />
+            </el-select>
+            <el-popover trigger="click" placement="bottom-end" :width="260">
+              <template #reference>
+                <el-button class="count-filter" :type="countsFiltered ? 'primary' : ''" :plain="countsFiltered">
+                  {{ t('userManagementCountFilter') }}
+                </el-button>
+              </template>
+              <div v-for="metric in metrics" :key="metric.key" class="count-options">
+                <strong>{{ t(metric.label) }}</strong>
+                <el-checkbox-group v-model="countFilter[metric.key]" :aria-label="t(metric.label)">
+                  <el-checkbox value="normal">{{ t('normal') }}</el-checkbox>
+                  <el-checkbox value="deleted">{{ t('selectDeleted') }}</el-checkbox>
+                </el-checkbox-group>
               </div>
-            </template>
-          </el-table-column>
-          <el-table-column :formatter="formatterReceive" label-class-name="receive" column-key="receive"
-                           :filtered-value="filteredValue" :filters="filters" :width="receiveWidth"
-                           :label="$t('tabReceived')"
-                           prop="receiveEmailCount"/>
-          <el-table-column :formatter="formatterSend" label-class-name="send" column-key="send"
-                           :filtered-value="filteredValue" :filters="filters" v-if="sendNumShow" :label="$t('tabSent')"
-                           prop="sendEmailCount"/>
-          <el-table-column :formatter="formatterAccount" label-class-name="account" column-key="account"
-                           :filtered-value="filteredValue" :filters="filters" v-if="accountNumShow"
-                           :label="$t('tabMailboxes')"
-                           prop="accountCount"/>
-          <el-table-column v-if="createTimeShow" :label="$t('tabRegisteredAt')" min-width="160" prop="createTime">
-            <template #default="props">
-              {{ tzDayjs(props.row.createTime).format('YYYY-MM-DD HH:mm') }}
-            </template>
-          </el-table-column>
-          <el-table-column v-if="statusShow" min-width="60px" :label="$t('tabStatus')" prop="status">
-            <template #default="props">
-              <el-tag disable-transitions v-if="props.row.isDel === 1" type="info">{{ $t('deleted') }}</el-tag>
-              <el-tag disable-transitions v-else-if="props.row.status === 0" type="primary">{{ $t('active') }}</el-tag>
-              <el-tag disable-transitions v-else-if="props.row.status === 1" type="danger">{{ $t('banned') }}</el-tag>
-            </template>
-          </el-table-column>
-          <el-table-column v-if="typeShow" :label="$t('tabRole')" min-width="140" prop="type">
-            <template #default="props">
-              <div class="type">
-                {{ toRoleName(props.row.type) }}
-              </div>
-            </template>
-          </el-table-column>
-          <!-- Narrow screens keep the address visible; official status moves into the Action menu. -->
-          <el-table-column v-if="officialShow" :label="$t('officialVerified')" min-width="150"><template #default="{row}"><OfficialBadge :profile="row" /><el-button v-perm="'user:verify'" text @click="openOfficial(row)">{{ $t(row.officialVerified ? 'officialManage' : 'officialGrant') }}</el-button><small v-if="row.identityUsername">@{{ row.identityUsername }}</small></template></el-table-column>
-          <el-table-column :label="$t('tabSetting')" :width="settingWidth" fixed="right">
-            <template #default="props">
-              <el-button size="small" type="primary" v-if="(props.row.type === 0 && userStore.user.type !== 0)" >{{ $t('action') }}</el-button>
-              <el-dropdown v-else >
-                <el-button size="small" type="primary">{{ $t('action') }}</el-button>
-                <template #dropdown>
-                  <el-dropdown-menu>
-                    <el-dropdown-item @click="openSetPwd(props.row)" >{{ $t('chgPwd') }}</el-dropdown-item>
-                    <el-dropdown-item @click="openSetType(props.row)" >{{ $t('perm') }}</el-dropdown-item>
-                    <template v-if="props.row.type !== 0">
-                      <el-dropdown-item v-if="props.row.isDel !== 1" @click="setStatus(props.row)">
-                        {{ setStatusName(props.row) }}
-                      </el-dropdown-item>
-                      <el-dropdown-item v-else @click="restore(props.row)">{{ $t('restore') }}</el-dropdown-item>
+            </el-popover>
+            <el-button :aria-label="t('userManagementRefresh')" :title="t('userManagementRefresh')" :disabled="loading" @click="refresh">
+              <Icon icon="ion:reload" width="17" aria-hidden="true" />
+            </el-button>
+          </div>
+        </div>
+
+        <div v-if="canDelete && users.length" class="selection-bar">
+          <el-checkbox
+            :model-value="allSelected"
+            :indeterminate="selectedIds.length > 0 && !allSelected"
+            :disabled="!selectableIds.length || loading || !!error || mutating"
+            @change="selectPage"
+          >{{ t('userManagementSelectPage') }}</el-checkbox>
+          <template v-if="selectedIds.length">
+            <span aria-live="polite">{{ t('chatSelectedCount', { count: n(selectedIds.length) }) }}</span>
+            <el-button type="danger" plain :disabled="loading || !!error || mutating" @click="deleteUsers()">
+              {{ t('adminDeleteUser') }}
+            </el-button>
+          </template>
+        </div>
+
+        <div v-if="error && loaded" class="list-error" role="status">
+          <span>{{ t('listNotUpdated') }}</span>
+          <el-button text @click="getUserList()">{{ t('listRetry') }}</el-button>
+        </div>
+
+        <div v-loading="loading" :aria-busy="loading" class="results">
+          <table v-if="users.length" class="users-table" role="table" :aria-label="t('allUsers')">
+            <thead role="rowgroup">
+              <tr role="row">
+                <th scope="col" role="columnheader">{{ t('tabEmailAddress') }}</th>
+                <th scope="col" role="columnheader">{{ t('tabStatus') }}</th>
+                <th v-for="metric in metrics" :key="metric.key" scope="col" role="columnheader" class="metric-heading">
+                  {{ t(metric.label) }}
+                </th>
+                <th scope="col" role="columnheader">{{ t('tabRegisteredAt') }}</th>
+                <th scope="col" role="columnheader" class="actions-heading">{{ t('action') }}</th>
+              </tr>
+            </thead>
+            <tbody role="rowgroup">
+              <tr v-for="row in users" :key="row.userId" role="row" :class="{ 'is-selected': selectedIds.includes(row.userId) }">
+                <td role="cell" class="identity-cell">
+                  <div class="identity">
+                    <el-checkbox
+                      v-if="canDelete && row.type !== 0"
+                      :model-value="selectedIds.includes(row.userId)"
+                      :aria-label="row.email"
+                      :disabled="loading || !!error || mutating"
+                      @change="selectUser(row.userId, $event)"
+                    />
+                    <span v-else-if="canDelete" class="selection-spacer" aria-hidden="true"></span>
+                    <UserAvatar :email="row.email" :size="36" aria-hidden="true" />
+                    <div class="identity-copy">
+                      <div class="identity-line">
+                        <button type="button" class="email-link" dir="ltr" translate="no" :title="row.email" @click="detailsDialog.open(row)">
+                          {{ row.email }}
+                        </button>
+                        <OfficialBadge :profile="row" />
+                        <span v-if="oauthPlatform(row)" class="provider" :title="oauthPlatform(row).label" :aria-label="oauthPlatform(row).label" role="img">
+                          <img v-if="oauthPlatform(row).image" :src="oauthPlatform(row).image" alt="" />
+                          <Icon v-else :icon="oauthPlatform(row).icon" width="15" aria-hidden="true" />
+                        </span>
+                      </div>
+                      <div class="identity-meta">
+                        <bdi v-if="row.identityUsername">@{{ row.identityUsername }}</bdi>
+                        <span :class="{ 'admin-role': row.type === 0 }">{{ toRoleName(row.type) }}</span>
+                      </div>
+                    </div>
+                  </div>
+                </td>
+                <td role="cell" class="status-cell">
+                  <el-tag
+                    v-if="row.isDel === 1 || row.status === 0 || row.status === 1"
+                    :type="row.isDel === 1 ? 'info' : row.status === 0 ? 'success' : 'danger'"
+                    effect="light" round disable-transitions
+                  >{{ t(row.isDel === 1 ? 'selectDeleted' : row.status === 0 ? 'active' : 'banned') }}</el-tag>
+                </td>
+                <td v-for="metric in metrics" :key="metric.key" role="cell" class="metric-cell">
+                  <span class="compact-label">{{ t(metric.label) }}</span>
+                  <span>{{ n(metricCount(row, metric)) }}</span>
+                </td>
+                <td role="cell" class="date-cell">
+                  <span class="compact-label">{{ t('tabRegisteredAt') }}</span>
+                  <bdi>{{ row.createTime ? tzDayjs(row.createTime).format('YYYY-MM-DD HH:mm') : t('unknown') }}</bdi>
+                </td>
+                <td role="cell" class="actions-cell">
+                  <el-dropdown trigger="click" placement="bottom-end" @command="runAction(row, $event)">
+                    <el-button class="row-action" :disabled="loading || !!error || mutating">
+                      {{ t('action') }} <Icon icon="mingcute:down-small-fill" width="17" aria-hidden="true" />
+                    </el-button>
+                    <template #dropdown>
+                      <el-dropdown-menu>
+                        <el-dropdown-item command="details">{{ t('userDetails') }}</el-dropdown-item>
+                        <el-dropdown-item v-if="canManage(row)" command="mailboxes">{{ t('userAccount') }}</el-dropdown-item>
+                        <el-dropdown-item v-if="canManage(row) && canSetPassword" command="password">{{ t('changePassword') }}</el-dropdown-item>
+                        <el-dropdown-item v-if="row.type !== 0 && canSetRole" command="role">{{ t('setRole') }}</el-dropdown-item>
+                        <el-dropdown-item
+                          v-if="canVerify && canManage(row) && (row.officialVerified || (row.isDel !== 1 && row.status === 0))"
+                          command="verified"
+                        >{{ t(row.officialVerified ? 'officialManage' : 'officialGrant') }}</el-dropdown-item>
+                        <el-dropdown-item v-if="row.type !== 0 && canSetStatus" command="status" divided>
+                          {{ t(row.isDel === 1 ? 'restoreUser' : row.status === 0 ? 'banUser' : 'enableUser') }}
+                        </el-dropdown-item>
+                        <el-dropdown-item v-if="row.type !== 0 && canDelete" command="delete" divided class="danger-action">
+                          {{ t('adminDeleteUser') }}
+                        </el-dropdown-item>
+                      </el-dropdown-menu>
                     </template>
-                    <el-dropdown-item @click="openAccountList(props.row.userId)" >{{ $t('account') }}</el-dropdown-item>
-                    <el-dropdown-item @click="openDetails(props.row)" >{{ $t('details') }}</el-dropdown-item>
-                    <el-dropdown-item v-if="!officialShow" v-perm="'user:verify'" @click="openOfficial(props.row)">{{ $t(props.row.officialVerified ? 'officialManage' : 'officialGrant') }}</el-dropdown-item>
-                  </el-dropdown-menu>
-                </template>
-              </el-dropdown>
-            </template>
-          </el-table-column>
-        </el-table>
-        <div class="pagination" v-if="total > 10">
-          <el-pagination
-              :size="pageSize"
-              :current-page="params.num"
-              :page-size="params.size"
-              :pager-count="pagerCount"
-              :page-sizes="[10, 15, 20, 25, 30, 50]"
-              background
-              :layout="layout"
-              :total="total"
-              @size-change="sizeChange"
-              @current-change="numChange"
-          />
-          <el-pagination
-              v-if="phonePageShow"
-              :size="pageSize"
-              :current-page="params.num"
-              :page-size="params.size"
-              :pager-count="pagerCount"
-              :page-sizes="[10, 15, 20, 25, 30, 50]"
-              background
-              layout="sizes, total"
-              :total="total"
-              @size-change="sizeChange"
-              @current-change="numChange"
-          />
+                  </el-dropdown>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div v-else-if="!loading" class="empty-state" role="status">
+            <span class="empty-icon"><Icon icon="si:user-alt-2-line" width="24" aria-hidden="true" /></span>
+            <p>{{ t(error ? 'listLoadFailed' : 'userManagementEmpty') }}</p>
+            <el-button v-if="error" @click="getUserList()">{{ t('listRetry') }}</el-button>
+            <el-button v-else-if="params.email || params.status !== -1" @click="clearFilters">{{ t('reset') }}</el-button>
+          </div>
         </div>
+
+        <footer v-if="total > pageSizes[0]" class="pagination">
+          <el-pagination
+            background
+            :size="isPhone ? 'small' : 'default'"
+            :current-page="displayPage"
+            :page-size="params.size"
+            :page-sizes="pageSizes"
+            :pager-count="5"
+            :layout="isPhone ? 'prev, pager, next' : 'sizes, prev, pager, next'"
+            :total="total"
+            :disabled="loading || !!error"
+            @size-change="sizeChange"
+            @current-change="numChange"
+          />
+        </footer>
       </div>
-    </el-scrollbar>
+    </div>
+
     <PasswordRoleDialogs ref="pwdRoleDialogs" :role-list="roleList" />
-    <AddUserDialog ref="addDialog" :role-list="roleList" @added="getUserList(false)" />
+    <AddUserDialog ref="addDialog" :role-list="roleList" @added="getUserList()" />
     <AccountsDialog ref="accountsDialog" />
-    <DetailsDialog ref="detailsDialog" :role-name="toRoleName" :columns="{ sendNumShow, accountNumShow, createTimeShow, typeShow, statusShow }" />
+    <DetailsDialog ref="detailsDialog" :role-name="toRoleName" />
     <OfficialDialog ref="officialDialog" />
-    <el-dropdown
-        :show-timeout="0"
-        :hide-timeout="0"
-        ref="dropdownRef"
-        @visible-change="visibleChange"
-        :virtual-ref="triggerRef"
-        :show-arrow="false"
-        :popper-options="{
-      modifiers: [{ name: 'offset', options: { offset: [0, 0] } }],
-    }"
-        virtual-triggering
-        trigger="contextmenu"
-        placement="bottom-start"
-    >
-      <template #dropdown>
-        <el-dropdown-menu>
-          <el-dropdown-item @click="openSetPwd(rightClickUser)">
-            <template #default>
-              <div class="right-dropdown-item">
-                <icon icon="fluent:fingerprint-20-filled" width="22" height="22" />
-                <span>{{t('changePassword')}}</span>
-              </div>
-            </template>
-          </el-dropdown-item>
-          <el-dropdown-item @click="openSetType(rightClickUser)">
-            <template #default>
-              <div class="right-dropdown-item">
-                <icon icon="fluent:lock-closed-16-regular" width="21" height="21" />
-                <span>{{ t('setRole') }}</span>
-              </div>
-            </template>
-          </el-dropdown-item>
-          <el-dropdown-item v-if="rightClickUser.type !== 0">
-            <template #default>
-              <div class="right-dropdown-item" v-if="rightClickUser.isDel !== 1" @click="setStatus(rightClickUser)" >
-                <Icon icon="ion:reload" v-if="rightClickUser.status" style="margin-left: 1px;margin-right: 1px" width="19" height="19" />
-                <Icon icon="ion:ban-outline" v-else style="margin-left: 1px;margin-right: 1px" width="19" height="19" />
-                <span>{{ setRightStatusName(rightClickUser) }}</span>
-              </div>
-              <div class="right-dropdown-item" v-else @click="restore(rightClickUser)">
-                <Icon icon="ion:reload" style="margin-left: 1px;margin-right: 1px" width="19" height="19" />
-                <span>{{ t('restoreUser') }}</span>
-              </div>
-            </template>
-          </el-dropdown-item>
-          <el-dropdown-item @click="openAccountList(rightClickUser.userId)" >
-            <template #default>
-              <div class="right-dropdown-item" >
-                <Icon icon="hugeicons:mailbox-01" width="20" height="20" />
-                <span>{{ t('userEmail') }}</span>
-              </div>
-            </template>
-          </el-dropdown-item>
-          <el-dropdown-item @click="openDetails(rightClickUser)" >
-            <template #default>
-              <div class="right-dropdown-item" >
-                <Icon icon="si:user-alt-2-line" width="20" height="20" />
-                <span>{{ t('userDetails') }}</span>
-              </div>
-            </template>
-          </el-dropdown-item>
-          <el-dropdown-item v-if="rightClickUser.type !== 0" @click="delOneUser(rightClickUser)" >
-            <template #default>
-              <div class="right-dropdown-item" >
-                <Icon icon="uiw:delete" width="18" height="18" style="margin-left: 1px;margin-right: 1px" />
-                <span>{{ t('adminDeleteUser') }}</span>
-              </div>
-            </template>
-          </el-dropdown-item>
-        </el-dropdown-menu>
-      </template>
-    </el-dropdown>
-  </div>
+  </section>
 </template>
 
 <script setup>
+import { computed, onMounted, reactive, ref, watch } from 'vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { Icon } from '@iconify/vue'
+import { useI18n } from 'vue-i18n'
+import { hasPerm } from '@/perm/perm.js'
+import { userList, userDelete, userSetStatus, userRestore } from '@/request/user.js'
+import { roleSelectUse } from '@/request/role.js'
+import { tzDayjs } from '@/utils/day.js'
+import { useRoleStore } from '@/store/role.js'
+import { useUserStore } from '@/store/user.js'
+import { useBreakpoint } from '@/composables/use-breakpoint.js'
+import OfficialBadge from '@/components/official-badge.vue'
+import UserAvatar from '@/components/user-avatar.vue'
+import PasswordRoleDialogs from './dialogs/password-role-dialogs.vue'
+import AddUserDialog from './dialogs/add-user-dialog.vue'
+import AccountsDialog from './dialogs/accounts-dialog.vue'
+import DetailsDialog from './dialogs/details-dialog.vue'
+import OfficialDialog from './dialogs/official-dialog.vue'
 
-import {defineOptions, h, reactive, ref, watch} from 'vue'
-import {userList, userDelete, userSetStatus, userRestore} from '@/request/user.js'
-import {roleSelectUse} from "@/request/role.js";
-import {Icon} from "@iconify/vue";
-import loading from "@/components/loading/index.vue";
-import {tzDayjs} from "@/utils/day.js";
-import {useSettingStore} from "@/store/setting.js";
-import {useRoleStore} from "@/store/role.js";
-import {useUserStore} from "@/store/user.js";
-import {useI18n} from 'vue-i18n';
-import {useEventListener} from '@vueuse/core';
-import {useBreakpoint} from '@/composables/use-breakpoint.js';
-import PasswordRoleDialogs from './dialogs/password-role-dialogs.vue';
-import AddUserDialog from './dialogs/add-user-dialog.vue';
-import AccountsDialog from './dialogs/accounts-dialog.vue';
-import DetailsDialog from './dialogs/details-dialog.vue';
-import OfficialDialog from './dialogs/official-dialog.vue';
+defineOptions({ name: 'user' })
 
-defineOptions({
-  name: 'user'
-})
-
-// The dialogs live in ./dialogs; the table, its Action menu and the context menu open them.
-const pwdRoleDialogs = ref(), addDialog = ref(), accountsDialog = ref(), detailsDialog = ref(), officialDialog = ref()
-const openSetPwd = (user) => pwdRoleDialogs.value.openSetPwd(user)
-const openSetType = (user) => pwdRoleDialogs.value.openSetType(user)
-const openAdd = () => addDialog.value.open()
-const openAccountList = (userId) => accountsDialog.value.open(userId)
-const openDetails = (user) => detailsDialog.value.open(user)
-const openOfficial = (row) => officialDialog.value.open(row)
-
-const {t, locale} = useI18n();
-const roleStore = useRoleStore()
+const { t, n } = useI18n()
+const { isPhone } = useBreakpoint()
 const userStore = useUserStore()
-const settingStore = useSettingStore()
-const oauthPlatformMap = {
-  google: { key: 'google', label: 'Google', icon: 'devicon:google', iconType: 'iconify' },
-  github: { key: 'github', label: 'GitHub', icon: 'codicon:github-inverted', iconType: 'iconify' },
-  linuxdo: { key: 'linuxdo', label: 'LinuxDo', icon: '/image/linuxdo.webp', iconType: 'image' },
+const roleStore = useRoleStore()
+const canAdd = computed(() => hasPerm('user:add'))
+const canDelete = computed(() => hasPerm('user:delete'))
+const canSetPassword = computed(() => hasPerm('user:set-pwd'))
+const canSetRole = computed(() => hasPerm('user:set-type'))
+const canSetStatus = computed(() => hasPerm('user:set-status'))
+const canVerify = computed(() => hasPerm('user:verify'))
+
+const pwdRoleDialogs = ref(null)
+const addDialog = ref(null)
+const accountsDialog = ref(null)
+const detailsDialog = ref(null)
+const officialDialog = ref(null)
+const roleList = ref([])
+
+const oauthPlatforms = {
+  google: { label: 'Google', icon: 'devicon:google' },
+  github: { label: 'GitHub', icon: 'codicon:github-inverted' },
+  linuxdo: { label: 'LINUX DO', image: '/image/linuxdo.webp' }
 }
 function oauthPlatform(row) {
-  if (row?.platform && oauthPlatformMap[row.platform]) {
-    return oauthPlatformMap[row.platform]
-  }
-  // 旧数据可能只有 username、无 platform
-  if (row?.username) return oauthPlatformMap.linuxdo
-  return null
+  return oauthPlatforms[row.platform] || (row.username ? oauthPlatforms.linuxdo : null)
 }
-const filteredValue = ['normal', 'del']
-const filters = [{text: t('active'), value: 'normal'}, {text: t('deleted'), value: 'del'}]
-const preserveExpanded = ref(false)
-const emailWidth = ref(230)
-const expandWidth = ref(40)
-const settingWidth = ref(null)
-const sendNumShow = ref(true)
-const accountNumShow = ref(true)
-const createTimeShow = ref(true)
-const statusShow = ref(true)
-const officialShow = ref(true)
-const typeShow = ref(true)
-const receiveWidth = ref(null)
-const phonePageShow = ref(false)
-const layout = ref('prev, pager, next,  sizes, total')
-const pageSize = ref('')
+
+const metrics = [
+  { key: 'received', label: 'tabReceived', normal: 'receiveEmailCount', deleted: 'delReceiveEmailCount' },
+  { key: 'sent', label: 'tabSent', normal: 'sendEmailCount', deleted: 'delSendEmailCount' },
+  { key: 'mailboxes', label: 'tabMailboxes', normal: 'accountCount', deleted: 'delAccountCount' }
+]
+const countFilter = reactive(Object.fromEntries(metrics.map(({ key }) => [key, ['normal', 'deleted']])))
+const countsFiltered = computed(() => metrics.some(({ key }) => countFilter[key].length !== 2))
+
+function metricCount(row, metric) {
+  return countFilter[metric.key].reduce((total, state) => total + (row[metric[state]] ?? 0), 0)
+}
+
+const pageSizes = [10, 15, 20, 25, 30, 50]
+const params = reactive({ email: '', status: -1, timeSort: 0, num: 1, size: 15 })
+try {
+  const stored = JSON.parse(localStorage.getItem('user-params'))
+  if (stored) {
+    if ([-2, -1, 0, 1].includes(stored.status)) params.status = stored.status
+    if ([0, 1].includes(stored.timeSort)) params.timeSort = stored.timeSort
+    if (pageSizes.includes(stored.size)) params.size = stored.size
+    if (!stored.email && Number.isSafeInteger(stored.num) && stored.num > 0) params.num = stored.num
+  }
+} catch {
+  // Ignore invalid saved preferences.
+}
+
+const emailInput = ref('')
 const users = ref([])
-const tableRef = ref({})
 const total = ref(0)
-const first = ref(true)
-const scrollbarRef = ref(null)
-const dropdownRef = ref(null);
-const dropdownShow = ref(false);
-const rightClickUser = ref({});
-const position = ref(
-    DOMRect.fromRect({
-      x: 0,
-      y: 0,
-    })
-)
+const displayPage = ref(params.num)
+const loading = ref(true)
+const loaded = ref(false)
+const error = ref(false)
+const mutating = ref(false)
+const selectedIds = ref([])
+const selectableIds = computed(() => users.value.filter(row => row.type !== 0).map(row => row.userId))
+const allSelected = computed(() => selectableIds.value.length > 0 && selectedIds.value.length === selectableIds.value.length)
+let listRevision = 0
 
-const triggerRef = ref({
-  getBoundingClientRect() {
-    return position.value;
-  }
-})
-
-const params = reactive({
-  email: '',
-  num: 1,
-  size: 15,
-  timeSort: 0,
-  status: -1
-})
-const pagerCount = ref(10)
-const tableLoading = ref(true)
-const roleList = reactive([])
-roleSelectUse().then(list => {
-  roleList.length = 0
-  roleList.push(...list)
-})
-
-const paramsStar = localStorage.getItem('user-params')
-if (paramsStar) {
-  const localParams = JSON.parse(paramsStar)
-  params.num = localParams.num
-  params.size = localParams.size
-  params.timeSort = localParams.timeSort
-  params.status = localParams.status
+function selectPage(selected) {
+  selectedIds.value = selected ? [...selectableIds.value] : []
 }
 
-watch(() => params, () => {
-  localStorage.setItem('user-params', JSON.stringify(params))
-}, {
-  deep: true
-})
-
-watch(() => roleStore.refresh, () => {
-  roleSelectUse().then(list => {
-    roleList.length = 0
-    roleList.push(...list)
-  })
-})
-
-watch(() => userStore.refreshList, () => {
-  getUserList(false)
-})
-
-getUserList()
-
-const filterItem = reactive({
-  send: ['normal', 'del'],
-  account: ['normal', 'del'],
-  receive: ['normal', 'del']
-})
-
-useEventListener(window, 'wheel', () => {
-  if (dropdownShow.value) {
-    dropdownRef.value?.handleClose();
-  }
-}, { passive: true })
-
-function visibleChange(e) {
-  dropdownShow.value = e;
-  if (!e) {
-    rightClickUser.value.checkedClass = '';
-  }
+function selectUser(id, selected) {
+  selectedIds.value = selected ? [...selectedIds.value, id] : selectedIds.value.filter(value => value !== id)
 }
 
-function cellClassName({ row }) {
-  return row.checkedClass;
-}
-
-const handleContextmenu = (row, column, cell, event) => {
-
-  if (row.type === 0 && userStore.user.type !== 0) {
-    return
+async function refreshRoles() {
+  try {
+    roleList.value = await roleSelectUse()
+  } catch {
+    // The request layer displays the error. Keep the last loaded role names.
   }
-
-  rightClickUser.value.checkedClass = '';
-
-  const { clientX, clientY } = event
-  position.value = DOMRect.fromRect({
-    x: clientX,
-    y: clientY,
-  })
-  event.preventDefault()
-  dropdownRef.value?.handleOpen()
-
-  row.checkedClass = 'checked-row';
-  rightClickUser.value = row;
-}
-
-function tableFilter(e) {
-
-  if (e.send) filterItem.send = e.send
-  if (e.account) filterItem.account = e.account
-  if (e.receive) filterItem.receive = e.receive
-
-}
-
-function formatterSend(e) {
-
-  if (filterItem.send.length === 2) {
-    return e.sendEmailCount + e.delSendEmailCount
-  }
-
-  if (filterItem.send.includes('normal')) {
-    return e.sendEmailCount
-  }
-
-  if (filterItem.send.includes('del')) {
-    return e.delSendEmailCount
-  }
-
-  return 0
-}
-
-function formatterAccount(e) {
-
-  if (filterItem.account.length === 2) {
-    return e.accountCount + e.delAccountCount
-  }
-
-  if (filterItem.account.includes('normal')) {
-    return e.accountCount
-  }
-
-  if (filterItem.account.includes('del')) {
-    return e.delAccountCount
-  }
-
-  return 0
-}
-
-function formatterReceive(e) {
-
-
-  if (filterItem.receive.length === 2) {
-    return e.receiveEmailCount + e.delReceiveEmailCount
-  }
-
-  if (filterItem.receive.includes('normal')) {
-    return e.receiveEmailCount
-  }
-
-  if (filterItem.receive.includes('del')) {
-    return e.delReceiveEmailCount
-  }
-
-  return 0
-}
-
-function setStatusName(user) {
-  if (user.isDel === 1) return t('restore')
-  if (user.status === 0) return t('btnBan')
-  if (user.status === 1) return t('enable')
-}
-
-function setRightStatusName(user) {
-  if (user.isDel === 1) return t('adminDeleteUser')
-  if (user.status === 0) return t('banUser')
-  if (user.status === 1) return t('enableUser')
-}
-
-const tableRowFormatter = (data) => {
-  return data.row.email
 }
 
 function toRoleName(type) {
-
-  if (type === 0) {
-    return t('admin')
-  }
-
-  const index = roleList.findIndex(role => role.roleId === type)
-  if (index > -1) {
-    return roleList[index].name
-  }
-  return ""
+  return type === 0 ? t('admin') : roleList.value.find(role => role.roleId === type)?.name || t('unknown')
 }
 
-function delUser(user) {
-  const rows = tableRef.value.getSelectionRows();
-  const userIds = rows.map(row => row.userId);
-  if (userIds.length === 0) {
-    return;
-  }
-  ElMessageBox.confirm(t('delUsersConfirm'), {
-    confirmButtonText: t('confirm'),
-    cancelButtonText: t('cancel'),
-    type: 'warning'
-  }).then(() => {
-    userDelete(userIds).then(() => {
-      ElMessage({
-        message: t('delSuccessMsg'),
-        type: "success",
-        plain: true
-      })
-      getUserList(true)
-    })
-  });
-}
-
-function delOneUser(user) {
-  ElMessageBox.confirm(t('delConfirm', {msg: user.email}), {
-    confirmButtonText: t('confirm'),
-    cancelButtonText: t('cancel'),
-    type: 'warning'
-  }).then(() => {
-    userDelete([user.userId]).then(() => {
-      ElMessage({
-        message: t('delSuccessMsg'),
-        type: "success",
-        plain: true
-      })
-      getUserList(true)
-    })
-  });
-}
-
-function restore(user) {
-
-  const type = ref(0)
-
-  ElMessageBox.confirm(null, {
-    confirmButtonText: t('confirm'),
-    cancelButtonText: t('cancel'),
-    message: () => h('div', [
-      h('div', {class: 'mb-2'}, t('restoreConfirm', {msg: user.email}))
-      // h(ElRadioGroup, {
-      //   modelValue: type.value,
-      //   'onUpdate:modelValue': (val) => (type.value = val),
-      // }, [
-      //   h(ElRadio, {label: 'option1', value: 0}, t('normalRestore')),
-      //   h(ElRadio, {label: 'option2', value: 1}, t('allRestore')),
-      // ])
-    ]),
-    type: 'warning'
-  }).then(() => {
-    userRestore(user.userId, type.value).then(() => {
-      user.isDel = 0
-      ElMessage({
-        message: t('restoreSuccessMsg'),
-        type: "success",
-        plain: true
-      })
-    })
-  });
-}
-
-function setStatus(user) {
-  httpSetStatus(user);
-}
-
-function httpSetStatus(user) {
-  let status = user.status ? 0 : 1
-  userSetStatus({status: status, userId: user.userId}).then(() => {
-    user.status = status
-    ElMessage({
-      message: t('saveSuccessMsg'),
-      type: "success",
-      plain: true
-    })
-  })
+function canManage(row) {
+  return row.type !== 0 || userStore.user.type === 0
 }
 
 function search() {
+  params.email = emailInput.value.trim()
+  restartList()
+}
+
+function clearFilters() {
+  params.status = -1
+  params.timeSort = 0
+  emailInput.value = ''
+  search()
+}
+
+function restartList() {
   params.num = 1
   getUserList()
 }
 
 function refresh() {
-  params.email = ''
-  params.num = 1
-  params.status = -1
-  params.timeSort = 0
-  getUserList();
-  roleSelectUse().then(list => {
-    roleList.length = 0
-    roleList.push(...list)
-  })
-}
-
-function changeTimeSort() {
-  params.num = 1
-  params.timeSort = params.timeSort ? 0 : 1
-  getUserList()
-}
-
-function numChange(num) {
-  params.num = num
+  refreshRoles()
   getUserList()
 }
 
 function sizeChange(size) {
+  if (size === params.size) return
   params.size = size
+  restartList()
+}
+
+function numChange(page) {
+  if (page === params.num) return
+  params.num = page
   getUserList()
 }
 
-function getUserList(loading = true) {
-
-  tableLoading.value = loading
-  const newParams = {...params}
-
-  if (newParams.status === -2) {
-    delete newParams.status
-    newParams.isDel = 1
+async function getUserList() {
+  const revision = ++listRevision
+  loading.value = true
+  error.value = false
+  selectedIds.value = []
+  const query = { ...params }
+  if (query.status === -2) {
+    delete query.status
+    query.isDel = 1
   }
-  userList(newParams).then(data => {
-    users.value = data.list.map(item => ({...item, checkedClass: ''}))
+  try {
+    const data = await userList(query)
+    if (revision !== listRevision) return
+    const lastPage = Math.max(1, Math.ceil(data.total / query.size))
+    if (query.num > lastPage) {
+      params.num = lastPage
+      return getUserList()
+    }
+    users.value = data.list
     total.value = data.total
-    scrollbarRef.value?.setScrollTop(0);
-  }).finally(() => {
-    tableLoading.value = false
-    setTimeout(() => {
-      first.value = false
-    }, 200)
-  })
+    displayPage.value = query.num
+    loaded.value = true
+    try {
+      localStorage.setItem('user-params', JSON.stringify({ ...params, num: query.email ? 1 : query.num, email: '' }))
+    } catch {
+      // The list works when local storage is unavailable.
+    }
+  } catch {
+    if (revision === listRevision) error.value = true
+  } finally {
+    if (revision === listRevision) loading.value = false
+  }
 }
 
-const {width: viewportWidth} = useBreakpoint()
-watch(viewportWidth, adjustWidth, {immediate: true})
-
-function adjustWidth() {
-  const width = viewportWidth.value
-  statusShow.value = width > 1090
-  officialShow.value = width > 1090
-  createTimeShow.value = width > 1367
-  accountNumShow.value = width > 650
-  sendNumShow.value = width > 685
-  typeShow.value = width > 767
-  emailWidth.value = width > 480 ? 230 : null
-  settingWidth.value = width < 480 ? (locale.value === 'en' ? 85 : 75) : null
-  expandWidth.value = width < 480 ? 30 : 35
-  pagerCount.value = width < 768 ? 7 : 11
-  receiveWidth.value = width < 480 ? 90 : null
-  layout.value = width < 768 ? 'pager' : 'prev, pager, next,sizes, total'
-  phonePageShow.value = width < 768
-  pageSize.value = width < 380 ? 'small' : ''
+function runAction(row, action) {
+  switch (action) {
+    case 'details': return detailsDialog.value.open(row)
+    case 'mailboxes': return accountsDialog.value.open(row.userId)
+    case 'password': return pwdRoleDialogs.value.openSetPwd(row)
+    case 'role': return pwdRoleDialogs.value.openSetType(row)
+    case 'verified': return officialDialog.value.open(row)
+    case 'delete': return deleteUsers(row)
+    case 'status': return updateStatus(row)
+  }
 }
 
+async function deleteUsers(row) {
+  if (loading.value || error.value || mutating.value) return
+  const ids = row ? [row.userId] : [...selectedIds.value]
+  if (!ids.length) return
+  await confirmChange(
+    row ? t('delConfirm', { msg: row.email }) : t('delUsersConfirm'),
+    () => userDelete(ids),
+    'delSuccessMsg'
+  )
+}
+
+async function updateStatus(row) {
+  if (loading.value || error.value || mutating.value) return
+  if (row.isDel === 1) {
+    return confirmChange(t('restoreConfirm', { msg: row.email }), () => userRestore(row.userId, 0), 'restoreSuccessMsg')
+  }
+  const status = row.status === 0 ? 1 : 0
+  const action = () => userSetStatus({ userId: row.userId, status })
+  if (status === 1) return confirmChange(t('banRestore', { msg: row.email }), action, 'saveSuccessMsg')
+  return changeUser(action, 'saveSuccessMsg')
+}
+
+async function confirmChange(message, action, successMessage) {
+  mutating.value = true
+  try {
+    await ElMessageBox.confirm(message, {
+      confirmButtonText: t('confirm'),
+      cancelButtonText: t('cancel'),
+      type: 'warning'
+    })
+    await changeUser(action, successMessage)
+  } catch {
+    // Dismissing the confirmation leaves the list in place.
+  } finally {
+    mutating.value = false
+  }
+}
+
+async function changeUser(action, successMessage) {
+  mutating.value = true
+  try {
+    await action()
+    ElMessage.success(t(successMessage))
+    await getUserList()
+  } catch {
+    // The request layer displays the error.
+  } finally {
+    mutating.value = false
+  }
+}
+
+watch(() => roleStore.refresh, refreshRoles)
+watch(() => userStore.refreshList, () => getUserList())
+onMounted(refresh)
 </script>
 
-<style>
-.el-message-box__container {
-  align-items: start !important;
-}
-
-.el-message-box__message {
-  word-break: break-all;
-}
-
-.el-table-filter__content {
-  min-width: 0;
-}
-</style>
 <style lang="scss" scoped>
-
-:deep(.el-table .checked-row) {
-  background: var(--el-color-warning-light-9);
+.users-page {
+  overflow: auto;
+  min-height: 0;
+  min-width: 0;
+  background: var(--el-bg-color-page);
 }
 
-.user-box {
-  overflow: hidden;
-  height: 100%;
+.users-content {
+  container-type: inline-size;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 1320px;
+  margin-inline: auto;
+  padding: clamp(14px, 2.6vw, 38px) clamp(12px, 2.6vw, 38px) 32px;
 }
 
-:deep(.el-dialog) {
-  width: 400px !important;
-  @media (max-width: 440px) {
-    width: calc(100% - 40px) !important;
-    margin-right: 20px !important;
-    margin-left: 20px !important;
-  }
-}
-
-:deep(.account-dialog) {
-  width: 500px !important;
-  @media (max-width: 540px) {
-    width: calc(100% - 40px) !important;
-    margin-right: 20px !important;
-    margin-left: 20px !important;
-  }
-}
-
-.header-actions {
-  padding: 9px 15px;
+.page-heading {
   display: flex;
-  gap: 15px;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-block-end: 20px;
+
+  h1 {
+    margin: 0;
+    color: var(--el-text-color-primary);
+    font-size: clamp(21px, 2.1vw, 29px);
+    font-weight: 670;
+    line-height: 1.2;
+  }
+
+  .el-button {
+    min-height: 38px;
+    white-space: normal;
+
+    :deep(span) { gap: 5px; }
+  }
+}
+
+.result-count {
+  margin: 7px 0 0;
+  color: var(--el-text-color-secondary);
+  font-size: 13px;
+}
+
+.users-panel {
+  border: 1px solid var(--el-border-color-light);
+  border-radius: 16px;
+  background: var(--el-bg-color-overlay);
+}
+
+.toolbar,
+.selection-bar,
+.list-error,
+.pagination {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 12px 16px;
+}
+
+.toolbar {
+  justify-content: space-between;
+  border-bottom: 1px solid var(--el-border-color-lighter);
+
+  :deep(.el-input__wrapper),
+  :deep(.el-select__wrapper),
+  .el-button {
+    min-height: 38px;
+    border-radius: 8px;
+  }
+}
+
+.search-form {
+  display: flex;
+  flex: 1 1 260px;
+  max-width: 390px;
+  min-width: 0;
+  gap: 8px;
+}
+
+.filter-actions {
+  display: flex;
   flex-wrap: wrap;
   align-items: center;
-  box-shadow: var(--header-actions-border);
-  font-size: 18px;
+  gap: 8px;
 
-  .search-input {
-    width: min(200px, calc(100vw - 140px));
-  }
-
-  .search {
-    :deep(.el-input-group) {
-      height: 28px;
-    }
-
-    :deep(.el-input__inner) {
-      height: 28px;
-    }
-  }
-
-  .icon {
-    cursor: pointer;
-  }
+  .el-button { margin: 0; }
 }
 
-.type {
-  white-space: nowrap;
+.status-select { width: 136px; }
+.sort-select { width: 156px; }
+
+.count-options {
+  padding: 6px 4px;
+
+  :deep(.el-checkbox-group) { display: flex; flex-wrap: wrap; column-gap: 16px; }
+  :deep(.el-checkbox) { margin-inline-end: 0; }
+}
+
+.selection-bar {
+  font-size: 13px;
+  color: var(--el-text-color-secondary);
+  min-height: 34px;
+  padding-block: 4px;
+  border-bottom: 1px solid var(--el-border-color-lighter);
+
+  .el-button { margin-inline-start: auto; }
+}
+
+.list-error {
+  color: var(--el-color-warning);
+  background: var(--el-color-warning-light-9);
+  overflow-wrap: anywhere;
+}
+
+.results { min-height: 170px; }
+.users-table {
+  width: 100%;
+  table-layout: fixed;
+  border-spacing: 0;
+  color: var(--el-text-color-primary);
+  font-size: 13px;
+
+  th,
+  td {
+    padding: 12px;
+    text-align: start;
+    vertical-align: middle;
+  }
+
+  th {
+    color: var(--el-text-color-secondary);
+    background: var(--el-fill-color-lighter);
+    font-size: 12px;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+  }
+
+  th:nth-child(2) { width: 88px; }
+  th:nth-child(6) { width: 128px; }
+  th:last-child { width: 88px; }
+
+  td { border-top: 1px solid var(--el-border-color-lighter); }
+  tbody tr:hover { background: var(--el-fill-color-lighter); }
+  tbody .is-selected,
+  tbody .is-selected:hover { background: var(--el-color-primary-light-9); }
+
+  .identity-cell { padding-inline: 16px 8px; }
+  th:first-child { padding-inline-start: 16px; }
+  .metric-heading,
+  .metric-cell { text-align: center; }
+  .metric-heading { width: 9%; }
+  .metric-cell,
+  .date-cell { font-variant-numeric: tabular-nums; }
+  .date-cell { color: var(--el-text-color-secondary); }
+  .actions-heading,
+  .actions-cell { text-align: end; padding-inline-end: 16px; }
+}
+
+.identity,
+.identity-line,
+.identity-meta,
+.provider {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.identity { gap: 9px; }
+.identity-copy { min-width: 0; }
+.identity-line { gap: 4px; }
+.selection-spacer { width: 14px; flex: none; }
+.provider { flex: none; }
+.provider img { width: 15px; height: 15px; border-radius: 50%; }
+
+.email-link {
+  padding: 2px 0;
+  border: 0;
+  background: none;
+  text-align: start;
+  color: var(--el-text-color-primary);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 620;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
+
+  &:hover { color: var(--el-color-primary); text-decoration: underline; }
 }
 
-.choose-star {
-  color: var(--el-color-primary)
+.identity-meta {
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  margin-block-start: 3px;
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+
+  .admin-role { color: var(--el-color-primary); }
 }
 
-.scrollbar {
-  width: 100%;
-  overflow: auto;
-  height: calc(100% - 50px);
-  @media (max-width: 464px) {
-    height: calc(100% - 90px);
-  }
+.row-action {
+  min-height: 34px;
+  max-width: 100%;
+  padding-inline: 9px;
+  white-space: normal;
+
+  :deep(span) { gap: 2px; }
+  :deep(svg) { flex: none; }
 }
 
-:deep(.oauth-avatar) {
-  flex-shrink: 0;
+.danger-action { color: var(--el-color-danger); }
+.compact-label { display: none; }
+
+.empty-state {
+  min-height: 210px;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 12px;
+  padding: 18px;
+  text-align: center;
+  color: var(--el-text-color-secondary);
+
+  p { margin: 0; }
 }
 
-:deep(.oauth-platform-icon) {
-  flex-shrink: 0;
+.empty-icon {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  background: var(--el-color-primary-light-9);
+  color: var(--el-color-primary);
 }
 
 .pagination {
-  margin-top: 15px;
-  margin-bottom: 20px;
-  padding-right: 30px;
-  width: 100%;
-  display: flex;
-  flex-direction: column;
   justify-content: end;
-  gap: 10px;
-  @media (max-width: 767px) {
-    padding-right: 10px;
-  }
-
-  .el-pagination {
-    align-self: end;
-  }
+  border-top: 1px solid var(--el-border-color-lighter);
+  :deep(.el-select) { width: 135px; }
 }
 
+@container (max-width: 860px) {
+  .search-form { max-width: none; }
+  .users-table {
+    display: block;
 
-.email-row {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
+    thead {
+      position: absolute;
+      clip-path: inset(50%);
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+    }
 
-.status-select {
-  :deep(.el-select__wrapper) {
-    min-height: 28px;
-  }
-}
+    tbody { display: grid; }
 
-.loading {
-  position: absolute;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: var(--loadding-background);
-  left: 0;
-  z-index: 2;
-  top: 0;
-  width: 100%;
-  height: 100%;
-}
+    tr {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+      gap: 10px;
+      padding: 14px;
+      border-top: 1px solid var(--el-border-color-lighter);
+    }
 
-.loading-show {
-  transition: all 200ms ease 200ms;
-  opacity: 1;
-}
+    tbody tr:first-child { border-top: 0; }
 
-.loading-hide {
-  pointer-events: none;
-  transition: var(--loading-hide-transition);
-  opacity: 0;
-}
+    td,
+    .identity-cell,
+    .actions-cell {
+      text-align: start;
+      min-width: 0;
+      border: 0;
+      padding: 0;
+    }
 
-.right-dropdown-item {
-  display: flex;
-  gap: 10px;
-}
+    .identity-cell,
+    .date-cell { grid-column: 1 / -2; }
+    .status-cell { grid-column: -2; justify-self: end; }
+    .actions-cell { grid-column: -2; grid-row: 3; justify-self: end; }
 
-:deep(.el-pagination .el-select) {
-  width: 100px;
-  background: var(--el-bg-color);
-}
+    .date-cell { grid-row: 3; align-self: center; }
+    .metric-cell { grid-row: 2; }
+    .metric-cell:nth-child(3) { grid-column: 1; }
+    .metric-cell:nth-child(4) { grid-column: 2; }
+    .metric-cell:nth-child(5) { grid-column: 3 / -1; }
 
-:deep(.el-input-group__append) {
-  padding: 0 !important;
-  padding-left: 8px !important;
-  background: var(--el-bg-color);
-}
+    .metric-cell {
+      background: var(--el-fill-color-light);
+      padding: 7px 9px;
+      border-radius: 7px;
+      overflow-wrap: anywhere;
+    }
 
-:deep(.cell) {
-  white-space: normal;
-  overflow: visible;
-  text-overflow: clip;
-}
+    .compact-label {
+      display: block;
+      margin-block-end: 2px;
+      color: var(--el-text-color-secondary);
+      font-size: 11px;
+    }
 
-:deep(.receive .cell) {
-  white-space: nowrap;
-}
-
-:deep(.send .cell) {
-  white-space: nowrap;
-}
-
-:deep(.account .cell) {
-  white-space: nowrap;
-}
-
-:deep(.el-table) {
-  @media (pointer: coarse) {
-    /* 触屏 */
-    user-select: none;
+    .date-cell .compact-label { display: none; }
   }
 }
 
-:deep(.el-table th.el-table__cell>.cell.highlight) {
-  color: #909399;
-}
+@container (max-width: 480px) {
+  .toolbar,
+  .selection-bar { padding-inline: 12px; }
 
-:deep(.el-table__inner-wrapper:before) {
-  background: var(--el-bg-color);
-}
+  .filter-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) auto;
+    width: 100%;
 
-:deep(.el-message-box__container) {
-  align-items: start;
+    .status-select,
+    .sort-select { width: 100%; }
+    .count-filter { grid-column: 1 / 3; justify-self: start; }
+    .el-button:last-child { grid-column: 3; justify-self: end; }
+  }
+
+  .filter-actions .sort-select { grid-column: 2 / -1; }
+
+  .users-table {
+    tr { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px 7px; padding: 12px; }
+    .identity { gap: 6px; }
+    .identity-cell { grid-column: 1 / -1; }
+    .status-cell { grid-column: 1 / 3; grid-row: 4; justify-self: start; }
+    .actions-cell { grid-column: 3 / -1; grid-row: 4; }
+    .date-cell { grid-column: 1 / -1; grid-row: 3; }
+    .metric-cell:nth-child(5) { grid-column: 3; }
+  }
 }
 </style>
