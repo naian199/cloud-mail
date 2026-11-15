@@ -501,7 +501,8 @@
 </template>
 
 <script setup>
-import {computed, defineOptions, ref} from "vue";
+import {computed, defineOptions, ref, watch} from "vue";
+import {useRoute, useRouter} from "vue-router";
 import {deleteBackground} from "@/request/setting.js";
 import {useUiStore} from "@/store/ui.js";
 import {Icon} from "@iconify/vue";
@@ -549,6 +550,10 @@ const visibleSettingsSections=computed(()=>{
 });
 function categoryCount(id){return availableSettingsSections.value.filter(section=>id==='all'||section.category===id).length;}
 function chooseSettingsCategory(id){activeCategory.value=id;settingsSearch.value='';settingsScroll.value?.setScrollTop(0);}
+// The chosen category lives in the address, so a refresh, a shared link or Back keeps it.
+const settingsRoute=useRoute(),settingsRouter=useRouter();
+if(typeof settingsRoute.query.category==='string'&&settingsCategories.some(item=>item.id===settingsRoute.query.category))activeCategory.value=settingsRoute.query.category;
+watch(activeCategory,id=>{if(settingsRoute.name!=='sys-setting')return;const query={...settingsRoute.query};if(id==='all')delete query.category;else query.category=id;if(query.category!==settingsRoute.query.category)settingsRouter.replace({query});});
 
 const uiStore = useUiStore();
 const {

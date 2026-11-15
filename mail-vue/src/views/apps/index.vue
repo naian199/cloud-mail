@@ -74,12 +74,14 @@ async function load(next = 0) {
   }
 }
 function syncAddress() {
+  // A search typed just before opening an app must not write onto the app's address.
+  if (route.name !== 'apps') return;
   const query = {};
   if (q.value.trim()) query.q = q.value.trim();
   if (platform.value) query.platform = platform.value;
   router.replace({ query });
 }
-function queue() { clearTimeout(timer); timer = setTimeout(() => { syncAddress(); load(); }, 300); }
+function queue() { clearTimeout(timer); timer = setTimeout(() => { if (route.name !== 'apps') return; syncAddress(); load(); }, 300); }
 function setPlatform(p) { platform.value = p; syncAddress(); load(); }
 function clearFilters() { q.value = ''; platform.value = ''; syncAddress(); load(); }
 watch(() => [route.query.q, route.query.platform], ([nq, np]) => {

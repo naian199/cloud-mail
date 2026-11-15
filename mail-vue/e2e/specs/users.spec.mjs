@@ -37,7 +37,8 @@ test('email search and status work independently and can be reset', async ({ pag
   await search.press('Enter');
   await expect(page.getByRole('button', { name: 'palmer@example.com' })).toBeVisible();
 
-  await page.getByRole('combobox', { name: 'Status' }).click();
+  // Click the select itself: its placeholder covers the inner input, as for a real user.
+  await page.locator('.el-select').filter({ has: page.getByRole('combobox', { name: 'Status' }) }).click();
   await page.getByRole('option', { name: 'Banned', exact: true }).click();
   await expect(page.getByText('No users found.')).toBeVisible();
   await expect(search).toHaveValue('palmer@example.com');

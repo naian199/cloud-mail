@@ -1,5 +1,5 @@
 <template>
-  <el-dialog class="account-dialog" v-model="detailsShow" :title="t('userDetails')" width="min(520px, calc(100% - 28px))">
+  <el-dialog class="account-dialog" v-model="detailsShow" :title="t('userDetails')" width="min(520px, calc(100% - 28px))" @closed="$emit('closed')">
     <div class="details">
       <div class="account-identity">
         <UserAvatar :email="userDetails.email" :size="42" aria-hidden="true" />
@@ -106,11 +106,16 @@ function resetSendCount(user) {
   });
 }
 
+defineEmits(['closed']);
 defineExpose({
   open(user) {
     userDetails.value = user;
     detailsShow.value = true;
-  }
+  },
+  close() {
+    detailsShow.value = false;
+  },
+  get shown() { return detailsShow.value; }
 });
 </script>
 
