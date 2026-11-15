@@ -49,8 +49,8 @@
 </template>
 
 <script setup>
-import { computed, reactive, ref } from 'vue';
-import { RouterLink } from 'vue-router';
+import { computed, nextTick, reactive, ref, watch } from 'vue';
+import { RouterLink, useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { ElMessageBox } from 'element-plus';
 import ListState from '@/components/list-state.vue';
@@ -59,8 +59,13 @@ import { formatBytes } from '@/utils/file-utils.js';
 
 const { t } = useI18n();
 const queue = ref([]), loaded = ref(false), loading = ref(false), error = ref('');
-const search = ref(''), filter = ref('pending'), busy = ref(false);
 const statuses = ['published', 'hidden', 'removed', 'rejected'];
+// The search, status filter and expanded apps live in the address, so opening an app and coming
+// Back (or refreshing) returns to the same place in the queue.
+const route = useRoute(), router = useRouter();
+const filters = ['pending', 'all', ...statuses];
+const search = ref(typeof route.query.q === 'string' ? route.query.q.slice(0, 80) : '');
+const filter = ref(filters.includes(route.query.status) ? route.query.status : 'pending'), busy = ref(false);
 const visibleApps = computed(() => {
   const term = search.value.trim().toLocaleLowerCase();
   return queue.value.filter(app => {
@@ -71,11 +76,34 @@ const visibleApps = computed(() => {
   });
 });
 const open = reactive({}), versions = reactive({}), seen = reactive({});
+let restored = false;
+const openIds = () => Object.keys(open).filter((id) => open[id]).map(Number).sort((a, b) => a - b);
+function syncAddress() {
+  if (route.name !== 'app-review') return;
+  const query = {};
+  if (search.value.trim()) query.q = search.value.trim();
+  if (filter.value !== 'pending') query.status = filter.value;
+  if (openIds().length) query.open = openIds().join(',');
+  if (JSON.stringify(query) !== JSON.stringify(route.query)) router.replace({ query });
+}
+watch([search, filter], syncAddress);
+for (const id of String(route.query.open || '').split(',').map(Number).filter((n) => Number.isSafeInteger(n) && n > 0).slice(0, 20)) {
+  open[id] = true;
+  loadVersions({ appId: id });
+}
 
 async function load() {
   if (loading.value) return;
   loading.value = true;
-  try { queue.value = await reviewQueue(); loaded.value = true; error.value = ''; } catch { error.value = loaded.value ? 'stale' : 'failed'; } finally { loading.value = false; }
+  try {
+    queue.value = await reviewQueue(); loaded.value = true; error.value = '';
+    // Back from an app: return to the expanded entry in the queue.
+    if (!restored && openIds().length) {
+      restored = true;
+      await nextTick();
+      document.querySelector(`[data-review="${openIds()[0]}"]`)?.scrollIntoView({ block: 'center' });
+    }
+  } catch { error.value = loaded.value ? 'stale' : 'failed'; } finally { loading.value = false; }
 }
 async function loadVersions(a) {
   try { const data = await appDetail(a.appId); versions[a.appId] = data.versions; seen[a.appId] = data.app.updateTime; return true; } catch { return false; }
@@ -87,6 +115,7 @@ async function approve(a) {
   busy.value = true;
   try {
     open[a.appId] = true;
+    syncAddress();
     if (!(await loadVersions(a))) return;
     const pending = versions[a.appId].filter(v => v.status === 'review');
     const list = pending.map(v => `v${v.version} · ${t('appPlatform_' + v.platform)}`).join('\n') || t('appNoVersions');
@@ -101,6 +130,7 @@ async function approve(a) {
 function toggle(a) {
   open[a.appId] = !open[a.appId];
   if (open[a.appId]) loadVersions(a);
+  syncAddress();
 }
 
 async function decide(a, action, needsReason = false, version) {

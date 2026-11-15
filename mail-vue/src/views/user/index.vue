@@ -112,7 +112,7 @@
                     <UserAvatar :email="row.email" :size="36" aria-hidden="true" />
                     <div class="identity-copy">
                       <div class="identity-line">
-                        <button v-if="canManage(row)" type="button" class="email-label email-link" dir="ltr" translate="no" :title="row.email" @click="detailsDialog.open(row)">
+                        <button v-if="canManage(row)" type="button" class="email-label email-link" dir="ltr" translate="no" :title="row.email" @click="openDetails(row)">
                           {{ row.email }}
                         </button>
                         <bdi v-else class="email-label" translate="no" :title="row.email">{{ row.email }}</bdi>
@@ -202,13 +202,14 @@
     <PasswordRoleDialogs ref="pwdRoleDialogs" :role-list="roleList" />
     <AddUserDialog ref="addDialog" :role-list="roleList" @added="getUserList()" />
     <AccountsDialog ref="accountsDialog" />
-    <DetailsDialog ref="detailsDialog" :role-name="toRoleName" />
+    <DetailsDialog ref="detailsDialog" :role-name="toRoleName" @closed="detailsClosed" />
     <OfficialDialog ref="officialDialog" />
   </section>
 </template>
 
 <script setup>
 import { computed, onMounted, reactive, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Icon } from '@iconify/vue'
 import { useI18n } from 'vue-i18n'
@@ -282,7 +283,14 @@ try {
   // Ignore invalid saved preferences.
 }
 
-const emailInput = ref('')
+// Search, filters and the open user live in the address: Back closes the details (also on
+// phones), and a refresh or a shared link reopens the same filtered list.
+const route = useRoute()
+const router = useRouter()
+if (typeof route.query.q === 'string') { params.email = route.query.q.trim().slice(0, 254); params.num = 1 }
+if (['-2', '-1', '0', '1'].includes(route.query.status)) params.status = Number(route.query.status)
+if (['0', '1'].includes(route.query.sort)) params.timeSort = Number(route.query.sort)
+const emailInput = ref(params.email)
 const users = ref([])
 const total = ref(0)
 const displayPage = ref(params.num)
@@ -322,6 +330,41 @@ function canManage(row) {
 function search() {
   params.email = emailInput.value.trim()
   restartList()
+}
+
+function listQuery() {
+  const query = { ...route.query }
+  for (const key of ['q', 'status', 'sort']) delete query[key]
+  if (params.email) query.q = params.email
+  if (params.status !== -1) query.status = String(params.status)
+  if (params.timeSort) query.sort = String(params.timeSort)
+  return query
+}
+
+function syncAddress() {
+  if (route.name !== 'user') return
+  const query = listQuery()
+  if (JSON.stringify(query) !== JSON.stringify(route.query)) router.replace({ query })
+}
+
+// Opening details is an explicit step with its own history entry.
+function openDetails(row) {
+  router.push({ query: { ...listQuery(), user: String(row.userId) } })
+}
+
+function showDetailsFromAddress() {
+  if (route.name !== 'user') return
+  const id = Number(route.query.user)
+  if (!id) { if (detailsDialog.value?.shown) detailsDialog.value.close(); return }
+  const row = users.value.find(item => item.userId === id)
+  if (row && canManage(row)) detailsDialog.value?.open(row)
+  else if (loaded.value) router.replace({ query: listQuery() })
+}
+
+function detailsClosed() {
+  if (route.name !== 'user' || !route.query.user) return
+  if (window.history.state?.back) router.back()
+  else router.replace({ query: listQuery() })
 }
 
 function clearFilters() {
@@ -374,6 +417,7 @@ async function getUserList() {
     users.value = data.list
     total.value = data.total
     displayPage.value = query.num
+    syncAddress()
     loaded.value = true
     try {
       localStorage.setItem('user-params', JSON.stringify({ ...params, num: query.email ? 1 : query.num, email: '' }))
@@ -390,7 +434,7 @@ async function getUserList() {
 function runAction(row, action) {
   if (!canManage(row)) return
   switch (action) {
-    case 'details': return detailsDialog.value.open(row)
+    case 'details': return openDetails(row)
     case 'mailboxes': return accountsDialog.value.open(row.userId)
     case 'password': return pwdRoleDialogs.value.openSetPwd(row)
     case 'role': return pwdRoleDialogs.value.openSetType(row)
@@ -452,6 +496,7 @@ async function changeUser(action, successMessage) {
 }
 
 watch(() => roleStore.refresh, refreshRoles)
+watch(() => [route.query.user, users.value], showDetailsFromAddress)
 watch(() => userStore.refreshList, () => getUserList())
 onMounted(refresh)
 </script>
