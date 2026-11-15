@@ -112,9 +112,10 @@
                     <UserAvatar :email="row.email" :size="36" aria-hidden="true" />
                     <div class="identity-copy">
                       <div class="identity-line">
-                        <button type="button" class="email-link" dir="ltr" translate="no" :title="row.email" @click="detailsDialog.open(row)">
+                        <button v-if="canManage(row)" type="button" class="email-label email-link" dir="ltr" translate="no" :title="row.email" @click="detailsDialog.open(row)">
                           {{ row.email }}
                         </button>
+                        <bdi v-else class="email-label" translate="no" :title="row.email">{{ row.email }}</bdi>
                         <OfficialBadge :profile="row" />
                         <span v-if="oauthPlatform(row)" class="provider" :title="oauthPlatform(row).label" :aria-label="oauthPlatform(row).label" role="img">
                           <img v-if="oauthPlatform(row).image" :src="oauthPlatform(row).image" alt="" />
@@ -144,18 +145,18 @@
                   <bdi>{{ row.createTime ? tzDayjs(row.createTime).format('YYYY-MM-DD HH:mm') : t('unknown') }}</bdi>
                 </td>
                 <td role="cell" class="actions-cell">
-                  <el-dropdown trigger="click" placement="bottom-end" @command="runAction(row, $event)">
+                  <el-dropdown v-if="canManage(row)" trigger="click" placement="bottom-end" @command="runAction(row, $event)">
                     <el-button class="row-action" :disabled="loading || !!error || mutating">
                       {{ t('action') }} <Icon icon="mingcute:down-small-fill" width="17" aria-hidden="true" />
                     </el-button>
                     <template #dropdown>
                       <el-dropdown-menu>
                         <el-dropdown-item command="details">{{ t('userDetails') }}</el-dropdown-item>
-                        <el-dropdown-item v-if="canManage(row)" command="mailboxes">{{ t('userAccount') }}</el-dropdown-item>
-                        <el-dropdown-item v-if="canManage(row) && canSetPassword" command="password">{{ t('changePassword') }}</el-dropdown-item>
+                        <el-dropdown-item command="mailboxes">{{ t('userAccount') }}</el-dropdown-item>
+                        <el-dropdown-item v-if="canSetPassword" command="password">{{ t('changePassword') }}</el-dropdown-item>
                         <el-dropdown-item v-if="row.type !== 0 && canSetRole" command="role">{{ t('setRole') }}</el-dropdown-item>
                         <el-dropdown-item
-                          v-if="canVerify && canManage(row) && (row.officialVerified || (row.isDel !== 1 && row.status === 0))"
+                          v-if="canVerify && (row.officialVerified || (row.isDel !== 1 && row.status === 0))"
                           command="verified"
                         >{{ t(row.officialVerified ? 'officialManage' : 'officialGrant') }}</el-dropdown-item>
                         <el-dropdown-item v-if="row.type !== 0 && canSetStatus" command="status" divided>
@@ -387,6 +388,7 @@ async function getUserList() {
 }
 
 function runAction(row, action) {
+  if (!canManage(row)) return
   switch (action) {
     case 'details': return detailsDialog.value.open(row)
     case 'mailboxes': return accountsDialog.value.open(row.userId)
@@ -632,19 +634,23 @@ onMounted(refresh)
 .provider { flex: none; }
 .provider img { width: 15px; height: 15px; border-radius: 50%; }
 
-.email-link {
-  padding: 2px 0;
-  border: 0;
-  background: none;
+.email-label {
+  padding-block: 2px;
   text-align: start;
   color: var(--el-text-color-primary);
-  cursor: pointer;
   font: inherit;
   font-weight: 620;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.email-link {
+  padding-inline: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
 
   &:hover { color: var(--el-color-primary); text-decoration: underline; }
 }
@@ -740,6 +746,7 @@ onMounted(refresh)
     .date-cell { grid-column: 1 / -2; }
     .status-cell { grid-column: -2; justify-self: end; }
     .actions-cell { grid-column: -2; grid-row: 3; justify-self: end; }
+    .actions-cell:empty { display: none; }
 
     .date-cell { grid-row: 3; align-self: center; }
     .metric-cell { grid-row: 2; }
