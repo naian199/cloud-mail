@@ -102,7 +102,10 @@ test.describe('redesigned site', () => {
     await page.goto(BASE + '/me');
     await expect(page.locator('.me-page')).toBeVisible();
     await expect(page.locator('[data-me="publish"]')).toHaveCount(0);
-    await expect(page.locator('[data-me="review"]')).toHaveCount(0);
+    await expect(page.locator('[data-me="admin"]')).toHaveCount(0);
+    await page.goto(BASE + '/admin');
+    await expect(page.locator('.box-404')).toBeVisible();
+    await expect(page.locator('.admin-intro')).toHaveCount(0);
     await context.close();
   });
 

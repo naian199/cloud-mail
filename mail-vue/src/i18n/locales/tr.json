@@ -995,5 +995,11 @@
   "userManagementCountFilter": "Sayım seçenekleri",
   "userManagementRefresh": "Yenile",
   "userManagementSelectPage": "Bu sayfayı seç",
-  "userManagementEmpty": "Kullanıcı bulunamadı."
+  "userManagementEmpty": "Kullanıcı bulunamadı.",
+  "adminWorkspace": "Yönetim paneli",
+  "adminAccounts": "Kullanıcılar ve izinler",
+  "adminContent": "İçerik yönetimi",
+  "adminOperations": "Sistem ve istatistikler",
+  "adminClearInviteCodes": "Geçersiz kodları temizle",
+  "adminNoMatchingApps": "Eşleşen uygulama bulunamadı."
 }

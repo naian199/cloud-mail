@@ -2,6 +2,7 @@
   <div v-if="analysisLoading" class="analysis-loading">
     <loading/>
   </div>
+  <ListState v-else-if="analysisError" state="failed" @retry="loadAnalysis" />
   <el-scrollbar v-else style="height: 100%;">
     <div class="analysis" :key="boxKey">
       <div class="number">
@@ -119,6 +120,7 @@
 </template>
 
 <script setup>
+import ListState from '@/components/list-state.vue';
 import {Icon} from "@iconify/vue";
 import {useTransition} from "@vueuse/core";
 import {defineOptions, onActivated, onDeactivated, onMounted, reactive, ref, watch, computed} from "vue";
@@ -145,6 +147,7 @@ const sendTotal = ref(0)
 const accountTotal = ref(0)
 const userTotal = ref(0)
 const analysisLoading = ref(true)
+const analysisError = ref(false)
 
 const numberCount = reactive({
   normalReceiveTotal: 0,
@@ -209,7 +212,11 @@ const {width: viewportWidth, isTablet} = useBreakpoint()
 let senderPieLeft = viewportWidth.value < 500 ? `${viewportWidth.value - 110}` : '72%'
 let analysisDark = uiStore.dark
 
-onMounted(() => {
+onMounted(loadAnalysis)
+
+function loadAnalysis() {
+  analysisLoading.value = true
+  analysisError.value = false
   const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
   analysisEcharts(timeZone).then(data => {
@@ -242,9 +249,11 @@ onMounted(() => {
     analysisLoading.value = false
     initPicture();
     first = false
+  }).catch(() => {
+    analysisError.value = true
+    analysisLoading.value = false
   })
-
-})
+}
 
 const widthChange = debounce(initPicture, 500, {
   leading: false,
@@ -288,9 +297,10 @@ watch(() => uiStore.dark, () => {
 })
 
 function initPicture() {
-  if (route.name !== 'analysis') return
+  if (route.name !== 'analysis' || analysisLoading.value || analysisError.value) return
   boxKey.value++
   setTimeout(() => {
+    if (route.name !== 'analysis' || analysisLoading.value || analysisError.value) return
     createSenderPie()
     createIncreaseLine()
     createEmailColumnChart();

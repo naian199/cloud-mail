@@ -995,5 +995,11 @@
   "userManagementCountFilter": "Zähloptionen",
   "userManagementRefresh": "Aktualisieren",
   "userManagementSelectPage": "Diese Seite auswählen",
-  "userManagementEmpty": "Keine Benutzer gefunden."
+  "userManagementEmpty": "Keine Benutzer gefunden.",
+  "adminWorkspace": "Verwaltung",
+  "adminAccounts": "Benutzer und Zugriffsrechte",
+  "adminContent": "Inhaltsverwaltung",
+  "adminOperations": "System und Statistiken",
+  "adminClearInviteCodes": "Ungültige Codes löschen",
+  "adminNoMatchingApps": "Keine passenden Apps gefunden."
 }

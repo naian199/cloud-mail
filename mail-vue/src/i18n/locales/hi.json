@@ -995,5 +995,11 @@
   "userManagementCountFilter": "गिनती के विकल्प",
   "userManagementRefresh": "रीफ़्रेश करें",
   "userManagementSelectPage": "यह पेज चुनें",
-  "userManagementEmpty": "कोई उपयोगकर्ता नहीं मिला।"
+  "userManagementEmpty": "कोई उपयोगकर्ता नहीं मिला।",
+  "adminWorkspace": "व्यवस्थापक पैनल",
+  "adminAccounts": "उपयोगकर्ता और अनुमतियाँ",
+  "adminContent": "सामग्री प्रबंधन",
+  "adminOperations": "सिस्टम और विश्लेषण",
+  "adminClearInviteCodes": "अमान्य कोड हटाएँ",
+  "adminNoMatchingApps": "कोई मिलता-जुलता ऐप नहीं मिला।"
 }

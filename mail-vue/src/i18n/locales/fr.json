@@ -995,5 +995,11 @@
   "userManagementCountFilter": "Options de comptage",
   "userManagementRefresh": "Actualiser",
   "userManagementSelectPage": "Sélectionner cette page",
-  "userManagementEmpty": "Aucun utilisateur trouvé."
+  "userManagementEmpty": "Aucun utilisateur trouvé.",
+  "adminWorkspace": "Espace d’administration",
+  "adminAccounts": "Utilisateurs et accès",
+  "adminContent": "Gestion du contenu",
+  "adminOperations": "Système et statistiques",
+  "adminClearInviteCodes": "Effacer les codes invalides",
+  "adminNoMatchingApps": "Aucune application correspondante."
 }

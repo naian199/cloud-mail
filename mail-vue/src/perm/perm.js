@@ -1,4 +1,5 @@
 import {useUserStore} from "@/store/user.js";
+import { canOpenAdmin } from "./admin-pages.mjs";
 
 export default {
     mounted(el, binding) {
@@ -33,18 +34,26 @@ export function permsToRouter(permKeys) {
             routerList.push(...routers[perm])
         }
     })
+    if (canOpenAdmin(permKeys)) routerList.push(adminRoute);
     return routerList;
 }
 
 // Match the registered routes to the same permissions used to render navigation.
 export function syncPermissionRoutes(router,permKeys=[]) {
  const allowed=permsToRouter(permKeys),names=new Set(allowed.map(route=>route.name)),removed=[];
- for(const route of Object.values(routers).flat()){
+ for(const route of [...Object.values(routers).flat(), adminRoute]){
   if(!names.has(route.name)&&router.hasRoute(route.name)){router.removeRoute(route.name);removed.push(route.name);}
  }
  for(const route of allowed)if(!router.hasRoute(route.name))router.addRoute('layout',route);
  return removed;
 }
+
+const adminRoute = {
+    path: '/admin',
+    name: 'admin',
+    component: () => import('@/views/admin/index.vue'),
+    meta: { title: 'adminWorkspace', name: 'admin', menu: true }
+};
 
 const routers = {
     'app:publish': [

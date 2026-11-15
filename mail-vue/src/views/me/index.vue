@@ -18,15 +18,17 @@
       <RouterLink class="me-row" to="/settings"><Icon icon="cloud-mail:settings" width="21" /><span>{{ t('settings') }}</span><Icon class="me-chevron" icon="cloud-mail:chevron" width="18" /></RouterLink>
     </section>
 
-    <section v-if="canPublish || canReview" class="me-group">
+    <section v-if="canPublish" class="me-group">
       <h2>{{ t('navStore') }}</h2>
-      <RouterLink v-if="canPublish" class="me-row" to="/apps/publish" data-me="publish"><Icon icon="cloud-mail:upload" width="21" /><span>{{ t('appPublishTitle') }}</span><Icon class="me-chevron" icon="cloud-mail:chevron" width="18" /></RouterLink>
-      <RouterLink v-if="canReview" class="me-row" to="/apps/review" data-me="review"><Icon icon="cloud-mail:shield" width="21" /><span>{{ t('appReviewTitle') }}</span><Icon class="me-chevron" icon="cloud-mail:chevron" width="18" /></RouterLink>
+      <RouterLink class="me-row" to="/apps/publish" data-me="publish"><Icon icon="cloud-mail:upload" width="21" /><span>{{ t('appPublishTitle') }}</span><Icon class="me-chevron" icon="cloud-mail:chevron" width="18" /></RouterLink>
     </section>
 
-    <section v-if="admin.length" class="me-group">
-      <h2>{{ t('manage') }}</h2>
-      <RouterLink v-for="item in admin" :key="item.to" class="me-row" :to="item.to"><Icon :icon="item.icon" width="21" /><span>{{ t(item.label) }}</span><Icon class="me-chevron" icon="cloud-mail:chevron" width="18" /></RouterLink>
+    <section v-if="canOpenAdmin(user.user.permKeys)" class="me-group">
+      <RouterLink class="me-row" :to="{ name: 'admin' }" data-me="admin">
+        <Icon icon="cloud-mail:shield" width="21" aria-hidden="true" />
+        <span>{{ t('adminWorkspace') }}</span>
+        <Icon class="me-chevron" icon="cloud-mail:chevron" width="18" aria-hidden="true" />
+      </RouterLink>
     </section>
 
     <section class="me-group">
@@ -47,6 +49,7 @@ import LanguageSelect from '@/components/language-select.vue';
 import { useUserStore } from '@/store/user';
 import { useUiStore } from '@/store/ui';
 import { hasPerm } from '@/perm/perm.js';
+import { canOpenAdmin } from '@/perm/admin-pages.mjs';
 import { logout } from '@/request/login.js';
 import { useSiteNav, badge } from '@/composables/use-site-nav';
 
@@ -57,15 +60,6 @@ const ui = useUiStore();
 const router = useRouter();
 const { unread } = useSiteNav();
 const canPublish = computed(() => hasPerm('app:publish'));
-const canReview = computed(() => hasPerm('app:review'));
-const admin = computed(() => [
-  { perm: 'analysis:query', to: '/analysis', icon: 'cloud-mail:analytics', label: 'analytics' },
-  { perm: 'user:query', to: '/all-users', icon: 'cloud-mail:group', label: 'allUsers' },
-  { perm: 'all-email:query', to: '/all-mail', icon: 'cloud-mail:external-mail', label: 'allMail' },
-  { perm: 'role:query', to: '/role', icon: 'cloud-mail:lock', label: 'permissions' },
-  { perm: 'reg-key:query', to: '/invite-code', icon: 'cloud-mail:key', label: 'inviteCode' },
-  { perm: 'setting:query', to: '/system-settings', icon: 'cloud-mail:settings', label: 'SystemSettings' }
-].filter((item) => hasPerm(item.perm)));
 
 function toggleDark() {
   const next = !ui.dark;

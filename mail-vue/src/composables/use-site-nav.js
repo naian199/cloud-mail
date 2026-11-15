@@ -1,5 +1,6 @@
 import { computed } from 'vue';
 import { useRoute } from 'vue-router';
+import { isAdminRoute } from '@/perm/admin-pages.mjs';
 import { categoryUnread } from '@/composables/use-category-unread';
 import { useAccountStore } from '@/store/account';
 
@@ -8,13 +9,14 @@ import { useAccountStore } from '@/store/account';
 // "Me" on phones, where it keeps its own unread count.
 export const SECTIONS = {
   chat: ['chat-all', 'mail-chat', 'rooms'],
-  store: ['apps', 'app-detail', 'app-publish', 'app-review'],
+  store: ['apps', 'app-detail', 'app-publish'],
   files: ['files'],
   mail: ['external-mail', 'email', 'content', 'send', 'draft', 'star'],
-  me: ['me', 'setting', 'user', 'role', 'sys-setting', 'reg-key', 'all-email', 'analysis']
+  me: ['me', 'setting']
 };
 
 export function sectionOf(name) {
+  if (isAdminRoute(name)) return 'admin';
   return Object.keys(SECTIONS).find((key) => SECTIONS[key].includes(name)) || '';
 }
 

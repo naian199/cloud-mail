@@ -1,18 +1,19 @@
 <template>
   <div class="perm-box">
-    <div class="header-actions">
-      <Icon class="icon" icon="ion:add-outline" width="23" height="23" @click="openAddRole"/>
-      <Icon class="icon" icon="ion:reload" width="18" height="18" @click="refresh"/>
-    </div>
-    <el-scrollbar class="perm-scrollbar">
-      <div class="loading" :class="tableLoading ? 'loading-show' : 'loading-hide'"
-           :style="first ? 'background: transparent' : ''">
-        <loading/>
+    <header class="header-actions">
+      <h1>{{ t('permissions') }}</h1>
+      <div class="page-actions">
+        <el-button :loading="tableLoading" @click="refresh">{{ t('userManagementRefresh') }}</el-button>
+        <el-button v-if="hasPerm('role:add')" type="primary" @click="openAddRole">{{ t('addRoleTitle') }}</el-button>
       </div>
+    </header>
+    <el-scrollbar class="perm-scrollbar">
+      <ListState :state="listError" :retrying="tableLoading" @retry="refresh" />
       <el-table
           :data="roles"
-          style="height: 100%;"
-          :empty-text="''"
+          v-loading="tableLoading"
+          v-if="listError !== 'failed'"
+          :empty-text="tableLoading ? ' ' : undefined"
       >
         <el-table-column width="10"/>
         <el-table-column :label="$t('role')" prop="name" :min-width="roleWidth">
@@ -33,13 +34,13 @@
         </el-table-column>
         <el-table-column :label="$t('tabSetting')" :width="settingWidth" fixed="right">
           <template #default="props">
-            <el-dropdown trigger="click">
+            <el-dropdown v-if="hasPerm('role:set') || hasPerm('role:delete')" trigger="click">
               <el-button size="small" type="primary">{{ $t('action') }}</el-button>
               <template #dropdown>
                 <el-dropdown-menu>
-                  <el-dropdown-item @click="openRoleSet(props.row)">{{ $t('change') }}</el-dropdown-item>
-                  <el-dropdown-item @click="setDef(props.row)">{{ $t('default') }}</el-dropdown-item>
-                  <el-dropdown-item @click="delRole(props.row)">{{ $t('delete') }}</el-dropdown-item>
+                  <el-dropdown-item v-if="hasPerm('role:set')" @click="openRoleSet(props.row)">{{ $t('change') }}</el-dropdown-item>
+                  <el-dropdown-item v-if="hasPerm('role:set') && !props.row.isDefault" @click="setDef(props.row)">{{ $t('default') }}</el-dropdown-item>
+                  <el-dropdown-item v-if="hasPerm('role:delete')" @click="delRole(props.row)">{{ $t('delete') }}</el-dropdown-item>
                 </el-dropdown-menu>
               </template>
             </el-dropdown>
@@ -146,7 +147,8 @@
 import {Icon} from "@iconify/vue";
 import {defineOptions, nextTick, reactive, ref, watch} from "vue";
 import {roleAdd, roleDelete, rolePermTree, roleRoleList, roleSet, roleSetDef} from "@/request/role.js";
-import loading from '@/components/loading/index.vue';
+import ListState from '@/components/list-state.vue';
+import { hasPerm } from '@/perm/perm.js';
 import {useRoleStore} from "@/store/role.js";
 import {useUserStore} from "@/store/user.js";
 import {useSettingStore} from "@/store/setting.js";
@@ -172,7 +174,9 @@ const desShow = ref(true)
 const settingWidth = ref(null)
 const sortWidth = ref(null)
 const roleWidth = ref(200)
-const first = ref(true)
+const listError = ref('')
+let loadedRoles = false
+let requestRevision = 0
 
 const dialogType = reactive({
   title: '',
@@ -384,20 +388,23 @@ function addRole() {
 
 
 function refresh() {
-  tableLoading.value = true
-  roles.length = 0
   getRoleList()
 }
 
-function getRoleList() {
-  roleRoleList().then(list => {
+async function getRoleList() {
+  const revision = ++requestRevision
+  tableLoading.value = true
+  listError.value = ''
+  try {
+    const list = await roleRoleList()
+    if (revision !== requestRevision) return
     roles.value = list
-  }).finally(() => {
-    tableLoading.value = false
-    setTimeout(() => {
-      first.value = false
-    }, 200)
-  })
+    loadedRoles = true
+  } catch {
+    if (revision === requestRevision) listError.value = loadedRoles ? 'stale' : 'failed'
+  } finally {
+    if (revision === requestRevision) tableLoading.value = false
+  }
 }
 
 const {width: viewportWidth} = useBreakpoint()
@@ -420,9 +427,12 @@ watch([viewportWidth, locale], adjustWidth, {immediate: true})
   height: 100%;
   overflow: hidden;
   width: 100%;
+  display: flex;
+  flex-direction: column;
 
   .perm-scrollbar {
-    height: 100%;
+    flex: 1;
+    min-height: 0;
   }
 }
 
@@ -440,27 +450,19 @@ watch([viewportWidth, locale], adjustWidth, {immediate: true})
 }
 
 .header-actions {
-  padding: 9px 15px;
   display: flex;
   align-items: center;
-  gap: 18px;
-  box-shadow: var(--header-actions-border);
-  font-size: 18px;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 16px;
+  border-bottom: 1px solid var(--el-border-color-lighter);
 
-  .search {
-    :deep(.el-input-group) {
-      height: 28px;
-    }
-
-    :deep(.el-input__inner) {
-      height: 28px;
-    }
-  }
-
-  .icon {
-    cursor: pointer;
-  }
+  h1 { margin: 0; font-size: clamp(20px, 3vw, 27px); }
 }
+
+.page-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.page-actions .el-button { margin: 0; }
 
 .warning {
   position: relative;
@@ -474,28 +476,6 @@ watch([viewportWidth, locale], adjustWidth, {immediate: true})
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-.loading {
-  height: calc(100% - 41px);
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: absolute;
-  background: var(--loadding-background);
-  z-index: 2;
-}
-
-.loading-show {
-  transition: all 200ms ease 200ms;
-  opacity: 1;
-}
-
-.loading-hide {
-  pointer-events: none;
-  transition: var(--loading-hide-transition);
-  opacity: 0;
 }
 
 .role-name {

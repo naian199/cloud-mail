@@ -995,5 +995,11 @@
   "userManagementCountFilter": "Telopties",
   "userManagementRefresh": "Vernieuwen",
   "userManagementSelectPage": "Deze pagina selecteren",
-  "userManagementEmpty": "Geen gebruikers gevonden."
+  "userManagementEmpty": "Geen gebruikers gevonden.",
+  "adminWorkspace": "Beheeromgeving",
+  "adminAccounts": "Gebruikers en rechten",
+  "adminContent": "Inhoudsbeheer",
+  "adminOperations": "Systeem en statistieken",
+  "adminClearInviteCodes": "Ongeldige codes wissen",
+  "adminNoMatchingApps": "Geen overeenkomende apps."
 }

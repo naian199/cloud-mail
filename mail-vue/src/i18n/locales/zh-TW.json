@@ -995,5 +995,11 @@
   "userManagementCountFilter": "計數選項",
   "userManagementRefresh": "重新整理",
   "userManagementSelectPage": "全選本頁",
-  "userManagementEmpty": "找不到使用者"
+  "userManagementEmpty": "找不到使用者",
+  "adminWorkspace": "管理後台",
+  "adminAccounts": "使用者與權限",
+  "adminContent": "內容管理",
+  "adminOperations": "系統與數據",
+  "adminClearInviteCodes": "清理失效金鑰",
+  "adminNoMatchingApps": "找不到符合條件的應用程式。"
 }

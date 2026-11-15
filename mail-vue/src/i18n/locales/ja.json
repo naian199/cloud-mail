@@ -995,5 +995,11 @@
   "userManagementCountFilter": "集計オプション",
   "userManagementRefresh": "更新",
   "userManagementSelectPage": "このページを全選択",
-  "userManagementEmpty": "ユーザーが見つかりませんでした。"
+  "userManagementEmpty": "ユーザーが見つかりませんでした。",
+  "adminWorkspace": "管理画面",
+  "adminAccounts": "ユーザーと権限",
+  "adminContent": "コンテンツ管理",
+  "adminOperations": "システムと分析",
+  "adminClearInviteCodes": "無効なコードを削除",
+  "adminNoMatchingApps": "条件に合うアプリが見つかりません。"
 }
