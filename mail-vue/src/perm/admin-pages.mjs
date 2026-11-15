@@ -13,7 +13,8 @@ export const adminSections = [
     label: 'adminContent',
     pages: [
       { name: 'app-review', label: 'appReviewTitle', icon: 'shield', permission: 'app:review' },
-      { name: 'all-email', label: 'allMail', icon: 'external-mail', permission: 'all-email:query' }
+      { name: 'all-email', label: 'allMail', icon: 'external-mail', permission: 'all-email:query' },
+      { name: 'member-orders', label: 'memberOrdersTitle', icon: 'shield', permission: 'member:query' }
     ]
   },
   {

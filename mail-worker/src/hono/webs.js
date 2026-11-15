@@ -26,4 +26,5 @@ import '../api/public-api'
 import '../api/telegram-api'
 import '../api/oauth-api'
 import '../api/app-store-api'
+import '../api/membership-api'
 export default app;

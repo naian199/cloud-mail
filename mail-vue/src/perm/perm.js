@@ -56,6 +56,14 @@ const adminRoute = {
 };
 
 const routers = {
+    'member:query': [
+        {
+            path: '/member-orders',
+            name: 'member-orders',
+            component: () => import('@/views/membership/admin.vue'),
+            meta: { title: 'memberOrdersTitle', name: 'member-orders', menu: false }
+        }
+    ],
     'app:publish': [
         {
             path: '/apps/publish',

@@ -12,7 +12,7 @@ export const SECTIONS = {
   store: ['apps', 'app-detail', 'app-publish'],
   files: ['files'],
   mail: ['external-mail', 'email', 'content', 'send', 'draft', 'star'],
-  me: ['me', 'setting']
+  me: ['me', 'setting', 'membership']
 };
 
 export function sectionOf(name) {

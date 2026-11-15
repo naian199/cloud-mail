@@ -15,6 +15,7 @@
         <span v-if="unread.mail" class="me-badge">{{ badge(unread.mail, n) }}</span>
         <Icon class="me-chevron" icon="cloud-mail:chevron" width="18" />
       </RouterLink>
+      <RouterLink class="me-row" to="/membership" data-me="membership"><Icon icon="cloud-mail:shield" width="21" /><span>{{ t('memberTitle') }}</span><Icon class="me-chevron" icon="cloud-mail:chevron" width="18" /></RouterLink>
       <RouterLink class="me-row" to="/settings"><Icon icon="cloud-mail:settings" width="21" /><span>{{ t('settings') }}</span><Icon class="me-chevron" icon="cloud-mail:chevron" width="18" /></RouterLink>
     </section>
 
