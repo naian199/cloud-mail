@@ -44,3 +44,34 @@ test('administrative conversations join legacy replies, respect mailbox boundari
 	assert.deepEqual(messages.all(8, '2026-11-02 12:00:00', 2, 10).map((r) => r.emailId), [3]);
 	assert.deepEqual(messages.all(4, '', 0, 10), []);
 });
+
+test('both sides of a conversation between two mailboxes show as one entry with every message once', () => {
+	const db = new DatabaseSync(':memory:');
+	db.exec(`
+	  CREATE TABLE user (user_id INTEGER PRIMARY KEY, email TEXT);
+	  CREATE TABLE account (account_id INTEGER PRIMARY KEY, user_id INTEGER, email TEXT);
+	  CREATE TABLE email (
+	    email_id INTEGER PRIMARY KEY, user_id INTEGER, account_id INTEGER, send_email TEXT, name TEXT,
+	    subject TEXT, text TEXT, type INTEGER, create_time TEXT, message_id TEXT, conversation_key TEXT,
+	    conversation_peers TEXT, to_email TEXT, recipient TEXT, cc TEXT, is_del INTEGER, status INTEGER, content TEXT
+	  );
+	  INSERT INTO user VALUES (1,'owner@example.com'),(2,'palmer@example.com');
+	  INSERT INTO account VALUES (1,1,'owner@example.com'),(2,2,'palmer@example.com');
+	`);
+	const insert = db.prepare('INSERT INTO email VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)');
+	const row = (id, user, from, to, type, peer, message, body) => insert.run(id, user, user, from, '', 'Chat', body, type,
+		`2026-11-14 12:00:0${id}`, message, 'k', JSON.stringify([peer]), type === 0 ? to : '', JSON.stringify([{ address: to }]), '[]', 0, 0, '');
+	// palmer -> owner: sent copy in palmer's mailbox, received copy in owner's.
+	row(1, 2, 'palmer@example.com', 'owner@example.com', 1, 'owner@example.com', '<a>', 'Hi there');
+	row(2, 1, 'palmer@example.com', 'owner@example.com', 0, 'palmer@example.com', '<a>', 'Hi there');
+	// owner -> palmer.
+	row(3, 1, 'owner@example.com', 'palmer@example.com', 1, 'palmer@example.com', '<b>', 'Hello back');
+	row(4, 2, 'owner@example.com', 'palmer@example.com', 0, 'owner@example.com', '<b>', 'Hello back');
+	const list = db.prepare(adminConversationList).all('', '', 0, 10);
+	assert.equal(list.length, 1);
+	assert.equal(db.prepare(adminConversationList).all('palmer', '', 0, 10).length, 1);
+	const texts = db.prepare(adminConversationMessages).all(list[0].emailId, '', 0, 10).map((m) => m.text);
+	assert.deepEqual(texts, ['Hello back', 'Hi there']);
+	// Opened from either side's copy, it is the same conversation.
+	assert.deepEqual(db.prepare(adminConversationMessages).all(1, '', 0, 10).map((m) => m.text), ['Hello back', 'Hi there']);
+});
