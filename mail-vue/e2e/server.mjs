@@ -33,7 +33,9 @@ const secret = devConfig.match(/^jwt_secret = "(.*)"$/m)[1];
 rmSync(stateDir, { recursive: true, force: true });
 const wrangler = spawn(path.join(worker, 'node_modules/.bin/wrangler'),
   ['dev', '--config', config, '--port', String(PORT), '--persist-to', stateDir,
-    '--var', `costaction_api_base:${costaction.origin}`, '--var', `costaction_upload_origin:${costaction.origin}`],
+    '--var', `costaction_api_base:${costaction.origin}`, '--var', `costaction_upload_origin:${costaction.origin}`,
+    // Membership: purchases and the test payment provider exist only in this isolated run.
+    '--var', 'membership_purchase:1', '--var', 'membership_test_payments:1'],
   { cwd: worker, stdio: ['ignore', 'pipe', 'inherit'] });
 wrangler.stdout.on('data', () => {});
 const stop = () => { wrangler.kill(); costaction.close(); process.exit(); };

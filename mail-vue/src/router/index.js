@@ -89,6 +89,12 @@ const routes = [
                 meta: { title: 'navStore', name: 'app-detail', menu: false }
             },
             {
+                path: '/membership',
+                name: 'membership',
+                component: () => import('@/views/membership/index.vue'),
+                meta: { title: 'memberTitle', name: 'membership', menu: false }
+            },
+            {
                 path: '/me',
                 name: 'me',
                 component: () => import('@/views/me/index.vue'),

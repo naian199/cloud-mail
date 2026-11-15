@@ -39,7 +39,7 @@ const chatRoute = computed(() => ['chat-all', 'mail-chat', 'external-mail', 'roo
 const mailSection = computed(() => sectionOf(route.name) === 'mail');
 const adminSection = computed(() => isAdminRoute(route.name));
 // Pages that draw their own title bar.
-const ownHeader = computed(() => ['apps', 'app-detail', 'app-publish', 'me'].includes(route.name));
+const ownHeader = computed(() => ['apps', 'app-detail', 'app-publish', 'me', 'membership'].includes(route.name));
 const {collapsed:sidebarCollapsed,compact:compactSidebar}=useConversationSidebar();
 const conversationWidth = computed(() => sidebarCollapsed.value ? 64 : Math.min(420, Math.max(260, Number(uiStore.conversationWidth) || 300)));
 uiStore.asideShow = false;
@@ -50,7 +50,7 @@ function measureKeyboard() {
   const vv = window.visualViewport;
   keyboard.value = !!vv && window.innerHeight - vv.height > 150;
 }
-const detail = computed(() => adminSection.value || uiStore.mobileChatFocused || ['content', 'app-detail', 'app-publish'].includes(route.name));
+const detail = computed(() => adminSection.value || uiStore.mobileChatFocused || ['content', 'app-detail', 'app-publish', 'membership'].includes(route.name));
 const showTabbar = computed(() => phone.value && !detail.value && !keyboard.value);
 const writerRef = ref({})
 onMounted(() => {

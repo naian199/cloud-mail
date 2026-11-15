@@ -22,6 +22,7 @@ const exclude = [
 ];
 
 const requirePerms = [
+  '/member-admin',
   '/app-publish',
   '/app-review',
   '/user/official',
@@ -69,6 +70,7 @@ const requirePerms = [
 ];
 
 const premKey = {
+  'member:query': ['/member-admin'],
   'app:publish': ['/app-publish'],
   'app:review': ['/app-review'],
   'user:verify':['/user/official'],
