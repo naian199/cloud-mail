@@ -3,7 +3,8 @@
     <Rail v-if="!phone" />
     <el-container class="main-container">
       <el-main>
-        <el-header v-if="!chatRoute && !ownHeader"><Header :toolbar="!phone" /></el-header>
+        <el-header v-if="!chatRoute && !ownHeader && !adminSection"><Header :toolbar="!phone" /></el-header>
+        <AdminNav v-if="adminSection" :phone="phone" />
         <MailTabs v-if="mailSection && !(phone && route.name === 'content')" />
         <Main />
       </el-main>
@@ -20,6 +21,8 @@ import Main from '@/layout/main/index.vue'
 import Rail from '@/layout/rail/index.vue'
 import Tabbar from '@/layout/tabbar/index.vue'
 import MailTabs from '@/layout/mail-tabs/index.vue'
+import AdminNav from '@/layout/admin-nav/index.vue'
+import { isAdminRoute } from '@/perm/admin-pages.mjs';
 import { computed, ref, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute } from 'vue-router'
 import {useUiStore} from "@/store/ui.js";
@@ -34,8 +37,9 @@ const uiStore = useUiStore();
 const route = useRoute();
 const chatRoute = computed(() => ['chat-all', 'mail-chat', 'external-mail', 'rooms'].includes(route.name));
 const mailSection = computed(() => sectionOf(route.name) === 'mail');
+const adminSection = computed(() => isAdminRoute(route.name));
 // Pages that draw their own title bar.
-const ownHeader = computed(() => ['apps', 'app-detail', 'app-publish', 'app-review', 'me'].includes(route.name));
+const ownHeader = computed(() => ['apps', 'app-detail', 'app-publish', 'me'].includes(route.name));
 const {collapsed:sidebarCollapsed,compact:compactSidebar}=useConversationSidebar();
 const conversationWidth = computed(() => sidebarCollapsed.value ? 64 : Math.min(420, Math.max(260, Number(uiStore.conversationWidth) || 300)));
 uiStore.asideShow = false;
@@ -46,7 +50,7 @@ function measureKeyboard() {
   const vv = window.visualViewport;
   keyboard.value = !!vv && window.innerHeight - vv.height > 150;
 }
-const detail = computed(() => uiStore.mobileChatFocused || ['content', 'app-detail', 'app-publish', 'app-review'].includes(route.name));
+const detail = computed(() => adminSection.value || uiStore.mobileChatFocused || ['content', 'app-detail', 'app-publish'].includes(route.name));
 const showTabbar = computed(() => phone.value && !detail.value && !keyboard.value);
 const writerRef = ref({})
 onMounted(() => {

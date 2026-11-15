@@ -995,5 +995,11 @@
   "userManagementCountFilter": "Параметри підрахунку",
   "userManagementRefresh": "Оновити",
   "userManagementSelectPage": "Вибрати цю сторінку",
-  "userManagementEmpty": "Користувачів не знайдено."
+  "userManagementEmpty": "Користувачів не знайдено.",
+  "adminWorkspace": "Панель адміністратора",
+  "adminAccounts": "Користувачі й дозволи",
+  "adminContent": "Керування вмістом",
+  "adminOperations": "Система та статистика",
+  "adminClearInviteCodes": "Видалити недійсні коди",
+  "adminNoMatchingApps": "Відповідних застосунків не знайдено."
 }

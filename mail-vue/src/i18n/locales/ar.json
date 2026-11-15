@@ -995,5 +995,11 @@
   "userManagementCountFilter": "خيارات العدّ",
   "userManagementRefresh": "تحديث",
   "userManagementSelectPage": "تحديد هذه الصفحة",
-  "userManagementEmpty": "لم يتم العثور على مستخدمين."
+  "userManagementEmpty": "لم يتم العثور على مستخدمين.",
+  "adminWorkspace": "لوحة الإدارة",
+  "adminAccounts": "المستخدمون والصلاحيات",
+  "adminContent": "إدارة المحتوى",
+  "adminOperations": "النظام والتحليلات",
+  "adminClearInviteCodes": "مسح الرموز غير الصالحة",
+  "adminNoMatchingApps": "لا توجد تطبيقات مطابقة."
 }

@@ -18,6 +18,12 @@
           <span v-if="unread.mail" class="rail-badge" :aria-label="n(unread.mail) + ' ' + t('chatUnread')">{{ badge(unread.mail, n) }}</span></span>
         <span class="rail-label">{{ t('navMail') }}</span>
       </RouterLink>
+      <RouterLink v-if="canOpenAdmin(user.user.permKeys)" :to="{ name: 'admin' }" class="rail-item rail-secondary"
+        :class="{ active: section === 'admin' }" :aria-current="section === 'admin' ? 'page' : undefined"
+        :title="t('adminWorkspace')" data-nav="admin">
+        <span class="rail-icon"><Icon icon="cloud-mail:shield" width="21" aria-hidden="true" /></span>
+        <span class="rail-label">{{ t('manage') }}</span>
+      </RouterLink>
     </div>
     <RouterLink to="/me" class="rail-item rail-me" :class="{ active: section === 'me' }" :aria-current="section === 'me' ? 'page' : undefined" data-nav="me" :title="t('navMe')">
       <UserAvatar :profile="user.user.profile" :email="user.user.email" :size="34" />
@@ -35,6 +41,7 @@ import UserAvatar from '@/components/user-avatar.vue';
 import { useUserStore } from '@/store/user';
 import { useSettingStore } from '@/store/setting';
 import { useSiteNav, badge } from '@/composables/use-site-nav';
+import { canOpenAdmin } from '@/perm/admin-pages.mjs';
 
 const { t, n } = useI18n();
 const user = useUserStore();

@@ -995,5 +995,11 @@
   "userManagementCountFilter": "Tùy chọn đếm",
   "userManagementRefresh": "Làm mới",
   "userManagementSelectPage": "Chọn cả trang này",
-  "userManagementEmpty": "Không tìm thấy người dùng."
+  "userManagementEmpty": "Không tìm thấy người dùng.",
+  "adminWorkspace": "Trang quản trị",
+  "adminAccounts": "Người dùng và quyền",
+  "adminContent": "Quản lý nội dung",
+  "adminOperations": "Hệ thống và thống kê",
+  "adminClearInviteCodes": "Xóa mã không hợp lệ",
+  "adminNoMatchingApps": "Không có ứng dụng phù hợp."
 }

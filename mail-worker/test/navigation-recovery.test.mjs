@@ -1,3 +1,4 @@
+import {canOpenAdmin} from '../../mail-vue/src/perm/admin-pages.mjs';
 import test from 'node:test';import assert from 'node:assert/strict';import {readFileSync} from 'node:fs';import vm from 'node:vm';
 import {recoverNavigation,clearNavigationRecovery} from '../../mail-vue/src/utils/navigation-recovery.mjs';
 test('missing lazy chunks recover the exact same-origin destination once and never reload indefinitely',()=>{
@@ -16,11 +17,13 @@ test('missing lazy chunks recover the exact same-origin destination once and nev
 });
 test('permission changes add newly available administration routes and remove old account routes',()=>{
  const source=readFileSync(new URL('../../mail-vue/src/perm/perm.js',import.meta.url),'utf8').replace(/^import[^\n]*\n/gm,'').replace('export default {','const directive={').replaceAll('export function ','function ')+'\n;({syncPermissionRoutes});';
- const {syncPermissionRoutes}=vm.runInNewContext(source,{Set,Object,useUserStore:()=>({user:{permKeys:[]}})});
+ const {syncPermissionRoutes}=vm.runInNewContext(source,{Set,Object,canOpenAdmin,useUserStore:()=>({user:{permKeys:[]}})});
  const routes=new Map(),router={hasRoute:name=>routes.has(name),addRoute:(parent,route)=>{assert.equal(parent,'layout');routes.set(route.name,route);},removeRoute:name=>routes.delete(name)};
- syncPermissionRoutes(router,['user:query']);assert(routes.has('user'));assert(!routes.has('analysis'));
+ syncPermissionRoutes(router,['user:query']);assert(routes.has('user'));assert(routes.has('admin'));assert(!routes.has('analysis'));
  syncPermissionRoutes(router,['user:query','analysis:query']);assert(routes.has('analysis'));
  const removed=syncPermissionRoutes(router,['analysis:query']);assert(removed.includes('user'));assert(!routes.has('user'));
  syncPermissionRoutes(router,['*']);assert(routes.has('sys-setting'));assert(routes.has('reg-key'));assert(routes.has('all-email'));
+ syncPermissionRoutes(router,['app:publish']);assert(!routes.has('admin'));assert(routes.has('app-publish'));
+ syncPermissionRoutes(router,['app:review']);assert(routes.has('admin'));assert(routes.has('app-review'));
  syncPermissionRoutes(router,[]);assert.equal(routes.size,0);
 });

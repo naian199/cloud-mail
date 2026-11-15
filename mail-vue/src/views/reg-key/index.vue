@@ -1,30 +1,30 @@
 <template>
   <div class="reg-key">
-    <div class="header-actions">
-      <Icon class="icon" icon="ion:add-outline" width="23" height="23" @click="openAdd"/>
-      <div class="search">
-        <el-input
-            v-model="params.code"
-            class="search-input"
-            :placeholder="$t('searchRegKeyDesc')"
-        >
-        </el-input>
+    <header class="header-actions">
+      <h1>{{ t('inviteCode') }}</h1>
+      <div class="page-actions">
+        <el-button :loading="regKeyLoading" @click="refresh">{{ t('userManagementRefresh') }}</el-button>
+        <el-button v-if="hasPerm('reg-key:add')" type="primary" @click="openAdd">{{ t('addRegKey') }}</el-button>
       </div>
-      <Icon class="icon" icon="iconoir:search" @click="search" width="20" height="20"/>
-      <Icon class="icon" icon="ion:reload" width="18" height="18" @click="refresh"/>
-      <Icon class="icon" icon="fluent:broom-sparkle-16-regular" width="22" height="22" @click="clearNotUse"/>
+    </header>
+    <div class="code-toolbar">
+      <form class="search" role="search" @submit.prevent="search">
+        <el-input v-model="params.code" :aria-label="t('searchRegKeyDesc')" :placeholder="t('searchRegKeyDesc')" clearable @clear="search" />
+        <el-button native-type="submit">{{ t('userManagementSearch') }}</el-button>
+      </form>
+      <el-button v-if="hasPerm('reg-key:delete')" type="danger" plain :title="t('clearRegKey')" @click="clearNotUse">
+        {{ t('adminClearInviteCodes') }}
+      </el-button>
     </div>
 
-    <el-scrollbar class="scrollbar">
-      <div  class="loading" :class="regKeyLoading ? 'loading-show' : 'loading-hide'" :style="regKeyFirst ? 'background: transparent' : ''">
-        <loading/>
-      </div>
+    <el-scrollbar class="scrollbar" v-loading="regKeyLoading">
+      <ListState :state="listError" :retrying="regKeyLoading" @retry="refresh" />
       <div class="code-box">
-        <div class="code-item" v-for="item in regKeyData">
+        <div class="code-item" v-for="item in regKeyData" :key="item.regKeyId">
           <div class="code-info">
             <div class="info-left">
               <div class="info-left-item">
-                <span class="code" @click="copyCode(item.code)">{{ item.code }}</span>
+                <button class="code" type="button" :title="t('copy')" @click="copyCode(item.code)"><bdi>{{ item.code }}</bdi></button>
               </div>
               <div class="info-left-item">
                 <div>{{ $t('remainingUses') }}：</div>
@@ -42,13 +42,13 @@
               </div>
             </div>
             <div class="info-right">
-              <el-dropdown class="setting">
-                <Icon icon="fluent:settings-24-filled" width="21" height="21" color="#909399"/>
+              <el-dropdown class="setting" trigger="click">
+                <el-button size="small">{{ t('action') }}</el-button>
                 <template #dropdown>
                   <el-dropdown-menu>
                     <el-dropdown-item @click="copyCode(item.code)">{{ $t('copy') }}</el-dropdown-item>
                     <el-dropdown-item @click="openHistory(item)">{{ $t('history') }}</el-dropdown-item>
-                    <el-dropdown-item @click="deleteRegKey(item)">{{ $t('delete') }}</el-dropdown-item>
+                    <el-dropdown-item v-if="hasPerm('reg-key:delete')" @click="deleteRegKey(item)">{{ $t('delete') }}</el-dropdown-item>
                   </el-dropdown-menu>
                 </template>
               </el-dropdown>
@@ -56,8 +56,8 @@
           </div>
         </div>
       </div>
-      <div class="empty" v-if="regKeyData.length === 0">
-        <el-empty v-if="!regKeyFirst" :image-size="isMobile ? 120 : null" :description="$t('noCodeFound')"/>
+      <div class="empty" v-if="!regKeyLoading && !listError && !regKeyData.length">
+        <el-empty :image-size="isMobile ? 120 : null" :description="$t('noCodeFound')"/>
       </div>
     </el-scrollbar>
     <el-dialog v-model="showAdd" :title="$t('addRegKey')">
@@ -97,6 +97,8 @@
 
 <script setup>
 import {defineOptions, nextTick, reactive, ref, watch} from "vue"
+import ListState from '@/components/list-state.vue';
+import { hasPerm } from '@/perm/perm.js';
 import {Icon} from "@iconify/vue";
 import loading from "@/components/loading/index.vue";
 import {useSettingStore} from "@/store/setting.js";
@@ -124,7 +126,9 @@ const roleList = reactive([])
 const addLoading = ref(false)
 const showAdd = ref(false)
 const regKeyLoading = ref(true)
-const regKeyFirst = ref(true)
+const listError = ref('')
+let loadedCodes = false
+let requestRevision = 0
 const showRegKeyHistory = ref(false)
 const historyList = reactive([])
 const emailColumnWidth = ref(0)
@@ -141,7 +145,7 @@ const addForm = reactive({
 
 const regKeyData = reactive([])
 
-getList(true)
+getList()
 
 roleSelectUse().then(list => {
   roleList.length = 0
@@ -195,26 +199,27 @@ function formatUserCreateTime(regKey) { return formatCalendarDate(regKey.createT
 function formatExpireTime(expireTime) { return formatCalendarDate(expireTime); }
 
 function refresh() {
-  params.code = null
-  getList(true)
+  getList()
 }
 
 function search() {
-  getList(true)
+  getList()
 }
 
-function getList(showLoading = false) {
-  if (showLoading) {
-    regKeyLoading.value = true
+async function getList() {
+  const revision = ++requestRevision
+  regKeyLoading.value = true
+  listError.value = ''
+  try {
+    const list = await regKeyList({ code: params.code.trim() })
+    if (revision !== requestRevision) return
+    regKeyData.splice(0, regKeyData.length, ...list)
+    loadedCodes = true
+  } catch {
+    if (revision === requestRevision) listError.value = loadedCodes ? 'stale' : 'failed'
+  } finally {
+    if (revision === requestRevision) regKeyLoading.value = false
   }
-  regKeyList(params).then(list => {
-    regKeyData.length = 0
-    regKeyData.push(...list)
-    regKeyLoading.value = false
-    setTimeout(() => {
-      regKeyFirst.value = false
-    },200)
-  })
 }
 
 async function copyCode(code) {
@@ -271,7 +276,7 @@ function submit() {
 
   if (!addForm.code) {
     ElMessage({
-      message: $('emptyRegKeyMsg'),
+      message: t('emptyRegKeyMsg'),
       type: "error",
       plain: true
     })
@@ -352,20 +357,20 @@ function openAdd() {
 .reg-key {
   height: 100%;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .scrollbar {
-  height: calc(100% - 48px);
+  flex: 1;
+  min-height: 0;
   position: relative;
   background: var(--settings-page-background);
-  @media (max-width: 372px) {
-    height: calc(100% - 85px);
-  }
 
   .code-box {
     padding: 15px 15px 25px 15px;
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(min(310px, 100%), 1fr));
     gap: 15px;
 
     .code-item {
@@ -387,6 +392,13 @@ function openAdd() {
             padding-top: 5px;
 
             .code {
+              border: 0;
+              padding: 0;
+              background: transparent;
+              color: inherit;
+              text-align: start;
+              overflow-wrap: anywhere;
+              font: inherit;
               font-weight: bold;;
               font-size: 16px;
               white-space: nowrap;
@@ -492,39 +504,14 @@ function openAdd() {
   cursor: pointer;
 }
 
-.header-actions {
-  padding: 9px 15px;
-  display: flex;
-  gap: 18px;
-  flex-wrap: wrap;
-  align-items: center;
-  box-shadow: inset 0 -1px 0 0 rgba(100, 121, 143, 0.12);
-  font-size: 18px;
-  @media (max-width: 767px) {
-    gap: 15px;
-  }
-
-  .search-input {
-    width: min(200px, calc(100vw - 140px));
-  }
-
-  .search {
-    :deep(.el-input-group) {
-      height: 28px;
-    }
-
-    :deep(.el-input__inner) {
-      height: 28px;
-    }
-  }
-
-  .icon {
-    cursor: pointer;
-  }
-}
-
-:deep(.el-table__inner-wrapper:before) {
-  background: var(--el-bg-color);
-}
+.header-actions,
+.code-toolbar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; padding: 12px 16px; border-bottom: 1px solid var(--el-border-color-lighter); }
+.header-actions h1 { margin: 0; font-size: clamp(20px, 3vw, 27px); }
+.page-actions,
+.search { display: flex; gap: 8px; }
+.page-actions { flex-wrap: wrap; }
+.page-actions .el-button,
+.code-toolbar .el-button { margin: 0; }
+.search { flex: 1 1 250px; max-width: 390px; min-width: 0; }
 
 </style>

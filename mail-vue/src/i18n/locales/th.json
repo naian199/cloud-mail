@@ -995,5 +995,11 @@
   "userManagementCountFilter": "ตัวเลือกการนับ",
   "userManagementRefresh": "รีเฟรช",
   "userManagementSelectPage": "เลือกทั้งหน้านี้",
-  "userManagementEmpty": "ไม่พบผู้ใช้"
+  "userManagementEmpty": "ไม่พบผู้ใช้",
+  "adminWorkspace": "แผงผู้ดูแลระบบ",
+  "adminAccounts": "ผู้ใช้และสิทธิ์",
+  "adminContent": "การจัดการเนื้อหา",
+  "adminOperations": "ระบบและสถิติ",
+  "adminClearInviteCodes": "ล้างรหัสที่ใช้ไม่ได้",
+  "adminNoMatchingApps": "ไม่พบแอปที่ตรงกับเงื่อนไข"
 }

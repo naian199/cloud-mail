@@ -995,5 +995,11 @@
   "userManagementCountFilter": "Параметры подсчёта",
   "userManagementRefresh": "Обновить",
   "userManagementSelectPage": "Выбрать эту страницу",
-  "userManagementEmpty": "Пользователи не найдены."
+  "userManagementEmpty": "Пользователи не найдены.",
+  "adminWorkspace": "Панель управления",
+  "adminAccounts": "Пользователи и доступ",
+  "adminContent": "Управление контентом",
+  "adminOperations": "Система и статистика",
+  "adminClearInviteCodes": "Удалить недействительные коды",
+  "adminNoMatchingApps": "Подходящих приложений нет."
 }

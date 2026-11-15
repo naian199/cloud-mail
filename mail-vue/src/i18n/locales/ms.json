@@ -995,5 +995,11 @@
   "userManagementCountFilter": "Pilihan kiraan",
   "userManagementRefresh": "Muat semula",
   "userManagementSelectPage": "Pilih halaman ini",
-  "userManagementEmpty": "Tiada pengguna ditemui."
+  "userManagementEmpty": "Tiada pengguna ditemui.",
+  "adminWorkspace": "Panel pentadbir",
+  "adminAccounts": "Pengguna dan kebenaran",
+  "adminContent": "Pengurusan kandungan",
+  "adminOperations": "Sistem dan analitik",
+  "adminClearInviteCodes": "Padam kod tidak sah",
+  "adminNoMatchingApps": "Tiada aplikasi yang sepadan."
 }
